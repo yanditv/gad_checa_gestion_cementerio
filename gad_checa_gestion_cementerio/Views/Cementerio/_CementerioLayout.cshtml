@@ -38,8 +38,7 @@
 
 <div class="mt-3">
     <div id="tabs-with-icons-1" role="tabpanel" aria-labelledby="tabs-with-icons-item-1">
-        @RenderBody() 
+        @RenderBody()
+        @await RenderSectionAsync("Scripts", required: false)
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/preline@1.0.0/dist/preline.min.js"></script>
-    @await RenderSectionAsync("Scripts", required: false)
 </div>
