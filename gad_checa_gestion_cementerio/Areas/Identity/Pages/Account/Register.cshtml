@@ -1,0 +1,56 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="bg-white p-6 space-y-6 w-full max-w-md rounded-lg shadow-lg">
+    <div class="text-center">
+        <h1 class="text-gray-900 text-2xl font-bold">@ViewData["Title"]</h1>
+        <p class="text-gray-500">Create a new account</p>
+    </div>
+
+    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="space-y-4">
+        <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm" role="alert"></div>
+
+        <!-- Email -->
+        <div>
+            <label asp-for="Input.Email" class="text-gray-700 block text-sm font-medium">Email</label>
+            <div class="relative">
+                <input asp-for="Input.Email" type="email" class="py-3 px-4 border-gray-300 w-full rounded-lg border shadow-sm focus:ring focus:ring-blue-300 focus:border-blue-500" autocomplete="username" placeholder="name@example.com" />
+                <span asp-validation-for="Input.Email" class="text-red-500 text-sm"></span>
+            </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+            <label asp-for="Input.Password" class="text-gray-700 block text-sm font-medium">Password</label>
+            <div class="relative">
+                <input asp-for="Input.Password" type="password" class="py-3 px-4 border-gray-300 w-full rounded-lg border shadow-sm focus:ring focus:ring-blue-300 focus:border-blue-500" autocomplete="new-password" placeholder="••••••••" />
+                <span asp-validation-for="Input.Password" class="text-red-500 text-sm"></span>
+            </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+            <label asp-for="Input.ConfirmPassword" class="text-gray-700 block text-sm font-medium">Confirm Password</label>
+            <div class="relative">
+                <input asp-for="Input.ConfirmPassword" type="password" class="py-3 px-4 border-gray-300 w-full rounded-lg border shadow-sm focus:ring focus:ring-blue-300 focus:border-blue-500" autocomplete="new-password" placeholder="••••••••" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-red-500 text-sm"></span>
+            </div>
+        </div>
+
+        <!-- Register Button -->
+        <button id="registerSubmit" type="submit" class="py-3 px-4 bg-blue-600 text-white w-full rounded-lg font-semibold transition hover:bg-blue-700 focus:ring focus:ring-blue-300">
+            Register
+        </button>
+
+        <div class="text-gray-600 text-center text-sm">
+            <p>Ya tengo una cuenta? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:underline">Login</a></p>
+            @* <p><a id="resend-confirmation" asp-page="./ResendEmailConfirmation" class="text-blue-600 hover:underline">Resend email confirmation</a></p> *@
+        </div>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

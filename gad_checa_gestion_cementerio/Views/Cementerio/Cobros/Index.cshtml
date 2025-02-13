@@ -1,0 +1,7 @@
+﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.PagoModel>
+@{
+     ViewData["Title"] = "Cobros";
+    ViewData["EntityType"] = "cobro";
+    Layout = "~/Views/Cementerio/_CementerioLayout.cshtml";
+}
+@await Html.PartialAsync("_TablaGenerica", Model)

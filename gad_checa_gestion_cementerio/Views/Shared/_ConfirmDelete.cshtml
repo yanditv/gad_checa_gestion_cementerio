@@ -1,0 +1,58 @@
+﻿@* @model dynamic *@
+
+
+<div id="hs-vertically-centered-modal" class="hs-overlay top-0 start-0 z-[80] pointer-events-none fixed hidden size-full overflow-y-auto overflow-x-hidden" role="dialog" tabindex="-1" aria-labelledby="hs-vertically-centered-modal-label">
+    <div class="mt-0 m-3 min-h-[calc(100%-3.5rem)] flex items-center opacity-0 transition-all ease-out sm:max-w-lg sm:w-full sm:mx-auto hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500">
+        <div class="bg-white pointer-events-auto flex w-full flex-col rounded-xl border shadow-sm dark:bg-neutral-800 dark:border-neutral-700 dark:shadow-neutral-700/70">
+            <div class="py-3 px-4 flex items-center justify-between border-b dark:border-neutral-700">
+                <h3 id="hs-vertically-centered-modal-label" class="text-gray-800 font-bold dark:text-white">
+                    Confirmación
+                </h3>
+                <button type="button" class="size-8 gap-x-2 border-transparent bg-gray-100 text-gray-800 inline-flex items-center justify-center rounded-full border hover:bg-gray-200 focus:outline-none focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-600 dark:focus:bg-neutral-600" aria-label="Close" data-hs-overlay="#hs-vertically-centered-modal">
+                    <span class="sr-only">Close</span>
+                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto">
+                <p class="text-gray-800 dark:text-neutral-400">
+                    ¿Estás seguro de que deseas eliminar este elemento?
+                </p>
+            </div>
+            <div class="gap-x-2 py-3 px-4 flex items-center justify-end border-t dark:border-neutral-700">
+                <button type="button" class="py-2 px-3 gap-x-2 border-gray-200 bg-white text-gray-800 inline-flex items-center rounded-lg border text-sm font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700 dark:focus:bg-neutral-700" data-hs-overlay="#hs-vertically-centered-modal">
+                    Cancelar
+                </button>
+                <button type="button" class="py-2 px-3 gap-x-2 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" id="confirmDeleteButton">
+                    Aceptar
+                </button>
+
+                <form id="deleteForm" asp-action="Delete" method="post" style="display:none;">
+                    <input type="hidden" name="id" id="deleteId" value="" />
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let deleteIdInput = document.getElementById("deleteId");
+
+        const deleteButtons = document.querySelectorAll(".delete-button");
+        deleteButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                let deleteId = this.getAttribute("data-id");
+                deleteIdInput.value = deleteId;
+            });
+        });
+
+        const confirmDeleteButton = document.getElementById("confirmDeleteButton");
+        confirmDeleteButton.addEventListener("click", function () {
+            const deleteForm = document.getElementById("deleteForm");
+            deleteForm.submit();
+        });
+    });
+</script>

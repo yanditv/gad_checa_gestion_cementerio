@@ -1,0 +1,936 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.Localization
+
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Gad Checa - Gestión Cementerio</title>
+    @* <script src="https://cdn.tailwindcss.com"></script> *@
+    <link rel="stylesheet" href="https://preline.co/assets/css/main.min.css?v=1.0.0">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/gad_checa_gestion_cementerio.styles.css" asp-append-version="true" />
+    <script>
+        const html = document.querySelector('html');
+        const isLightOrAuto = localStorage.getItem('hs_theme') === 'light' || (localStorage.getItem('hs_theme') === 'auto' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const isDarkOrAuto = localStorage.getItem('hs_theme') === 'dark' || (localStorage.getItem('hs_theme') === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        if (isLightOrAuto && html.classList.contains('dark')) html.classList.remove('dark');
+        else if (isDarkOrAuto && html.classList.contains('light')) html.classList.remove('light');
+        else if (isDarkOrAuto && !html.classList.contains('dark')) html.classList.add('dark');
+        else if (isLightOrAuto && !html.classList.contains('light')) html.classList.add('light');
+    </script>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <header class="top-0 inset-x-0 z-[48] bg-white py-2.5 sticky flex w-full flex-wrap border-b text-sm dark:bg-neutral-800 dark:border-neutral-700 md:justify-start md:flex-nowrap lg:ps-[260px]">
+        <nav class="px-4 mx-auto flex w-full basis-full items-center sm:px-6">
+            <div class="me-5 flex items-center lg:me-0 lg:hidden">
+                <!-- Logo -->
+                <a class="inline-block flex flex-none items-center rounded-xl text-xl font-semibold focus:outline-none focus:opacity-80" href="/" aria-label="Preline">
+                    <img src="/img/logo.jpeg" class="h-10 w-10 rounded-full" />
+                    <span class="ms-1 text-sm">GAD - CHECA</span>
+                </a>
+                <!-- End Logo -->
+            </div>
+
+            <div class="gap-x-1 ms-auto flex w-full items-center justify-end md:justify-between md:gap-x-3">
+
+                <div class="hidden md:block">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <div class="inset-y-0 start-0 ps-3.5 pointer-events-none absolute z-20 flex items-center">
+                            <svg class="size-4 text-gray-400 shrink-0 dark:text-white/60" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.3-4.3"></path>
+                            </svg>
+                        </div>
+                        <input type="text" class="py-2 ps-10 pe-16 bg-white border-gray-200 block w-full rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder:text-neutral-400 dark:focus:ring-neutral-600" placeholder="Search" wfd-id="id0">
+                        <div class="inset-y-0 end-0 pe-1 pointer-events-none absolute z-20 flex hidden items-center">
+                            <button type="button" class="size-6 text-gray-500 inline-flex shrink-0 items-center justify-center rounded-full hover:text-blue-600 focus:outline-none focus:text-blue-600 dark:text-neutral-500 dark:hover:text-blue-500 dark:focus:text-blue-500" aria-label="Close">
+                                <span class="sr-only">Close</span>
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="m15 9-6 6"></path>
+                                    <path d="m9 9 6 6"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="inset-y-0 end-0 pe-3 text-gray-400 pointer-events-none absolute z-20 flex items-center">
+                            <svg class="size-3 text-gray-400 shrink-0 dark:text-white/60" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"></path>
+                            </svg>
+                            <span class="mx-1">
+                                <svg class="size-3 text-gray-400 shrink-0 dark:text-white/60" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"></path>
+                                    <path d="M12 5v14"></path>
+                                </svg>
+                            </span>
+                            <span class="text-xs">/</span>
+                        </div>
+                    </div>
+                    <!-- End Search Input -->
+                </div>
+
+                <div class="gap-1 flex flex-row items-center justify-end">
+                    <button type="button" class="gap-x-2 border-transparent text-gray-800 relative inline-flex size-[38px] items-center justify-center rounded-full border text-sm font-semibold hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white md:hidden dark:hover:bg-neutral-700 dark:focus:bg-neutral-700">
+                        <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path>
+                        </svg>
+                        <span class="sr-only">Search</span>
+                    </button>
+
+                    <button type="button" class="gap-x-2 border-transparent text-gray-800 relative inline-flex size-[38px] items-center justify-center rounded-full border text-sm font-semibold hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700 dark:focus:bg-neutral-700">
+                        <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+                        </svg>
+                        <span class="sr-only">Notifications</span>
+                    </button>
+
+                    <button type="button" class="gap-x-2 border-transparent text-gray-800 relative inline-flex size-[38px] items-center justify-center rounded-full border text-sm font-semibold hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-neutral-700 dark:focus:bg-neutral-700">
+                        <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                        <span class="sr-only">Activity</span>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div class="hs-dropdown relative inline-flex [--placement:bottom-right]">
+                        <button id="hs-dropdown-account" type="button" class="gap-x-2 border-transparent text-gray-800 inline-flex size-[38px] items-center justify-center rounded-full border text-sm font-semibold focus:outline-none disabled:opacity-50 disabled:pointer-events-none dark:text-white" aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
+                            <img class="size-[38px] shrink-0 rounded-full" src="https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=435&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%20435w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%20735w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%20870w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=1035&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%201035w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%201335w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%201470w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=1635&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%201635w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%201935w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%202070w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=2235&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%202235w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=2535&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%202535w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%202670w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=2835&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%202835w,%20https://plus.unsplash.com/premium_photo-1723028769916-a767a6b0f719?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D%203000w" alt="Avatar">
+                        </button>
+
+                        <div class="hs-dropdown-menu duration min-w-60 bg-white mt-2 hidden rounded-lg opacity-0 shadow-md transition-[opacity,margin] before:h-4 before:absolute before:-top-4 before:start-0 before:w-full after:h-4 after:absolute after:-bottom-4 after:start-0 after:w-full dark:bg-neutral-800 dark:border dark:border-neutral-700 dark:divide-neutral-700 hs-dropdown-open:opacity-100" role="menu" aria-orientation="vertical" aria-labelledby="hs-dropdown-account">
+                            <div class="py-3 px-5 bg-gray-100 rounded-t-lg dark:bg-neutral-700">
+                                <p class="text-gray-500 text-sm dark:text-neutral-500">Signed in as</p>
+                                <p class="text-gray-800 text-sm font-medium dark:text-neutral-200">@UserManager.GetUserName(User)</p>
+                            </div>
+                            <div class="p-1.5 space-y-0.5">
+                                <a class="gap-x-3.5 py-2 px-3 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300" href="#">
+                                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+                                    </svg>
+                                    Newsletter
+                                </a>
+                                <a class="gap-x-3.5 py-2 px-3 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300" href="#">
+                                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                                        <path d="M3 6h18"></path>
+                                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                    </svg>
+                                    Purchases
+                                </a>
+                                <a class="gap-x-3.5 py-2 px-3 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300" href="#">
+                                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                                        <path d="M12 12v9"></path>
+                                        <path d="m8 17 4 4 4-4"></path>
+                                    </svg>
+                                    Downloads
+                                </a>
+                               <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" class="gap-x-3.5 py-2 px-3 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300">
+                                    <button type="submit" class="gap-x-3.5 text-gray-800 flex items-center hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300">
+                                        <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                        </svg>
+                                        <span>Salir</span>
+                                    </button>
+                                </form>
+
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Dropdown -->
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="top-0 inset-x-0 bg-white px-4 sticky z-20 border-y dark:bg-neutral-800 dark:border-neutral-700 sm:px-6 lg:px-8 lg:hidden">
+        <div class="py-2 flex items-center">
+            <!-- Navigation Toggle -->
+            <button type="button" class="size-8 gap-x-2 border-gray-200 text-gray-800 flex items-center justify-center rounded-lg border hover:text-gray-500 focus:outline-none focus:text-gray-500 disabled:opacity-50 disabled:pointer-events-none dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-500 dark:focus:text-neutral-500" aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-application-sidebar" aria-label="Toggle navigation" data-hs-overlay="#hs-application-sidebar">
+                <span class="sr-only">Toggle Navigation</span>
+                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                    <path d="M15 3v18"></path>
+                    <path d="m8 9 3 3-3 3"></path>
+                </svg>
+            </button>
+            <!-- End Navigation Toggle -->
+            <!-- Breadcrumb -->
+            <ol class="ms-3 flex items-center whitespace-nowrap">
+                <li class="text-gray-800 flex items-center text-sm dark:text-neutral-400">
+                    Application Layout
+                    <svg class="mx-3 size-2.5 text-gray-400 shrink-0 overflow-visible dark:text-neutral-500" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 1L10.6869 7.16086C10.8637 7.35239 10.8637 7.64761 10.6869 7.83914L5 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                </li>
+                <li class="text-gray-800 truncate text-sm font-semibold dark:text-neutral-400" aria-current="page">
+                    Dashboard
+                </li>
+            </ol>
+            <!-- End Breadcrumb -->
+        </div>
+    </div>
+    
+    <div id="hs-application-sidebar" class="hs-overlay -translate-x-full inset-y-0 start-0 z-[60] bg-white border-gray-200 fixed hidden h-full w-[260px] transform border-e transition-all duration-300 dark:bg-neutral-800 dark:border-neutral-700 lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [--auto-close:lg] hs-overlay-open:translate-x-0" role="dialog" aria-label="Sidebar">
+        <div class="relative flex h-full max-h-full flex-col">
+            <div class="px-6 pt-4 flex items-center">
+                <!-- Logo -->
+                <a class="inline-block flex flex-none items-center rounded-xl text-xl font-semibold focus:outline-none focus:opacity-80" href="/" aria-label="Preline">
+                    <img src="/img/logo.jpeg" class="h-20 w-20 rounded-full" />
+                    <span class="ms-1">GAD - CHECA</span>
+                </a>
+                <!-- End Logo -->
+
+            </div>
+
+            <!-- Content -->
+            <div class="h-full overflow-y-auto [&amp;::-webkit-scrollbar]:w-2 [&amp;::-webkit-scrollbar-thumb]:rounded-full [&amp;::-webkit-scrollbar-track]:bg-gray-100 [&amp;::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&amp;::-webkit-scrollbar-track]:bg-neutral-700 dark:[&amp;::-webkit-scrollbar-thumb]:bg-neutral-500">
+                <nav class="hs-accordion-group p-3 flex w-full flex-col flex-wrap" data-hs-accordion-always-open="">
+                    <ul class="space-y-1 flex flex-col">
+                        <li>
+                            <a class="gap-x-3.5 py-2 px-2.5 bg-gray-100 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-700 dark:text-white" href="#">
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="hs-accordion active" id="contrato-accordion">
+                            <button type="button" class="hs-accordion-toggle gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-start text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700" aria-expanded="true" aria-controls="account-accordion-child">
+                                <svg class="mt-0.5 size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="15" r="3"></circle>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M10 15H6a4 4 0 0 0-4 4v2"></path>
+                                    <path d="m21.7 16.4-.9-.3"></path>
+                                    <path d="m15.2 13.9-.9-.3"></path>
+                                    <path d="m16.6 18.7.3-.9"></path>
+                                    <path d="m19.1 12.2.3-.9"></path>
+                                    <path d="m19.6 18.7-.4-1"></path>
+                                    <path d="m16.8 12.3-.4-1"></path>
+                                    <path d="m14.3 16.6 1-.4"></path>
+                                    <path d="m20.7 13.8 1-.4"></path>
+                                </svg>
+                                Contratos
+
+                                <svg class="size-4 ms-auto hidden hs-accordion-active:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m18 15-6-6-6 6"></path>
+                                </svg>
+
+                                <svg class="size-4 ms-auto block hs-accordion-active:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            <div id="contrato-accordion-child" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="account-accordion" style="display: block;">
+                                <ul class="ps-8 pt-1 space-y-1">
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="/contratos/create">
+                                            Nuevo
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="/contratos">
+                                            Listado
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                            Pendietes de Cobro
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="hs-accordion" id="users-accordion">
+                            <button type="button" class="hs-accordion-toggle gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-start text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700" aria-expanded="false" aria-controls="users-accordion-child">
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Users
+
+                                <svg class="size-4 ms-auto hidden hs-accordion-active:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m18 15-6-6-6 6"></path>
+                                </svg>
+
+                                <svg class="size-4 ms-auto block hs-accordion-active:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            <div id="users-accordion-child" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="users-accordion" style="display: none;">
+                                <ul class="hs-accordion-group ps-8 pt-1 space-y-1" data-hs-accordion-always-open="">
+                                    <li class="hs-accordion" id="users-accordion-sub-1">
+                                        <button type="button" class="hs-accordion-toggle gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-start text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700" aria-expanded="true" aria-controls="users-accordion-sub-1-child">
+                                            Sub Menu 1
+
+                                            <svg class="size-4 ms-auto hidden hs-accordion-active:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="m18 15-6-6-6 6"></path>
+                                            </svg>
+
+                                            <svg class="size-4 ms-auto block hs-accordion-active:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="m6 9 6 6 6-6"></path>
+                                            </svg>
+                                        </button>
+
+                                        <div id="users-accordion-sub-1-child" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="users-accordion-sub-1">
+                                            <ul class="pt-1 space-y-1">
+                                                <li>
+                                                    <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                                        Link 1
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                                        Link 2
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                                        Link 3
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </li>
+                                    <li class="hs-accordion" id="users-accordion-sub-2">
+                                        <button type="button" class="hs-accordion-toggle gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-start text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700" aria-expanded="true" aria-controls="users-accordion-sub-2-child">
+                                            Sub Menu 2
+
+                                            <svg class="size-4 ms-auto hidden hs-accordion-active:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="m18 15-6-6-6 6"></path>
+                                            </svg>
+
+                                            <svg class="size-4 ms-auto block hs-accordion-active:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="m6 9 6 6 6-6"></path>
+                                            </svg>
+                                        </button>
+
+                                        <div id="users-accordion-sub-2-child" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="users-accordion-sub-2">
+                                            <ul class="pt-1 space-y-1">
+                                                <li>
+                                                    <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                                        Link 1
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                                        Link 2
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                                        Link 3
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="hs-accordion active" id="account-accordion">
+                            <button type="button" class="hs-accordion-toggle gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-start text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700" aria-expanded="true" aria-controls="account-accordion-child">
+                                <svg class="mt-0.5 size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="15" r="3"></circle>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M10 15H6a4 4 0 0 0-4 4v2"></path>
+                                    <path d="m21.7 16.4-.9-.3"></path>
+                                    <path d="m15.2 13.9-.9-.3"></path>
+                                    <path d="m16.6 18.7.3-.9"></path>
+                                    <path d="m19.1 12.2.3-.9"></path>
+                                    <path d="m19.6 18.7-.4-1"></path>
+                                    <path d="m16.8 12.3-.4-1"></path>
+                                    <path d="m14.3 16.6 1-.4"></path>
+                                    <path d="m20.7 13.8 1-.4"></path>
+                                </svg>
+                                Gestión Personal
+
+                                <svg class="size-4 ms-auto hidden hs-accordion-active:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m18 15-6-6-6 6"></path>
+                                </svg>
+
+                                <svg class="size-4 ms-auto block hs-accordion-active:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            <div id="account-accordion-child" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="account-accordion" style="display: block;">
+                                <ul class="ps-8 pt-1 space-y-1">
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="/personas">
+                                            Personas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                            Link 2
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                            Link 3
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="hs-accordion" id="projects-accordion">
+                            <button type="button" class="hs-accordion-toggle gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-start text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700" aria-expanded="false" aria-controls="projects-accordion-child">
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                </svg>
+                                Empresa
+
+                                <svg class="size-4 ms-auto hidden hs-accordion-active:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m18 15-6-6-6 6"></path>
+                                </svg>
+
+                                <svg class="size-4 ms-auto block hs-accordion-active:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            <div id="projects-accordion-child" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="projects-accordion" style="display: none;">
+                                <ul class="ps-8 pt-1 space-y-1">
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                            Link 1
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                            Link 2
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex items-center rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200" href="#">
+                                            Link 3
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li>
+                            <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-sm hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-300" href="#">
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                                    <line x1="16" x2="16" y1="2" y2="6"></line>
+                                    <line x1="8" x2="8" y1="2" y2="6"></line>
+                                    <line x1="3" x2="21" y1="10" y2="10"></line>
+                                    <path d="M8 14h.01"></path>
+                                    <path d="M12 14h.01"></path>
+                                    <path d="M16 14h.01"></path>
+                                    <path d="M8 18h.01"></path>
+                                    <path d="M12 18h.01"></path>
+                                    <path d="M16 18h.01"></path>
+                                </svg>
+                                Calendar
+                            </a>
+                        </li>
+                        <li>
+                            <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-sm hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-300" href="/cementerio">
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                                    <line x1="16" x2="16" y1="2" y2="6"></line>
+                                    <line x1="8" x2="8" y1="2" y2="6"></line>
+                                    <line x1="3" x2="21" y1="10" y2="10"></line>
+                                    <path d="M8 14h.01"></path>
+                                    <path d="M12 14h.01"></path>
+                                    <path d="M16 14h.01"></path>
+                                    <path d="M8 18h.01"></path>
+                                    <path d="M12 18h.01"></path>
+                                    <path d="M16 18h.01"></path>
+                                </svg>
+                                Cementerio
+                            </a>
+                        </li>
+                        <li>
+                            <a class="gap-x-3.5 py-2 px-2.5 text-gray-800 flex w-full items-center rounded-lg text-sm hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-300" href="#">
+                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                Documentation
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            <!-- End Content -->
+        </div>
+    </div>
+    <div class="w-full lg:ps-64">
+        <div class="p-4 space-y-4 sm:p-6 sm:space-y-6">
+            @RenderBody()
+        </div>
+    </div>
+
+    
+@*     <!-- Main Layout -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r">
+            <div class="p-4 border-b">
+                <h2 class="text-xl font-bold">Menú</h2>
+            </div>
+            <ul class="space-y-2 p-4">
+                <li>
+                    <details class="group">
+                        <summary class="p-2 flex cursor-pointer items-center hover:bg-gray-200">
+                            <span>Inicio</span>
+                            <svg class="w-4 h-4 group-open:rotate-180 ml-auto transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </summary>
+                        <ul class="pl-4 mt-2 space-y-2">
+                            <li><a class="hover:text-indigo-500" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a></li>
+                            <li><a class="hover:text-indigo-500" asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a></li>
+                        </ul>
+                    </details>
+                </li>
+                <li><a href="#" class="p-2 block hover:bg-gray-200">Dashboard</a></li>
+                <li><a href="#" class="p-2 block hover:bg-gray-200">Gestión de Cementerios</a></li>
+                <li><a href="#" class="p-2 block hover:bg-gray-200">Configuraciones</a></li>
+                <li><a href="#" class="p-2 block hover:bg-gray-200">Ayuda</a></li>
+                <li><a href="/personas" class="p-2 block hover:bg-gray-200">Personas</a></li>
+            </ul>
+        </aside> *@
+
+        <!-- Content Area -->
+@*         <div class="content flex-1">
+            <main role="main" class="p-5 bg-white rounded-lg shadow-md">
+                <!-- Search Panel -->
+                <div class="mb-8">
+                    <input type="text" placeholder="Search..." class="p-2 w-full rounded-lg border">
+                </div>
+
+                @RenderBody()
+            </main>
+        </div>
+    </div> *@
+
+    <!-- Footer -->
+@*     <footer class="bg-white mt-auto border-t">
+        <div class="py-4 container mx-auto text-center">
+            &copy; 2025 - Gad Checa -
+            <a class="text-indigo-500 hover:text-indigo-700" asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
+        </div>
+    </footer> *@
+
+    <script src="https://preline.co/assets/vendor/preline/dist/index.js?v=1.0.0" ></script>
+    <script src="https://preline.co/assets/vendor/lodash/lodash.min.js"></script>
+    <script src="https://preline.co/assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+    <script src="https://preline.co/assets/vendor/preline/dist/helper-apexcharts.js"></script>
+    @* <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script> *@
+    @* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
+    @* <script src="~/js/site.js" asp-append-version="true"></script> *@
+    <script>
+        window.addEventListener("load", () => {
+          (function () {
+            buildChart(
+              "#hs-multiple-bar-charts",
+              (mode) => ({
+                chart: {
+                  type: "bar",
+                  height: 300,
+                  toolbar: {
+                    show: false,
+                  },
+                  zoom: {
+                    enabled: false,
+                  },
+                },
+                series: [
+                  {
+                    name: "Chosen Period",
+                    data: [
+                      23000, 44000, 55000, 57000, 56000, 61000, 58000, 63000, 60000,
+                      66000, 34000, 78000,
+                    ],
+                  },
+                  {
+                    name: "Last Period",
+                    data: [
+                      17000, 76000, 85000, 101000, 98000, 87000, 105000, 91000, 114000,
+                      94000, 67000, 66000,
+                    ],
+                  },
+                ],
+                plotOptions: {
+                  bar: {
+                    horizontal: false,
+                    columnWidth: "16px",
+                    borderRadius: 0,
+                  },
+                },
+                legend: {
+                  show: false,
+                },
+                dataLabels: {
+                  enabled: false,
+                },
+                stroke: {
+                  show: true,
+                  width: 8,
+                  colors: ["transparent"],
+                },
+                xaxis: {
+                  categories: [
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
+                  ],
+                  axisBorder: {
+                    show: false,
+                  },
+                  axisTicks: {
+                    show: false,
+                  },
+                  crosshairs: {
+                    show: false,
+                  },
+                  labels: {
+                    style: {
+                      colors: "#9ca3af",
+                      fontSize: "13px",
+                      fontFamily: "Inter, ui-sans-serif",
+                      fontWeight: 400,
+                    },
+                    offsetX: -2,
+                    formatter: (title) => title.slice(0, 3),
+                  },
+                },
+                yaxis: {
+                  labels: {
+                    align: "left",
+                    minWidth: 0,
+                    maxWidth: 140,
+                    style: {
+                      colors: "#9ca3af",
+                      fontSize: "13px",
+                      fontFamily: "Inter, ui-sans-serif",
+                      fontWeight: 400,
+                    },
+                    formatter: (value) => (value >= 1000 ? `${value / 1000}k` : value),
+                  },
+                },
+                states: {
+                  hover: {
+                    filter: {
+                      type: "darken",
+                      value: 0.9,
+                    },
+                  },
+                },
+                tooltip: {
+                  y: {
+                    formatter: (value) =>
+                      `$${value >= 1000 ? `${value / 1000}k` : value}`,
+                  },
+                  custom: function (props) {
+                    const { categories } = props.ctx.opts.xaxis;
+                    const { dataPointIndex } = props;
+                    const title = categories[dataPointIndex];
+                    const newTitle = `${title}`;
+
+                    return buildTooltip(props, {
+                      title: newTitle,
+                      mode,
+                      hasTextLabel: true,
+                      wrapperExtClasses: "min-w-28",
+                      labelDivider: ":",
+                      labelExtClasses: "ms-2",
+                    });
+                  },
+                },
+                responsive: [
+                  {
+                    breakpoint: 568,
+                    options: {
+                      chart: {
+                        height: 300,
+                      },
+                      plotOptions: {
+                        bar: {
+                          columnWidth: "14px",
+                        },
+                      },
+                      stroke: {
+                        width: 8,
+                      },
+                      labels: {
+                        style: {
+                          colors: "#9ca3af",
+                          fontSize: "11px",
+                          fontFamily: "Inter, ui-sans-serif",
+                          fontWeight: 400,
+                        },
+                        offsetX: -2,
+                        formatter: (title) => title.slice(0, 3),
+                      },
+                      yaxis: {
+                        labels: {
+                          align: "left",
+                          minWidth: 0,
+                          maxWidth: 140,
+                          style: {
+                            colors: "#9ca3af",
+                            fontSize: "11px",
+                            fontFamily: "Inter, ui-sans-serif",
+                            fontWeight: 400,
+                          },
+                          formatter: (value) =>
+                            value >= 1000 ? `${value / 1000}k` : value,
+                        },
+                      },
+                    },
+                  },
+                ],
+              }),
+              {
+                colors: ["#2563eb", "#d1d5db"],
+                grid: {
+                  borderColor: "#e5e7eb",
+                },
+              },
+              {
+                colors: ["#6b7280", "#2563eb"],
+                grid: {
+                  borderColor: "#404040",
+                },
+              }
+            );
+          })();
+        });
+    </script>
+    
+    <script>
+        window.addEventListener("load", () => {
+          (function () {
+            buildChart(
+              "#hs-single-area-chart",
+              (mode) => ({
+                chart: {
+                  height: 300,
+                  type: "area",
+                  toolbar: {
+                    show: false,
+                  },
+                  zoom: {
+                    enabled: false,
+                  },
+                },
+                series: [
+                  {
+                    name: "Visitors",
+                    data: [180, 51, 60, 38, 88, 50, 40, 52, 88, 80, 60, 70],
+                  },
+                ],
+                legend: {
+                  show: false,
+                },
+                dataLabels: {
+                  enabled: false,
+                },
+                stroke: {
+                  curve: "straight",
+                  width: 2,
+                },
+                grid: {
+                  strokeDashArray: 2,
+                },
+                fill: {
+                  type: "gradient",
+                  gradient: {
+                    type: "vertical",
+                    shadeIntensity: 1,
+                    opacityFrom: 0.1,
+                    opacityTo: 0.8,
+                  },
+                },
+                xaxis: {
+                  type: "category",
+                  tickPlacement: "on",
+                  categories: [
+                    "25 January 2023",
+                    "26 January 2023",
+                    "27 January 2023",
+                    "28 January 2023",
+                    "29 January 2023",
+                    "30 January 2023",
+                    "31 January 2023",
+                    "1 February 2023",
+                    "2 February 2023",
+                    "3 February 2023",
+                    "4 February 2023",
+                    "5 February 2023",
+                  ],
+                  axisBorder: {
+                    show: false,
+                  },
+                  axisTicks: {
+                    show: false,
+                  },
+                  crosshairs: {
+                    stroke: {
+                      dashArray: 0,
+                    },
+                    dropShadow: {
+                      show: false,
+                    },
+                  },
+                  tooltip: {
+                    enabled: false,
+                  },
+                  labels: {
+                    style: {
+                      colors: "#9ca3af",
+                      fontSize: "13px",
+                      fontFamily: "Inter, ui-sans-serif",
+                      fontWeight: 400,
+                    },
+                    formatter: (title) => {
+                      let t = title;
+
+                      if (t) {
+                        const newT = t.split(" ");
+                        t = `${newT[0]} ${newT[1].slice(0, 3)}`;
+                      }
+
+                      return t;
+                    },
+                  },
+                },
+                yaxis: {
+                  labels: {
+                    align: "left",
+                    minWidth: 0,
+                    maxWidth: 140,
+                    style: {
+                      colors: "#9ca3af",
+                      fontSize: "13px",
+                      fontFamily: "Inter, ui-sans-serif",
+                      fontWeight: 400,
+                    },
+                    formatter: (value) => (value >= 1000 ? `${value / 1000}k` : value),
+                  },
+                },
+                tooltip: {
+                  x: {
+                    format: "MMMM yyyy",
+                  },
+                  y: {
+                    formatter: (value) =>
+                      `${value >= 1000 ? `${value / 1000}k` : value}`,
+                  },
+                  custom: function (props) {
+                    const { categories } = props.ctx.opts.xaxis;
+                    const { dataPointIndex } = props;
+                    const title = categories[dataPointIndex].split(" ");
+                    const newTitle = `${title[0]} ${title[1]}`;
+
+                    return buildTooltip(props, {
+                      title: newTitle,
+                      mode,
+                      valuePrefix: "",
+                      hasTextLabel: true,
+                      markerExtClasses: "!rounded-sm",
+                      wrapperExtClasses: "min-w-28",
+                    });
+                  },
+                },
+                responsive: [
+                  {
+                    breakpoint: 568,
+                    options: {
+                      chart: {
+                        height: 300,
+                      },
+                      labels: {
+                        style: {
+                          colors: "#9ca3af",
+                          fontSize: "11px",
+                          fontFamily: "Inter, ui-sans-serif",
+                          fontWeight: 400,
+                        },
+                        offsetX: -2,
+                        formatter: (title) => title.slice(0, 3),
+                      },
+                      yaxis: {
+                        labels: {
+                          align: "left",
+                          minWidth: 0,
+                          maxWidth: 140,
+                          style: {
+                            colors: "#9ca3af",
+                            fontSize: "11px",
+                            fontFamily: "Inter, ui-sans-serif",
+                            fontWeight: 400,
+                          },
+                          formatter: (value) =>
+                            value >= 1000 ? `${value / 1000}k` : value,
+                        },
+                      },
+                    },
+                  },
+                ],
+              }),
+              {
+                colors: ["#2563eb", "#9333ea"],
+                fill: {
+                  gradient: {
+                    stops: [0, 90, 100],
+                  },
+                },
+                grid: {
+                  borderColor: "#e5e7eb",
+                },
+              },
+              {
+                colors: ["#3b82f6", "#a855f7"],
+                fill: {
+                  gradient: {
+                    stops: [100, 90, 0],
+                  },
+                },
+                grid: {
+                  borderColor: "#404040",
+                },
+              }
+            );
+          })();
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

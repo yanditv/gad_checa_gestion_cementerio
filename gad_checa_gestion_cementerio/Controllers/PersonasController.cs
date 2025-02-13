@@ -1,0 +1,211 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using gad_checa_gestion_cementerio.Data;
+using gad_checa_gestion_cementerio.Models;
+using gad_checa_gestion_cementerio.Utils;
+using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+
+namespace gad_checa_gestion_cementerio.Controllers
+{
+    public class PersonasController : BaseController
+    {
+
+        public PersonasController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager) : base(context, userManager, mapper)
+        {
+        }
+
+        // GET: Personas
+        public async Task<IActionResult> Index()
+        {
+            var personas = await _context.Persona.ToListAsync();
+            var personasModel = _mapper.Map<List<PersonaModel>>(personas);
+            Console.WriteLine(personasModel);
+            return View(personasModel);
+        }
+
+        // GET: Personas/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var persona = await _context.Persona
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (persona == null)
+            {
+                return NotFound();
+            }
+
+            return View(persona);
+        }
+
+        // GET: Personas/Create
+        public IActionResult Create()
+        {
+            var tipos = new List<string> { "Cedula", "RUC" };
+            ViewData["TiposIdentificacion"] = new SelectList(tipos);
+            return View();
+        }
+
+        // POST: Personas/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Id,Nombres,Apellidos,TipoIdentificacion,NumeroIdentificacion,Telefono,Email,Direccion")] Models.PersonaModel persona)
+        {
+            if (ModelState.IsValid)
+            {
+                Microsoft.AspNetCore.Identity.IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+                Data.Persona p = new Data.Persona
+                {
+                    Id = persona.Id,
+                    NumeroIdentificacion = persona.NumeroIdentificacion,
+                    TipoIdentificacion= persona.TipoIdentificacion,
+                    Direccion = persona.Direccion,
+                    Email = persona.Email,
+                    Nombres = persona.Nombres,
+                    Telefono = persona.Telefono,
+                    FechaCreacion = DateTime.Now,
+                    Apellidos = persona.Apellidos,
+                    UsuarioCreador = identityUser,
+
+                };
+                _context.Add(p);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            var tipos = new List<string> { "Cedula", "RUC" };
+            ViewData["TiposIdentificacion"] = new SelectList(tipos);
+            return View(persona);
+        }
+
+        // GET: Personas/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var persona = await _context.Persona.FindAsync(id);
+            Models.PersonaModel p = new Models.PersonaModel
+            {
+                Id = persona.Id,
+                Nombres = persona.Nombres,
+                Apellidos = persona.Apellidos,
+                TipoIdentificacion = persona.TipoIdentificacion,
+                NumeroIdentificacion = persona.NumeroIdentificacion,
+                Telefono = persona.Telefono,
+                Email = persona.Email,
+                Direccion = persona.Direccion,
+
+            };
+
+            if (persona == null)
+            {
+                return NotFound();
+            }
+            var tipos = new List<string> { "Cedula", "RUC" };
+            ViewData["TiposIdentificacion"] = new SelectList(tipos);
+            return View(p);
+        }
+
+        // POST: Personas/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Nombres,Apellidos,TipoIdentificacion,NumeroIdentificacion,Telefono,Email,Direccion")] Models.PersonaModel persona)
+        {
+            if (id != persona.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var existente = _context.Persona.Find(persona.Id);
+                    if (existente != null)
+                    {
+                        existente.Direccion = persona.Direccion;
+                        existente.TipoIdentificacion = persona.Direccion;
+                        existente.UsuarioActualizador = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+                        existente.NumeroIdentificacion = persona.NumeroIdentificacion;
+                        existente.Telefono = persona.Telefono;
+                        existente.Email = persona.Email;
+                        existente.Nombres = persona.Nombres;
+                        existente.Apellidos = persona.Apellidos;
+                        existente.FechaActualizacion = DateTime.Now;
+                        _context.Update(existente);
+                        await _context.SaveChangesAsync();
+                    }
+
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!PersonaExists(persona.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            var tipos = new List<string> { "Cedula", "RUC" };
+            ViewData["TiposIdentificacion"] = new SelectList(tipos);
+            return View(persona);
+        }
+
+        // GET: Personas/Delete/5
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var persona = await _context.Persona
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (persona == null)
+            {
+                return NotFound();
+            }
+
+            return View(persona);
+        }
+
+        // POST: Personas/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var persona = await _context.Persona.FindAsync(id);
+            if (persona != null)
+            {
+                _context.Persona.Remove(persona);
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool PersonaExists(int id)
+        {
+            return _context.Persona.Any(e => e.Id == id);
+        }
+    }
+}

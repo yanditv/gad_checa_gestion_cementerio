@@ -1,0 +1,195 @@
+﻿@model gad_checa_gestion_cementerio.Data.Contrato
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<div className="bg-gray-800 px-6 py-4">
+    <h1 className="text-2xl font-bold text-white">Contrato de Servicio de Arrendamiento de Cementerio</h1>
+    <p className="text-gray-300 mt-1">Número de Contrato: CNT-1738118990428-261</p>
+</div>
+
+<div class="p-4 bg-white rounded-lg shadow-md dark:bg-neutral-800">
+    <!-- Stepper -->
+    <div data-hs-stepper="">
+        <!-- Stepper Nav -->
+        <ul class="gap-x-2 relative flex flex-row">
+            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
+        "index": 1
+      }'>
+                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
+                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
+                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">1</span>
+                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </span>
+                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
+                        Datos del Fallecido
+                    </span>
+                </span>
+                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
+            </li>
+
+            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
+        "index": 2
+      }'>
+                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
+                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
+                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">2</span>
+                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </span>
+                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
+                        Datos de los responsables
+                    </span>
+                </span>
+                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
+            </li>
+
+            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
+          "index": 3
+        }'>
+                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
+                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
+                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">3</span>
+                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </span>
+                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
+                        Datos del contrato
+                    </span>
+                </span>
+                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
+            </li>
+            <!-- End Item -->
+        </ul>
+        <!-- End Stepper Nav -->
+        <!-- Stepper Content -->
+        <div class="mt-5 sm:mt-8">
+            <!-- First Content -->
+            <div data-hs-stepper-content-item='{
+        "index": 1
+      }'>
+                <div class="p-4 h-48 bg-gray-50 border-gray-200 flex items-center justify-center rounded-xl border border-dashed dark:bg-neutral-700 dark:border-neutral-600">
+                    <h3 class="text-gray-500 dark:text-neutral-400">
+                        First content
+                    </h3>
+                </div>
+            </div>
+            <!-- End First Content -->
+            <!-- First Content -->
+            <div data-hs-stepper-content-item='{
+        "index": 2
+      }' style="display: none;">
+                <div class="p-4 h-48 bg-gray-50 border-gray-200 flex items-center justify-center rounded-xl border border-dashed dark:bg-neutral-700 dark:border-neutral-600">
+                    <h3 class="text-gray-500 dark:text-neutral-400">
+                        Second content
+                    </h3>
+                </div>
+            </div>
+            <!-- End First Content -->
+            <!-- First Content -->
+            <div data-hs-stepper-content-item='{
+        "index": 3
+      }' style="display: none;">
+                <div class="p-4 h-48 bg-gray-50 border-gray-200 flex items-center justify-center rounded-xl border border-dashed dark:bg-neutral-700 dark:border-neutral-600">
+                    <h3 class="text-gray-500 dark:text-neutral-400">
+                        Third content
+                    </h3>
+                </div>
+            </div>
+            <!-- End First Content -->
+            <!-- Final Content -->
+            <div data-hs-stepper-content-item='{
+        "isFinal": true
+      }' style="display: none;">
+                <div class="p-4 h-48 bg-gray-50 border-gray-200 flex items-center justify-center rounded-xl border border-dashed dark:bg-neutral-700 dark:border-neutral-600">
+                    <h3 class="text-gray-500 dark:text-neutral-400">
+                        Datos de Pago
+                    </h3>
+                </div>
+            </div>
+            <!-- End Final Content -->
+            <!-- Button Group -->
+            <div class="mt-5 gap-x-2 flex items-center justify-between">
+                <button type="button" class="py-2 px-3 gap-x-1 border-gray-200 bg-white text-gray-800 inline-flex items-center rounded-lg border text-sm font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-back-btn="">
+                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                    Back
+                </button>
+                <button type="button" class="py-2 px-3 gap-x-1 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-next-btn="">
+                    Next
+                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+                </button>
+                <button type="button" class="py-2 px-3 gap-x-1 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-finish-btn="" style="display: none;">
+                    Finish
+                </button>
+                <button type="reset" class="py-2 px-3 gap-x-1 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-reset-btn="" style="display: none;">
+                    Reset
+                </button>
+            </div>
+            <!-- End Button Group -->
+        </div>
+        <!-- End Stepper Content -->
+    </div>
+    <!-- End Stepper -->
+</div>
+
+
+@* <h1 class="mb-4 text-2xl font-bold">Create</h1>
+
+<h4 class="mb-2 text-xl">Contrato</h4>
+<hr class="mb-4" />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" class="space-y-4">
+            <div asp-validation-summary="ModelOnly" class="text-red-500"></div>
+            <div class="form-group">
+                <label asp-for="BovedaId" class="text-gray-700 block text-sm font-medium"></label>
+                <select asp-for="BovedaId" class="form-control mt-1 block w-full" asp-items="ViewBag.BovedaId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="FechaInicio" class="text-gray-700 block text-sm font-medium"></label>
+                <input asp-for="FechaInicio" class="form-control mt-1 block w-full" />
+                <span asp-validation-for="FechaInicio" class="text-red-500"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FechaFin" class="text-gray-700 block text-sm font-medium"></label>
+                <input asp-for="FechaFin" class="form-control mt-1 block w-full" />
+                <span asp-validation-for="FechaFin" class="text-red-500"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MontoTotal" class="text-gray-700 block text-sm font-medium"></label>
+                <input asp-for="MontoTotal" class="form-control mt-1 block w-full" />
+                <span asp-validation-for="MontoTotal" class="text-red-500"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Estado" class="text-gray-700 block text-sm font-medium"></label>
+                <input asp-for="Estado" class="form-control mt-1 block w-full" />
+                <span asp-validation-for="Estado" class="text-red-500"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Observaciones" class="text-gray-700 block text-sm font-medium"></label>
+                <input asp-for="Observaciones" class="form-control mt-1 block w-full" />
+                <span asp-validation-for="Observaciones" class="text-red-500"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary bg-blue-500 text-white py-2 px-4 rounded font-bold hover:bg-blue-700" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="text-blue-500 hover:text-blue-700">Back to List</a>
+</div>
+ *@
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,182 @@
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
+
+namespace gad_checa_gestion_cementerio.Data
+{
+    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Personalizar los nombres de las tablas
+            builder.Entity<IdentityUser>(entity =>
+            {
+                entity.ToTable(name: "Usuarios");
+            });
+
+            builder.Entity<IdentityRole>(entity =>
+            {
+                entity.ToTable(name: "Roles");
+            });
+
+            builder.Entity<IdentityUserRole<string>>(entity =>
+            {
+                entity.ToTable("UsuarioRoles");
+            });
+
+            builder.Entity<IdentityUserClaim<string>>(entity =>
+            {
+                entity.ToTable("UsuarioClaims");
+            });
+
+            builder.Entity<IdentityUserLogin<string>>(entity =>
+            {
+                entity.ToTable("UsuarioLogins");
+            });
+
+            builder.Entity<IdentityRoleClaim<string>>(entity =>
+            {
+                entity.ToTable("RoleClaims");
+            });
+
+            builder.Entity<IdentityUserToken<string>>(entity =>
+            {
+                entity.ToTable("UsuarioTokens");
+            });
+
+            // Configuración de la herencia (TPH - Table Per Hierarchy)
+            builder.Entity<Persona>()
+                .HasDiscriminator<string>("TipoPersona")
+                .HasValue<Persona>("Persona")
+                .HasValue<Responsable>("Responsable");
+
+            // Configuración de relaciones con IdentityUser
+            builder.Entity<Persona>()
+                .HasOne<IdentityUser>(p => p.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Persona>()
+                .HasOne<IdentityUser>(p => p.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Persona>()
+                .HasOne<IdentityUser>(p => p.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Contrato>()
+                .HasOne<IdentityUser>(c => c.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Contrato>()
+                .HasOne<IdentityUser>(c => c.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Contrato>()
+                .HasOne<IdentityUser>(c => c.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Difunto>()
+                .HasOne<IdentityUser>(d => d.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Difunto>()
+                .HasOne<IdentityUser>(d => d.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Difunto>()
+                .HasOne<IdentityUser>(d => d.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Descuento>()
+                .HasOne<IdentityUser>(d => d.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Descuento>()
+                .HasOne<IdentityUser>(d => d.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Descuento>()
+                .HasOne<IdentityUser>(d => d.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Bloque>()
+                .HasOne<IdentityUser>(s => s.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Bloque>()
+                .HasOne<IdentityUser>(s => s.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Bloque>()
+                .HasOne<IdentityUser>(s => s.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Cementerio>()
+                .HasOne<IdentityUser>(c => c.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Cementerio>()
+                .HasOne<IdentityUser>(c => c.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Cementerio>()
+                .HasOne<IdentityUser>(c => c.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Boveda>()
+                .HasOne<IdentityUser>(b => b.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Boveda>()
+                .HasOne<IdentityUser>(b => b.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Boveda>()
+                .HasOne<IdentityUser>(b => b.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Pago>()
+                .HasOne<IdentityUser>(p => p.UsuarioCreador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Pago>()
+                .HasOne<IdentityUser>(p => p.UsuarioActualizador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Pago>()
+                .HasOne<IdentityUser>(p => p.UsuarioEliminador)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+
+            // Relación entre Contrato y Responsable
+            builder.Entity<Contrato>()
+                .HasMany(c => c.Responsables)
+                .WithMany(r => r.Contratos)
+                .UsingEntity(j => j.ToTable("ContratoResponsable"));
+
+        }
+        public DbSet<Bloque> Bloque { get; set; }
+        public DbSet<Cementerio> Cementerio { get; set; }
+        public DbSet<Descuento> Descuento { get; set; }
+        public DbSet<Contrato> Contrato { get; set; }
+        public DbSet<Cuota> Cuota { get; set; }
+        public DbSet<Pago> Pago { get; set; }
+        public DbSet<Difunto> Difunto { get; set; }
+        public DbSet<Persona> Persona { get; set; }
+        public DbSet<Boveda> Boveda { get; set; }
+        public DbSet<Responsable> ContratoResponsable { get; set; }
+        public DbSet<Responsable> Responsable { get; set; }
+        public DbSet<GADInformacion> GadInformacion { get; set; }
+
+    }
+}

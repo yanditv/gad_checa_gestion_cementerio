@@ -1,0 +1,6 @@
+﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.DifuntoModel>
+@{
+     ViewData["Title"] = "Difuntos";
+    Layout = "~/Views/Cementerio/_CementerioLayout.cshtml";
+}
+@await Html.PartialAsync("_TablaGenerica", Model)

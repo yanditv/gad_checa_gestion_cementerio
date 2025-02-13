@@ -1,0 +1,18 @@
+{
+  "name": "gad_checa_gestion_cementerio",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tailwindcss -i ./wwwroot/css/input.css -o ./wwwroot/css/output.css --watch"
+  },
+  "dependencies": {
+    "gad_checa_gestion_cementerio": "file:",
+    "tailwindcss": "^4.0.1"
+  }
+}
