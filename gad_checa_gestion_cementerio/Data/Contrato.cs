@@ -9,12 +9,11 @@ namespace gad_checa_gestion_cementerio.Data
         public Contrato()
         {
             this.Responsables = new List<Responsable>();
-            this.Pagos = new List<Pago>();
+            this.Cuotas = new List<Cuota>();
         }
 
         [Key]
         public int Id { get; set; }
-
 
         [Required]
         public DateTime FechaInicio { get; set; }
@@ -38,7 +37,6 @@ namespace gad_checa_gestion_cementerio.Data
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }
         public DateTime? FechaEliminacion { get; set; }
-
 
         [ForeignKey("UsuarioCreador")]
         public string UsuarioCreadorId { get; set; }
@@ -64,7 +62,15 @@ namespace gad_checa_gestion_cementerio.Data
         public Difunto Difunto { get; set; }
 
         public List<Responsable> Responsables { get; set; }
-        public List<Pago> Pagos { get; set; }
-    }
+        public List<Cuota> Cuotas { get; set; }
 
+        // Nuevo campo para el número secuencial
+        [Required]
+        [StringLength(50)]
+        public string NumeroSecuencial { get; set; }
+
+        // Campo para indicar si es renovación
+        [Required]
+        public bool EsRenovacion { get; set; }
+    }
 }

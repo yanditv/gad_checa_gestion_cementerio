@@ -37,6 +37,21 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.ToTable("ContratoResponsable", (string)null);
                 });
 
+            modelBuilder.Entity("CuotaPago", b =>
+                {
+                    b.Property<int>("CuotasId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PagosId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CuotasId", "PagosId");
+
+                    b.HasIndex("PagosId");
+
+                    b.ToTable("CuotaPago", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -428,6 +443,9 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.Property<int>("DifuntoId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("EsRenovacion")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("Estado")
                         .HasColumnType("bit");
 
@@ -451,6 +469,11 @@ namespace gad_checa_gestion_cementerio.Migrations
 
                     b.Property<int>("NumeroDeMeses")
                         .HasColumnType("int");
+
+                    b.Property<string>("NumeroSecuencial")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Observaciones")
                         .IsRequired()
@@ -493,20 +516,14 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.Property<int>("ContratoId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("Estado")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("FechaPago")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("FechaVencimiento")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Monto")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("NumeroCuota")
-                        .HasColumnType("int");
+                    b.Property<bool>("Pagada")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -572,6 +589,11 @@ namespace gad_checa_gestion_cementerio.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Apellidos")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("DescuentoId")
                         .HasColumnType("int");
 
@@ -590,10 +612,18 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.Property<DateTime>("FechaFallecimiento")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Nombre")
+                    b.Property<DateTime>("FechaNacimiento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Nombres")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NumeroIdentificacion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("UsuarioActualizadorId")
                         .HasColumnType("nvarchar(450)");
@@ -679,56 +709,29 @@ namespace gad_checa_gestion_cementerio.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ContratoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CuotaId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Estado")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("FechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaEliminacion")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("FechaPago")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Monto")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("PersonaQueRealizaPagoId")
+                    b.Property<string>("NumeroComprobante")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PersonaId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UsuarioActualizadorId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("PersonaPagoId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("UsuarioCreadorId")
+                    b.Property<string>("TipoPago")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UsuarioEliminadorId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContratoId");
-
-                    b.HasIndex("CuotaId");
-
-                    b.HasIndex("PersonaQueRealizaPagoId");
-
-                    b.HasIndex("UsuarioActualizadorId");
-
-                    b.HasIndex("UsuarioCreadorId");
-
-                    b.HasIndex("UsuarioEliminadorId");
+                    b.HasIndex("PersonaId");
 
                     b.ToTable("Pago");
                 });
@@ -870,6 +873,21 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CuotaPago", b =>
+                {
+                    b.HasOne("gad_checa_gestion_cementerio.Data.Cuota", null)
+                        .WithMany()
+                        .HasForeignKey("CuotasId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("gad_checa_gestion_cementerio.Data.Pago", null)
+                        .WithMany()
+                        .HasForeignKey("PagosId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -957,7 +975,7 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Boveda", b =>
                 {
                     b.HasOne("gad_checa_gestion_cementerio.Data.Piso", "Piso")
-                        .WithMany("Bovedas")
+                        .WithMany()
                         .HasForeignKey("PisoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1056,7 +1074,7 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Cuota", b =>
                 {
                     b.HasOne("gad_checa_gestion_cementerio.Data.Contrato", "Contrato")
-                        .WithMany()
+                        .WithMany("Cuotas")
                         .HasForeignKey("ContratoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1124,47 +1142,9 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Pago", b =>
                 {
-                    b.HasOne("gad_checa_gestion_cementerio.Data.Contrato", null)
+                    b.HasOne("gad_checa_gestion_cementerio.Data.Persona", null)
                         .WithMany("Pagos")
-                        .HasForeignKey("ContratoId");
-
-                    b.HasOne("gad_checa_gestion_cementerio.Data.Cuota", "Cuota")
-                        .WithMany()
-                        .HasForeignKey("CuotaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("gad_checa_gestion_cementerio.Data.Persona", "PersonaQueRealizaPago")
-                        .WithMany("Pagos")
-                        .HasForeignKey("PersonaQueRealizaPagoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
-                        .WithMany()
-                        .HasForeignKey("UsuarioActualizadorId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
-                        .WithMany()
-                        .HasForeignKey("UsuarioCreadorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
-                        .WithMany()
-                        .HasForeignKey("UsuarioEliminadorId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Cuota");
-
-                    b.Navigation("PersonaQueRealizaPago");
-
-                    b.Navigation("UsuarioActualizador");
-
-                    b.Navigation("UsuarioCreador");
-
-                    b.Navigation("UsuarioEliminador");
+                        .HasForeignKey("PersonaId");
                 });
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Persona", b =>
@@ -1194,13 +1174,11 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Piso", b =>
                 {
-                    b.HasOne("gad_checa_gestion_cementerio.Data.Bloque", "Bloque")
+                    b.HasOne("gad_checa_gestion_cementerio.Data.Bloque", null)
                         .WithMany("Pisos")
                         .HasForeignKey("BloqueId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Bloque");
                 });
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Bloque", b =>
@@ -1215,7 +1193,7 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Contrato", b =>
                 {
-                    b.Navigation("Pagos");
+                    b.Navigation("Cuotas");
                 });
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Descuento", b =>
@@ -1231,11 +1209,6 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Persona", b =>
                 {
                     b.Navigation("Pagos");
-                });
-
-            modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Piso", b =>
-                {
-                    b.Navigation("Bovedas");
                 });
 #pragma warning restore 612, 618
         }

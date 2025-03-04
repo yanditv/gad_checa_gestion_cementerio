@@ -11,8 +11,17 @@ namespace gad_checa_gestion_cementerio.Data
 
         [Required]
         [StringLength(100)]
-        public string Nombre { get; set; }
+        public string Nombres { get; set; }
+                [Required]
+        [StringLength(100)]
+        public string Apellidos { get; set; }
+        
+        [Required]
+        [StringLength(20)]
+        public string NumeroIdentificacion { get; set; }
 
+        [Required]
+        public DateTime FechaNacimiento { get; set; }
         [Required]
         public DateTime FechaFallecimiento { get; set; }
 

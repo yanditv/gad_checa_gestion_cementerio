@@ -1,43 +1,36 @@
 ﻿@{
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-
-@{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var entityType = Context.Request.Query["entityType"].ToString();
 }
 
-<div class="border-gray-200 border-b dark:border-neutral-700">
-    <nav id="cementerioTabs" class="gap-x-12 flex" aria-label="Tabs" role="tablist" aria-orientation="horizontal">
+<div class="border-bottom">
+    <ul class="nav nav-tabs" id="cementerioTabs" role="tablist">
         @foreach (var tab in new[]
         {
-        new { Id = "tabs-with-icons-1", Name = "Cementerio", Action = "", Icon = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" },
-        new { Id = "tabs-with-icons-1", Name = "Bloques", Action = "Bloques", Icon = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" },
-        new { Id = "tabs-with-icons-2", Name = "Bovedas", Action = "Bovedas", Icon = "M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z M12 10a3 3 0 1 1 0 6 3 3 0 1 1 0-6z M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" },
-        new { Id = "tabs-with-icons-3", Name = "Difuntos", Action = "Difuntos", Icon = "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 12a3 3 0 1 1 0 6 3 3 0 1 1 0-6z" },
-        new { Id = "tabs-with-icons-4", Name = "Cobros", Action = "Cobros", Icon = "M12 2L2 7v6a10 10 0 1 0 20 0V7z M12 17a3 3 0 1 1 0-6 3 3 0 1 1 0 6z" }
+            new { Id = "tabs-with-icons-1", Name = "Cementerio", Action = "", Icon = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" },
+            new { Id = "tabs-with-icons-2", Name = "Bloques", Action = "Bloques", Icon = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" },
+            new { Id = "tabs-with-icons-3", Name = "Bovedas", Action = "Bovedas", Icon = "M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z M12 10a3 3 0 1 1 0 6 3 3 0 1 1 0-6z M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" },
+            new { Id = "tabs-with-icons-4", Name = "Difuntos", Action = "Difuntos", Icon = "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 12a3 3 0 1 1 0 6 3 3 0 1 1 0-6z" },
+            new { Id = "tabs-with-icons-5", Name = "Cobros", Action = "Cobros", Icon = "M12 2L2 7v6a10 10 0 1 0 20 0V7z M12 17a3 3 0 1 1 0-6 3 3 0 1 1 0 6z" }
         })
         {
             var tabName = new string(tab.Name.Where(c => char.IsLetterOrDigit(c)).ToArray());
-            var isActive = (tab.Action == currentAction || entityType == tabName.ToLower()) ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500";
-            <a type="button" class="py-4 px-1 gap-x-2 inline-flex items-center whitespace-nowrap border-b-2 text-sm hover:text-blue-600 focus:outline-none focus:text-blue-600 disabled:opacity-50 disabled:pointer-events-none dark:text-neutral-400 dark:hover:text-blue-500 @isActive"
-               id="@tab.Id"
-               aria-selected="@(isActive.Contains("border-blue-600") ? "true" : "false")"
-               data-hs-tab="#@tab.Id"
-               aria-controls="@tab.Id"
-               role="tab"
-               href="@Url.Action(tab.Action, "Cementerio")">
-                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="@tab.Icon"></path>
-                </svg>
-                @tab.Name
-            </a>
+            var isActive = (tab.Action == currentAction || entityType == tabName.ToLower()) ? "active" : "";
+            <li class="nav-item" role="presentation">
+                <a class="nav-link @isActive" id="@tab.Id-tab" data-bs-toggle="tab" href="@Url.Action(tab.Action, "Cementerio")" role="tab" aria-controls="@tab.Id" aria-selected="@(isActive == "active" ? "true" : "false")">
+                    <svg class="size-4 me-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="@tab.Icon"></path>
+                    </svg>
+                    @tab.Name
+                </a>
+            </li>
         }
-    </nav>
+    </ul>
 </div>
 
-<div class="mt-3">
-    <div id="tabs-with-icons-1" role="tabpanel" aria-labelledby="tabs-with-icons-item-1">
+<div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="tabs-with-icons-1" role="tabpanel" aria-labelledby="tabs-with-icons-1-tab">
         @RenderBody()
         @await RenderSectionAsync("Scripts", required: false)
     </div>

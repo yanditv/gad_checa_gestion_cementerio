@@ -144,18 +144,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(b => b.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
-            builder.Entity<Pago>()
-                .HasOne<IdentityUser>(p => p.UsuarioCreador)
-                .WithMany()
-                .OnDelete(DeleteBehavior.NoAction);
-            builder.Entity<Pago>()
-                .HasOne<IdentityUser>(p => p.UsuarioActualizador)
-                .WithMany()
-                .OnDelete(DeleteBehavior.NoAction);
-            builder.Entity<Pago>()
-                .HasOne<IdentityUser>(p => p.UsuarioEliminador)
-                .WithMany()
-                .OnDelete(DeleteBehavior.NoAction);
+
 
 
             // Relación entre Contrato y Responsable
@@ -163,6 +152,11 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasMany(c => c.Responsables)
                 .WithMany(r => r.Contratos)
                 .UsingEntity(j => j.ToTable("ContratoResponsable"));
+
+            builder.Entity<Cuota>()
+                .HasMany(c => c.Pagos)
+                .WithMany(p => p.Cuotas)
+                .UsingEntity(j => j.ToTable("CuotaPago"));
 
         }
         public DbSet<Bloque> Bloque { get; set; }
