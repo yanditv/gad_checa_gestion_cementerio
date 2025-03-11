@@ -10,6 +10,10 @@ namespace gad_checa_gestion_cementerio.Data
         {
             this.Responsables = new List<Responsable>();
             this.Cuotas = new List<Cuota>();
+            this.FechaCreacion = DateTime.Now;
+            this.FechaActualizacion = DateTime.Now;
+            this.FechaInicio = DateTime.Now;
+            this.FechaFin = DateTime.Now;
         }
 
         [Key]

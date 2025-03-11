@@ -1,22 +1,44 @@
-/*html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
+.stepper {
+  display: flex;
+  justify-content: space-between;
   position: relative;
-  min-height: 100%;
+  margin: 20px 0;
 }
 
-body {
-  margin-bottom: 60px;
-}*/
+.stepper::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #ddd;
+  z-index: 1;
+}
+
+.step {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.step.completed .circle {
+  background-color: #28a745;
+  color: white;
+}
+
+.circle {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 50%;
+  background-color: #ddd;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.step.active .circle {
+  background-color: #007bff;
+  color: white;
+}

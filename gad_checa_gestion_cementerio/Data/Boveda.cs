@@ -38,6 +38,13 @@ namespace gad_checa_gestion_cementerio.Data
         [Required]
         public int PisoId { get; set; }
         public Piso Piso { get; set; } // Relación con el piso
+        public string DescripcionCompleta
+        {
+            get
+            {
+                return $"Bloque {Piso.BloqueId} - Piso {Piso.NumeroPiso} - Bóveda {Numero}";
+            }
+        } // Relación con la descripción de la bóveda
     }
 
 }

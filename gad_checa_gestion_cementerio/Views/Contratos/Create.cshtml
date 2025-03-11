@@ -1,197 +1,301 @@
 ﻿@model gad_checa_gestion_cementerio.Models.CreateContratoModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Crear Contrato";
 }
 
 
-<!-- Card -->
-<div class="mb-4 flex flex-col">
-    <div class="-m-1.5 overflow-x-auto">
-        <div class="p-1.5 inline-block min-w-full align-middle">
-            <div class="bg-gray-600 border-gray-200 overflow-hidden rounded-xl border shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
-                <!-- Header -->
-                <div class="px-6 py-4 gap-3 border-gray-200 grid border-b dark:border-neutral-700 md:flex md:justify-between md:items-center">
-                    <div>
-                        <h2 class="text-white text-xl font-semibold dark:text-neutral-200">
-                            Contrato de Servicio de Arrendamiento de Cementerio
-                        </h2>
-                        <p class="text-white text-sm dark:text-neutral-400">
-                            Número de Contrato: CTR-GADCHECA-2025-999
-                        </p>
-                    </div>
-
-                    <div>
-                        <div class="gap-x-3 flex items-center">
-                            <!-- Botón "View all" -->
-                            <a class="py-2 px-3 gap-x-2 border-gray-200 bg-white text-gray-800 inline-block items-center rounded-lg border text-sm font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" asp-action="Index">
-                                View all
-                            </a>
+<div class="">
+    <!-- Card -->
+    <div class="d-flex flex-column">
+        <div class="overflow-auto">
+            <div class="d-inline-block w-100 align-middle">
+                <div class="bg-secondary border overflow-hidden rounded-xl shadow-sm">
+                    <!-- Header -->
+                    <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="text-white h4">
+                                Contrato de Servicio de Arrendamiento de Cementerio
+                            </h2>
+                            <p class="text-white small">
+                                @Model.contrato.NumeroSecuencial
+                            </p>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center">
+                                <!-- Botón "Ver todos" -->
+                                <a class="btn btn-outline-light" asp-action="Index">
+                                    Ver todos
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="p-4 bg-white rounded-lg shadow-md dark:bg-neutral-800">
-    <!-- Stepper -->
-    <div data-hs-stepper="">
-        <!-- Stepper Nav -->
-        <ul class="gap-x-2 relative flex flex-row">
-            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
-        "index": 1
-      }'>
-                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
-                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
-                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">1</span>
-                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
+    <div class="bg-white rounded-lg shadow-md pb-2 p-4">
+        <!-- Stepper -->
+        <div id="stepper">
+            <!-- Stepper Nav -->
+            <div class="stepper">
+                <div class="step completed" data-step="1" data-url="@Url.Action("CreateDifunto", "Contratos")">
+                    <div class="circle">1</div>
+                    <div>Datos del Fallecido</div>
+                </div>
+                <div class="step" data-step="2" data-url="@Url.Action("CreateResponsables", "Contratos")">
+                    <div class="circle">2</div>
+                    <div>Datos de los Responsables</div>
+                </div>
+                <div class="step" data-step="3" data-url="@Url.Action("CreateContrato", "Contratos")">
+                    <div class="circle">3</div>
+                    <div>Datos del Contrato</div>
+                </div>
+                <div class="step" data-step="4" data-url="@Url.Action("CreatePago", "Contratos")">
+                    <div class="circle">4</div>
+                    <div>Pago</div>
+                </div>
+                <div class="step" data-step="5" data-url="@Url.Action("DocumentoContrato", "Contratos")">
+                    <div class="circle">5</div>
+                    <div>Verificación de Datos</div>
+                </div>
+            </div>
+            <div class="bg-light" id="mensajes"></div>
+            <!-- End Stepper Nav -->
+            <!-- Stepper Content -->
+            <div class="mt-4">
+                <!-- First Content -->
+                <div data-content="1">
+                    @await Html.PartialAsync("_CreateDifunto", Model.difunto)
+                </div>
+                <!-- End First Content -->
+                <!-- Second Content -->
+                <div data-content="2" style="display: none;">
+                    @await Html.PartialAsync("_CreateResponsables", Model.responsables)
+                </div>
+                <!-- End Second Content -->
+                <!-- Third Content -->
+                <div data-content="3" style="display: none;">
+                    @await Html.PartialAsync("_CreateContrato", Model.contrato)
+                </div>
+                <!-- End Third Content -->
+                <!-- Fourth Content -->
+                <div data-content="4" style="display: none;">
+                    @await Html.PartialAsync("_CreatePago", Model.pago)
+                </div>
+                <!-- End Fourth Content -->
+                <!-- Fifth Content -->
+                <div data-content="5" style="display: none;">
+                    @await Html.PartialAsync("_DocumentoContrato", Model)
+                </div>
+                <!-- End Fifth Content -->
+                <!-- Button Group -->
+                <div class="mt-4 mb-4 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" id="backBtn" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-arrow-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M15 8a.5.5 0 0 1-.5.5H2.707l4.147 4.146a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z" />
                         </svg>
-                    </span>
-                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
-                        Datos del Fallecido
-                    </span>
-                </span>
-                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
-            </li>
-
-            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
-        "index": 2
-      }'>
-                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
-                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
-                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">2</span>
-                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
+                        Atrás
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">
+                        Siguiente
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-arrow-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M1 8a.5.5 0 0 1 .5-.5h11.793l-4.147-4.146a.5.5 0 1 1 .708-.708l5 5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
                         </svg>
-                    </span>
-                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
-                        Datos de los responsables
-                    </span>
-                </span>
-                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
-            </li>
-
-            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
-          "index": 3
-        }'>
-                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
-                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
-                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">3</span>
-                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </span>
-                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
-                        Datos del contrato
-                    </span>
-                </span>
-                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
-            </li>
-
-            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
-          "index": 4
-        }'>
-                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
-                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
-                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">4</span>
-                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </span>
-                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
-                        Pago
-                    </span>
-                </span>
-                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
-            </li>
-
-            <li class="gap-x-2 basis-0 group flex flex-1 shrink items-center" data-hs-stepper-nav-item='{
-          "index": 5
-        }'>
-                <span class="min-w-7 min-h-7 group inline-flex items-center align-middle text-xs">
-                    <span class="size-7 bg-gray-100 text-gray-800 group-focus:bg-gray-200 flex shrink-0 items-center justify-center rounded-full font-medium dark:bg-neutral-700 dark:text-white hs-stepper-active:bg-blue-600 hs-stepper-active:text-white hs-stepper-success:bg-blue-600 hs-stepper-success:text-white hs-stepper-completed:bg-teal-500 dark:group-focus:bg-gray-600 dark:hs-stepper-active:bg-blue-500 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500 hs-stepper-completed:group-focus:bg-teal-600 dark:hs-stepper-completed:group-focus:bg-teal-600">
-                        <span class="hs-stepper-success:hidden hs-stepper-completed:hidden">5</span>
-                        <svg class="size-3 hidden shrink-0 hs-stepper-success:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </span>
-                    <span class="ms-2 text-gray-800 text-sm font-medium dark:text-white">
-                        Verificación de Datos
-                    </span>
-                </span>
-                <div class="h-px bg-gray-200 group-last:hidden w-full flex-1 dark:bg-neutral-600 hs-stepper-success:bg-blue-600 hs-stepper-completed:bg-teal-600 dark:hs-stepper-success:bg-blue-500 dark:hs-stepper-completed:bg-teal-500"></div>
-            </li>
-            <!-- End Item -->
-        </ul>
-        <!-- End Stepper Nav -->
-        <!-- Stepper Content -->
-        <div class="mt-5 sm:mt-8">
-            <!-- First Content -->
-            <div data-hs-stepper-content-item='{
-        "index": 1
-      }'>
-            @await Html.PartialAsync("_CreateDifunto", Model.difunto)
+                    </button>
+                    <button type="button" class="btn btn-success" id="finishBtn" style="display: none;">
+                        Finalizar
+                    </button>
+                    <button type="reset" class="btn btn-warning" id="resetBtn" style="display: none;">
+                        Reiniciar
+                    </button>
+                </div>
+                <!-- End Button Group -->
             </div>
-            <!-- End First Content -->
-            <!-- Second Content -->
-            <div data-hs-stepper-content-item='{
-        "index": 2
-      }' style="display: none;">
-                 @await Html.PartialAsync("_CreateResponsables", Model.responsables)
-            </div>
-            <!-- End Second Content -->
-            <!-- Third Content -->
-            <div data-hs-stepper-content-item='{
-        "index": 3
-      }' style="display: none;">
-                @await Html.PartialAsync("_CreateContrato", Model.contrato)
-            </div>
-            <!-- End Third Content -->
-            <!-- Fourth Content -->
-            <div data-hs-stepper-content-item='{
-        "index": 4
-      }' style="display: none;">
-                 @await Html.PartialAsync("_CreatePago", Model.pago)
-            </div>
-            <!-- End Fourth Content -->
-            <!-- Fifth Content -->
-            <div data-hs-stepper-content-item='{
-        "index": 5
-      }' style="display: none;">
-                 @await Html.PartialAsync("_DocumentoContrato", Model)
-            </div>
-            <!-- End Fifth Content -->
-            <!-- Button Group -->
-            <div class="mt-5 gap-x-2 flex items-center justify-between">
-                <button type="button" class="py-2 px-3 gap-x-1 border-gray-200 bg-white text-gray-800 inline-flex items-center rounded-lg border text-sm font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-back-btn="">
-                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m15 18-6-6 6-6"></path>
-                    </svg>
-                    Back
-                </button>
-                <button type="button" class="py-2 px-3 gap-x-1 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-next-btn="">
-                    Next
-                    <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m9 18 6-6-6-6"></path>
-                    </svg>
-                </button>
-                <button type="button" class="py-2 px-3 gap-x-1 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-finish-btn="" style="display: none;">
-                    Finish
-                </button>
-                <button type="reset" class="py-2 px-3 gap-x-1 border-transparent bg-blue-600 text-white inline-flex items-center rounded-lg border text-sm font-medium hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-stepper-reset-btn="" style="display: none;">
-                    Reset
-                </button>
-            </div>
-            <!-- End Button Group -->
+            <!-- End Stepper Content -->
         </div>
-        <!-- End Stepper Content -->
+        <!-- End Stepper -->
     </div>
-    <!-- End Stepper -->
 </div>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+<!-- Script del Stepper (dentro de la página) -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const steps = document.querySelectorAll('.step');
+        const contents = document.querySelectorAll('[data-content]');
+        const backBtn = document.getElementById('backBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const finishBtn = document.getElementById('finishBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const mensajesDiv = document.getElementById('mensajes');
+        let currentStep = 0;
+
+        // Pasos que no requieren validación
+        const noValidationSteps = [2]; // Ejemplo: pasos 2 y 4 no requieren validación (índices 1 y 3)
+
+        function updateStepper() {
+            steps.forEach((step, index) => {
+                if (index === currentStep) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else if (index < currentStep) {
+                    step.classList.add('completed');
+                    step.classList.remove('active');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+
+            contents.forEach((content, index) => {
+                if (index === currentStep) {
+                    content.style.display = 'block';
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+
+            backBtn.disabled = currentStep === 0;
+            nextBtn.style.display = currentStep === steps.length - 1 ? 'none' : 'inline-block';
+            finishBtn.style.display = currentStep === steps.length - 1 ? 'inline-block' : 'none';
+        }
+
+        function hideAllContentsExceptFirst() {
+            contents.forEach((content, index) => {
+                if (index !== 0) {
+                    content.style.display = 'none';
+                }
+            });
+        }
+
+        function initStepper() {
+            hideAllContentsExceptFirst();
+            updateStepper();
+        }
+
+        function validateStep(step) {
+            if (noValidationSteps.includes(step)) {
+                return true;
+            }
+            const form = contents[step].querySelector('form');
+            if (form) {
+                return form.checkValidity();
+            }
+            return true;
+        }
+
+        function postStepData(step) {
+            const form = contents[step].querySelector('form');
+            if (form) {
+                const formData = new FormData(form);
+                return fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json());
+            }
+            return Promise.resolve({ success: true });
+        }
+
+        function getStepData(step) {
+            const content = contents[step];
+            const url = steps[step].getAttribute('data-url');
+            if (url) {
+                return fetch(url).then(response => response.text()).then(html => {
+                    content.innerHTML = html;
+                });
+            }
+            return Promise.resolve();
+        }
+
+        function showErrors(errors) {
+            mensajesDiv.innerHTML = '';
+            errors.forEach(error => {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+                errorDiv.textContent = error;
+                mensajesDiv.appendChild(errorDiv);
+            });
+        }
+
+        function clearErrors() {
+            mensajesDiv.innerHTML = '';
+        }
+
+        steps.forEach((step, index) => {
+            step.addEventListener('click', () => {
+                if (validateStep(currentStep)) {
+                    postStepData(currentStep).then(data => {
+                        if (data.success) {
+                            currentStep = index;
+                            clearErrors();
+                            getStepData(currentStep).then(() => {
+                                updateStepper();
+                            });
+                        } else {
+                            showErrors(data.errors);
+                        }
+                    });
+                } else {
+                    showErrors(['Por favor, complete todos los campos requeridos antes de continuar.']);
+                }
+            });
+        });
+
+        backBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                clearErrors();
+                updateStepper();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                postStepData(currentStep).then(data => {
+                    if (data.success) {
+                        if (currentStep < steps.length - 1) {
+                            currentStep++;
+                            clearErrors();
+                            getStepData(currentStep).then(() => {
+                                updateStepper();
+                            });
+                        }
+                    } else {
+                        showErrors(data.errors);
+                    }
+                });
+            } else {
+                showErrors(['Por favor, complete todos los campos requeridos antes de continuar.']);
+            }
+        });
+
+        finishBtn.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                postStepData(currentStep).then(data => {
+                    if (data.success) {
+                        alert('Proceso finalizado');
+                    } else {
+                        showErrors(data.errors);
+                    }
+                });
+            } else {
+                showErrors(['Por favor, complete todos los campos requeridos antes de continuar.']);
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            currentStep = 0;
+            clearErrors();
+            updateStepper();
+        });
+
+        initStepper();
+    });
+</script>
+
+<!-- Incluir la vista parcial del modal -->
+@await Html.PartialAsync("_AddResponsableModal", new gad_checa_gestion_cementerio.Models.ResponsableModel())

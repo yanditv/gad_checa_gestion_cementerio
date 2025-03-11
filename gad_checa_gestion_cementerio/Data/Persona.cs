@@ -14,50 +14,54 @@ namespace gad_checa_gestion_cementerio.Data
         [Key]
         public int Id { get; set; }
 
-        [Required]
         [StringLength(100)]
+        [Display(Name = "Nombres")]
+        [Required(ErrorMessage = "Los nombres son obligatorios.")]
         public string Nombres { get; set; }
-        [Required]
         [StringLength(100)]
+        [Display(Name = "Apellidos")]
+        [Required(ErrorMessage = "Los apellidos son obligatorios.")]
         public string Apellidos { get; set; }
 
-        [Required]
         [StringLength(20)]
+        [Display(Name = "Tipo de Identificación")]
+        [Required(ErrorMessage = "El tipo de identificación es obligatorio.")]
         public string TipoIdentificacion { get; set; }
 
-        [Required]
         [StringLength(20)]
+        [Display(Name = "Número de Identificación")]
+        [Required(ErrorMessage = "El número de identificación es obligatorio.")]
         public string NumeroIdentificacion { get; set; }
 
         [StringLength(20)]
-        public  string Telefono { get; set; }
+        [Display(Name = "Teléfono")]
+        [Required(ErrorMessage = "El teléfono es obligatorio.")]
+        public string Telefono { get; set; }
 
         [StringLength(200)]
-        public  string Direccion { get; set; }
+        [Display(Name = "Dirección")]
+        [Required(ErrorMessage = "La dirección es obligatoria.")]
+        public string Direccion { get; set; }
 
         [StringLength(100)]
-        public  string Email { get; set; }
+        [Display(Name = "Correo Electrónico")]
+        [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
+        [EmailAddress(ErrorMessage = "El correo electrónico no es válido.")]
+        public string Email { get; set; }
 
         [Required]
+        [Display(Name = "Estado")]
         public bool Estado { get; set; }
 
         // Auditoría
         public DateTime FechaCreacion { get; set; }
-        public DateTime FechaActualizacion { get; set; }
-        public DateTime? FechaEliminacion { get; set; }
 
 
-        [ForeignKey("UsuarioCreador")]
-        public string UsuarioCreadorId { get; set; }
+        [ForeignKey("UsuarioCreadorId")]
+        [Display(Name = "Usuario Creador")]
+        [Required(ErrorMessage = "El usuario creador es obligatorio.")]
         public IdentityUser UsuarioCreador { get; set; }
 
-        [ForeignKey("UsuarioActualizador")]
-        public string? UsuarioActualizadorId { get; set; }
-        public IdentityUser UsuarioActualizador { get; set; }
-
-        [ForeignKey("UsuarioEliminador")]
-        public string? UsuarioEliminadorId { get; set; }
-        public IdentityUser UsuarioEliminador { get; set; }
 
         // Relaciones
         public ICollection<Pago> Pagos { get; set; }

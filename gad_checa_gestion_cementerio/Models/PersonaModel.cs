@@ -12,30 +12,44 @@ namespace gad_checa_gestion_cementerio.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
+
+
+        [StringLength(100)]
+        [Display(Name = "Nombres")]
+        [Required(ErrorMessage = "Los nombres son obligatorios.")]
         public string Nombres { get; set; }
-        [Required]
-        [MaxLength(100)]
+        [StringLength(100)]
+        [Display(Name = "Apellidos")]
+        [Required(ErrorMessage = "Los apellidos son obligatorios.")]
         public string Apellidos { get; set; }
 
-        [Required]
         [StringLength(20)]
+        [Display(Name = "Tipo de Identificación")]
+        [Required(ErrorMessage = "El tipo de identificación es obligatorio.")]
         public string TipoIdentificacion { get; set; }
-        [MaxLength(20)]
-        [CustomValidation(typeof(PersonaModel), nameof(ValidateCedula))]
-        public string NumeroIdentificacion { get; set; } // Puede ser null si no es un responsable registrado
 
-        [MaxLength(15)]
-        [Phone(ErrorMessage = "El número de teléfono no es válido.")]
+        [StringLength(20)]
+        [Display(Name = "Número de Identificación")]
+        [Required(ErrorMessage = "El número de identificación es obligatorio.")]
+        [CustomValidation(typeof(PersonaModel), nameof(ValidateCedula))]
+        public string NumeroIdentificacion { get; set; }
+
+        [StringLength(20)]
+        [Display(Name = "Teléfono")]
+        [Required(ErrorMessage = "El teléfono es obligatorio.")]
         public string Telefono { get; set; }
 
-        [MaxLength(50)]
+        [StringLength(200)]
+        [Display(Name = "Dirección")]
+        [Required(ErrorMessage = "La dirección es obligatoria.")]
+        public string Direccion { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Correo Electrónico")]
+        [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
         [EmailAddress(ErrorMessage = "El correo electrónico no es válido.")]
         public string Email { get; set; }
 
-        [MaxLength(200)]
-        public string Direccion { get; set; }
 
         public static ValidationResult ValidateCedula(string cedula, ValidationContext context)
         {

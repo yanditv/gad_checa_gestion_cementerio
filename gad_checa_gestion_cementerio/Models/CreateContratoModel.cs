@@ -1,4 +1,3 @@
-using System;
 using gad_checa_gestion_cementerio.Data;
 
 namespace gad_checa_gestion_cementerio.Models;
@@ -7,14 +6,14 @@ public class CreateContratoModel
 {
     public CreateContratoModel()
     {
-        contrato = new Contrato();
-        difunto = new Difunto();
-        responsables = new List<Responsable>();
-        pago = new Pago();
+        contrato = new ContratoModel();
+        difunto = new DifuntoModel();
+        responsables = new List<ResponsableModel>();
+        pago = new PagoModel();
     }
-    public Contrato contrato { get; set; }
-    public Difunto difunto { get; set; }
-    public List<Responsable> responsables { get; set; }
-    public Pago pago { get; set; }
+    public ContratoModel contrato { get; set; }
+    public DifuntoModel difunto { get; set; }
+    public List<ResponsableModel> responsables { get; set; }
+    public PagoModel pago { get; set; }
 
 }

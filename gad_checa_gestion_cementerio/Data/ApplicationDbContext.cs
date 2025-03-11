@@ -62,15 +62,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(p => p.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
-            builder.Entity<Persona>()
-                .HasOne<IdentityUser>(p => p.UsuarioActualizador)
-                .WithMany()
-                .OnDelete(DeleteBehavior.NoAction);
 
-            builder.Entity<Persona>()
-                .HasOne<IdentityUser>(p => p.UsuarioEliminador)
-                .WithMany()
-                .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Contrato>()
                 .HasOne<IdentityUser>(c => c.UsuarioCreador)

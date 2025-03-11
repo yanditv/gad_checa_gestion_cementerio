@@ -9,6 +9,7 @@ namespace gad_checa_gestion_cementerio.Data
         public Responsable()
         {
             this.Contratos = new List<Contrato>();
+            this.FechaInicio = DateTime.Now;
         }
         public DateTime FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }

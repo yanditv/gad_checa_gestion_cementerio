@@ -5,6 +5,17 @@ using System.Globalization;
 using gad_checa_gestion_cementerio.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Configurar la sesións
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Configurar servicios y opciones
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Agregar servicios al contenedor.
@@ -61,7 +72,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseSession();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=index}/{id?}"); // Ruta personalizada
@@ -151,6 +162,37 @@ using (var scope = app.Services.CreateScope())
             UsuarioCreador = adminUser
         };
         dbContext.Cementerio.Add(cementerio);
+        await dbContext.SaveChangesAsync();
+    }
+    // Crear descuentos si no existen
+    var descuentos = await dbContext.Descuento.ToListAsync();
+    if (descuentos.Count == 0)
+    {
+        var descuento1 = new Descuento
+        {
+            Descripcion = "Ninguno",
+            Porcentaje = 0,
+            Estado = true,
+            FechaCreacion = DateTime.Now,
+            UsuarioCreador = adminUser
+        };
+        var descuento2 = new Descuento
+        {
+            Descripcion = "20%",
+            Porcentaje = 20,
+            Estado = true,
+            FechaCreacion = DateTime.Now,
+            UsuarioCreador = adminUser
+        };
+        var descuento3 = new Descuento
+        {
+            Descripcion = "30%",
+            Porcentaje = 30,
+            Estado = true,
+            FechaCreacion = DateTime.Now,
+            UsuarioCreador = adminUser
+        };
+        dbContext.Descuento.AddRange(descuento1, descuento2, descuento3);
         await dbContext.SaveChangesAsync();
     }
 }

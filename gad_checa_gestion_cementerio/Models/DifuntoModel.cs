@@ -4,32 +4,33 @@ using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace gad_checa_gestion_cementerio.Models{
+namespace gad_checa_gestion_cementerio.Models
+{
     public class DifuntoModel
     {
         [Key]
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "El campo {0} es requerido")]
         [StringLength(100)]
-        public string Nombre { get; set; }
+        [Display(Name = "Nombres")]
+        public string Nombres { get; set; }
+        [Required(ErrorMessage = "El campo {0} es requerido")]
+        [StringLength(100)]
+        public string Apellidos { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "El campo {0} es requerido")]
+        [StringLength(20)]
+        public string NumeroIdentificacion { get; set; }
+
+        [Required(ErrorMessage = "El campo {0} es requerido")]
+        public DateTime FechaNacimiento { get; set; }
+        [Required(ErrorMessage = "El campo {0} es requerido")]
         public DateTime FechaFallecimiento { get; set; }
 
-        [Required]
-        public bool Estado { get; set; }
-
-        // Auditoría
-        public DateTime FechaCreacion { get; set; }
-
-        public Contrato? Contrato { get; set; }
-
-        [Required]
+        [Required(ErrorMessage = "El campo {0} es requerido")]
         [ForeignKey("Descuento")]
         public int DescuentoId { get; set; }
-
-        public Descuento Descuento { get; set; }
     }
 
 }

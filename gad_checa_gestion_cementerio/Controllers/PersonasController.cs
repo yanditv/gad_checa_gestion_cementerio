@@ -64,12 +64,12 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             if (ModelState.IsValid)
             {
-                Microsoft.AspNetCore.Identity.IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+                IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
                 Data.Persona p = new Data.Persona
                 {
                     Id = persona.Id,
                     NumeroIdentificacion = persona.NumeroIdentificacion,
-                    TipoIdentificacion= persona.TipoIdentificacion,
+                    TipoIdentificacion = persona.TipoIdentificacion,
                     Direccion = persona.Direccion,
                     Email = persona.Email,
                     Nombres = persona.Nombres,
@@ -140,13 +140,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                     {
                         existente.Direccion = persona.Direccion;
                         existente.TipoIdentificacion = persona.Direccion;
-                        existente.UsuarioActualizador = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+
                         existente.NumeroIdentificacion = persona.NumeroIdentificacion;
                         existente.Telefono = persona.Telefono;
                         existente.Email = persona.Email;
                         existente.Nombres = persona.Nombres;
                         existente.Apellidos = persona.Apellidos;
-                        existente.FechaActualizacion = DateTime.Now;
                         _context.Update(existente);
                         await _context.SaveChangesAsync();
                     }

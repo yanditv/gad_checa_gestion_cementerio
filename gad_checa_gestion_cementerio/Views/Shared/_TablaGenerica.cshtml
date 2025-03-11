@@ -7,41 +7,31 @@
     // URL para la acción "Create"
     var createUrl = Url.Action("Create", "Cementerio", new { entityType = actionName });
 }
-
+</style>
 <div class="my-4">
     <div class="card">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
             <div>
-                <h4 class="card-title mb-0">@ViewData["Title"]</h4>
-                <small class="text-muted">
+                <h4 class="card-title mb-2">@ViewData["Title"]</h4>
+                <p class="text-muted">
                     Gestione los registros: puede listar, modificar, buscar y eliminar.
-                </small>
+                </p>
             </div>
-            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0">
-                <div class="input-group">
-                    <input
-                        type="text"
-                        id="hs-table-with-pagination-search"
-                        class="form-control"
-                        placeholder="Buscar..."
-                        aria-label="Search"
-                    />
-                    <span class="input-group-text">
-                        <i class="ti ti-search"></i>
-                    </span>
+            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
+                <div>
+                    <div class="input-group">
+                        <input type="text" id="hs-table-with-pagination-search" class="form-control form-control-sm"
+                            placeholder="Buscar..." aria-label="Search" />
+                        <span class="input-group-text">
+                            <i class="ti ti-search"></i>
+                        </span>
+                    </div>
                 </div>
-                <a
-                    class="btn btn-outline-secondary"
-                    asp-action="Index"
-                >
-                    Ver todo
+                <a class="btn btn-outline-secondary btn-md" asp-action="Index">
+                    Ver todos
                 </a>
-                <a
-                    class="btn btn-primary"
-                    asp-action="Create"
-                    asp-route-entityType="@ViewData["EntityType"]"
-                >
-                    <i class="ti ti-plus"></i> Crear Nuevo
+                <a class="btn btn-primary btn-md" asp-action="Create" asp-route-entityType="@ViewData["EntityType"]">
+                    <i class="ti ti-plus"></i> <span class="no-wrap">Crear</span><span class="no-wrap"> Nuevo</span>
                 </a>
             </div>
         </div>
@@ -52,11 +42,7 @@
                     <thead class="table-secondary">
                         <tr>
                             <th scope="col">
-                                <input
-                                    type="checkbox"
-                                    class="form-check-input"
-                                    id="hs-at-with-checkboxes-main"
-                                />
+                                <input type="checkbox" class="form-check-input" id="hs-at-with-checkboxes-main" />
                             </th>
                             @foreach (var property in Model.First().GetType().GetProperties())
                             {
@@ -74,10 +60,7 @@
                         {
                             <tr>
                                 <td>
-                                    <input
-                                        type="checkbox"
-                                        class="form-check-input"
-                                    />
+                                    <input type="checkbox" class="form-check-input" />
                                 </td>
                                 @foreach (var property in item.GetType().GetProperties())
                                 {
@@ -86,19 +69,11 @@
                                     </td>
                                 }
                                 <td class="text-end">
-                                    <a
-                                        class="btn btn-sm btn-outline-primary"
-                                        asp-action="Edit"
-                                        asp-route-id="@item.Id"
-                                    >
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@item.Id">
                                         <i class="ti ti-edit"></i>
                                     </a>
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-outline-danger delete-button"
-                                        data-hs-overlay="#hs-vertically-centered-modal"
-                                        data-id="@item.Id"
-                                    >
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-button"
+                                        data-hs-overlay="#hs-vertically-centered-modal" data-id="@item.Id">
                                         <i class="ti ti-trash"></i>
                                     </button>
                                 </td>
