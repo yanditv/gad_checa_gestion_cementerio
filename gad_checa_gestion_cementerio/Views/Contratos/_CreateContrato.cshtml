@@ -18,40 +18,45 @@
                         <span asp-validation-for="NumeroSecuencial" class="text-danger"></span>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label asp-for="BovedaId" class="form-label">Boveda</label>
+                        <label asp-for="BovedaId" class="form-label">Bóveda</label>
+                        <div class="input-group"></div>
                         <select asp-for="BovedaId" class="form-control" asp-items="ViewBag.BovedaId"></select>
+                        <button type="button" class="btn btn-secondary" onclick="buscarBovedasDisponibles()">Buscar
+                            Disponibles</button>
                         <span asp-validation-for="BovedaId" class="text-danger"></span>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FechaInicio" class="form-label">Fecha de Inicio</label>
-                            <input asp-for="FechaInicio" type="date" class="form-control" />
-                            <span asp-validation-for="FechaInicio" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FechaFin" class="form-label">Fecha de Fin</label>
-                            <input asp-for="FechaFin" type="date" class="form-control" />
-                            <span asp-validation-for="FechaFin" class="text-danger"></span>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="NumeroDeMeses" class="form-label">Número de Meses</label>
-                            <input asp-for="NumeroDeMeses" type="number" class="form-control" />
-                            <span asp-validation-for="NumeroDeMeses" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="MontoTotal" class="form-label">Monto Total</label>
-                            <input asp-for="MontoTotal" type="number" step="0.01" class="form-control" />
-                            <span asp-validation-for="MontoTotal" class="text-danger"></span>
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Observaciones" class="form-label">Observaciones</label>
-                        <textarea asp-for="Observaciones" rows="3" class="form-control"></textarea>
-                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FechaInicio" class="form-label">Fecha de Inicio</label>
+                        <input asp-for="FechaInicio" type="date" class="form-control" />
+                        <span asp-validation-for="FechaInicio" class="text-danger"></span>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FechaFin" class="form-label">Fecha de Fin</label>
+                        <input asp-for="FechaFin" type="date" class="form-control" />
+                        <span asp-validation-for="FechaFin" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="NumeroDeMeses" class="form-label">Número de Meses</label>
+                        <input asp-for="NumeroDeMeses" type="number" class="form-control" />
+                        <span asp-validation-for="NumeroDeMeses" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="MontoTotal" class="form-label">Monto Total</label>
+                        <input asp-for="MontoTotal" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="MontoTotal" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                    <textarea asp-for="Observaciones" rows="3" class="form-control"></textarea>
+                    <span asp-validation-for="Observaciones" class="text-danger"></span>
+                </div>
             </form>
         </div>
     </div>

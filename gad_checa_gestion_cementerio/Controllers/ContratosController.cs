@@ -281,7 +281,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpGet]
         public IActionResult CreateResponsables()
         {
-            var responsables = new List<ResponsableModel>();
+            var contrato = GetContratoFromSession();
+            var responsables = contrato.responsables;
             var tipos = new List<string> { "Cedula", "RUC" };
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
             return PartialView("_CreateResponsables", responsables);
@@ -357,19 +358,10 @@ namespace gad_checa_gestion_cementerio.Controllers
         public IActionResult CreateContrato()
         {
             var contrato = GetContratoFromSession();
-            contrato.contrato.NumeroDeMeses = 12;
+            contrato.contrato.NumeroDeMeses = 5;
             contrato.contrato.FechaInicio = DateTime.Now;
             contrato.contrato.FechaFin = contrato.contrato.FechaInicio.AddMonths(contrato.contrato.NumeroDeMeses);
-
-            var bovedas = _context.Boveda
-                .Where(b => b.Estado)
-                .Include(b => b.Piso)
-                .Select(b => new
-                {
-                    b.Id,
-                    DescripcionCompleta = $"{b.Piso.BloqueId} - {b.Piso.NumeroPiso} - {b.Numero}"
-                })
-                .ToList();
+            contrato.contrato.MontoTotal = 240;
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
 
 
@@ -389,8 +381,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                     var cuota = new CuotaModel
                     {
                         Monto = montoCuota,
-                        FechaVencimiento = contrato.FechaInicio.AddMonths(i),
+                        FechaVencimiento = contrato.FechaInicio.AddYears(i + 1),
                         Pagada = false
+
                     };
                     sessionContrato.contrato.Cuotas.Add(cuota);
 
@@ -400,6 +393,16 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
 
             return Json(new { success = false, errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+        }
+        //Documento
+
+        // CREAR CONTRATO
+        [HttpGet]
+        public IActionResult DocumentoContrato()
+        {
+            var contrato = GetContratoFromSession();
+
+            return PartialView("_DocumentoContrato", contrato);
         }
     }
 }

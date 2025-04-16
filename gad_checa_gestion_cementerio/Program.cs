@@ -178,16 +178,16 @@ using (var scope = app.Services.CreateScope())
         };
         var descuento2 = new Descuento
         {
-            Descripcion = "20%",
-            Porcentaje = 20,
+            Descripcion = "50%",
+            Porcentaje = 50,
             Estado = true,
             FechaCreacion = DateTime.Now,
             UsuarioCreador = adminUser
         };
         var descuento3 = new Descuento
         {
-            Descripcion = "30%",
-            Porcentaje = 30,
+            Descripcion = "100%",
+            Porcentaje = 100,
             Estado = true,
             FechaCreacion = DateTime.Now,
             UsuarioCreador = adminUser

@@ -28,13 +28,13 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             var bloques = await _context.Bloque.ToListAsync();
             var bloquesModel = _mapper.Map<List<BloqueViewModel>>(bloques);
-            return View("Bloques/Index",bloquesModel);
+            return View("Bloques/Index", bloquesModel);
         }
 
         public async Task<IActionResult> Bovedas()
         {
             var bovedas = await _context.Boveda
-                .Include(x=>x.Piso)
+                .Include(x => x.Piso)
                 .ToListAsync();
             var bovedasModel = _mapper.Map<List<BovedaViewModel>>(bovedas);
             var bloque = await _context.Bloque.ToListAsync();
@@ -89,6 +89,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                     ViewData["Cementerios"] = new SelectList(_context.Cementerio, "Id", "Nombre");
                     return View("Bloques/Bloque", model);
                 case "bovedas":
+                    var bloques = _context.Bloque.ToList();
+                    ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
                     return View("Bovedas/Boveda", model);
                 case "cobros":
                     return View("Cobros/Cobro", model);
@@ -103,11 +105,11 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(BloqueModel bloque)
         {
-            
+
 
             if (bloque != null)
             {
-                
+
                 bloque.FechaCreacion = DateTime.Now;
                 if (ModelState.IsValid)
                 {
