@@ -20,9 +20,9 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var bloques = await _context.Bloque.ToListAsync();
-            var bloquesModel = _mapper.Map<List<BloqueModel>>(bloques);
-            return View(bloquesModel);
+            var cementerios = await _context.Cementerio.ToListAsync();
+            var cementeriosModel = _mapper.Map<List<CementerioModel>>(cementerios);
+            return View(cementeriosModel);
         }
         public async Task<IActionResult> Bloques()
         {
@@ -37,9 +37,13 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(x => x.Piso)
                 .ToListAsync();
             var bovedasModel = _mapper.Map<List<BovedaViewModel>>(bovedas);
+            
             var bloque = await _context.Bloque.ToListAsync();
+
             var viewModel = new BovedaFilterModel();
+
             viewModel.Bovedas = bovedasModel;
+            viewModel.Piso = bovedasModel.FirstOrDefault()?.Piso.Id ?? 0;
 
             ViewData["Bloques"] = new SelectList(bloque, "Id", "Descripcion");
             return View("Bovedas/Index", viewModel);
@@ -109,7 +113,6 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (bloque != null)
             {
-
                 bloque.FechaCreacion = DateTime.Now;
                 if (ModelState.IsValid)
                 {
@@ -117,6 +120,29 @@ namespace gad_checa_gestion_cementerio.Controllers
                     var bloq = _mapper.Map<Bloque>(bloque);
                     bloq.FechaCreacion = DateTime.Now;
                     bloq.UsuarioCreadorId = _userManager.GetUserId(User);
+                    bloq.CementerioId = 1;
+                    bloq.Estado = true;
+                    bloq.FechaActualizacion = DateTime.Now;
+
+
+                    var listBovedas = new List<Boveda>();
+                
+                    foreach(var piso in bloq.Pisos)
+                    {                   
+                        for (int i = 0; i < bloq.BovedasPorPiso; i++)
+                        {
+                            listBovedas.Add(new Boveda
+                            {
+                                Estado = true,
+                                FechaCreacion = DateTime.Now,
+                                UsuarioCreador = _userManager.GetUserAsync(User).Result,
+                                PisoId = piso.Id,
+                                Piso = piso,
+                                Numero = i + 1
+                            });
+                        }
+                        _context.Boveda.AddRange(listBovedas);
+                    }
                     _context.Add(bloq);
                     await _context.SaveChangesAsync();
 

@@ -18,7 +18,7 @@ namespace gad_checa_gestion_cementerio.Models.Views
         {
             get
             {
-                return this.Bovedas.Max(x=>x.Piso.NumeroPiso);
+                return this.Bovedas.Any()? this.Bovedas.Max(x=>x.Piso.NumeroPiso):0;	
             }
         }
 

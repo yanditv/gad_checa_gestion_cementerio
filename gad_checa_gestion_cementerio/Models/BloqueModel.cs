@@ -41,6 +41,9 @@ namespace gad_checa_gestion_cementerio.Models
         [Required(ErrorMessage = "El estado es obligatorio.")]
         public bool Estado { get; set; }
 
+        [Required]
+        public int BovedasPorPiso { get; set; }
+
         // Auditoría
         public  DateTime FechaCreacion { get; set; }
 

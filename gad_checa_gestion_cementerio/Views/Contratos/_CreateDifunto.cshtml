@@ -31,14 +31,14 @@
                     </div>
                     <div class="col-md-6">
                         <label for="FechaNacimiento" class="form-label">Fecha de Nacimiento</label>
-                        <input asp-for="FechaFallecimiento" class="form-control" />
+                        <input asp-for="FechaNacimiento" class="form-control" value="@DateTime.Now.AddYears(-100).ToString("yyyy-MM-dd")" type="date" />
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label asp-for="FechaFallecimiento" class="form-label">Fecha de Defunción</label>
-                        <input asp-for="FechaFallecimiento" class="form-control" />
+                        <input asp-for="FechaFallecimiento" class="form-control" value="@DateTime.Now.AddYears(-1).ToString("yyyy-MM-dd")" type="date" />
                     </div>
                     <div class="col-md-6">
                         <label asp-for="DescuentoId" class="form-label">Descuento</label>
