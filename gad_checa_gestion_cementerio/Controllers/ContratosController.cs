@@ -72,18 +72,61 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var contrato = GetContratoFromSession();
             var year = DateTime.Now.Year;
-            var lastContrato = _context.Contrato.OrderByDescending(c => c.Id).FirstOrDefault();
-            var nextNumber = lastContrato != null ? lastContrato.Id + 1 : 1;
-            var prefix = contrato.contrato.EsRenovacion ? "RNV" : "CTR";
+
+            // Obtener la bóveda asociada al contrato desde la sesión
+            var boveda = _context.Boveda.Include(b => b.Piso.Bloque).FirstOrDefault(b => b.Id == contrato.contrato.BovedaId && b.Estado);
+            // Determinar el prefijo según el tipo de contrato y si la bóveda pertenece a un bloque de tipo "NICHOS"
+            var prefix = contrato.contrato.EsRenovacion
+                ? "RNV"
+                : (boveda != null && boveda.Piso.Bloque.Tipo == "NICHOS")
+                    ? "NCH"
+                    : "CTR";
+
+            // Filtrar los contratos por año y prefijo
+            var lastContrato = _context.Contrato
+                .Where(c => c.NumeroSecuencial.Contains($"-{year}-") && c.NumeroSecuencial.StartsWith(prefix))
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefault();
+
+            // Determinar el siguiente número secuencial
+            var nextNumber = lastContrato != null
+                ? int.Parse(lastContrato.NumeroSecuencial.Split('-').Last()) + 1
+                : 1;
+
+            // Generar el número secuencial
             var numeroSecuencial = $"{prefix}-GADCHECA-{year}-{nextNumber:D3}";
             contrato.contrato.NumeroSecuencial = numeroSecuencial;
 
             var descuentos = _context.Descuento.ToList();
             ViewData["DescuentoId"] = new SelectList(descuentos, "Id", "Descripcion");
+
             var tipos = new List<string> { "Cedula", "RUC" };
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
+            contrato.responsables = new List<ResponsableModel>();
+            contrato.contrato = new ContratoModel
+            {
+                FechaInicio = DateTime.Now,
+                FechaFin = DateTime.Now.AddMonths(5),
+                MontoTotal = 240,
+                Estado = true,
+                Observaciones = string.Empty,
+                DifuntoId = 0,
+                EsRenovacion = false,
+                Cuotas = new List<CuotaModel>(),
+                NumeroSecuencial = numeroSecuencial
+            };
             SaveContratoToSession(contrato);
             return View(contrato);
+        }
+        public void onChangeBoveda(int bovedaId)
+        {
+            var boveda = _context.Boveda.Find(bovedaId);
+            if (boveda != null)
+            {
+                var contrato = GetContratoFromSession();
+                contrato.contrato.BovedaId = boveda.Id;
+                SaveContratoToSession(contrato);
+            }
         }
 
         // POST: Contratos/Create
@@ -255,7 +298,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpGet]
         public IActionResult CreateDifunto()
         {
-            var difunto = new DifuntoModel();
+            var contrato = GetContratoFromSession();
+            var difunto = contrato == null ? new DifuntoModel() : contrato.difunto ?? new DifuntoModel();
 
             return PartialView("_CreateDifunto", difunto);
         }
@@ -362,6 +406,8 @@ namespace gad_checa_gestion_cementerio.Controllers
             contrato.contrato.FechaInicio = DateTime.Now;
             contrato.contrato.FechaFin = contrato.contrato.FechaInicio.AddMonths(contrato.contrato.NumeroDeMeses);
             contrato.contrato.MontoTotal = 240;
+
+
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
 
 

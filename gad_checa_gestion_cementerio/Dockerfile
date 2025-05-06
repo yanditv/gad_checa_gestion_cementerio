@@ -11,6 +11,7 @@ EXPOSE 8081
 # Esta fase se usa para compilar el proyecto de servicio
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
+
 WORKDIR /src
 COPY ["gad_checa_gestion_cementerio/gad_checa_gestion_cementerio.csproj", "gad_checa_gestion_cementerio/"]
 RUN dotnet restore "./gad_checa_gestion_cementerio/gad_checa_gestion_cementerio.csproj"

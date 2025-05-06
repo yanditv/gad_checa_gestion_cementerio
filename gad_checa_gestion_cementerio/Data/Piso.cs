@@ -23,5 +23,8 @@ namespace gad_checa_gestion_cementerio.Data
         [Required]
         public int BloqueId { get; set; }
 
+        [ForeignKey("BloqueId")]
+        public Bloque Bloque { get; set; } // Relación con el bloque
+
     }
 }

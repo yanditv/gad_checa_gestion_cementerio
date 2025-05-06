@@ -39,17 +39,17 @@
         <div id="stepper">
             <!-- Stepper Nav -->
             <div class="stepper">
-                <div class="step completed" data-step="1" data-url="@Url.Action("CreateDifunto", "Contratos")">
+                <div class="step completed" data-step="1" data-url="@Url.Action("CreateContrato", "Contratos")">
                     <div class="circle">1</div>
-                    <div>Datos del Fallecido</div>
+                    <div>Datos del contrato</div>
                 </div>
-                <div class="step" data-step="2" data-url="@Url.Action("CreateResponsables", "Contratos")">
+                <div class="step" data-step="2" data-url="@Url.Action("CreateDifunto", "Contratos")">
                     <div class="circle">2</div>
-                    <div>Datos de los Responsables</div>
+                    <div>Datos del Difunto</div>
                 </div>
-                <div class="step" data-step="3" data-url="@Url.Action("CreateContrato", "Contratos")">
+                <div class="step" data-step="3" data-url="@Url.Action("CreateResponsables", "Contratos")">
                     <div class="circle">3</div>
-                    <div>Datos del Contrato</div>
+                    <div>Datos de los Responsables</div>
                 </div>
                 <div class="step" data-step="4" data-url="@Url.Action("CreatePago", "Contratos")">
                     <div class="circle">4</div>
@@ -66,17 +66,18 @@
             <div class="mt-4">
                 <!-- First Content -->
                 <div data-content="1">
-                    @await Html.PartialAsync("_CreateDifunto", Model.difunto)
+                    @await Html.PartialAsync("_CreateContrato", Model.contrato)
+
                 </div>
                 <!-- End First Content -->
                 <!-- Second Content -->
                 <div data-content="2" style="display: none;">
-                    @await Html.PartialAsync("_CreateResponsables", Model.responsables)
+                    @await Html.PartialAsync("_CreateDifunto", Model.difunto)
                 </div>
                 <!-- End Second Content -->
                 <!-- Third Content -->
                 <div data-content="3" style="display: none;">
-                    @await Html.PartialAsync("_CreateContrato", Model.contrato)
+                    @await Html.PartialAsync("_CreateResponsables", Model.responsables)
                 </div>
                 <!-- End Third Content -->
                 <!-- Fourth Content -->
