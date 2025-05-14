@@ -4,8 +4,9 @@ using gad_checa_gestion_cementerio.Data;
 using System.Globalization;
 using gad_checa_gestion_cementerio.Utils;
 using DotNetEnv;
-var builder = WebApplication.CreateBuilder(args);
 DotNetEnv.Env.Load();
+var builder = WebApplication.CreateBuilder(args);
+
 
 // Configurar la sesións
 builder.Services.AddSession(options =>
