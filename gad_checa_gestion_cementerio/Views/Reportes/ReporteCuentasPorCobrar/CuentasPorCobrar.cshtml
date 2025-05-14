@@ -1,0 +1,42 @@
+@model List<gad_checa_gestion_cementerio.Models.Views.ReporteCuentasPorCobrarViewModel>
+
+@{
+    ViewData["Title"] = "CuentasPorCobrar";
+    ViewData["EntityType"] = "CuentasPorCobrar";
+    Layout = "~/Views/Reportes/_ReportesLayout.cshtml";
+}
+
+<div class="min-h-screen bg-white p-6 flex flex-col items-center">
+
+    <h2 class="text-gray-700 mb-6 text-2xl font-semibold">Reporte de Bóvedas</h2>
+
+    <div class="mb-4"></div>
+        <form method="get" asp-action="CuentasPorCobrarPdf">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Generar PDF
+            </button>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class=" table-auto border border-gray-200 shadow-sm rounded-lg" style="width:80%; text-align: center;">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contrato Serial</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cuota Pendiente</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4 text-sm text-gray-900">@item.Cuotas</td>
+                        @*<td class="px-6 py-4 text-sm text-gray-900">@item.Contrato.Serial</td>*@
+                        <td class="px-6 py-4 text-sm text-gray-900">@item.Monto</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using gad_checa_gestion_cementerio.Data;
 using System.Globalization;
 using gad_checa_gestion_cementerio.Utils;
-
+using DotNetEnv;
 var builder = WebApplication.CreateBuilder(args);
-
+DotNetEnv.Env.Load();
 
 // Configurar la sesións
 builder.Services.AddSession(options =>
@@ -197,3 +197,5 @@ using (var scope = app.Services.CreateScope())
     }
 }
 app.Run();
+
+Rotativa.AspNetCore.RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
