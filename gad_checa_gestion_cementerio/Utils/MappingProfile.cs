@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Models.Views;
-using gad_checa_gestion_cementerio.Data;   
+using gad_checa_gestion_cementerio.Data;
 namespace gad_checa_gestion_cementerio.Utils
 {
     public class MappingProfile : Profile
@@ -12,7 +12,7 @@ namespace gad_checa_gestion_cementerio.Utils
             CreateMap<Bloque, BloqueModel>();
             CreateMap<BloqueModel, Bloque>();
             CreateMap<BloqueViewModel, Bloque>();
-            CreateMap<Bloque, BloqueViewModel > ();
+            CreateMap<Bloque, BloqueViewModel>();
 
             CreateMap<Persona, PersonaModel>();
             CreateMap<PersonaModel, Persona>();
@@ -25,7 +25,11 @@ namespace gad_checa_gestion_cementerio.Utils
             CreateMap<PisoModel, Piso>();
 
             CreateMap<GADInformacion, GADInformacion>();
+
             CreateMap<Cementerio, CementerioModel>();
+            CreateMap<CementerioModel, Cementerio>();
+
+
             CreateMap<Cuota, CuotaModel>();
             CreateMap<Pago, PagoModel>();
             CreateMap<Responsable, ResponsableModel>();

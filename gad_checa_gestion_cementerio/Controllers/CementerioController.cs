@@ -37,7 +37,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(x => x.Piso)
                 .ToListAsync();
             var bovedasModel = _mapper.Map<List<BovedaViewModel>>(bovedas);
-            
+
             var bloque = await _context.Bloque.ToListAsync();
 
             var viewModel = new BovedaFilterModel();
@@ -63,12 +63,20 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         public async Task<IActionResult> Tarifas()
         {
-            var difuntos = await _context.Difunto.ToListAsync();
-            var difuntosModel = _mapper.Map<List<DifuntoModel>>(difuntos);
-            return View("Tarifas/Index", difuntosModel);
+            var cementerio = await _context.Cementerio.FirstOrDefaultAsync();
+            var cementerioModel = _mapper.Map<CementerioModel>(cementerio);
+            return View("Tarifas/Index", cementerioModel);
+        }
+        [HttpPost]
+        public async Task<IActionResult> Tarifas(CementerioModel cementerioModel)
+        {
+            var cementerio = _mapper.Map<Cementerio>(cementerioModel);
+            _context.Cementerio.Update(cementerio);
+            return View("Tarifas/Index", cementerioModel);
         }
         // Acción genérica para crear (puede ser reutilizada por otros módulos)
         // Acción para mostrar el formulario de creación
+        [HttpGet]
         public IActionResult Create(string entityType)
         {
             // Determinar el tipo de modelo basado en el parámetro entityType
@@ -126,9 +134,9 @@ namespace gad_checa_gestion_cementerio.Controllers
 
 
                     var listBovedas = new List<Boveda>();
-                
-                    foreach(var piso in bloq.Pisos)
-                    {                   
+
+                    foreach (var piso in bloq.Pisos)
+                    {
                         for (int i = 0; i < bloq.BovedasPorPiso; i++)
                         {
                             listBovedas.Add(new Boveda
@@ -207,5 +215,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     return null;
             }
         }
+
+
     }
 }

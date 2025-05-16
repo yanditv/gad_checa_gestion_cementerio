@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -27,6 +28,9 @@ namespace gad_checa_gestion_cementerio.Data
 
         [Required]
         public bool Estado { get; set; }
+
+        [Precision(18, 2)]
+        public decimal? tarifa_arriendo { get; set; }
 
         // Auditoría
         public DateTime FechaActualizacion { get; set; }

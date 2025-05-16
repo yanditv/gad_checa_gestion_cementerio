@@ -25,6 +25,9 @@ namespace gad_checa_gestion_cementerio.Models
         [Required]
         public DateTime FechaCreacion { get; set; }
 
+        [Display(Name = "Tarifa de Arriendo")]
+        public decimal? tarifa_arriendo { get; set; }
+
         [Required]
         public bool Estado { get; set; }
 
