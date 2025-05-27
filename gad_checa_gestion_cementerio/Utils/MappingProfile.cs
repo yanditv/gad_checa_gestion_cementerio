@@ -25,14 +25,29 @@ namespace gad_checa_gestion_cementerio.Utils
             CreateMap<PisoModel, Piso>();
 
             CreateMap<GADInformacion, GADInformacion>();
+            CreateMap<GADInformacion, GADInformacion>();
 
             CreateMap<Cementerio, CementerioModel>();
             CreateMap<CementerioModel, Cementerio>();
 
 
             CreateMap<Cuota, CuotaModel>();
+            CreateMap<CuotaModel, Cuota>();
+            // Pago
             CreateMap<Pago, PagoModel>();
+            CreateMap<PagoModel, Pago>();
+            //responsable
             CreateMap<Responsable, ResponsableModel>();
+            CreateMap<ResponsableModel, Responsable>();
+
+            //contrato
+            CreateMap<Contrato, ContratoModel>();
+            CreateMap<ContratoModel, Contrato>();
+
+            //difunto
+            CreateMap<Difunto, DifuntoModel>();
+            CreateMap<DifuntoModel, Difunto>();
+            //Boveda
 
             // Ejemplo:
             // CreateMap<Origen, Destino>()

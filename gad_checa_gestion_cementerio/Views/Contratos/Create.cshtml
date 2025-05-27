@@ -277,7 +277,34 @@
             if (validateStep(currentStep)) {
                 postStepData(currentStep).then(data => {
                     if (data.success) {
-                        alert('Proceso finalizado');
+                        // Crear un formulario en memoria
+                        const form = document.createElement('form');
+                        form.innerHTML = document.querySelector('form').innerHTML;
+
+                        // Agregar los datos del modelo al FormData
+                        const formData = new FormData(form);
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                        if (token) {
+                            formData.append('__RequestVerificationToken', token);
+                        }
+                        // Si tienes datos adicionales en data.model, agrégalos aquí
+
+
+                        fetch('@Url.Action("Save", "Contratos")', {
+                            method: 'POST',
+                            //body: formData
+                        })
+                            .then(response => response.json())
+                            .then(result => {
+                                if (result.success) {
+                                    window.location.href = '@Url.Action("Index", "Contratos")';
+                                } else {
+                                    showErrors(result.errors || ['Ocurrió un error al finalizar el proceso.']);
+                                }
+                            })
+                            .catch(() => {
+                                showErrors(['Ocurrió un error al finalizar el proceso.']);
+                            });
                     } else {
                         showErrors(data.errors);
                     }

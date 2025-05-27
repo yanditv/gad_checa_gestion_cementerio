@@ -15,6 +15,7 @@ namespace gad_checa_gestion_cementerio.Models
 
         [Required]
         public bool Pagada { get; set; }
+        public Guid TempId { get; set; } = Guid.NewGuid();
 
 
     }

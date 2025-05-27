@@ -9,7 +9,6 @@ namespace gad_checa_gestion_cementerio.Models
         public PagoModel()
         {
             Cuotas = new List<CuotaModel>();
-            this.CuotasPorPagar = new List<CuotaModel>();
         }
         [Key]
         public int Id { get; set; }
@@ -31,6 +30,5 @@ namespace gad_checa_gestion_cementerio.Models
         public int PersonaPagoId { get; set; }
 
         public List<CuotaModel> Cuotas { get; set; }
-        public List<CuotaModel> CuotasPorPagar { get; set; }
     }
 }

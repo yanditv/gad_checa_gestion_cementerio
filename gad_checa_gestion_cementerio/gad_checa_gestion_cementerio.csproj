@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -7,7 +6,6 @@
     <UserSecretsId>3f02d196-512d-460c-a9b2-68b96831a75b</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
@@ -30,5 +28,7 @@
     <PackageReference Include="QuestPDF" Version="2025.5.0" />
     <PackageReference Include="Rotativa.AspNetCore" Version="1.4.0" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Folder Include="wwwroot/Rotativa/" />
+  </ItemGroup>
 </Project>

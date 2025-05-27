@@ -4,6 +4,7 @@ using gad_checa_gestion_cementerio.Data;
 using System.Globalization;
 using gad_checa_gestion_cementerio.Utils;
 using DotNetEnv;
+using gad_checa_gestion_cementerio.services;
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +19,13 @@ builder.Services.AddSession(options =>
 
 // Configurar servicios y opciones
 builder.Services.AddAutoMapper(typeof(MappingProfile));
-
+builder.Services.AddScoped<ContratoService>();
 // Agregar servicios al contenedor.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Agregar la administración de roles
+
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
