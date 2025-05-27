@@ -389,18 +389,18 @@ namespace gad_checa_gestion_cementerio.Controllers
             return PartialView("_CreatePago", contrato.pago);
         }
         [HttpPost]
-        public IActionResult CreatePago(PagoModel pago, List<int> CuotasSeleccionadas)
+        public IActionResult CreatePago(PagoModel pago, List<Guid> CuotasSeleccionadas)
         {
             Console.WriteLine("Cuotas seleccionadas: " + string.Join(", ", CuotasSeleccionadas));
             if (ModelState.IsValid)
             {
                 var contrato = GetContratoFromSession();
-                pago.Cuotas = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.Id)).ToList();
+                pago.Cuotas = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.TempId)).ToList();
 
                 // Marcar las cuotas seleccionadas como pagadas
                 foreach (var cuota in contrato.contrato.Cuotas)
                 {
-                    if (CuotasSeleccionadas.Contains(cuota.Id))
+                    if (CuotasSeleccionadas.Contains(cuota.TempId))
                     {
                         cuota.Pagada = true;
                     }
