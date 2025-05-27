@@ -98,63 +98,73 @@ namespace gad_checa_gestion_cementerio.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        //[ValidateAntiForgeryToken]
         public IActionResult Save()
         {
             var viewModel = GetContratoFromSession();
 
-            // Validar el modelo antes de guardar
-            if (viewModel == null || viewModel.contrato == null)
+            if (viewModel?.contrato == null)
             {
                 return Json(new { success = false, errors = new List<string> { "No se encontró información del contrato en la sesión." } });
             }
 
-            // Puedes agregar aquí validaciones adicionales si lo necesitas
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
                 return Json(new { success = false, errors });
             }
 
-            try
+            using (var transaction = _context.Database.BeginTransaction())
             {
-                var contrato = _mapper.Map<Contrato>(viewModel.contrato);
-                // usuario que crea el contrato
-                var user = _userManager.GetUserAsync(User).Result;
-
-                var userId = _userManager.GetUserAsync(User).Result.Id;
-                // User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-                contrato.Difunto = _mapper.Map<Difunto>(viewModel.difunto);
-                contrato.DifuntoId = viewModel.difunto.Id;
-                contrato.Difunto.UsuarioCreadorId = userId;
-                contrato.Difunto.FechaCreacion = DateTime.Now;
-                contrato.UsuarioActualizadorId = userId;
-                contrato.FechaActualizacion = DateTime.Now;
-                contrato.Responsables = _mapper.Map<List<Responsable>>(viewModel.responsables);
-                contrato.Responsables.ForEach(r =>
+                try
                 {
-                    r.UsuarioCreador = user;
-                    r.FechaCreacion = DateTime.Now;
-                });
-                contrato.FechaCreacion = DateTime.Now;
-                contrato.UsuarioCreadorId = userId;
+                    // Obtener usuario y su Id solo una vez
+                    var userTask = _userManager.GetUserAsync(User);
+                    userTask.Wait();
+                    var user = userTask.Result;
+                    var userId = user?.Id;
 
-                _context.Contrato.Add(contrato);
+                    var contrato = _mapper.Map<Contrato>(viewModel.contrato);
+                    contrato.FechaCreacion = DateTime.Now;
+                    contrato.UsuarioCreadorId = userId;
+                    contrato.UsuarioActualizadorId = userId;
+                    contrato.FechaActualizacion = DateTime.Now;
 
-                // Guardar los datos del pago
-                var pago = _mapper.Map<Pago>(viewModel.pago);
-                pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
-                pago.FechaPago = DateTime.Now;
-                _context.Pago.Add(pago);
-                _context.SaveChanges();
+                    // Difunto
+                    contrato.Difunto = _mapper.Map<Difunto>(viewModel.difunto);
+                    contrato.DifuntoId = viewModel.difunto.Id;
+                    contrato.Difunto.UsuarioCreadorId = userId;
+                    contrato.Difunto.FechaCreacion = DateTime.Now;
 
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al guardar el contrato");
-                return Json(new { success = false, errors = new List<string> { "Ocurrió un error al guardar el contrato." } });
+                    // Responsables
+                    contrato.Responsables = _mapper.Map<List<Responsable>>(viewModel.responsables);
+                    var now = DateTime.Now;
+                    contrato.Responsables.ForEach(r =>
+                    {
+                        r.UsuarioCreador = user;
+                        r.FechaCreacion = now;
+                    });
+
+                    _context.Contrato.Add(contrato);
+                    _context.SaveChanges();
+
+                    // Ahora sí, el primer responsable tiene Id
+                    var pago = _mapper.Map<Pago>(viewModel.pago);
+                    pago.PersonaPagoId = contrato.Responsables.FirstOrDefault()?.Id ?? 0;
+                    pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
+                    pago.FechaPago = now;
+                    _context.Pago.Add(pago);
+
+                    _context.SaveChanges();
+
+                    transaction.Commit();
+                    return Json(new { success = true });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    _logger.LogError(ex, "Error al guardar el contrato");
+                    return Json(new { success = false, errors = new List<string> { "Ocurrió un error al guardar el contrato." } });
+                }
             }
         }
 
