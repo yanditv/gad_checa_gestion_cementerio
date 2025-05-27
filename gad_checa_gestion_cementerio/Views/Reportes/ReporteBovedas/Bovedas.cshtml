@@ -7,7 +7,6 @@
 }
 
 <div class="min-h-screen bg-white p-6 flex flex-col items-center">
-
     <h2 class="text-gray-700 mb-6 text-2xl font-semibold">Reporte de Bóvedas</h2>
 
     <div class="mb-4">
@@ -19,21 +18,23 @@
     </div>
 
     <div class="overflow-x-auto">
-        <table class=" table-auto border border-gray-200 shadow-sm rounded-lg" style="width:80%; text-align: center;">
+        <table class="table-auto border border-gray-200 shadow-sm rounded-lg" style="width:90%; text-align: center;">
             <thead class="bg-gray-100">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Número de Boveda</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Piso</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                    <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-left">Nº Bóveda</th>
+                    <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-left">Piso</th>
+                    <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-left">Estado</th>
+                    <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase text-left">Fecha de Creación</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.Numero</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.NumeroPiso</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.Estado</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-left">@item.NumeroBoveda</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-left">@item.NumeroPiso</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-left">@item.EstadoBoveda</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-left">@item.FechaCreacionBoveda.ToShortDateString()</td>
                     </tr>
                 }
             </tbody>
