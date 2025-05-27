@@ -34,6 +34,10 @@ namespace gad_checa_gestion_cementerio.Utils
             CreateMap<Pago, PagoModel>();
             CreateMap<Responsable, ResponsableModel>();
 
+            //contrato
+            CreateMap<Contrato, ContratoModel>();
+            CreateMap<ContratoModel, Contrato>();
+
             // Ejemplo:
             // CreateMap<Origen, Destino>()
             //     .ForMember(dest => dest.PropiedadDestino, opt => opt.MapFrom(src => src.PropiedadOrigen));

@@ -14,14 +14,17 @@ using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
 using Newtonsoft.Json;
+using gad_checa_gestion_cementerio.services;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
     {
+        private readonly ContratoService _contratoService;
         private readonly ILogger<ContratosController> _logger;
-        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager, ILogger<ContratosController> logger) : base(context, userManager, mapper)
+        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService) : base(context, userManager, mapper)
         {
             _logger = logger;
+            _contratoService = contratoService;
 
         }
         private CreateContratoModel GetContratoFromSession()
@@ -71,50 +74,11 @@ namespace gad_checa_gestion_cementerio.Controllers
             ViewData["BovedaId"] = new SelectList(_context.Boveda, "Id", "Estado");
 
             var contrato = GetContratoFromSession();
-            var year = DateTime.Now.Year;
-
-            // Obtener la bóveda asociada al contrato desde la sesión
-            var boveda = _context.Boveda.Include(b => b.Piso.Bloque).FirstOrDefault(b => b.Id == contrato.contrato.BovedaId && b.Estado);
-            // Determinar el prefijo según el tipo de contrato y si la bóveda pertenece a un bloque de tipo "NICHOS"
-            var prefix = contrato.contrato.EsRenovacion
-                ? "RNV"
-                : (boveda != null && boveda.Piso.Bloque.Tipo == "NICHOS")
-                    ? "NCH"
-                    : "CTR";
-
-            // Filtrar los contratos por año y prefijo
-            var lastContrato = _context.Contrato
-                .Where(c => c.NumeroSecuencial.Contains($"-{year}-") && c.NumeroSecuencial.StartsWith(prefix))
-                .OrderByDescending(c => c.Id)
-                .FirstOrDefault();
-
-            // Determinar el siguiente número secuencial
-            var nextNumber = lastContrato != null
-                ? int.Parse(lastContrato.NumeroSecuencial.Split('-').Last()) + 1
-                : 1;
-
-            // Generar el número secuencial
-            var numeroSecuencial = $"{prefix}-GADCHECA-{year}-{nextNumber:D3}";
-            contrato.contrato.NumeroSecuencial = numeroSecuencial;
-
-            var descuentos = _context.Descuento.ToList();
-            ViewData["DescuentoId"] = new SelectList(descuentos, "Id", "Descripcion");
-
             var tipos = new List<string> { "Cedula", "RUC" };
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
             contrato.responsables = new List<ResponsableModel>();
-            contrato.contrato = new ContratoModel
-            {
-                FechaInicio = DateTime.Now,
-                FechaFin = DateTime.Now.AddMonths(5),
-                MontoTotal = 240,
-                Estado = true,
-                Observaciones = string.Empty,
-                DifuntoId = 0,
-                EsRenovacion = false,
-                Cuotas = new List<CuotaModel>(),
-                NumeroSecuencial = numeroSecuencial
-            };
+            var nuevoContrato = _contratoService.nuevoContrato();
+            contrato.contrato = _mapper.Map<ContratoModel>(nuevoContrato);
             SaveContratoToSession(contrato);
             return View(contrato);
         }
@@ -133,31 +97,40 @@ namespace gad_checa_gestion_cementerio.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Create(CreateContratoModel viewModel)
+        //[ValidateAntiForgeryToken]
+        public IActionResult Save()
         {
-            if (ModelState.IsValid)
-            {
-                var contrato = new Contrato
-                {
-                    FechaInicio = viewModel.contrato.FechaInicio,
-                    FechaFin = viewModel.contrato.FechaFin,
-                    NumeroDeMeses = viewModel.contrato.NumeroDeMeses,
-                    MontoTotal = viewModel.contrato.MontoTotal,
-                    Estado = viewModel.contrato.Estado,
-                    Observaciones = viewModel.contrato.Observaciones,
-                    DifuntoId = viewModel.difunto.Id,
-                    Responsables = _mapper.Map<List<Responsable>>(viewModel.responsables),
-                    NumeroSecuencial = viewModel.contrato.NumeroSecuencial,
-                    EsRenovacion = viewModel.contrato.EsRenovacion
-                };
+            var viewModel = GetContratoFromSession();
 
+            // Validar el modelo antes de guardar
+            if (viewModel == null || viewModel.contrato == null)
+            {
+                return Json(new { success = false, errors = new List<string> { "No se encontró información del contrato en la sesión." } });
+            }
+
+            // Puedes agregar aquí validaciones adicionales si lo necesitas
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return Json(new { success = false, errors });
+            }
+
+            try
+            {
+                var contrato = _mapper.Map<Contrato>(viewModel.contrato);
+                contrato.FechaCreacion = DateTime.Now;
+                contrato.UsuarioCreadorId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
                 _context.Contrato.Add(contrato);
                 _context.SaveChanges();
-                return RedirectToAction("Index");
+
+                return Json(new { success = true });
             }
-            return View(viewModel);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar el contrato");
+                return Json(new { success = false, errors = new List<string> { "Ocurrió un error al guardar el contrato." } });
+            }
         }
 
         // GET: Contratos/Edit/5
@@ -300,7 +273,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             var contrato = GetContratoFromSession();
             var difunto = contrato == null ? new DifuntoModel() : contrato.difunto ?? new DifuntoModel();
-
+            var descuentos = _context.Descuento.ToList();
+            ViewData["DescuentoId"] = new SelectList(descuentos, "Id", "Descripcion");
             return PartialView("_CreateDifunto", difunto);
         }
         [HttpPost]
@@ -345,7 +319,6 @@ namespace gad_checa_gestion_cementerio.Controllers
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, errors });
         }
-
         [HttpPost]
         public IActionResult AddResponsable(ResponsableModel responsable)
         {
@@ -356,7 +329,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                 SaveContratoToSession(contrato);
                 return Json(new { success = true, responsable });
             }
-
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, errors });
         }
@@ -373,12 +345,10 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 Console.WriteLine(cuota.FechaVencimiento);
             }
-
             var firstResponsable = contrato.responsables.FirstOrDefault();
             if (firstResponsable != null)
             {
                 contrato.pago.PersonaPagoId = firstResponsable.Id;
-
             }
             SaveContratoToSession(contrato);
             return PartialView("_CreatePago", contrato.pago);
@@ -386,6 +356,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpPost]
         public IActionResult CreatePago(PagoModel pago, List<int> CuotasSeleccionadas)
         {
+            Console.WriteLine("Cuotas seleccionadas: " + string.Join(", ", CuotasSeleccionadas));
             if (ModelState.IsValid)
             {
                 var contrato = GetContratoFromSession();
@@ -397,21 +368,19 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             return Json(new { success = false, errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
         }
-        // CREAR CONTRATO
+        // CREAR CONTRATO 
         [HttpGet]
         public IActionResult CreateContrato()
         {
-            var contrato = GetContratoFromSession();
-            contrato.contrato.NumeroDeMeses = 5;
-            contrato.contrato.FechaInicio = DateTime.Now;
-            contrato.contrato.FechaFin = contrato.contrato.FechaInicio.AddMonths(contrato.contrato.NumeroDeMeses);
-            contrato.contrato.MontoTotal = 240;
+            var contrato_model = GetContratoFromSession();
+            var tarifa = _context.Cementerio.FirstOrDefault()?.tarifa_arriendo ?? 0;
+            contrato_model.contrato.NumeroDeMeses = 5;
+            contrato_model.contrato.FechaInicio = DateTime.Now;
+            contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddMonths(contrato_model.contrato.NumeroDeMeses);
 
-
+            contrato_model.contrato.MontoTotal = tarifa;
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
-
-
-            return PartialView("_CreateContrato", contrato.contrato);
+            return PartialView("_CreateContrato", contrato_model.contrato);
         }
         [HttpPost]
         public IActionResult CreateContrato(ContratoModel contrato)
