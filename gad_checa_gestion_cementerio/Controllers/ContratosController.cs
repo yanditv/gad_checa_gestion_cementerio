@@ -15,6 +15,7 @@ using iText.Layout;
 using iText.Layout.Element;
 using Newtonsoft.Json;
 using gad_checa_gestion_cementerio.services;
+using System.ComponentModel;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
@@ -118,10 +119,34 @@ namespace gad_checa_gestion_cementerio.Controllers
             try
             {
                 var contrato = _mapper.Map<Contrato>(viewModel.contrato);
+                // usuario que crea el contrato
+                var user = _userManager.GetUserAsync(User).Result;
+
+                var userId = _userManager.GetUserAsync(User).Result.Id;
+                // User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                contrato.Difunto = _mapper.Map<Difunto>(viewModel.difunto);
+                contrato.DifuntoId = viewModel.difunto.Id;
+                contrato.Difunto.UsuarioCreadorId = userId;
+                contrato.Difunto.FechaCreacion = DateTime.Now;
+                contrato.UsuarioActualizadorId = userId;
+                contrato.FechaActualizacion = DateTime.Now;
+                contrato.Responsables = _mapper.Map<List<Responsable>>(viewModel.responsables);
+                contrato.Responsables.ForEach(r =>
+                {
+                    r.UsuarioCreador = user;
+                    r.FechaCreacion = DateTime.Now;
+                });
                 contrato.FechaCreacion = DateTime.Now;
-                contrato.UsuarioCreadorId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                contrato.UsuarioCreadorId = userId;
 
                 _context.Contrato.Add(contrato);
+
+                // Guardar los datos del pago
+                var pago = _mapper.Map<Pago>(viewModel.pago);
+                pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
+                pago.FechaPago = DateTime.Now;
+                _context.Pago.Add(pago);
                 _context.SaveChanges();
 
                 return Json(new { success = true });
@@ -338,10 +363,10 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
             var contrato = GetContratoFromSession();
-            contrato.pago.CuotasPorPagar = contrato.contrato.Cuotas.Where(c => !c.Pagada).ToList();
+            contrato.pago.Cuotas = contrato.contrato.Cuotas.Where(c => !c.Pagada).ToList();
             contrato.pago.FechaPago = DateTime.Now;
-            contrato.pago.Monto = contrato.pago.CuotasPorPagar.Sum(c => c.Monto);
-            foreach (var cuota in contrato.pago.CuotasPorPagar)
+            contrato.pago.Monto = contrato.pago.Cuotas.Sum(c => c.Monto);
+            foreach (var cuota in contrato.pago.Cuotas)
             {
                 Console.WriteLine(cuota.FechaVencimiento);
             }
@@ -360,7 +385,17 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (ModelState.IsValid)
             {
                 var contrato = GetContratoFromSession();
-                pago.CuotasPorPagar = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.Id)).ToList();
+                pago.Cuotas = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.Id)).ToList();
+
+                // Marcar las cuotas seleccionadas como pagadas
+                foreach (var cuota in contrato.contrato.Cuotas)
+                {
+                    if (CuotasSeleccionadas.Contains(cuota.Id))
+                    {
+                        cuota.Pagada = true;
+                    }
+                }
+
                 contrato.pago = pago;
                 SaveContratoToSession(contrato);
                 return Json(new { success = true });

@@ -290,9 +290,9 @@
                         // Si tienes datos adicionales en data.model, agrégalos aquí
 
 
-                        fetch('@Url.Action("Create", "Contratos")', {
+                        fetch('@Url.Action("Save", "Contratos")', {
                             method: 'POST',
-                            body: formData
+                            //body: formData
                         })
                             .then(response => response.json())
                             .then(result => {
