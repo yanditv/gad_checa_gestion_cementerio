@@ -7,14 +7,14 @@
 <h1>Listado de Contratos</h1>
 
 <p>
-    <a asp-action="Create" class="btn btn-primary">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">Nuevo</a>
 </p>
 
 <table class="table table-striped table-bordered">
     <thead class="thead-dark">
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Boveda)
+                @Html.DisplayNameFor(model => model.NumeroSecuencial)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.FechaInicio)
@@ -39,7 +39,7 @@
         {
             <tr>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Boveda.Estado)
+                    @Html.DisplayFor(modelItem => item.NumeroSecuencial)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.FechaInicio)
