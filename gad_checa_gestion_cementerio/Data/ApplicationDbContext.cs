@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
+using gad_checa_gestion_cementerio.Models;
 
 namespace gad_checa_gestion_cementerio.Data
 {
@@ -11,6 +12,7 @@ namespace gad_checa_gestion_cementerio.Data
             : base(options)
         {
         }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -63,7 +65,6 @@ namespace gad_checa_gestion_cementerio.Data
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
-
             builder.Entity<Contrato>()
                 .HasOne<IdentityUser>(c => c.UsuarioCreador)
                 .WithMany()
@@ -76,6 +77,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(c => c.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Difunto>()
                 .HasOne<IdentityUser>(d => d.UsuarioCreador)
                 .WithMany()
@@ -88,6 +90,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(d => d.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Descuento>()
                 .HasOne<IdentityUser>(d => d.UsuarioCreador)
                 .WithMany()
@@ -100,6 +103,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(d => d.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Bloque>()
                 .HasOne<IdentityUser>(s => s.UsuarioCreador)
                 .WithMany()
@@ -112,6 +116,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(s => s.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Cementerio>()
                 .HasOne<IdentityUser>(c => c.UsuarioCreador)
                 .WithMany()
@@ -124,6 +129,7 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasOne<IdentityUser>(c => c.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Boveda>()
                 .HasOne<IdentityUser>(b => b.UsuarioCreador)
                 .WithMany()
@@ -137,8 +143,6 @@ namespace gad_checa_gestion_cementerio.Data
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
-
-
             // Relación entre Contrato y Responsable
             builder.Entity<Contrato>()
                 .HasMany(c => c.Responsables)
@@ -149,8 +153,9 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasMany(c => c.Pagos)
                 .WithMany(p => p.Cuotas)
                 .UsingEntity(j => j.ToTable("CuotaPago"));
-
         }
+
+        // DbSets
         public DbSet<Bloque> Bloque { get; set; }
         public DbSet<Cementerio> Cementerio { get; set; }
         public DbSet<Descuento> Descuento { get; set; }
@@ -163,6 +168,7 @@ namespace gad_checa_gestion_cementerio.Data
         public DbSet<Responsable> ContratoResponsable { get; set; }
         public DbSet<Responsable> Responsable { get; set; }
         public DbSet<GADInformacion> GadInformacion { get; set; }
+        public DbSet<Piso> Piso { get; set; }
 
     }
 }

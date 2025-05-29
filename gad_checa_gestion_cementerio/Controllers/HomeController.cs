@@ -1,7 +1,11 @@
 using System.Diagnostics;
 using gad_checa_gestion_cementerio.Models;
+using gad_checa_gestion_cementerio.Models.Views;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using gad_checa_gestion_cementerio.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -9,15 +13,90 @@ namespace gad_checa_gestion_cementerio.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
         public IActionResult Index()
         {
-            return View();
+            // Agrupar cuotas por mes y año
+            var ingresosMensuales = _context.Cuota
+                .AsEnumerable()
+                .GroupBy(c => new { c.FechaVencimiento.Year, c.FechaVencimiento.Month })
+                .Select(g => new IngresoMensualViewModel
+                {
+                    Anio = g.Key.Year,
+                    Mes = g.Key.Month,
+                    TotalIngresado = g.Where(c => c.Pagada).Sum(c => c.Monto),
+                    TotalDeuda = g.Where(c => !c.Pagada).Sum(c => c.Monto)
+                })
+                .OrderBy(x => x.Anio)
+                .ThenBy(x => x.Mes)
+                .ToList();
+
+            // Transacciones recientes (últimos pagos)
+            var transaccionesRecientes = (from pago in _context.Pago
+                                          join persona in _context.Persona on pago.PersonaPagoId equals persona.Id
+                                          orderby pago.FechaPago descending
+                                          select new TransaccionRecienteViewModel
+                                          {
+                                              NombrePersona = persona.Nombres + " " + persona.Apellidos,
+                                              NumeroComprobante = pago.NumeroComprobante,
+                                              Monto = pago.Monto,
+                                              FechaPago = pago.FechaPago
+                                          })
+                                          .Take(10)
+                                          .ToList();
+
+            var viewModel = new DashboardViewModel
+            {
+                NumeroDifuntos = _context.Difunto.Count(),
+
+                BovedasDisponibles = _context.Boveda.Count(b =>
+                    !_context.Contrato.Any(c =>
+                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin >= DateTime.Today)
+                    ||
+                    _context.Contrato.Any(c =>
+                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin < DateTime.Today)
+                ),
+
+                BovedasOcupadas = _context.Boveda.Count(b =>
+                    _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.Estado == true)
+                ),
+
+                NichosDisponibles = _context.Piso.Count(p => p.Precio > 0),
+                NichosOcupados = _context.Piso.Count(p => p.Precio == 0),
+
+                BovedasPorCaducar = _context.Contrato
+                    .Where(c => c.FechaFin <= DateTime.Today && c.Estado == true)
+                    .Select(c => c.BovedaId)
+                    .Distinct()
+                    .Count(),
+
+                UltimosContratos = _context.Contrato
+                    .OrderByDescending(c => c.FechaFin)
+                    .Take(10)
+                    .Select(c => new ContratoResumenViewModel
+                    {
+                        NumeroSecuencial = c.NumeroSecuencial,
+                        FechaFin = c.FechaFin,
+                        MontoTotal = c.MontoTotal,
+                        CuotasPendientes = c.Cuotas.Count(q => !q.Pagada),
+                        EstadoContrato = c.FechaFin < DateTime.Today
+                            ? "Vencido"
+                            : (c.FechaFin <= DateTime.Today.AddDays(8) ? "Próximo a vencer" : "Vigente")
+                    })
+                    .ToList(),
+
+                IngresosMensuales = ingresosMensuales,
+                TransaccionesRecientes = transaccionesRecientes
+            };
+
+            return View(viewModel);
         }
 
         [Authorize(Roles = "Admin")]
