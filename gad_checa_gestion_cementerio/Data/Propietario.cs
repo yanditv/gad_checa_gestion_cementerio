@@ -2,7 +2,7 @@ using System;
 
 namespace gad_checa_gestion_cementerio.Data;
 
-public class Propietario
+public class Propietario : Persona
 {
     public Propietario()
     {

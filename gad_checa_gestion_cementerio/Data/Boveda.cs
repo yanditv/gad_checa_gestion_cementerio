@@ -42,7 +42,7 @@ namespace gad_checa_gestion_cementerio.Data
         [ForeignKey("PisoId")]
         public Piso Piso { get; set; } // Relación con el piso
 
-        public long? PropietarioId { get; set; }
+        public int? PropietarioId { get; set; }
 
         [ForeignKey("PropietarioId")]
         public Propietario? Propietario { get; set; }
