@@ -11,21 +11,20 @@
     <h2 class="text-gray-700 mb-6 text-2xl font-semibold">Reporte de Ingresos por Fecha</h2>
 
     <div class="mb-4">
-        <form method="get" asp-action="IngresosPorFechaPdf">
-            <div class="flex items-center space-x-2 mb-2">
-                <label for="fechaInicio" class="block text-gray-700 text-sm font-bold">Desde:</label>
-                <input type="date" id="fechaInicio" name="fechaInicio"
-                    class="shadow appearance-none border rounded w-auto py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <div class="flex items-center space-x-2 mb-2">
-                <label for="fechaFin" class="block text-gray-700 text-sm font-bold">Hasta:</label>
-                <input type="date" id="fechaFin" name="fechaFin"
-                    class="shadow appearance-none border rounded w-auto py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Generar PDF
-            </button>
+        <form asp-action="IngresosPorFecha" method="get" class="mb-4">
+            <label>Desde:</label>
+            <input type="date" name="fechaInicio" class="form-control" required />
+            <label>Hasta:</label>
+            <input type="date" name="fechaFin" class="form-control" required />
+            <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
         </form>
+
+       <form method="get" asp-controller="Reportes" asp-action="IngresosPorFechaPdf">
+            <input type="hidden" name="fechaInicio" value="@ViewBag.Desde" />
+            <input type="hidden" name="fechaFin" value="@ViewBag.Hasta" />
+            <button type="submit" class="btn btn-success mt-3">Generar PDF</button>
+        </form>
+
     </div>
 
     <div class="overflow-x-auto w-full">

@@ -3,7 +3,8 @@ using QuestPDF.Infrastructure;
 using QuestPDF.Helpers;
 using gad_checa_gestion_cementerio.Models.Views;
 using System.Collections.Generic;
-using System.Linq;
+using static QuestPDF.Helpers.PageSizes;
+using System;
 
 public class BovedasPdfDocument : IDocument
 {
@@ -33,45 +34,67 @@ public class BovedasPdfDocument : IDocument
     }
 
     void ComposeTable(IContainer container)
+{
+    container.Table(table =>
     {
-        container.Table(table =>
+        table.ColumnsDefinition(columns =>
         {
-            table.ColumnsDefinition(columns =>
-            {
-                columns.ConstantColumn(60); // Nº Bóveda
-                columns.RelativeColumn();   // Piso
-                columns.RelativeColumn();   // Estado
-                columns.RelativeColumn();   // Fecha Creación
-            });
-
-            // Header
-            table.Header(header =>
-            {
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Bóveda").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Piso").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Estado").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Creación").Bold();
-            });
-
-            // Body
-            foreach (var item in _viewModels)
-            {
-                table.Cell().Element(CellStyle).Text(item.NumeroBoveda.ToString());
-                table.Cell().Element(CellStyle).Text(item.NumeroPiso.ToString());
-                table.Cell().Element(CellStyle).Text(item.EstadoBoveda);
-                table.Cell().Element(CellStyle).Text(item.FechaCreacionBoveda.ToShortDateString());
-            }
-
-            // Footer (opcional)
-            table.Footer(footer =>
-            {
-                footer.Cell().ColumnSpan(3).Element(CellStyle).AlignRight().Text("TOTAL:").Bold();
-                footer.Cell().Element(CellStyle).Text(_viewModels.Count.ToString()).Bold();
-            });
+            columns.RelativeColumn(1); // Bóveda
+            columns.RelativeColumn(1); // Piso
+            columns.RelativeColumn(1); // Estado
+            columns.RelativeColumn(2); // Bloque
+            columns.RelativeColumn(1); // Tipo
+            columns.RelativeColumn(2); // Contrato
+            columns.RelativeColumn(1); // Duración
+            columns.RelativeColumn(2); // Responsable
+            columns.RelativeColumn(2); // Difunto
         });
-    }
 
-    IContainer CellStyle(IContainer container)
+        table.Header(header =>
+        {
+            header.Cell().Element(CellStyle).Text("Bóveda").SemiBold();
+            header.Cell().Element(CellStyle).Text("Piso").SemiBold();
+            header.Cell().Element(CellStyle).Text("Estado").SemiBold();
+            header.Cell().Element(CellStyle).Text("Bloque").SemiBold();
+            header.Cell().Element(CellStyle).Text("Tipo").SemiBold();
+            header.Cell().Element(CellStyle).Text("Contrato").SemiBold();
+            header.Cell().Element(CellStyle).Text("Duración").SemiBold();
+            header.Cell().Element(CellStyle).Text("Responsable").SemiBold();
+            header.Cell().Element(CellStyle).Text("Difunto").SemiBold();
+        });
+
+        foreach (var item in _viewModels)
+        {
+            string contrato = item.NumeroSecuencialContrato != null
+                ? $"{item.NumeroSecuencialContrato}\n{item.FechaInicioContrato?.ToShortDateString()} - {item.FechaFinContrato?.ToShortDateString()}"
+                : "Sin contrato";
+
+            string duracion = item.NumeroDeMeses != null
+                ? $"{item.NumeroDeMeses} meses"
+                : "-";
+
+            string responsable = item.NombreResponsable != null
+                ? $"{item.NombreResponsable}\n{item.CedulaResponsable}"
+                : "N/A";
+
+            string difunto = item.NombresDifunto != null
+                ? $"{item.NombresDifunto} {item.ApellidosDifunto}\n{item.FechaFallecimiento?.ToShortDateString()}"
+                : "Libre";
+
+            table.Cell().Element(CellStyle).Text($"#{item.NumeroBoveda}").WrapAnywhere();
+            table.Cell().Element(CellStyle).Text(item.NumeroPiso.ToString());
+            table.Cell().Element(CellStyle).Text(item.EstadoBoveda);
+            table.Cell().Element(CellStyle).Text(item.NombreBloque).WrapAnywhere();
+            table.Cell().Element(CellStyle).Text(item.TipoBloque);
+            table.Cell().Element(CellStyle).Text(contrato).WrapAnywhere();
+            table.Cell().Element(CellStyle).Text(duracion);
+            table.Cell().Element(CellStyle).Text(responsable).WrapAnywhere();
+            table.Cell().Element(CellStyle).Text(difunto).WrapAnywhere();
+        }
+    });
+}
+
+    private static IContainer CellStyle(IContainer container)
     {
         return container
             .Border(0.5f)
