@@ -19,6 +19,8 @@ namespace gad_checa_gestion_cementerio.Utils
 
             CreateMap<Boveda, BovedaViewModel>();
             CreateMap<BovedaViewModel, Boveda>();
+            CreateMap<Boveda, BovedaModel>();
+            CreateMap<BovedaModel, Boveda>();
 
 
             CreateMap<Piso, PisoModel>();
