@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using gad_checa_gestion_cementerio.Data;
@@ -15,7 +11,6 @@ using iText.Layout;
 using iText.Layout.Element;
 using Newtonsoft.Json;
 using gad_checa_gestion_cementerio.services;
-using System.ComponentModel;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
@@ -427,6 +422,16 @@ namespace gad_checa_gestion_cementerio.Controllers
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
             return PartialView("_CreateContrato", contrato_model.contrato);
         }
+        [HttpGet]
+        public IActionResult RecargarContratoByTipo(int tipoContrato)
+        {
+            // Lógica para obtener el modelo actualizado según el tipo
+            var contrato_model = GetContratoFromSession().contrato;
+            contrato_model.NumeroSecuencial = _contratoService.getNumeroContrato((TipoContrato)tipoContrato);
+            //return Json(new { success = true, contrato = contrato_model });
+            return PartialView("_CreateContrato", contrato_model); // O puedes retornar Json(model) si prefieres trabajar con JS puro
+        }
+
         [HttpPost]
         public IActionResult CreateContrato(ContratoModel contrato)
         {
