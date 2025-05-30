@@ -1,12 +1,11 @@
 using System;
 
-namespace gad_checa_gestion_cementerio.Data;
+namespace gad_checa_gestion_cementerio.Models;
 
-public class Propietario : Persona
+public class PropietarioModel : PersonaModel
 {
-    public Propietario()
+    public PropietarioModel()
     {
-        this.Bovedas = new List<Boveda>();
         this.FechaInicio = DateTime.Now;
         this.Catastro = string.Empty;
     }
@@ -14,7 +13,4 @@ public class Propietario : Persona
     public DateTime? FechaFin { get; set; }
 
     public string Catastro { get; set; }
-
-    public ICollection<Boveda> Bovedas { get; set; }
-
 }

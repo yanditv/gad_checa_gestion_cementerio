@@ -40,6 +40,10 @@ namespace gad_checa_gestion_cementerio.Utils
             CreateMap<Responsable, ResponsableModel>();
             CreateMap<ResponsableModel, Responsable>();
 
+            //propietario
+            CreateMap<Propietario, PropietarioModel>();
+            CreateMap<PropietarioModel, Propietario>();
+
             //contrato
             CreateMap<Contrato, ContratoModel>();
             CreateMap<ContratoModel, Contrato>();
