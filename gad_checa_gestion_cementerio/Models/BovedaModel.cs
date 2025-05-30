@@ -36,5 +36,10 @@ namespace gad_checa_gestion_cementerio.Models
         [Required]
         public int PisoId { get; set; }
         public Piso Piso { get; set; } // Relación con el piso
+
+        public int? PropietarioId { get; set; }
+
+        [ForeignKey("PropietarioId")]
+        public Propietario? Propietario { get; set; }
     }
 }
