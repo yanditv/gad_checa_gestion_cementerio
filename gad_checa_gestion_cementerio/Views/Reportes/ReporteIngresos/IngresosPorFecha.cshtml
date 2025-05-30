@@ -1,53 +1,64 @@
 @model List<gad_checa_gestion_cementerio.Models.Views.ReporteIngresoPorFechaViewModel>
 
 @{
-    ViewData["Title"] = "IngresosPorFecha";
+    ViewData["Title"] = "Ingresos por Fecha";
     ViewData["EntityType"] = "IngresosPorFecha";
     Layout = "~/Views/Reportes/_ReportesLayout.cshtml";
 }
 
 <div class="min-h-screen bg-white p-6 flex flex-col items-center">
 
-    <h2 class="text-gray-700 mb-6 text-2xl font-semibold">Reporte de Bóvedas</h2>
+    <h2 class="text-gray-700 mb-6 text-2xl font-semibold">Reporte de Ingresos por Fecha</h2>
 
     <div class="mb-4">
-        <form method="get" asp-action="IngresosPorFechaPdf">
-            <div class="flex items-center space-x-2 mb-2">
-                <label for="fechaInicio" class="block text-gray-700 text-sm font-bold">Desde:</label>
-                <input type="date" id="fechaInicio" name="fechaInicio"
-                    class="shadow appearance-none border rounded w-auto py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <div class="flex items-center space-x-2 mb-2">
-                <label for="fechaFin" class="block text-gray-700 text-sm font-bold">Hasta:</label>
-                <input type="date" id="fechaFin" name="fechaFin"
-                    class="shadow appearance-none border rounded w-auto py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Generar PDF
-            </button>
+        <form asp-action="IngresosPorFecha" method="get" class="mb-4">
+            <label>Desde:</label>
+            <input type="date" name="fechaInicio" class="form-control" required />
+            <label>Hasta:</label>
+            <input type="date" name="fechaFin" class="form-control" required />
+            <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
         </form>
+
+       <form method="get" asp-controller="Reportes" asp-action="IngresosPorFechaPdf">
+            <input type="hidden" name="fechaInicio" value="@ViewBag.Desde" />
+            <input type="hidden" name="fechaFin" value="@ViewBag.Hasta" />
+            <button type="submit" class="btn btn-success mt-3">Generar PDF</button>
+        </form>
+
     </div>
 
-
-
-    <div class="overflow-x-auto">
-        <table class=" table-auto border border-gray-200 shadow-sm rounded-lg" style="width:80%; text-align: center;">
+    <div class="overflow-x-auto w-full">
+        <table class="table-auto border border-gray-300 shadow-sm rounded-lg w-full text-center text-sm">
             <thead class="bg-gray-100">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Boveda</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo de Ingreso</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                    <th class="px-4 py-2">Fecha</th>
+                    <th class="px-4 py-2">Tipo Ingreso</th>
+                    <th class="px-4 py-2">Tipo Pago</th>
+                    <th class="px-4 py-2">Comprobante</th>
+                    <th class="px-4 py-2">Monto</th>
+                    <th class="px-4 py-2">Responsable</th>
+                    <th class="px-4 py-2">Identificación</th>
+                    <th class="px-4 py-2">Contrato</th>
+                    <th class="px-4 py-2">Bóveda</th>
+                    <th class="px-4 py-2">Piso</th>
+                    <th class="px-4 py-2">Bloque</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.Fecha.ToShortDateString()</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.Boveda</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.TipoIngreso</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">@item.Total</td>
+                        <td class="px-4 py-2">@item.FechaPago.ToShortDateString()</td>
+                        <td class="px-4 py-2">@item.TipoIngreso</td>
+                        <td class="px-4 py-2">@item.TipoPago</td>
+                        <td class="px-4 py-2">@item.NumeroComprobante</td>
+                        <td class="px-4 py-2">$@item.Monto.ToString("F2")</td>
+                        <td class="px-4 py-2">@item.PagadoPor</td>
+                        <td class="px-4 py-2">@item.IdentificacionPagador</td>
+                        <td class="px-4 py-2">@item.NumeroContrato</td>
+                        <td class="px-4 py-2">@item.Boveda</td>
+                        <td class="px-4 py-2">@item.Piso</td>
+                        <td class="px-4 py-2">@item.Bloque</td>
                     </tr>
                 }
             </tbody>
