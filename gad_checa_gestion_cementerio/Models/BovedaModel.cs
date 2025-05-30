@@ -16,6 +16,7 @@ namespace gad_checa_gestion_cementerio.Models
 
         [Required]
         public int Numero { get; set; }
+        public string? NumeroSecuecial { get; set; }
 
         [Required]
         public bool Estado { get; set; }
@@ -36,5 +37,10 @@ namespace gad_checa_gestion_cementerio.Models
         [Required]
         public int PisoId { get; set; }
         public Piso Piso { get; set; } // Relación con el piso
+
+        public int? PropietarioId { get; set; }
+
+        [ForeignKey("PropietarioId")]
+        public Propietario? Propietario { get; set; }
     }
 }

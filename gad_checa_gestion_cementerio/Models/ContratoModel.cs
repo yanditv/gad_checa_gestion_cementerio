@@ -58,4 +58,6 @@ public class ContratoModel
     // Campo para indicar si es renovación
     [Required]
     public bool EsRenovacion { get; set; }
+
+    public TipoContrato TipoContrato { get; set; } = TipoContrato.Nuevo;
 }

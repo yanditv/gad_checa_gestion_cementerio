@@ -17,7 +17,7 @@ namespace gad_checa_gestion_cementerio.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.1")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -352,7 +352,13 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.Property<int>("Numero")
                         .HasColumnType("int");
 
+                    b.Property<string>("NumeroSecuecial")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("PisoId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PropietarioId")
                         .HasColumnType("int");
 
                     b.Property<string>("UsuarioActualizadorId")
@@ -368,6 +374,8 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PisoId");
+
+                    b.HasIndex("PropietarioId");
 
                     b.HasIndex("UsuarioActualizadorId");
 
@@ -419,6 +427,7 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal?>("tarifa_arriendo")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -832,6 +841,23 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.ToTable("Piso");
                 });
 
+            modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Propietario", b =>
+                {
+                    b.HasBaseType("gad_checa_gestion_cementerio.Data.Persona");
+
+                    b.Property<string>("Catastro")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FechaFin")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("datetime2");
+
+                    b.HasDiscriminator().HasValue("Propietario");
+                });
+
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Responsable", b =>
                 {
                     b.HasBaseType("gad_checa_gestion_cementerio.Data.Persona");
@@ -841,6 +867,15 @@ namespace gad_checa_gestion_cementerio.Migrations
 
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
+
+                    b.ToTable("Persona", t =>
+                        {
+                            t.Property("FechaFin")
+                                .HasColumnName("Responsable_FechaFin");
+
+                            t.Property("FechaInicio")
+                                .HasColumnName("Responsable_FechaInicio");
+                        });
 
                     b.HasDiscriminator().HasValue("Responsable");
                 });
@@ -967,6 +1002,10 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("gad_checa_gestion_cementerio.Data.Propietario", "Propietario")
+                        .WithMany("Bovedas")
+                        .HasForeignKey("PropietarioId");
+
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
@@ -984,6 +1023,8 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Piso");
+
+                    b.Navigation("Propietario");
 
                     b.Navigation("UsuarioActualizador");
 
@@ -1184,6 +1225,11 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Persona", b =>
                 {
                     b.Navigation("Pagos");
+                });
+
+            modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Propietario", b =>
+                {
+                    b.Navigation("Bovedas");
                 });
 #pragma warning restore 612, 618
         }
