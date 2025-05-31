@@ -3,8 +3,8 @@ namespace gad_checa_gestion_cementerio.Models.Views
     public class ReporteBovedasViewModel
     {
         // Bóveda
-        public int BovedaId { get; set; }
-        public int NumeroBoveda { get; set; }
+        public int BovedaId { get; set; } 
+        public string NumeroBoveda { get; set; }
         public string EstadoBoveda { get; set; } // "Ocupada" o "Libre"
         public DateTime FechaCreacionBoveda { get; set; }
 

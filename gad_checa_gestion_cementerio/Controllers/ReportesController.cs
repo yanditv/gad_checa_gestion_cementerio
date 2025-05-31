@@ -68,7 +68,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.Numero,
+                    NumeroBoveda = b.NumeroSecuecial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
@@ -198,7 +198,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             return bovedas.Select(b => new ReporteBovedasViewModel
             {
                 BovedaId = b.Id,
-                NumeroBoveda = b.Numero,
+                NumeroBoveda = b.NumeroSecuecial,
                 NumeroPiso = b.Piso.NumeroPiso,
                 EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                 FechaCreacionBoveda = b.FechaCreacion,
@@ -222,7 +222,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(p => p.Cuotas)
                     .ThenInclude(c => c.Contrato)
                         .ThenInclude(c => c.Difunto)
-                .Include(p => p.Cuotas)
                 .Where(p => p.FechaPago >= desde && p.FechaPago <= hasta)
                 .ToListAsync();
 
@@ -230,33 +229,34 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             foreach (var pago in pagos)
             {
-                foreach (var cuota in pago.Cuotas)
+                // Usar la primera cuota para acceder a datos del contrato
+                var primeraCuota = pago.Cuotas.FirstOrDefault();
+                if (primeraCuota == null) continue;
+
+                var contrato = primeraCuota.Contrato;
+                if (contrato == null) continue;
+
+                var boveda = contrato.Boveda;
+                var piso = boveda?.Piso;
+                var bloque = piso?.Bloque;
+                var responsable = contrato.Responsables.FirstOrDefault();
+
+                ingresos.Add(new ReporteIngresoPorFechaViewModel
                 {
-                    var contrato = cuota.Contrato;
-                    if (contrato == null) continue;
-
-                    var boveda = contrato.Boveda;
-                    var piso = boveda?.Piso;
-                    var bloque = piso?.Bloque;
-                    var responsable = contrato.Responsables.FirstOrDefault();
-
-                    ingresos.Add(new ReporteIngresoPorFechaViewModel
-                    {
-                        FechaPago = pago.FechaPago,
-                        TipoPago = pago.TipoPago,
-                        NumeroComprobante = pago.NumeroComprobante,
-                        Monto = pago.Monto,
-                        PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
-                        IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
-                        NumeroContrato = contrato.NumeroSecuencial,
-                        TipoIngreso = contrato.EsRenovacion ? "Renovación" : "Inicial",
-                        Boveda = $"#{boveda?.Numero}",
-                        Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
-                        Bloque = bloque?.Descripcion ?? "N/A",
-                        FechaInicio = desde ?? DateTime.MinValue,
-                        FechaFin = hasta ?? DateTime.MaxValue
-                    });
-                }
+                    FechaPago = pago.FechaPago,
+                    TipoPago = pago.TipoPago,
+                    NumeroComprobante = pago.NumeroComprobante,
+                    Monto = pago.Monto,
+                    PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
+                    IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
+                    NumeroContrato = contrato.NumeroSecuencial,
+                    TipoIngreso = contrato.EsRenovacion ? "Renovación" : "Inicial",
+                    Boveda = $"#{boveda?.Numero}",
+                    Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
+                    Bloque = bloque?.Descripcion ?? "N/A",
+                    FechaInicio = desde ?? DateTime.MinValue,
+                    FechaFin = hasta ?? DateTime.MaxValue
+                });
             }
 
             return ingresos.OrderBy(i => i.FechaPago).ToList();
@@ -314,7 +314,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.Numero,
+                    NumeroBoveda = b.NumeroSecuecial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
