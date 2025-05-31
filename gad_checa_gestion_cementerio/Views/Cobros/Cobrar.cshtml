@@ -1,0 +1,79 @@
+﻿@model gad_checa_gestion_cementerio.Models.PagoModel
+@{
+    ViewData["Title"] = "Crear Pago";
+}
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h4 mb-0 text-white">Datos del Pago</h2>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">Asegúrate de completar los campos necesarios</p>
+
+            <form asp-action="Cobrar" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="TipoPago" class="form-label">Tipo de Pago</label>
+                        <select asp-for="TipoPago" class="form-control" asp-items="ViewBag.TiposPago"></select>
+                        <span asp-validation-for="TipoPago" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Comprobante</label>
+                        <input name="NumeroComprobante" class="form-control" />
+                        <span class="text-danger"></span>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Monto" class="form-label">Monto</label>
+                        <input asp-for="Monto" class="form-control" />
+                        <span asp-validation-for="Monto" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FechaPago" class="form-label">Fecha de Pago</label>
+                        <input asp-for="FechaPago" type="date" class="form-control" />
+                        <span asp-validation-for="FechaPago" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="bg-light p-3 mb-3">
+                    <h4 class="h5">Cuotas por Pagar</h4>
+                    <p class="text-muted">Selecciona la cuota que deseas pagar</p>
+                </div>
+
+                @* muestra el listado de cuotas para seleccionar la cuota a pagar *@
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Seleccionar</th>
+                            <th>Fecha de Vencimiento</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Cuotas.Count; i++)
+                        {
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="CuotasSeleccionadas" value="@Model.Cuotas[i].TempId" />
+                                </td>
+                                <td>
+                                    @Model.Cuotas[i].FechaVencimiento.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    @Model.Cuotas[i].Monto.ToString("C")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-primary">Cobrar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+
+}

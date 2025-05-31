@@ -4,6 +4,7 @@ using QuestPDF.Helpers;
 using gad_checa_gestion_cementerio.Models.Views;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 public class CuentasPorCobrarPdfDocument : IDocument
 {
@@ -22,18 +23,27 @@ public class CuentasPorCobrarPdfDocument : IDocument
         {
             page.Margin(30);
 
-            page.Header().Text("Reporte de Cuentas por Cobrar")
-                .FontSize(18)
-                .SemiBold()
-                .FontColor(Colors.Blue.Medium);
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo_gad.png");
+
+            page.Header().Column(column =>
+            {
+                column.Item().AlignCenter().Width(500).Height(100).Image(logoPath).FitArea();
+                column.Item().Text("REPORTE DE CUENTAS POR COBRAR")
+                    .FontSize(20)
+                    .Bold()
+                    .FontColor(Colors.Black)
+                    .AlignCenter(); 
+            });
+
 
             page.Content().Element(ComposeTable);
         });
     }
 
+
     void ComposeTable(IContainer container)
     {
-        container.Table(table =>
+        container.PaddingTop(15).Table(table =>
         {
             table.ColumnsDefinition(columns =>
             {
@@ -47,35 +57,40 @@ public class CuentasPorCobrarPdfDocument : IDocument
                 columns.ConstantColumn(60); // Estado
             });
 
-            // Encabezado
+            // ENCABEZADO
             table.Header(header =>
             {
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Contrato").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Responsable").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Teléfono").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Difunto").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Ubicación").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Fecha Venc.").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Monto").Bold();
-                header.Cell().Element(CellStyle).Background(Colors.Grey.Lighten3).Text("Estado").Bold();
+                foreach (var title in new[] {
+                    "Contrato", "Responsable", "Teléfono", "Difunto", "Ubicación",
+                    "Fecha Venc.", "Monto", "Estado"
+                })
+                {
+                    header.Cell().Background(Colors.Grey.Lighten3)
+                        .Padding(5) // Ajusta si quieres más/menos espacio
+                        .AlignCenter()
+                        .AlignMiddle()
+                        .Text(title)
+                        .FontSize(9)
+                        .Bold();
+                }
             });
 
-            // Cuerpo
+            // FILAS
             foreach (var item in _viewModels)
             {
                 var ubicacion = $"{item.Bloque} - Piso {item.Piso} - Bóveda {item.NumeroBoveda}";
 
-                table.Cell().Element(CellStyle).Text(item.NumeroSecuencialContrato);
-                table.Cell().Element(CellStyle).Text(item.NombreResponsable);
-                table.Cell().Element(CellStyle).Text(item.TelefonoResponsable);
-                table.Cell().Element(CellStyle).Text(item.NombreDifunto);
-                table.Cell().Element(CellStyle).Text(ubicacion);
-                table.Cell().Element(CellStyle).Text(item.FechaVencimiento.ToShortDateString());
-                table.Cell().Element(CellStyle).Text($"${item.Monto:F2}");
-                table.Cell().Element(CellStyle).Text(item.Pagada ? "Pagada" : "Pendiente");
+                table.Cell().Element(CellStyle).Text(item.NumeroSecuencialContrato).FontSize(9);
+                table.Cell().Element(CellStyle).Text(item.NombreResponsable).FontSize(9);
+                table.Cell().Element(CellStyle).Text(item.TelefonoResponsable).FontSize(9);
+                table.Cell().Element(CellStyle).Text(item.NombreDifunto).FontSize(9);
+                table.Cell().Element(CellStyle).Text(ubicacion).FontSize(9);
+                table.Cell().Element(CellStyle).Text(item.FechaVencimiento.ToShortDateString()).FontSize(9);
+                table.Cell().Element(CellStyle).Text($"${item.Monto:F2}").FontSize(9);
+                table.Cell().Element(CellStyle).Text(item.Pagada ? "Pagada" : "Pendiente").FontSize(9);
             }
 
-            // Total
+            // TOTAL
             table.Footer(footer =>
             {
                 footer.Cell().ColumnSpan(6).Element(CellStyle).AlignRight().Text("TOTAL:").Bold();

@@ -68,7 +68,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.Numero,
+                    NumeroBoveda = b.NumeroSecuecial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
@@ -128,8 +128,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> IngresosPorFecha(DateTime? fechaInicio, DateTime? fechaFin)
         {
-            var desde = fechaInicio ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            var hasta = fechaFin ?? desde.AddMonths(1).AddDays(-1);
+            var desde = Commons.getFechaInicial(fechaInicio);
+            var hasta = Commons.getFechaFinal(fechaFin);
 
             ViewBag.Desde = desde.ToString("yyyy-MM-dd");
             ViewBag.Hasta = hasta.ToString("yyyy-MM-dd");
@@ -155,7 +155,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .ThenInclude(ct => ct.Responsables)
                 .ToList();
 
-            return cuotasPendientes.Select(c => {
+            return cuotasPendientes.Select(c =>
+            {
                 var contrato = c.Contrato;
                 var difunto = contrato.Difunto;
                 var boveda = contrato.Boveda;
@@ -198,7 +199,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             return bovedas.Select(b => new ReporteBovedasViewModel
             {
                 BovedaId = b.Id,
-                NumeroBoveda = b.Numero,
+                NumeroBoveda = b.NumeroSecuecial,
                 NumeroPiso = b.Piso.NumeroPiso,
                 EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                 FechaCreacionBoveda = b.FechaCreacion,
@@ -210,6 +211,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         private async Task<List<ReporteIngresoPorFechaViewModel>> ObtenerIngresosPorFechaViewModel(DateTime? desde, DateTime? hasta)
         {
+
             var pagos = await _context.Pago
                 .Include(p => p.Cuotas)
                     .ThenInclude(c => c.Contrato)
@@ -222,7 +224,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(p => p.Cuotas)
                     .ThenInclude(c => c.Contrato)
                         .ThenInclude(c => c.Difunto)
-                .Include(p => p.Cuotas)
                 .Where(p => p.FechaPago >= desde && p.FechaPago <= hasta)
                 .ToListAsync();
 
@@ -230,33 +231,34 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             foreach (var pago in pagos)
             {
-                foreach (var cuota in pago.Cuotas)
+                // Usar la primera cuota para acceder a datos del contrato
+                var primeraCuota = pago.Cuotas.FirstOrDefault();
+                if (primeraCuota == null) continue;
+
+                var contrato = primeraCuota.Contrato;
+                if (contrato == null) continue;
+
+                var boveda = contrato.Boveda;
+                var piso = boveda?.Piso;
+                var bloque = piso?.Bloque;
+                var responsable = contrato.Responsables.FirstOrDefault();
+
+                ingresos.Add(new ReporteIngresoPorFechaViewModel
                 {
-                    var contrato = cuota.Contrato;
-                    if (contrato == null) continue;
-
-                    var boveda = contrato.Boveda;
-                    var piso = boveda?.Piso;
-                    var bloque = piso?.Bloque;
-                    var responsable = contrato.Responsables.FirstOrDefault();
-
-                    ingresos.Add(new ReporteIngresoPorFechaViewModel
-                    {
-                        FechaPago = pago.FechaPago,
-                        TipoPago = pago.TipoPago,
-                        NumeroComprobante = pago.NumeroComprobante,
-                        Monto = pago.Monto,
-                        PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
-                        IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
-                        NumeroContrato = contrato.NumeroSecuencial,
-                        TipoIngreso = contrato.EsRenovacion ? "Renovación" : "Inicial",
-                        Boveda = $"#{boveda?.Numero}",
-                        Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
-                        Bloque = bloque?.Descripcion ?? "N/A",
-                        FechaInicio = desde ?? DateTime.MinValue,
-                        FechaFin = hasta ?? DateTime.MaxValue
-                    });
-                }
+                    FechaPago = pago.FechaPago,
+                    TipoPago = pago.TipoPago,
+                    NumeroComprobante = pago.NumeroComprobante,
+                    Monto = pago.Cuotas.Sum(c => c.Monto),
+                    PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
+                    IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
+                    NumeroContrato = contrato.NumeroSecuencial,
+                    TipoIngreso = contrato.EsRenovacion ? "Renovación" : "Inicial",
+                    Boveda = $"#{boveda?.Numero}",
+                    Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
+                    Bloque = bloque?.Descripcion ?? "N/A",
+                    FechaInicio = Commons.getFechaInicial(desde ?? DateTime.MinValue),
+                    FechaFin = Commons.getFechaFinal(hasta ?? DateTime.MaxValue)
+                });
             }
 
             return ingresos.OrderBy(i => i.FechaPago).ToList();
@@ -275,8 +277,9 @@ namespace gad_checa_gestion_cementerio.Controllers
             return File(pdf, "application/pdf");
         }
 
-        
-        [HttpGet]        public IActionResult BovedasPdf(string tipoBloque, string nombreBloque)
+
+        [HttpGet]
+        public IActionResult BovedasPdf(string tipoBloque, string nombreBloque)
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
@@ -314,7 +317,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.Numero,
+                    NumeroBoveda = b.NumeroSecuecial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
