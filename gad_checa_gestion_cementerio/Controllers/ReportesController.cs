@@ -128,8 +128,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> IngresosPorFecha(DateTime? fechaInicio, DateTime? fechaFin)
         {
-            var desde = fechaInicio ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            var hasta = fechaFin ?? desde.AddMonths(1).AddDays(-1);
+            var desde = Commons.getFechaInicial(fechaInicio);
+            var hasta = Commons.getFechaFinal(fechaFin);
 
             ViewBag.Desde = desde.ToString("yyyy-MM-dd");
             ViewBag.Hasta = hasta.ToString("yyyy-MM-dd");
@@ -155,7 +155,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .ThenInclude(ct => ct.Responsables)
                 .ToList();
 
-            return cuotasPendientes.Select(c => {
+            return cuotasPendientes.Select(c =>
+            {
                 var contrato = c.Contrato;
                 var difunto = contrato.Difunto;
                 var boveda = contrato.Boveda;
@@ -210,6 +211,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         private async Task<List<ReporteIngresoPorFechaViewModel>> ObtenerIngresosPorFechaViewModel(DateTime? desde, DateTime? hasta)
         {
+
             var pagos = await _context.Pago
                 .Include(p => p.Cuotas)
                     .ThenInclude(c => c.Contrato)
@@ -246,7 +248,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     FechaPago = pago.FechaPago,
                     TipoPago = pago.TipoPago,
                     NumeroComprobante = pago.NumeroComprobante,
-                    Monto = pago.Monto,
+                    Monto = pago.Cuotas.Sum(c => c.Monto),
                     PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
                     IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
                     NumeroContrato = contrato.NumeroSecuencial,
@@ -254,8 +256,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                     Boveda = $"#{boveda?.Numero}",
                     Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
                     Bloque = bloque?.Descripcion ?? "N/A",
-                    FechaInicio = desde ?? DateTime.MinValue,
-                    FechaFin = hasta ?? DateTime.MaxValue
+                    FechaInicio = Commons.getFechaInicial(desde ?? DateTime.MinValue),
+                    FechaFin = Commons.getFechaFinal(hasta ?? DateTime.MaxValue)
                 });
             }
 
@@ -275,8 +277,9 @@ namespace gad_checa_gestion_cementerio.Controllers
             return File(pdf, "application/pdf");
         }
 
-        
-        [HttpGet]        public IActionResult BovedasPdf(string tipoBloque, string nombreBloque)
+
+        [HttpGet]
+        public IActionResult BovedasPdf(string tipoBloque, string nombreBloque)
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
