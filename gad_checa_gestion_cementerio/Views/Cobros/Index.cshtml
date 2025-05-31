@@ -1,4 +1,4 @@
-﻿@model IEnumerable<gad_checa_gestion_cementerio.Data.Cuota>
+﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
 @{
     ViewData["Title"] = "Cobros";
 }
@@ -39,8 +39,8 @@
                                 <input type="checkbox" class="form-check-input" id="hs-at-with-checkboxes-main" />
                             </th>
                             <th scope="col" class="text-uppercase small fw-bold">Id</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Secuencial</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Monto</th>
+                            <th scope="col" class="text-uppercase small fw-bold">Contrato</th>
+                            <th scope="col" class="text-uppercase small fw-bold">Monto Pendiente</th>
                             <th scope="col" class="text-uppercase small fw-bold">Fecha de vencimiento</th>
                             <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
                         </tr>
@@ -53,17 +53,14 @@
                                     <input type="checkbox" class="form-check-input" />
                                 </td>
                                 <td>@item.Id</td>
-                                <td>@item.Contrato.NumeroSecuencial</td>
-                                <td>@item.Monto</td>
-                                <td>@item.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                <td>@item.NumeroSecuencial</td>
+                                <td>@item.MontoPendiente</td>
+                                <td>@item.FechaFin.ToString("dd/MM/yyyy")</td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@item.Id">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Cobrar" asp-route-id="@item.Id">
                                         <i class="ti ti-edit"></i>
+                                        Cobrar
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger delete-button"
-                                        data-hs-overlay="#hs-vertically-centered-modal" data-id="@item.Id">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
                                 </td>
                             </tr>
                         }

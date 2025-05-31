@@ -60,4 +60,22 @@ public class ContratoModel
     public bool EsRenovacion { get; set; }
 
     public TipoContrato TipoContrato { get; set; } = TipoContrato.Nuevo;
+
+
+    //Datos para reportes
+
+    public decimal MontoPagado
+    {
+        get
+        {
+            return Cuotas.Any() ? Cuotas.Sum(x => x.Pagada ? x.Monto : 0) : 0;
+        }
+    }
+    public decimal MontoPendiente
+    {
+        get
+        {
+            return Cuotas.Any() ? Cuotas.Sum(x => !x.Pagada ? x.Monto : 0) : 0;
+        }
+    }
 }
