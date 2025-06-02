@@ -13,11 +13,11 @@
                 Visualice y gestione las bóvedas del cementerio.
             </p>
         </div>
-        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
+        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-nowrap">
             <!-- Filtros -->
-            <form method="get" asp-action="Bovedas" class="flex flex-wrap gap-4 justify-center">
+            <form method="get" asp-action="Bovedas" class="d-flex gap-2 align-items-center flex-nowrap">
                 <!-- Tipo de bloque -->
-                <select name="tipoBloque" class="px-3 py-2 border rounded" onchange="this.form.submit()">
+                <select name="tipoBloque" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">-- Tipo de Bóveda --</option>
                     @foreach (var tipo in Model.TiposDisponibles)
                     {
@@ -25,19 +25,20 @@
                     }
                 </select>
 
-                <!-- Nombre del bloque (filtrado por tipo) -->
-                <select name="nombreBloque" class="px-3 py-2 border rounded">
+                <!-- Nombre del bloque -->
+                <select name="nombreBloque" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">-- Bloque --</option>
                     @foreach (var bloque in Model.BloquesDisponibles)
                     {
-                        <option value="@bloque" selected="@(Model.NombreBloque == bloque ? "selected" : null)">@bloque
+                        <option value="@bloque" selected="@(Model.NombreBloque == bloque ? "selected" : null)">
+                            @bloque
                         </option>
                     }
                 </select>
 
-                <button type="submit" class="btn btn-success btn-md">
-                    <i class="ti ti-filter"></i> <span class="no-wrap">
-                        Filtrar
+                <!-- Botón Filtrar -->
+                <button type="submit" class="btn btn-success btn-sm d-flex align-items-center">
+                    <i class="ti ti-filter me-1"></i> Filtrar
                 </button>
             </form>
 
@@ -45,13 +46,15 @@
             <form method="get" asp-action="BovedasPdf">
                 <input type="hidden" name="tipoBloque" value="@Model.TipoBloque" />
                 <input type="hidden" name="nombreBloque" value="@Model.NombreBloque" />
-                <button type="submit" class="btn btn-primary btn-md">
-                    <i class="ti ti-plus"></i> <span class="no-wrap"></span><span class="no-wrap"> Generar
-                        PDF</span>
+                <button type="submit" class="btn btn-primary btn-sm ">
+                    <i class="ti ti-download"></i> <span class="no-wrap">Generar PDF</span><span class="no-wrap">
+                    </span>
                 </button>
             </form>
         </div>
     </div>
+
+
     <div class="min-h-screen bg-white p-6 flex flex-col items-center">
 
         <!-- Tabla -->

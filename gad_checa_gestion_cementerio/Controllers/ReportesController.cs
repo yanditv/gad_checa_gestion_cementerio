@@ -128,6 +128,12 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> IngresosPorFecha(DateTime? fechaInicio, DateTime? fechaFin)
         {
+            if (fechaInicio == null || fechaFin == null)
+            {
+                //primer día del mes actual y último día del mes actual
+                fechaInicio = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                fechaFin = DateTime.Now;
+            }
             var desde = Commons.getFechaInicial(fechaInicio);
             var hasta = Commons.getFechaFinal(fechaFin);
 
