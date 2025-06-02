@@ -1,0 +1,17 @@
+@model IEnumerable<gad_checa_gestion_cementerio.Models.NotifyModel>
+
+@foreach (var item in Model)
+{
+    <a class="list-group-item list-group-item-action">
+        <div class="d-flex">
+            <div class="flex-shrink-0">
+                <img src="~/images/user/avatar-2.jpg" alt="user-image" class="user-avtar">
+            </div>
+            <div class="flex-grow-1 ms-1">
+                <span class="float-end text-muted">@DateTime.Now.ToShortTimeString()</span>
+                <p class="text-body mb-1"><b>@item.title:</b> @item.description</p>
+                <span class="text-muted">hace un momento</span>
+            </div>
+        </div>
+    </a>
+}
