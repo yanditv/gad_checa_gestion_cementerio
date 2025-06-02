@@ -1,100 +1,116 @@
 @model gad_checa_gestion_cementerio.Models.Views.FiltroBovedasViewModel
 
 @{
-    ViewData["Title"] = "Bóvedas";
+    ViewData["Title"] = "Reporte de Bóvedas";
     Layout = "~/Views/Reportes/_ReportesLayout.cshtml";
 }
+<div class="card">
 
-<div class="min-h-screen bg-white p-6 flex flex-col items-center">
-    <h2 class="text-gray-700 mb-6 text-2xl font-semibold">Reporte de Bóvedas</h2>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h4 class="card-title mb-2">@ViewData["Title"]</h4>
+            <p class="text-muted">
+                Visualice y gestione las bóvedas del cementerio. Puede filtrar por tipo de bóveda y nombre del bloque, y
+                generar un reporte en PDF con los detalles de las bóvedas.
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
+            <!-- Filtros -->
+            <form method="get" asp-action="Bovedas" class="flex flex-wrap gap-4 justify-center">
+                <!-- Tipo de bloque -->
+                <select name="tipoBloque" class="px-3 py-2 border rounded" onchange="this.form.submit()">
+                    <option value="">-- Tipo de Bóveda --</option>
+                    @foreach (var tipo in Model.TiposDisponibles)
+                    {
+                        <option value="@tipo" selected="@(Model.TipoBloque == tipo ? "selected" : null)">@tipo</option>
+                    }
+                </select>
 
-    <!-- Filtros -->
-    <form method="get" asp-action="Bovedas" class="mb-6 flex flex-wrap gap-4 justify-center">
-    <!-- Tipo de bloque -->
-    <select name="tipoBloque" class="px-3 py-2 border rounded" onchange="this.form.submit()">
-        <option value="">-- Tipo de Bóveda --</option>
-        @foreach (var tipo in Model.TiposDisponibles)
-        {
-            <option value="@tipo" selected="@(Model.TipoBloque == tipo ? "selected" : null)">@tipo</option>
-        }
-    </select>
+                <!-- Nombre del bloque (filtrado por tipo) -->
+                <select name="nombreBloque" class="px-3 py-2 border rounded">
+                    <option value="">-- Bloque --</option>
+                    @foreach (var bloque in Model.BloquesDisponibles)
+                    {
+                        <option value="@bloque" selected="@(Model.NombreBloque == bloque ? "selected" : null)">@bloque
+                        </option>
+                    }
+                </select>
 
-    <!-- Nombre del bloque (filtrado por tipo) -->
-    <select name="nombreBloque" class="px-3 py-2 border rounded">
-        <option value="">-- Bloque --</option>
-        @foreach (var bloque in Model.BloquesDisponibles)
-        {
-            <option value="@bloque" selected="@(Model.NombreBloque == bloque ? "selected" : null)">@bloque</option>
-        }
-    </select>
+                <button type="submit" class="btn btn-success btn-md">
+                    <i class="ti ti-filter"></i> <span class="no-wrap">
+                        Filtrar
+                </button>
+            </form>
 
-    <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-        Filtrar
-    </button>
-</form>
-
-
-    <!-- Botón PDF -->
-    <div class="mb-4">
-        <form method="get" asp-action="BovedasPdf">
-            <input type="hidden" name="tipoBloque" value="@Model.TipoBloque" />
-            <input type="hidden" name="nombreBloque" value="@Model.NombreBloque" />
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Generar PDF
-            </button>
-        </form>
+            <!-- Botón PDF -->
+            <form method="get" asp-action="BovedasPdf">
+                <input type="hidden" name="tipoBloque" value="@Model.TipoBloque" />
+                <input type="hidden" name="nombreBloque" value="@Model.NombreBloque" />
+                <button type="submit" class="btn btn-primary btn-md">
+                    <i class="ti ti-plus"></i> <span class="no-wrap"></span><span class="no-wrap"> Generar
+                        PDF</span>
+                </button>
+            </form>
+        </div>
     </div>
+    <div class="min-h-screen bg-white p-6 flex flex-col items-center">
 
-    <!-- Tabla -->
-    <div class="overflow-x-auto">
-        <table class="table-auto border border-gray-300 shadow-md rounded-lg text-sm" style="width:100%; text-align:left;">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="px-4 py-2">Bóveda</th>
-                    <th class="px-4 py-2">Piso</th>
-                    <th class="px-4 py-2">Estado</th>
-                    <th class="px-4 py-2">Bloque</th>
-                    <th class="px-4 py-2">Tipo</th>
-                    <th class="px-4 py-2">Contrato</th>
-                    <th class="px-4 py-2">Duración</th>
-                    <th class="px-4 py-2">Difunto</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach (var item in Model.Bovedas)
-                {
+        <!-- Tabla -->
+        <div class="table-responsive">
+            <table class="table-auto border border-gray-300 shadow-md rounded-lg text-sm"
+                style="width:100%; text-align:left;">
+                <thead class="bg-gray-100">
                     <tr>
-                        <td class="px-4 py-2">@item.NumeroBoveda</td>
-                        <td class="px-4 py-2">@item.NumeroPiso</td>
-                        <td class="px-4 py-2">@item.EstadoBoveda</td>
-                        <td class="px-4 py-2">@item.NombreBloque</td>
-                        <td class="px-4 py-2">@item.TipoBloque</td>
-                        <td class="px-4 py-2">
-                            @if (item.NumeroSecuencialContrato != null)
-                            {
-                                <div>@item.NumeroSecuencialContrato<br />
-                                     <small>@item.FechaInicioContrato?.ToShortDateString() - @item.FechaFinContrato?.ToShortDateString()</small>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="text-gray-400 italic">Sin contrato</span>
-                            }
-                        </td>
-                        <td class="px-4 py-2">@item.NumeroDeMeses meses</td>
-                        <td class="px-4 py-2">
-                            @if (item.NombresDifunto != null)
-                            {
-                                <div>@item.NombresDifunto @item.ApellidosDifunto<br /><small>@item.FechaFallecimiento?.ToShortDateString()</small></div>
-                            }
-                            else
-                            {
-                                <span class="text-gray-400 italic">Libre</span>
-                            }
-                        </td>
+                        <th class="px-4 py-2">Bóveda</th>
+                        <th class="px-4 py-2">Piso</th>
+                        <th class="px-4 py-2">Estado</th>
+                        <th class="px-4 py-2">Bloque</th>
+                        <th class="px-4 py-2">Tipo</th>
+                        <th class="px-4 py-2">Contrato</th>
+                        <th class="px-4 py-2">Duración</th>
+                        <th class="px-4 py-2">Difunto</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var item in Model.Bovedas)
+                    {
+                        <tr>
+                            <td class="px-4 py-2">@item.NumeroBoveda</td>
+                            <td class="px-4 py-2">@item.NumeroPiso</td>
+                            <td class="px-4 py-2">@item.EstadoBoveda</td>
+                            <td class="px-4 py-2">@item.NombreBloque</td>
+                            <td class="px-4 py-2">@item.TipoBloque</td>
+                            <td class="px-4 py-2">
+                                @if (item.NumeroSecuencialContrato != null)
+                                {
+                                    <div>@item.NumeroSecuencialContrato<br />
+                                        <small>@item.FechaInicioContrato?.ToShortDateString() -
+                                            @item.FechaFinContrato?.ToShortDateString()</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-400 italic">Sin contrato</span>
+                                }
+                            </td>
+                            <td class="px-4 py-2">@item.NumeroDeMeses meses</td>
+                            <td class="px-4 py-2">
+                                @if (item.NombresDifunto != null)
+                                {
+                                    <div>@item.NombresDifunto
+                                        @item.ApellidosDifunto<br /><small>@item.FechaFallecimiento?.ToShortDateString()</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-400 italic">Libre</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
+
 </div>
