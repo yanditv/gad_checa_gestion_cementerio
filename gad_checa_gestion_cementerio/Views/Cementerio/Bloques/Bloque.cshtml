@@ -11,7 +11,7 @@
     <div class="py-3 w-full justify-start sm:max-w-2xl">
         <div class="px-5 py-10 relative w-full rounded-3xl sm:p-5">
             <div class="max-w-full text-left">
-                <h2 class="text-gray-700 mb-2 text-xl font-semibold">Crear Bovedas</h2>
+                <h2 class="text-gray-700 mb-2 text-xl font-semibold">Crear Bloque</h2>
                 <p class="mb-6 text-sm text-[#6A717D]">Asegúrate de completar los campos necesarios</p>
 
                 <form asp-action="Create">
@@ -38,8 +38,10 @@
                         <span asp-validation-for="Tipo" class="text-danger"></span>
                     </div>
                     <div class="flex flex-col">
-                        <label asp-for="TarifaBase" cclass="text-gray-700"></label>
-                        <input asp-for="TarifaBase" class="px-4 py-2 border-gray-300 text-gray-600 w-full rounded-md border focus:ring-gray-500 focus:border-gray-900 focus:outline-none sm:text-sm" />
+                        <label asp-for="TarifaBase" class="text-gray-700"></label>
+                        <input asp-for="TarifaBase"
+                               class="px-4 py-2 border-gray-300 text-gray-600 bg-gray-100 w-full rounded-md border focus:outline-none sm:text-sm"
+                               readonly />
                         <span asp-validation-for="TarifaBase" class="text-danger"></span>
                     </div>
                     <div class="flex flex-col">
@@ -97,4 +99,7 @@
 
     // Escuchar cambios en el select
     document.getElementById("NumeroDePisos").addEventListener("change", generatePisosInputs);
+
+    // Ejecutar una vez al cargar la página para mostrar al menos 1 piso
+    window.addEventListener("DOMContentLoaded", generatePisosInputs);
 </script>

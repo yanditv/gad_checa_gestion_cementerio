@@ -1,25 +1,32 @@
 ﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.NotifyModel>
 
 @{
-    ViewData["Title"] = "Nofificaciones";
+    ViewData["Title"] = "Notificaciones";
 }
 
-<table class="table">
-    <thead>
-        <tr>
-            <th scope="col">Title</th>
-            <th scope="col">Description</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-    @foreach (var item in Model)
+<h2 class="mb-4">Centro de Notificaciones</h2>
+
+@foreach (var item in Model)
+{
+    var alertClass = "alert-info"; // Por defecto
+    var icon = "bi-info-circle-fill";
+
+    if (item.title.ToLower().Contains("contrato"))
     {
-
-        <tr>
-            <td> @Html.DisplayFor(modelItem => item.title)</td>
-            <td> @Html.DisplayFor(modelItem => item.description)</td>
-        </tr>
-
+        alertClass = "alert-warning";
+        icon = "bi-exclamation-triangle-fill";
     }
-    </tbody>
-</table>
+    else if (item.title.ToLower().Contains("cuota"))
+    {
+        alertClass = "alert-danger";
+        icon = "bi-exclamation-octagon-fill";
+    }
+
+    <div class="alert @alertClass shadow-sm d-flex align-items-start gap-3 mb-3" role="alert">
+        <i class="bi @icon fs-4"></i>
+        <div>
+            <h5 class="mb-1">@item.title</h5>
+            <p class="mb-0">@item.description</p>
+        </div>
+    </div>
+}
