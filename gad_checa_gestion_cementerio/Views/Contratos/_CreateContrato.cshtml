@@ -38,12 +38,23 @@
                         <input asp-for="NumeroSecuencial" readonly class="form-control" />
                         <span asp-validation-for="NumeroSecuencial" class="text-danger"></span>
                     </div>
+                                        <div class="col-md-6 mb-3">
+                        <label asp-for="BovedaId" class="form-label">Nro. Secuencial</label>
+                        <input asp-for="BovedaId" readonly class="form-control" />
+                        <span asp-validation-for="BovedaId" class="text-danger"></span>
+                    </div>
                     <div class="col-md-6 mb-3">
-                        <label asp-for="BovedaId" class="form-label">Bóveda</label>
+                        @* <label asp-for="BovedaId" class="form-label">Bóveda</label>
                         <div class="input-group"></div>
                         <select asp-for="BovedaId" class="form-control" asp-items="ViewBag.BovedaId"></select>
-                        <button type="button" class="btn btn-secondary" onclick="buscarBovedasDisponibles()">Buscar
-                            Disponibles</button>
+                         *@
+
+                        
+                        <button type="button" class="btn btn-secondary" onclick="abrirModalBovedas('')">
+                            Buscar Disponibles
+                        </button>
+                        @* <button type="button" class="btn btn-secondary mt-2" data-bs-toggle="modal" data-bs-target="#modalBovedas">Buscar
+                            Disponibles</button> *@
                         <span asp-validation-for="BovedaId" class="text-danger"></span>
                     </div>
 
@@ -82,9 +93,29 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
+<div id="contenedorModalBovedas"></div>
+ @* @await Html.PartialAsync("_SelectBoveda", new List<gad_checa_gestion_cementerio.Models.BovedaModel>()) *@
+    
     <script>
+function abrirModalBovedas(filtro) {
+    fetch('/Contratos/BuscarBovedas?filtro=' + encodeURIComponent(filtro))
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('contenedorModalBovedas').innerHTML = html;
+
+            // Asegurar que el DOM se actualice antes de inicializar el modal
+            requestAnimationFrame(() => {
+                const modalElement = document.getElementById('modalBovedas');
+                if (modalElement) {
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                } else {
+                    console.error('modalBovedas no se encontró en el DOM.');
+                }
+            });
+        });
+}
+
         document.querySelectorAll('input[name="TipoContrato"]').forEach(function (radio) {
             radio.addEventListener('change', function () {
                 let tipoSeleccionado = this.value;
@@ -135,4 +166,85 @@
         }
 
     </script>
-}
+
+<script>
+
+    function renderTablaBovedas(data) {
+        const tbody = document.getElementById("tablaBovedasBody");
+        tbody.innerHTML = ""; // Limpiar
+
+        data.bovedas.forEach(boveda => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+            <td>${boveda.numeroSecuecial}</td>
+            <td>${boveda.numero}</td>
+            <td>${boveda.estado}</td>
+            <td>
+                <button type="button" class="btn btn-success btn-sm"
+                    onclick="seleccionarBoveda(${boveda.id}, '${boveda.numeroSecuecial}')">
+                    Seleccionar
+                </button>
+            </td>
+        `;
+
+            tbody.appendChild(row);
+        });
+
+        // Aquí podrías regenerar también la paginación si quieres
+        //renderPaginacion(data.paginaActual, data.totalPaginas);
+    }
+
+    function buscarBovedasJson(pagina = 1) {
+        const filtro = document.getElementById("filtroBoveda").value;
+
+        fetch(`/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&pagina=${pagina}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log("Bóvedas encontradas:", data);
+                renderTablaBovedas(data);
+            })
+            .catch(err => {
+                console.error("Error al buscar bóvedas:", err);
+            });
+    }
+
+    function buscarBovedas(pagina) {
+        const filtro = document.getElementById("filtroBoveda").value;
+
+        fetch(`/Contrato/BuscarBovedas?filtro=${encodeURIComponent(filtro)}&pagina=${pagina}`)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("tablaBovedasBody").innerHTML = html;
+            })
+            .catch(err => {
+                console.error("Error al buscar bóvedas:", err);
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const formBusqueda = document.getElementById('formBusquedaBoveda');
+        if (formBusqueda) {
+            formBusqueda.addEventListener('submit', function (e) {
+                e.preventDefault();
+                buscarBovedasJson(1); // Siempre empieza desde la página 1
+            });
+        }
+    });
+
+// Seleccionar una bóveda y cerrar el modal
+    function seleccionarBoveda(id, numeroSecuencial) {
+        const inputBovedaId = document.getElementById('BovedaId');
+        if (inputBovedaId) {
+            inputBovedaId.value = id;
+            inputBovedaId.dispatchEvent(new Event('change')); // Disparar el evento change si es necesario
+        }
+
+        // Cerrar el modal
+        const modalElement = document.getElementById('modalBovedas');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            modal.hide();
+        }
+    }
+</script>

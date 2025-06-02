@@ -1,0 +1,56 @@
+﻿@model gad_checa_gestion_cementerio.Models.Listas.BovedaPaginadaViewModel
+
+@{
+    var filtroActual = Model.Filtro ?? "";
+}
+
+<div class="modal fade" id="modalBovedas" tabindex="-1" aria-labelledby="modalBovedasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalBovedasLabel">Seleccionar Bóveda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                @* <form id="formBusquedaBoveda" method="get" asp-action="BuscarBovedas" asp-controller="Contratos"> *@
+                <div class="input-group mb-3">
+                    <input type="text" name="filtro" id="filtroBoveda" class="form-control"
+                        placeholder="Buscar por Nro. Secuencial" value="@filtroActual" />
+                    <button type="button" class="btn btn-primary" onclick="buscarBovedasJson(1)">Buscar</button>
+                </div>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nro. Secuencial</th>
+                            <th>Número</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaBovedasBody">
+                        @foreach (var boveda in Model.Bovedas)
+                        {
+                            <tr>
+                                <td>@boveda.NumeroSecuecial</td>
+                                <td>@boveda.Numero</td>
+                                <td>@(boveda.Estado ? "Activa" : "Inactiva")</td>
+                                <td>
+                                    <button type="button" class="btn btn-success btn-sm"
+                                        onclick="seleccionarBoveda(@boveda.Id, '@boveda.NumeroSecuecial')">
+                                        Seleccionar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @Html.Partial("_Paginacion", Model)
+
+                <div class="text-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

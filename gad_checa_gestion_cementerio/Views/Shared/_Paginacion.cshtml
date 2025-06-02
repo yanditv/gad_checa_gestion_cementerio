@@ -1,0 +1,23 @@
+﻿@model gad_checa_gestion_cementerio.Models.PaginacionBaseViewModel
+
+<div class="d-flex justify-content-between align-items-center my-3">
+    <div>
+        Página @Model.PaginaActual de @Model.TotalPaginas • Total @Model.TotalResultados resultados
+    </div>
+    <div>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item @(Model.TienePaginaAnterior ? "" : "disabled")">
+                    <a class="page-link" href="?pagina=@(Model.PaginaActual - 1)&filtro=@Model.Filtro" tabindex="-1">
+                        &larr; Prev
+                    </a>
+                </li>
+                <li class="page-item @(Model.TienePaginaSiguiente ? "" : "disabled")">
+                    <a class="page-link" href="?pagina=@(Model.PaginaActual + 1)&filtro=@Model.Filtro">
+                        Next &rarr;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>

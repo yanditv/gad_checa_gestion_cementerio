@@ -11,6 +11,7 @@ using iText.Layout;
 using iText.Layout.Element;
 using Newtonsoft.Json;
 using gad_checa_gestion_cementerio.services;
+using gad_checa_gestion_cementerio.Models.Listas;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
@@ -469,5 +470,71 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             return PartialView("_DocumentoContrato", contrato);
         }
+        #region BusquedaBovedas
+        [HttpGet]
+        public IActionResult BuscarBovedas(string filtro, int pagina = 1)
+        {
+            int pageSize = 10;
+            var query = _context.Boveda.AsQueryable();
+
+            if (!string.IsNullOrEmpty(filtro))
+            {
+                query = query.Where(b => b.NumeroSecuecial.Contains(filtro));
+            }
+
+            int total = query.Count();
+            var bovedas = query
+                .OrderBy(b => b.NumeroSecuecial)
+                .Skip((pagina - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var viewModel = new BovedaPaginadaViewModel
+            {
+                Bovedas = _mapper.Map<List<BovedaModel>>(bovedas),
+                PaginaActual = pagina,
+                TotalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+                Filtro = filtro
+            };
+
+            return PartialView("_SelectBoveda", viewModel);
+        }
+        public IActionResult BuscarBovedasJson(string filtro, int pagina = 1)
+        {
+            int pageSize = 10;
+            var query = _context.Boveda.AsQueryable();
+
+            if (!string.IsNullOrEmpty(filtro))
+            {
+                query = query.Where(b => b.NumeroSecuecial.Contains(filtro));
+            }
+
+            int total = query.Count();
+
+            var bovedas = query
+                .OrderBy(b => b.NumeroSecuecial)
+                .Skip((pagina - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var listaBovedas = _mapper.Map<List<BovedaModel>>(bovedas);
+
+            var resultado = new
+            {
+                bovedas = listaBovedas.Select(b => new
+                {
+                    id = b.Id,
+                    numeroSecuecial = b.NumeroSecuecial,
+                    numero = b.Numero,
+                    estado = b.Estado ? "Activa" : "Inactiva"
+                }),
+                paginaActual = pagina,
+                totalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+                filtro = filtro
+            };
+
+            return Json(resultado);
+        }
+        #endregion
     }
 }
