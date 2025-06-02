@@ -45,38 +45,38 @@
     </div>
 
 
-    <div class="overflow-x-auto w-full">
-        <table class="table-auto border border-gray-300 shadow-sm rounded-lg w-full text-center text-sm">
-            <thead class="bg-gray-100">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-secondary small">
                 <tr>
-                    <th class="px-4 py-2">Fecha</th>
-                    <th class="px-4 py-2">Tipo Ingreso</th>
-                    <th class="px-4 py-2">Tipo Pago</th>
-                    <th class="px-4 py-2">Comprobante</th>
-                    <th class="px-4 py-2">Monto</th>
-                    <th class="px-4 py-2">Responsable</th>
-                    <th class="px-4 py-2">Identificación</th>
-                    <th class="px-4 py-2">Contrato</th>
-                    <th class="px-4 py-2">Bóveda</th>
-                    <th class="px-4 py-2">Piso</th>
-                    <th class="px-4 py-2">Bloque</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Tipo Ingreso</th>
+                    <th scope="col">Tipo Pago</th>
+                    <th scope="col">Comprobante</th>
+                    <th scope="col">Monto</th>
+                    <th scope="col">Responsable</th>
+                    <th scope="col">Identificación</th>
+                    <th scope="col">Contrato</th>
+                    <th scope="col">Bóveda</th>
+                    <th scope="col">Piso</th>
+                    <th scope="col">Bloque</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="small">
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td class="px-4 py-2">@item.FechaPago.ToShortDateString()</td>
-                        <td class="px-4 py-2">@item.TipoIngreso</td>
-                        <td class="px-4 py-2">@item.TipoPago</td>
-                        <td class="px-4 py-2">@item.NumeroComprobante</td>
-                        <td class="px-4 py-2">$@item.Monto.ToString("F2")</td>
-                        <td class="px-4 py-2">@item.PagadoPor</td>
-                        <td class="px-4 py-2">@item.IdentificacionPagador</td>
-                        <td class="px-4 py-2">@item.NumeroContrato</td>
-                        <td class="px-4 py-2">@item.Boveda</td>
-                        <td class="px-4 py-2">@item.Piso</td>
-                        <td class="px-4 py-2">@item.Bloque</td>
+                        <td>@item.FechaPago.ToShortDateString()</td>
+                        <td>@item.TipoIngreso</td>
+                        <td>@item.TipoPago</td>
+                        <td>@item.NumeroComprobante</td>
+                        <td>$@item.Monto.ToString("F2")</td>
+                        <td>@item.PagadoPor</td>
+                        <td>@item.IdentificacionPagador</td>
+                        <td>@item.NumeroContrato</td>
+                        <td>@item.Boveda</td>
+                        <td>@item.Piso</td>
+                        <td>@item.Bloque</td>
                     </tr>
                 }
             </tbody>
