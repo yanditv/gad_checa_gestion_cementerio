@@ -1,5 +1,5 @@
 ﻿@{
-    Layout = "~/Views/Shared/_Layout.cshtml";  // Este layout compartido puede ser el principal de tu aplicación
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Este layout compartido puede ser el principal de tu aplicación
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var entityType = Context.Request.Query["entityType"].ToString();
 }
@@ -7,29 +7,31 @@
 <div class="border-bottom">
     <ul class="nav nav-tabs" id="reportesTabs" role="tablist">
         @foreach (var tab in new[]
-        {
-            new { Id = "tabs-with-icons-1", Name = "ReporteCuentasPorCobrar", Action = "CuentasPorCobrar", Icon = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" },
-            new { Id = "tabs-with-icons-2", Name = "ReporteBovedas", Action = "Bovedas", Icon = "M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z" },
-            new { Id = "tabs-with-icons-3", Name = "ReporteIngresos", Action = "IngresosPorFecha", Icon = "M9 22V12h6v10" },
-        })
+                {
+                new { Id = "tabs-with-icons-1", Name = "Cuentas por cobrar", Action = "CuentasPorCobrar", Icon =
+                "ti-coin" },
+                new { Id = "tabs-with-icons-2", Name = "Reporte de bóvedas", Action = "Bovedas", Icon = "ti-archive" },
+                new { Id = "tabs-with-icons-3", Name = "Reporte de Ingresos", Action = "IngresosPorFecha", Icon =
+                "ti-businessplan" },
+                })
         {
             var tabName = new string(tab.Name.Where(c => char.IsLetterOrDigit(c)).ToArray());
             var isActive = (tab.Action == currentAction || entityType == tabName.ToLower()) ? "active" : "";
             <li class="nav-item" role="presentation">
                 <a class="nav-link @isActive" id="@tab.Id-tab" href="@Url.Action(tab.Action, "Reportes")">
-                    <svg class="size-4 me-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="@tab.Icon"></path>
-                    </svg>
+                    <span class="pc-micon"><i class="ti @tab.Icon"></i></span>
                     @tab.Name
                 </a>
             </li>
+
         }
     </ul>
 </div>
 
 <div class="tab-content mt-3">
-    <div class="tab-pane fade show active" id="tabs-with-icons-1" role="tabpanel" aria-labelledby="tabs-with-icons-1-tab">
-        @RenderBody()  <!-- Aquí es donde se renderizará el contenido de cada pestaña -->
+    <div class="tab-pane fade show active" id="tabs-with-icons-1" role="tabpanel"
+        aria-labelledby="tabs-with-icons-1-tab">
+        @RenderBody() <!-- Aquí es donde se renderizará el contenido de cada pestaña -->
     </div>
 </div>
 
