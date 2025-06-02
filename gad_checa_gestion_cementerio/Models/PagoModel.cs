@@ -20,6 +20,8 @@ namespace gad_checa_gestion_cementerio.Models
         public string TipoPago { get; set; }
 
         [Required]
+        //que no sea vacio]
+
         public string NumeroComprobante { get; set; }
 
         [Required]
