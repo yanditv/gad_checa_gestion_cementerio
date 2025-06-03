@@ -233,5 +233,50 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             return _context.Persona.Any(e => e.Id == id);
         }
+
+        [HttpGet]
+        public IActionResult CrearDesdeModal()
+        {
+            var tipos = new List<string> { "Cédula", "RUC" };
+            ViewData["TiposIdentificacion"] = new SelectList(tipos);
+            return PartialView("_CrearPersonaModal", new PersonaModel());
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> GuardarDesdeModal([Bind("Nombres,Apellidos,TipoIdentificacion,NumeroIdentificacion,Telefono,Email,Direccion")] Models.PersonaModel persona)
+        {
+            if (!ModelState.IsValid)
+            {
+                var tipos = new List<string> { "Cédula", "RUC" };
+                ViewBag.TiposIdentificacion = new SelectList(tipos);
+                return PartialView("_CrearPersonaModal", persona);
+            }
+
+            IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+            Data.Persona p = new Data.Persona
+            {
+                NumeroIdentificacion = persona.NumeroIdentificacion,
+                TipoIdentificacion = persona.TipoIdentificacion,
+                Direccion = persona.Direccion,
+                Email = persona.Email,
+                Nombres = persona.Nombres,
+                Telefono = persona.Telefono,
+                FechaCreacion = DateTime.Now,
+                Apellidos = persona.Apellidos,
+                UsuarioCreador = identityUser
+            };
+
+            _context.Add(p);
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                id = p.Id,
+                nombreCompleto = $"{p.Nombres} {p.Apellidos}"
+            });
+        }
+
     }
 }

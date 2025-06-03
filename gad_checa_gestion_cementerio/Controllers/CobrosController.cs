@@ -2,10 +2,14 @@ using AutoMapper;
 using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Utils;
+using gad_checa_gestion_cementerio.Controllers.Pdf;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -56,46 +60,136 @@ namespace gad_checa_gestion_cementerio.Controllers
             ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
             // asignamos al pago, las cuotas pendientes del contrato
             pago.Cuotas = contratoModel.Cuotas.Where(c => !c.Pagada).ToList();
+
+            var personas = _context.Persona
+                .Where(p => p.Estado)
+                .OrderBy(p => p.Nombres)
+                .ThenBy(p => p.Apellidos)
+                .ToList();
+            ViewBag.Responsables = personas.Select(p => new SelectListItem
+            {
+                Value = p.Id.ToString(),
+                Text = $"{p.Nombres} {p.Apellidos}"
+            }).ToList();
             return View(pago);
         }
         [HttpPost]
-        public ActionResult Cobrar(PagoModel pago, List<Guid> CuotasSeleccionadas)
+        public ActionResult Cobrar(PagoModel pago, List<int> CuotasSeleccionadas)
         {
             try
             {
-                if (ModelState.IsValid)
+                if (!ModelState.IsValid || !CuotasSeleccionadas.Any())
                 {
-                    // Aquí deberías guardar el pago en la base de datos
+                    ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
 
-                    pago.Cuotas = pago.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.TempId)).ToList();
+                    var primeraCuota = _context.Cuota
+                        .Include(c => c.Contrato)
+                        .ThenInclude(c => c.Responsables)
+                        .FirstOrDefault(c => CuotasSeleccionadas.Contains(c.Id));
 
-                    // y actualizar el estado de las cuotas pagadas
-                    foreach (var cuota in pago.Cuotas)
+                    if (primeraCuota != null)
                     {
-                        cuota.Pagada = true; // Marcar la cuota como pagada
+                        ViewData["Responsables"] = primeraCuota.Contrato.Responsables.Select(r => new SelectListItem
+                        {
+                            Value = r.Id.ToString(),
+                            Text = r.Nombres + " " + r.Apellidos
+                        }).ToList();
+                    }
+                    else
+                    {
+                        ViewData["Responsables"] = new List<SelectListItem>();
                     }
 
-                    // Guardar el pago y las cuotas actualizadas en la base de datos
-                    var pagoEntity = _mapper.Map<Pago>(pago);
-                    pagoEntity.Id = 0;
+                    ModelState.AddModelError("", "Debe seleccionar al menos una cuota.");
+                    return View(pago);
+                }
+                else
+                {
+                    var cuotas = _context.Cuota
+                    .Where(c => CuotasSeleccionadas.Contains(c.Id))
+                    .ToList();
+
+                    foreach (var cuota in cuotas)
+                    {
+                        cuota.Pagada = true;
+                    }
+
+                    // Se crea el objeto Pago sin modificar los modelos
+                    var pagoEntity = new Pago
+                    {
+                        FechaPago = pago.FechaPago,
+                        TipoPago = pago.TipoPago,
+                        NumeroComprobante = pago.NumeroComprobante,
+                        Monto = cuotas.Sum(c => c.Monto),
+                        PersonaPagoId = pago.PersonaPagoId,
+                        Cuotas = cuotas
+                    };
+                    // Se asegura que Entity Framework reconozca los cambios en las cuotas
+                    foreach (var cuota in cuotas)
+                    {
+                        _context.Entry(cuota).State = EntityState.Modified;
+                    }
+
                     _context.Pago.Add(pagoEntity);
                     _context.SaveChanges();
-
-                    TempData["SuccessMessage"] = "Pago registrado exitosamente.";
-                    return RedirectToAction("Index");
+                    TempData["PagoID"] = pagoEntity.Id;
+                    // return RedirectToAction("FacturaPdf", new { id = pagoEntity.Id });
+                    return RedirectToAction(nameof(Index));
                 }
-
-                ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
-                return View(pago);
             }
             catch (Exception ex)
             {
-
-                // Manejo de errores, puedes registrar el error o mostrar un mensaje al usuario
                 ModelState.AddModelError("", "Ocurrió un error al procesar el pago: " + ex.Message);
-                throw ex;
+                return View(pago);
             }
         }
+
+
+        public IActionResult FacturaPdf(int id)
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var pago = _context.Pago
+                .Include(p => p.Cuotas)
+                    .ThenInclude(c => c.Contrato)
+                        .ThenInclude(c => c.Boveda)
+                            .ThenInclude(b => b.Piso)
+                                .ThenInclude(p => p.Bloque)
+                                    .ThenInclude(b => b.Cementerio)
+                .Include(p => p.Cuotas)
+                    .ThenInclude(c => c.Contrato)
+                        .ThenInclude(c => c.Responsables)
+                .FirstOrDefault(p => p.Id == id);
+
+            if (pago == null)
+                return NotFound();
+
+            var persona = _context.Persona.FirstOrDefault(p => p.Id == pago.PersonaPagoId);
+            if (persona == null)
+                return NotFound("Persona que realizó el pago no encontrada.");
+
+            var document = new FacturaPagoPdfDocument(pago, persona);
+            var pdf = document.GeneratePdf();
+
+            Response.Headers["Content-Disposition"] = "inline; filename=FacturaPago.pdf";
+            return File(pdf, "application/pdf");
+        }
+        public IActionResult Facturas(int id)
+        {
+            var pagos = _context.Pago
+                .Include(p => p.Cuotas)
+                .ThenInclude(c => c.Contrato)
+                .Where(p => p.Cuotas.Any(c => c.ContratoId == id && c.Pagada))
+                .ToList();
+
+            var contrato = _context.Contrato.FirstOrDefault(c => c.Id == id);
+            ViewData["ContratoId"] = id;
+            ViewData["ContratoSerie"] = contrato?.NumeroSecuencial;
+
+            return View(pagos);
+        }
+
+
 
     }
 }

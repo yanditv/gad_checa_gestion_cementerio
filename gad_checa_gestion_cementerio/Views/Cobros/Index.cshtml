@@ -1,6 +1,7 @@
 ﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
 @{
     ViewData["Title"] = "Cobros";
+    var pagoID = TempData["PagoID"];
 }
 <div class="my-4">
     <div class="card">
@@ -57,10 +58,15 @@
                                 <td>@item.MontoPendiente</td>
                                 <td>@item.FechaFin.ToString("dd/MM/yyyy")</td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Cobrar" asp-route-id="@item.Id">
-                                        <i class="ti ti-edit"></i>
-                                        Cobrar
-                                    </a>
+                                    <div class="btn-group" role="group">
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="Cobrar" asp-route-id="@item.Id">
+                                            <i class="ti ti-edit"></i> Cobrar
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-info" asp-action="Facturas" asp-route-id="@item.Id">
+                                            <i class="ti ti-file-text"></i> Ver Facturas
+                                        </a>
+                                    </div>
+
                                 </td>
                             </tr>
                         }
@@ -90,3 +96,12 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @if (pagoID != null)
+    {
+        <script>
+            window.open('@Url.Action("FacturaPdf", "Cobros", new { id = pagoID })', '_blank')
+        </script>
+    }
+}

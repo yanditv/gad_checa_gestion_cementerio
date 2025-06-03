@@ -1,0 +1,52 @@
+@model List<gad_checa_gestion_cementerio.Data.Pago>
+
+@{
+    ViewData["Title"] = "Facturas";
+    var contratoId = ViewData["ContratoId"];
+    var contratoSerie = ViewData["ContratoSerie"];
+    var cuotasPagadas = Model.SelectMany(p => p.Cuotas)
+    .Where(c => c.Pagada && c.ContratoId == (int)contratoId)
+    .Select(c => new
+    {
+        Cuota = c,
+        Pago = Model.FirstOrDefault(p => p.Cuotas.Any(q => q.Id == c.Id))
+    }).ToList();
+}
+
+<h2>Cuotas Pagadas del Contrato: <span class="text-primary">@contratoSerie</span></h2>
+
+<table class="table table-bordered">
+    <thead class="table-secondary">
+        <tr>
+            <th># Cuota</th>
+            <th>Fecha Vencimiento</th>
+            <th>Monto</th>
+            <th>Fecha de Pago</th>
+            <th>Tipo de Pago</th>
+            <th>Comprobante</th>
+            <th>Factura</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in cuotasPagadas)
+        {
+            <tr>
+                <td>@item.Cuota.Id</td>
+                <td>@item.Cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                <td>@item.Cuota.Monto.ToString("C")</td>
+                <td>@item.Pago?.FechaPago.ToString("dd/MM/yyyy")</td>
+                <td>@item.Pago?.TipoPago</td>
+                <td>@item.Pago?.NumeroComprobante</td>
+                <td>
+                    @if (item.Pago != null)
+                    {
+                        <a class="btn btn-sm btn-outline-dark" target="_blank" asp-action="FacturaPdf"
+                            asp-route-id="@item.Pago.Id">
+                            <i class="ti ti-file-download"></i> Ver PDF
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

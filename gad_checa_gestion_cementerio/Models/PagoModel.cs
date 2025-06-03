@@ -19,7 +19,7 @@ namespace gad_checa_gestion_cementerio.Models
         [Required]
         public string TipoPago { get; set; }
 
-        [Required]
+        [Required(ErrorMessage="El número de comprobante es obligatorio")]
         public string NumeroComprobante { get; set; }
 
         [Required]
