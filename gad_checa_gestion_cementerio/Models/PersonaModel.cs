@@ -66,5 +66,13 @@ namespace gad_checa_gestion_cementerio.Models
 
             return ValidationResult.Success;
         }
+
+        public string NombresCompletos
+        {
+            get
+            {
+                return $"{Nombres} {Apellidos}";
+            }
+        }
     }
 }

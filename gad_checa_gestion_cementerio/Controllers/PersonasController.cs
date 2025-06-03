@@ -10,6 +10,7 @@ using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Utils;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using gad_checa_gestion_cementerio.Models.Listas;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -21,12 +22,38 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         // GET: Personas
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string filtro = "", int pagina = 1)
         {
-            var personas = await _context.Persona.ToListAsync();
-            var personasModel = _mapper.Map<List<PersonaModel>>(personas);
-            Console.WriteLine(personasModel);
-            return View(personasModel);
+            int pageSize = 10;
+            var personasQuery = _context.Persona
+            .AsQueryable();
+
+            if (!string.IsNullOrEmpty(filtro))
+            {
+                personasQuery = personasQuery.Where(c =>
+                    c.Nombres.Contains(filtro) ||
+                    c.NumeroIdentificacion.Contains(filtro) ||
+                    c.Apellidos.Contains(filtro));
+            }
+
+            int total = await personasQuery.CountAsync();
+            var personas = await personasQuery
+            .OrderBy(c => c.Id)
+            .Skip((pagina - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+            var viewModel = new PersonaPaginadaViewModel
+            {
+                Personas = _mapper.Map<List<PersonaModel>>(personas),
+                PaginaActual = pagina,
+                TotalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+                Filtro = filtro,
+                TotalResultados = total
+            };
+            ViewBag.Filtro = filtro;
+
+            return View(viewModel);
         }
 
         // GET: Personas/Details/5

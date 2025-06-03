@@ -45,7 +45,7 @@ public class ContratoModel
 
     [Required]
     public int DifuntoId { get; set; }
-
+    public DifuntoModel? Difunto { get; set; }
 
     public List<ResponsableModel> Responsables { get; set; }
     public List<CuotaModel> Cuotas { get; set; }

@@ -40,10 +40,40 @@ namespace gad_checa_gestion_cementerio.Controllers
             HttpContext.Session.SetString("NuevoContrato", contratoJson);
         }
         // GET: Contratos
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string filtro = "", int pagina = 1)
         {
-            var applicationDbContext = _context.Contrato.Include(c => c.Boveda);
-            return View(await applicationDbContext.ToListAsync());
+            int pageSize = 10;
+            var contratosQuery = _context.Contrato
+            .Include(c => c.Difunto)
+            .Include(c => c.Cuotas)
+            .Include(c => c.Boveda)
+            .AsQueryable();
+
+            if (!string.IsNullOrEmpty(filtro))
+            {
+                contratosQuery = contratosQuery.Where(c =>
+                    c.NumeroSecuencial.Contains(filtro) ||
+                    c.Difunto.Nombres.Contains(filtro) ||
+                    c.Difunto.Apellidos.Contains(filtro));
+            }
+
+            int total = await contratosQuery.CountAsync();
+            var contratos = await contratosQuery
+            .OrderBy(c => c.Id)
+            .Skip((pagina - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+            var viewModel = new ContratoPaginadaViewModel
+            {
+                Contratos = _mapper.Map<List<ContratoModel>>(contratos),
+                PaginaActual = pagina,
+                TotalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+                Filtro = filtro,
+                TotalResultados = total
+            };
+            ViewBag.Filtro = filtro;
+            return View(viewModel);
         }
 
         // GET: Contratos/Details/5
@@ -72,10 +102,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var contrato = GetContratoFromSession();
             var tipos = new List<string> { "Cedula", "RUC" };
+            contrato.contrato = _mapper.Map<ContratoModel>(_contratoService.nuevoContrato());
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
-            contrato.responsables = new List<ResponsableModel>();
-            var nuevoContrato = _contratoService.nuevoContrato();
-            contrato.contrato = _mapper.Map<ContratoModel>(nuevoContrato);
             SaveContratoToSession(contrato);
             return View(contrato);
         }
@@ -303,7 +331,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         public IActionResult CreateDifunto()
         {
             var contrato = GetContratoFromSession();
-            var difunto = contrato == null ? new DifuntoModel() : contrato.difunto ?? new DifuntoModel();
+            var difunto = contrato.difunto ?? new DifuntoModel();
             var descuentos = _context.Descuento.ToList();
             ViewData["DescuentoId"] = new SelectList(descuentos, "Id", "Descripcion");
             return PartialView("_CreateDifunto", difunto);
@@ -418,7 +446,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             contrato_model.contrato.NumeroDeMeses = 5;
             contrato_model.contrato.FechaInicio = DateTime.Now;
             contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddMonths(contrato_model.contrato.NumeroDeMeses);
-
+            contrato_model.contrato.Difunto = new DifuntoModel();
             contrato_model.contrato.MontoTotal = tarifa;
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
             return PartialView("_CreateContrato", contrato_model.contrato);
@@ -435,7 +463,15 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         [HttpPost]
         public IActionResult CreateContrato(ContratoModel contrato)
-        {
+        {// Asegurarse de que el difunto no sea nulo
+            contrato.Difunto ??= new DifuntoModel()
+            {
+                Nombres = "",
+                Apellidos = "",
+                FechaNacimiento = DateTime.Now,
+                FechaFallecimiento = DateTime.Now,
+                NumeroIdentificacion = ""
+            };
             if (ModelState.IsValid)
             {
                 var sessionContrato = GetContratoFromSession();
@@ -484,6 +520,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             int total = query.Count();
             var bovedas = query
+                .Include(b => b.Piso.Bloque)
                 .OrderBy(b => b.NumeroSecuecial)
                 .Skip((pagina - 1) * pageSize)
                 .Take(pageSize)
@@ -494,6 +531,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Bovedas = _mapper.Map<List<BovedaModel>>(bovedas),
                 PaginaActual = pagina,
                 TotalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+
                 Filtro = filtro
             };
 
@@ -512,6 +550,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             int total = query.Count();
 
             var bovedas = query
+            .Include(b => b.Piso.Bloque)
                 .OrderBy(b => b.NumeroSecuecial)
                 .Skip((pagina - 1) * pageSize)
                 .Take(pageSize)
@@ -526,6 +565,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     id = b.Id,
                     numeroSecuecial = b.NumeroSecuecial,
                     numero = b.Numero,
+                    tipo = b.Piso.Bloque.Tipo,
                     estado = b.Estado ? "Activa" : "Inactiva"
                 }),
                 paginaActual = pagina,

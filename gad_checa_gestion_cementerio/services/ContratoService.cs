@@ -28,6 +28,7 @@ public class ContratoService
             MontoTotal = tarifa,
             Observaciones = string.Empty,
             DifuntoId = 0,
+            Difunto = new Difunto(),
             NumeroDeMeses = 5,
             EsRenovacion = false,
             Cuotas = new List<Cuota>(),
