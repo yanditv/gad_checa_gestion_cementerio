@@ -279,13 +279,39 @@
         <div class="page-block">
           <div class="row align-items-center">
             <div class="col-md-12">
-              <div class="page-header-title">
-                <h5 class="m-b-10">Home</h5>
-              </div>
-              <ul class="breadcrumb">
-                <li class="breadcrumb-item"><a href="../dashboard/index.html">Home</a></li>
-                <li class="breadcrumb-item"><a href="javascript: void(0)">Dashboard</a></li>
-                <li class="breadcrumb-item" aria-current="page">Home</li>
+              @* <div class="page-header-title">
+                <h5 class="m-b-10">@ViewData["Title"]</h5>
+              </div> *@
+              <ul class="breadcrumb small">
+                @* <li class="breadcrumb-item">
+                  <a href="~/">Home</a>
+                </li> *@
+                @if (ViewContext.RouteData.Values["controller"] != null)
+                {
+                  var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+                  var action = ViewContext.RouteData.Values["action"]?.ToString();
+                  @if (@action != @controller)
+                  {
+                    <li class="breadcrumb-item">
+                      <a href="~/@controller">@controller</a>
+                    </li>
+                  }
+                  @if (!string.Equals(action, "Index", StringComparison.OrdinalIgnoreCase))
+                  {
+                    <li class="breadcrumb-item active" aria-current="page">@action</li>
+                  }
+                }
+                @if (ViewData["Breadcrumbs"] is IEnumerable<string> breadcrumbs)
+                {
+                  foreach (var crumb in breadcrumbs)
+                  {
+                    <li class="breadcrumb-item">@crumb</li>
+                  }
+                }
+                else
+                {
+                  <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
+                }
               </ul>
             </div>
           </div>
