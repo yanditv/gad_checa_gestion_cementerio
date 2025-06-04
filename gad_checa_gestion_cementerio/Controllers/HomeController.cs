@@ -56,7 +56,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 NumeroDifuntos = _context.Difunto.Count(),
 
-                BovedasDisponibles = _context.Boveda.Count(b =>
+                BovedasDisponibles = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Bovedas").Count(b =>
                     !_context.Contrato.Any(c =>
                         c.BovedaId == b.Id && c.Estado == true && c.FechaFin >= DateTime.Today)
                     ||
@@ -64,18 +64,26 @@ namespace gad_checa_gestion_cementerio.Controllers
                         c.BovedaId == b.Id && c.Estado == true && c.FechaFin < DateTime.Today)
                 ),
 
-                BovedasOcupadas = _context.Boveda.Count(b =>
+                BovedasOcupadas = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Bovedas").Count(b =>
                     _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.Estado == true)
                 ),
 
-                NichosDisponibles = _context.Piso.Count(p => p.Precio > 0),
-                NichosOcupados = _context.Piso.Count(p => p.Precio == 0),
+                NichosDisponibles = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Nichos")
+                .Count(b =>
+                    !_context.Contrato.Any(c =>
+                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin >= DateTime.Today)
+                    ||
+                    _context.Contrato.Any(c =>
+                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin < DateTime.Today)
 
-                BovedasPorCaducar = _context.Contrato
-                    .Where(c => c.FechaFin <= DateTime.Today && c.Estado == true)
-                    .Select(c => c.BovedaId)
-                    .Distinct()
-                    .Count(),
+                ),
+                NichosOcupados = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Nichos").Count(b =>
+                    _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.Estado == true)
+                ),
+
+                BovedasPorCaducar = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Bovedas").Count(b =>
+                    _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.FechaFin <= DateTime.Today.AddDays(8) && c.Estado == true)
+                ),
 
                 UltimosContratos = _context.Contrato
                     .OrderByDescending(c => c.FechaFin)
