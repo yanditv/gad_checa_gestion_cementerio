@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using gad_checa_gestion_cementerio.Models.Listas;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -19,17 +20,43 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
         }
         // GET: CobrosController
-        public ActionResult Index()
+        public ActionResult Index(string filtro = "", int pagina = 1)
         {
-            var contratos = _context.Contrato
+            int pageSize = 10;
+            var contratosQuery = _context.Contrato
                 .Include(c => c.Boveda)
                 .Include(c => c.Difunto)
                 .Include(c => c.Responsables)
                 .Include(c => c.Cuotas)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(filtro))
+            {
+                contratosQuery = contratosQuery.Where(c =>
+                    c.NumeroSecuencial.Contains(filtro) ||
+                    c.Difunto.Nombres.Contains(filtro) ||
+                    c.Difunto.Apellidos.Contains(filtro));
+            }
+
+            int total = contratosQuery.Count();
+            var contratos = contratosQuery
+                .OrderBy(c => c.Id)
+                .Skip((pagina - 1) * pageSize)
+                .Take(pageSize)
                 .ToList();
 
-            var contratosModel = _mapper.Map<List<Models.ContratoModel>>(contratos);
-            return View(contratosModel);
+            var viewModel = new ContratoPaginadaViewModel
+            {
+                Contratos = _mapper.Map<List<Models.ContratoModel>>(contratos),
+                PaginaActual = pagina,
+                TotalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+                Filtro = filtro,
+                TotalResultados = total
+            };
+            ViewBag.Filtro = filtro;
+
+            return View(viewModel);
+
         }
 
         // GET  : COBRAR

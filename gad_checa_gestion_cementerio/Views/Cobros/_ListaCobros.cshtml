@@ -1,0 +1,59 @@
+﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-secondary">
+                <tr>
+                    <th scope="col">
+                        <input type="checkbox" class="form-check-input" id="hs-at-with-checkboxes-main" />
+                    </th>
+                    <th scope="col" class="text-uppercase small fw-bold">Id</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Contrato</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Monto Contrato</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Monto Pagado</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Monto Pendiente</th>
+
+                    <th scope="col" class="text-uppercase small fw-bold">Fecha de vencimiento</th>
+                    <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="small">
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input" />
+                        </td>
+                        <td>@item.Id</td>
+                        <td>@item.NumeroSecuencial</td>
+                        <td>@item.MontoTotal.ToString("C")</td>
+                        <td class="@(item.MontoPagado == 0 ? "" : "text-success")">@item.MontoPagado.ToString("C")</td>
+                        <td class="@(item.MontoPendiente == 0 ? "" : "text-danger")">@item.MontoPendiente.ToString("C")</td>
+                        <td>@item.FechaFin.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a class="btn btn-sm btn-outline-info me-2" asp-action="Facturas" asp-route-id="@item.Id">
+                                    <i class="ti ti-file-text"></i> Ver Facturas
+                                </a>
+                                @if (item.MontoPendiente > 0)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Cobrar" asp-route-id="@item.Id">
+                                        <i class="ti ti-edit"></i> Cobrar
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="p-3">
+        <p class="text-muted mb-0">No hay registros disponibles.</p>
+    </div>
+}

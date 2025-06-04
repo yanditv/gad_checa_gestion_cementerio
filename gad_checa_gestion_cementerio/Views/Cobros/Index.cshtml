@@ -1,101 +1,45 @@
-﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
+﻿@model gad_checa_gestion_cementerio.Models.Listas.ContratoPaginadaViewModel
 @{
     ViewData["Title"] = "Cobros";
     var pagoID = TempData["PagoID"];
 }
-<div class="my-4">
-    <div class="card">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-            <div>
-                <h4 class="card-title mb-2">Lista de Cobros</h4>
-                <p class="text-muted">
-                    Gestione los registros: puede listar, modificar, buscar y eliminar.
-                </p>
-            </div>
-            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h4 class="card-title mb-2">Lista de Cobros</h4>
+            <p class="text-muted">
+                Gestione los registros: puede listar, modificar, buscar y eliminar.
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
+
+            <form asp-action="Index" method="get">
                 <div>
+
                     <div class="input-group">
-                        <input type="text" id="hs-table-with-pagination-search" class="form-control form-control-sm"
-                            placeholder="Buscar..." aria-label="Search" />
-                        <span class="input-group-text">
-                            <i class="ti ti-search"></i>
-                        </span>
+                        <input type="text" name="Filtro" id="hs-table-with-pagination-search"
+                            class="form-control form-control-sm" placeholder="Buscar..." aria-label="Search"
+                            value="@ViewBag.Filtro" />
+                        <button type="submit" class="input-group-text btn btn-md btn-outline-secondary">
+                            <span class="">
+                                <i class="ti ti-search"></i>
+                            </span>
+                        </button>
                     </div>
                 </div>
-                <a class="btn btn-outline-secondary btn-md" asp-action="Index">
-                    Ver todos
-                </a>
-                <a class="btn btn-primary btn-md" asp-action="Create">
-                    <i class="ti ti-plus"></i> <span class="no-wrap">Crear</span><span class="no-wrap"> Nuevo</span>
-                </a>
-            </div>
-        </div>
-        @if (Model != null && Model.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0">
-                    <thead class="table-secondary">
-                        <tr>
-                            <th scope="col">
-                                <input type="checkbox" class="form-check-input" id="hs-at-with-checkboxes-main" />
-                            </th>
-                            <th scope="col" class="text-uppercase small fw-bold">Id</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Contrato</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Monto Pendiente</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Fecha de vencimiento</th>
-                            <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>
-                                    <input type="checkbox" class="form-check-input" />
-                                </td>
-                                <td>@item.Id</td>
-                                <td>@item.NumeroSecuencial</td>
-                                <td>@item.MontoPendiente</td>
-                                <td>@item.FechaFin.ToString("dd/MM/yyyy")</td>
-                                <td class="text-end">
-                                    <div class="btn-group" role="group">
-                                        <a class="btn btn-sm btn-outline-primary" asp-action="Cobrar" asp-route-id="@item.Id">
-                                            <i class="ti ti-edit"></i> Cobrar
-                                        </a>
-                                        <a class="btn btn-sm btn-outline-info" asp-action="Facturas" asp-route-id="@item.Id">
-                                            <i class="ti ti-file-text"></i> Ver Facturas
-                                        </a>
-                                    </div>
+            </form>
+            <a class="btn btn-outline-secondary btn-md" asp-action="Index">
+                Ver todos
+            </a>
 
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <div class="p-3">
-                <p class="text-muted mb-0">No hay registros disponibles.</p>
-            </div>
-        }
-
-        <div class="card-footer d-flex justify-content-between">
-            <p class="mb-0">
-                <small>Página 1 de 10 • Total 12 resultados</small>
-            </p>
-            <div>
-                <button class="btn btn-sm btn-light me-2" type="button">
-                    <i class="ti ti-arrow-left"></i> Prev
-                </button>
-                <button class="btn btn-sm btn-light" type="button">
-                    Next <i class="ti ti-arrow-right"></i>
-                </button>
-            </div>
         </div>
     </div>
+
+    @await Html.PartialAsync("_ListaCobros", Model.Contratos)
+    @await Html.PartialAsync("_Paginacion", Model)
 </div>
+
 
 @section Scripts {
     @if (pagoID != null)
