@@ -113,7 +113,7 @@ function floatchart() {
     chart.render();
   })();
 
-  
+
   (function () {
     var options = {
       chart: {
