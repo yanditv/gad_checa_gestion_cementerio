@@ -6,9 +6,6 @@
         <table class="table table-bordered table-hover mb-0">
             <thead class="table-secondary">
                 <tr>
-                    <th scope="col">
-                        <input type="checkbox" class="form-check-input" id="hs-at-with-checkboxes-main" />
-                    </th>
                     <th scope="col" class="text-uppercase small fw-bold">Id</th>
                     <th scope="col" class="text-uppercase small fw-bold">Contrato</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Contrato</th>
@@ -23,9 +20,6 @@
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td>
-                            <input type="checkbox" class="form-check-input" />
-                        </td>
                         <td>@item.Id</td>
                         <td>@item.NumeroSecuencial</td>
                         <td>@item.MontoTotal.ToString("C")</td>
