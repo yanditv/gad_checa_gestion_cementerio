@@ -68,7 +68,8 @@
                                     </td>
                                 }
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@item.Id">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit"
+                                        asp-route-entityType="@ViewData["EntityType"]" asp-route-id="@item.Id">
                                         <i class="ti ti-edit"></i>
                                     </a>
                                     <button type="button" class="btn btn-sm btn-outline-danger delete-button"

@@ -216,23 +216,53 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(string entityType, int id = 1)
         {
-            var boveda = await _context.Boveda
-                .Include(b => b.Piso)
-                .Include(b => b.Propietario)
-                .FirstOrDefaultAsync(b => b.Id == id);
+            // Determinar el tipo de modelo basado en el parámetro entityTyp
+            Type modelType = GetModelType(entityType);
 
-            if (boveda == null)
-                return NotFound();
+            if (modelType == null)
+            {
+                return NotFound(); // O manejar el error de otra manera
+            }
+            switch (entityType.ToLower())
+            {
+                case "bloques":
 
-            var bovedaModel = _mapper.Map<BovedaModel>(boveda);
+                    return View("Bloques/Bloque", new BloqueModel());
 
-            // Si necesitas cargar combos o datos relacionados:
-            var bloques = await _context.Bloque.ToListAsync();
-            ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
+                case "bovedas":
+                    var boveda = await _context.Boveda
+                        .Include(b => b.Piso)
+                        .Include(b => b.Propietario)
+                        .FirstOrDefaultAsync(b => b.Id == id);
 
-            return View("Bovedas/Boveda", bovedaModel);
+                    if (boveda == null)
+                        return NotFound();
+
+                    var bovedaModel = _mapper.Map<BovedaModel>(boveda);
+
+                    // Si necesitas cargar combos o datos relacionados:
+                    var bloques = await _context.Bloque.ToListAsync();
+                    ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
+
+                    return View("Bovedas/Boveda", bovedaModel);
+
+                case "cobros":
+                    var cobroModel = Activator.CreateInstance(modelType);
+                    return View("Cobros/Cobro", cobroModel);
+
+                case "difuntos":
+                    var difuntoModel = Activator.CreateInstance(modelType);
+                    return View("Difuntos/Difunto", difuntoModel);
+
+                default:
+                    var defaultModel = Activator.CreateInstance(modelType);
+                    return View(defaultModel);
+            }
+
+
+
         }
 
 
