@@ -226,7 +226,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (boveda == null)
                 return NotFound();
 
-            var bovedaModel = _mapper.Map<BovedaViewModel>(boveda);
+            var bovedaModel = _mapper.Map<BovedaModel>(boveda);
 
             // Si necesitas cargar combos o datos relacionados:
             var bloques = await _context.Bloque.ToListAsync();

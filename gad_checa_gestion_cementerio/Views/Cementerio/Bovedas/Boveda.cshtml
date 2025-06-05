@@ -1,24 +1,26 @@
-﻿@model gad_checa_gestion_cementerio.Models.Views.BovedaViewModel
+﻿@model gad_checa_gestion_cementerio.Models.BovedaModel
 
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
 
     <div class="form-group">
-        <label asp-for="Numero" class="control-label"></label>
-        <input asp-for="Numero" class="form-control" />
+        <label asp-for="NumeroSecuecial" class="control-label"></label>
+        <input asp-for="NumeroSecuecial" class="form-control" />
     </div>
+
 
     <div class="form-group">
         <label asp-for="PisoId" class="control-label"></label>
         <select asp-for="PisoId" class="form-control" asp-items="ViewBag.Bloques"></select>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Estado" class="control-label"></label>
-        <input asp-for="Estado" type="checkbox" />
-    </div>
+    @* //TODO: submit es que tiene un propietario,asp-action muestra los datos del propietario, y permite editarlo,
+    propietario debe tener un boton para crear un nuevo propietario,asp-action submit es que no tiene propietario *@
 
     <button type="submit" class="btn btn-primary">Guardar</button>
+
+
+
 </form>
 
 
