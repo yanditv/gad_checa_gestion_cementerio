@@ -215,6 +215,56 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var boveda = await _context.Boveda
+                .Include(b => b.Piso)
+                .Include(b => b.Propietario)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (boveda == null)
+                return NotFound();
+
+            var bovedaModel = _mapper.Map<BovedaViewModel>(boveda);
+
+            // Si necesitas cargar combos o datos relacionados:
+            var bloques = await _context.Bloque.ToListAsync();
+            ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
+
+            return View("Bovedas/Boveda", bovedaModel);
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(BovedaViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var bloques = await _context.Bloque.ToListAsync();
+                ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
+                return View("Bovedas/Boveda", model);
+            }
+
+            var boveda = await _context.Boveda.FindAsync(model.Id);
+            if (boveda == null)
+                return NotFound();
+
+            // Actualiza campos
+            boveda.Numero = model.Numero;
+            boveda.PisoId = model.PisoId;
+            boveda.Estado = model.Estado;
+            boveda.FechaActualizacion = DateTime.Now;
+            boveda.UsuarioActualizador = await _userManager.GetUserAsync(User); // ✅ Correcto
+
+            _context.Update(boveda);
+            _context.SaveChangesAsync();
+
+            return RedirectToAction("Bovedas");
+        }
+
+
 
     }
 }

@@ -1,4 +1,28 @@
-﻿@model gad_checa_gestion_cementerio.Models.BovedaModel
+﻿@model gad_checa_gestion_cementerio.Models.Views.BovedaViewModel
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label asp-for="Numero" class="control-label"></label>
+        <input asp-for="Numero" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PisoId" class="control-label"></label>
+        <select asp-for="PisoId" class="form-control" asp-items="ViewBag.Bloques"></select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Estado" class="control-label"></label>
+        <input asp-for="Estado" type="checkbox" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+</form>
+
+
+@*
 @{
     ViewData["Title"] = "Boveda";
     Layout = "~/Views/Cementerio/_CementerioLayout.cshtml";
@@ -8,7 +32,7 @@
     <input asp-for="Piso" class="form-control" />
     <span asp-validation-for="Piso" class="text-danger"></span>
 </div>
-@* <div class="form-group">
+ <div class="form-group">
     <label asp-for="Descripcion" class="control-label"></label>
     <input asp-for="Descripcion" class="form-control" />
     <span asp-validation-for="Descripcion" class="text-danger"></span>
