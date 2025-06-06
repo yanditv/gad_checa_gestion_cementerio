@@ -31,6 +31,8 @@ namespace gad_checa_gestion_cementerio.Models
         [Required(ErrorMessage = "El campo {0} es requerido")]
         [ForeignKey("Descuento")]
         public int DescuentoId { get; set; }
+
+        public string NombresCompletos => $"{Nombres} {Apellidos}";
     }
 
 }

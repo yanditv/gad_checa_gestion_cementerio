@@ -42,6 +42,7 @@ public class ContratoModel
     // Relaciones
     [Required]
     public int BovedaId { get; set; }
+    public BovedaModel? Boveda { get; set; }
 
     [Required]
     public int DifuntoId { get; set; }
@@ -59,9 +60,8 @@ public class ContratoModel
     [Required]
     public bool EsRenovacion { get; set; }
 
-    public TipoContrato TipoContrato { get; set; } = TipoContrato.Nuevo;
 
-
+    public string? PathDocumentoFirmado { get; set; }
     //Datos para reportes
 
     public decimal MontoPagado

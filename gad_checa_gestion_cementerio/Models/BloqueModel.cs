@@ -10,7 +10,7 @@ namespace gad_checa_gestion_cementerio.Models
     {
         public BloqueModel()
         {
-            this.Pisos = new List<PisoModel>();
+
         }
         [Key]
         public readonly int Id;
@@ -45,13 +45,11 @@ namespace gad_checa_gestion_cementerio.Models
         public int BovedasPorPiso { get; set; }
 
         // Auditoría
-        public  DateTime FechaCreacion { get; set; }
+        public DateTime FechaCreacion { get; set; }
 
         public readonly string UsuarioCreadorId;
         public readonly IdentityUser UsuarioCreador;
 
-        [ScaffoldColumn(false)]
-        public List<PisoModel> Pisos { get; set; }
 
         override public string ToString()
         {

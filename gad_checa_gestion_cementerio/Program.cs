@@ -8,7 +8,7 @@ using gad_checa_gestion_cementerio.services;
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
-
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 // Configurar la sesións
 builder.Services.AddSession(options =>
 {

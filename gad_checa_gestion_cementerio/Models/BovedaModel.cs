@@ -25,9 +25,7 @@ namespace gad_checa_gestion_cementerio.Models
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }
 
-
-        [ForeignKey("UsuarioCreadorId")]
-        public IdentityUser UsuarioCreador { get; set; }
+        public IdentityUser? UsuarioCreador { get; set; }
 
         [ForeignKey("UsuarioActualizadorId")]
         public IdentityUser? UsuarioActualizador { get; set; }
@@ -36,7 +34,7 @@ namespace gad_checa_gestion_cementerio.Models
         [ForeignKey("Piso")]
         [Required]
         public int PisoId { get; set; }
-        public Piso Piso { get; set; } // Relación con el piso
+        public PisoModel? Piso { get; set; } // Relación con el piso
 
         public int? PropietarioId { get; set; }
 

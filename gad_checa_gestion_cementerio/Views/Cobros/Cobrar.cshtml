@@ -109,11 +109,44 @@
                 width: '100%',
                 language: {
                     noResults: function () {
-                        return '<a href="#" onclick="abrirModalCrearPersona()" class="btn btn-link p-0">➕ Crear nueva persona</a>';
+                         return `
+                    <div class="text-center py-2">
+                        <span class="d-block mb-2 text-muted">No se encontraron personas</span>
+                        <button type="button" onclick="abrirModalCrearPersona()" class="btn btn-outline-primary btn-sm">
+                            <i class="ti ti-plus"></i> Crear nueva persona
+                        </button>
+                    </div>
+                `;
                     }
                 },
                 escapeMarkup: function (markup) { return markup; }
             });
+
+                // Estilizar el contenedor visible de Select2 al abrir
+    function aplicarEstiloBootstrap() {
+        $('.select2-container--default .select2-selection--single')
+            .addClass('form-control form-control-md')
+           .removeClass('select2-selection--single');
+
+        // Estilo al input interno de búsqueda
+        $('.select2-container--open .select2-search__field')
+            .addClass('form-control form-control-md');
+
+        // Estilo al dropdown de resultados
+    // Mejorar estilo del botón de limpiar selección (ícono "x")
+    $('.select2-selection__clear')
+        .removeClass('select2-selection__clear')
+        .addClass('btn-close position-absolute top-50 translate-middle-y end-0 me-2')
+
+    }
+
+    // Al abrir el select
+    select.on('select2:open', function () {
+        setTimeout(aplicarEstiloBootstrap, 0);
+    });
+
+    // Aplicar también al cargar la página
+    aplicarEstiloBootstrap();
         });
 
         function abrirModalCrearPersona() {

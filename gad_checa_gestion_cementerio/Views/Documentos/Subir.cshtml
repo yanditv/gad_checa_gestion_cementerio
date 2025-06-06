@@ -1,0 +1,37 @@
+﻿@model gad_checa_gestion_cementerio.Models.DocumentoViewModel
+@{
+    ViewData["Title"] = "Subir Documento PDF";
+}
+
+
+<form asp-action="Subir" enctype="multipart/form-data" method="post">
+    <div class="form-group">
+        <label asp-for="Archivo"></label>
+        <input asp-for="Archivo" type="file" class="form-control" />
+        <span asp-validation-for="Archivo" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">Subir</button>
+
+</form>
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Mensaje"] <br />
+        Ruta: <code>@TempData["RutaGuardada"]</code> <br />
+        <a href="@TempData["RutaGuardada"]" target="_blank">Ver archivo</a>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

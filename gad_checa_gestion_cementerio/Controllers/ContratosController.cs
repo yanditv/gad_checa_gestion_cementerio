@@ -12,6 +12,7 @@ using iText.Layout.Element;
 using Newtonsoft.Json;
 using gad_checa_gestion_cementerio.services;
 using gad_checa_gestion_cementerio.Models.Listas;
+using QuestPDF.Fluent;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
@@ -96,7 +97,40 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         // GET: Contratos/Create
-        public IActionResult Create()
+        public IActionResult Create(int idContrato = 0)
+        {
+            if (idContrato > 0)
+            {
+                var contrato = _context.Contrato
+                    .Include(c => c.Boveda)
+                    .Include(c => c.Difunto)
+                    .Include(c => c.Responsables)
+                    .Include(c => c.Cuotas)
+                    .FirstOrDefault(c => c.Id == idContrato);
+                contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true);
+                if (contrato != null)
+                {
+
+                    var contratoModelView = new CreateContratoModel
+                    {
+                        contrato = _mapper.Map<ContratoModel>(contrato),
+                        difunto = _mapper.Map<DifuntoModel>(contrato.Difunto),
+                        responsables = _mapper.Map<List<ResponsableModel>>(contrato.Responsables),
+                    };
+                    SaveContratoToSession(contratoModelView);
+                    return View(contratoModelView);
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            else
+            {
+                return InitializeNewContrato();
+            }
+        }
+        private IActionResult InitializeNewContrato()
         {
             ViewData["BovedaId"] = new SelectList(_context.Boveda, "Id", "Estado");
 
@@ -285,46 +319,21 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         public IActionResult GenerarContratoPDF(CreateContratoModel model)
         {
-            // Crear un MemoryStream para almacenar el PDF
-            using (var memoryStream = new MemoryStream())
-            {
-                // Crear el escritor de PDF
-                var writer = new PdfWriter(memoryStream);
-                var pdf = new PdfDocument(writer);
-                var document = new Document(pdf);
+            var documento = new ContratoPDF(model);
+            var pdfBytes = documento.GeneratePdf();
 
-                // Agregar contenido al PDF
-                document.Add(new Paragraph("CONTRATO DE RENOVACIÓN DE ARRIENDO DE BOVEDA DEL CEMENTERIO"));
-                document.Add(new Paragraph("DE LA PARROQUIA CHECA"));
-                document.Add(new Paragraph($"En la Parroquia de Checa, a los {model.contrato.FechaInicio:dd} días del mes de {model.contrato.FechaInicio:MMMM} del {model.contrato.FechaInicio:yyyy}; comparecen a celebrar el presente contrato de arrendamiento..."));
+            return File(pdfBytes, "application/pdf", "ContratoArrendamiento.pdf");
+        }
+        [HttpGet]
+        public IActionResult VerContratoPDF()
+        {
+            var modelo = GetContratoFromSession(); // o pásalo por parámetro
+            var boveda = _context.Boveda.Include(b => b.Piso.Bloque).FirstOrDefault(b => b.Id == modelo.contrato.BovedaId);
+            modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
+            var documento = new ContratoPDF(modelo);
+            var pdfBytes = documento.GeneratePdf();
 
-                // Agregar detalles del contrato
-                document.Add(new Paragraph($"Contrato ID: {model.contrato.Id}"));
-                document.Add(new Paragraph($"Fecha: {model.contrato.FechaInicio}"));
-                document.Add(new Paragraph($"Tipo: {model.contrato.Estado}"));
-
-                // Agregar detalles del difunto
-                document.Add(new Paragraph($"Nombre del difunto: {model.difunto.Nombres}"));
-                document.Add(new Paragraph($"Fecha de Nacimiento: {model.difunto.FechaNacimiento}"));
-                document.Add(new Paragraph($"Fecha de Defunción: {model.difunto.FechaFallecimiento}"));
-
-                // Agregar detalles de los responsables
-                foreach (var responsable in model.responsables)
-                {
-                    document.Add(new Paragraph($"Nombre: {responsable.Nombres}"));
-                    document.Add(new Paragraph($"Teléfono: {responsable.Telefono}"));
-                }
-
-                // Agregar detalles del pago
-                document.Add(new Paragraph($"Monto: {model.pago.Monto}"));
-                document.Add(new Paragraph($"Fecha de Pago: {model.pago.FechaPago}"));
-
-                // Cerrar el documento
-                document.Close();
-
-                // Devolver el PDF como un archivo descargable
-                return File(memoryStream.ToArray(), "application/pdf", "ContratoArrendamiento.pdf");
-            }
+            return File(pdfBytes, "application/pdf");
         }
         // CREAR DIFUNTO
         [HttpGet]
@@ -445,20 +454,23 @@ namespace gad_checa_gestion_cementerio.Controllers
             var tarifa = _context.Cementerio.FirstOrDefault()?.tarifa_arriendo ?? 0;
             contrato_model.contrato.NumeroDeMeses = 5;
             contrato_model.contrato.FechaInicio = DateTime.Now;
-            contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddMonths(contrato_model.contrato.NumeroDeMeses);
+            contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
             contrato_model.contrato.Difunto = new DifuntoModel();
             contrato_model.contrato.MontoTotal = tarifa;
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
             return PartialView("_CreateContrato", contrato_model.contrato);
         }
         [HttpGet]
-        public IActionResult RecargarContratoByTipo(int tipoContrato)
+        public IActionResult RecargarContratoByTipo(int idBoveda)
         {
             // Lógica para obtener el modelo actualizado según el tipo
-            var contrato_model = GetContratoFromSession().contrato;
-            contrato_model.NumeroSecuencial = _contratoService.getNumeroContrato((TipoContrato)tipoContrato);
+            var contratoSession = GetContratoFromSession();
+            var contrato_model = contratoSession.contrato;
+            contrato_model.NumeroSecuencial = _contratoService.getNumeroContrato(idBoveda);
+            SaveContratoToSession(contratoSession);
             //return Json(new { success = true, contrato = contrato_model });
-            return PartialView("_CreateContrato", contrato_model); // O puedes retornar Json(model) si prefieres trabajar con JS puro
+            return Json(new { success = true, numeroSecuencial = contrato_model.NumeroSecuencial });
+            // return View("Create", contratoSession); // O puedes retornar Json(model) si prefieres trabajar con JS puro
         }
 
         [HttpPost]
@@ -472,6 +484,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                 FechaFallecimiento = DateTime.Now,
                 NumeroIdentificacion = ""
             };
+            contrato.Boveda = _mapper.Map<BovedaModel>(_context.Boveda.Include(x => x.Piso.Bloque).Include(x => x.UsuarioCreador).Where(x => x.Id == contrato.BovedaId).FirstOrDefault());
+
             if (ModelState.IsValid)
             {
                 var sessionContrato = GetContratoFromSession();

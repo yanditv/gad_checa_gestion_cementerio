@@ -21,5 +21,8 @@ namespace gad_checa_gestion_cementerio.Models
 
         [Required]
         public int BloqueId { get; set; }
+        public BloqueModel? Bloque { get; set; } // Relación con el bloque
+
+
     }
 }

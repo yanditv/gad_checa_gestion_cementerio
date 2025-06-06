@@ -18,21 +18,23 @@ public class ContratoService
     {
 
         var tarifa = _context.Cementerio.FirstOrDefault()?.tarifa_arriendo ?? 0;
+        var periodo = 5;
         return new Contrato
         {
             FechaCreacion = DateTime.Now,
-            FechaActualizacion = DateTime.Now.AddYears(1),
+            FechaActualizacion = DateTime.Now,
             Estado = true,
             FechaInicio = DateTime.Now,
-            FechaFin = DateTime.Now.AddMonths(5),
+            FechaFin = DateTime.Now.AddYears(periodo),
             MontoTotal = tarifa,
             Observaciones = string.Empty,
             DifuntoId = 0,
             Difunto = new Difunto(),
-            NumeroDeMeses = 5,
+            NumeroDeMeses = periodo,
             EsRenovacion = false,
             Cuotas = new List<Cuota>(),
-            NumeroSecuencial = getNumeroContrato(TipoContrato.Nuevo),
+            BovedaId = 0,
+            NumeroSecuencial = getNumeroContrato(_context.Boveda.FirstOrDefault()?.Id ?? 0),
         };
     }
     private string GetTipoContratoPrefix(TipoContratos tipo)
@@ -46,53 +48,18 @@ public class ContratoService
             _ => throw new ArgumentOutOfRangeException(nameof(tipo), tipo, null)
         };
     }
-
-    public Boveda GetBovedaDisponibleByTipo(TipoContrato tipo, Boveda? boveda = null)
+    public string getNumeroContrato(int idBoveda, bool isRenovacion = false)
     {
-        // Validar el tipo de contrato
-        if (tipo != TipoContrato.Nuevo && tipo != TipoContrato.Renovación && tipo != TipoContrato.Nicho)
-        {
-            throw new ArgumentException("Tipo de contrato no válido. Debe ser 'Nuevo' o 'Renovación'.");
-        }
-        switch (tipo)
-        {
-            case TipoContrato.Nuevo:
-                var boveda_nueva = _context.Boveda
-                            .Include(b => b.Piso)
-                            .ThenInclude(p => p.Bloque)
-                            .FirstOrDefault(b => b.Piso.Bloque.Tipo == "Bovedas" && b.Estado == true);
-                return boveda_nueva ?? throw new InvalidOperationException("No hay bóvedas disponibles.");
-            case TipoContrato.Renovación:
-                return boveda ?? throw new InvalidOperationException("Debe proporcionar una bóveda para la renovación.");
-            case TipoContrato.Nicho:
-                // Buscar el tipo de bloque en la base de datos
-                var nicho_nuevo = _context.Boveda
-                            .Include(b => b.Piso)
-                            .ThenInclude(p => p.Bloque)
-                            .FirstOrDefault(b => b.Piso.Bloque.Tipo == "Nichos" && b.Estado == true);
-                return nicho_nuevo ?? throw new InvalidOperationException("No hay bóvedas disponibles.");
-            default:
-                throw new ArgumentException("Tipo de contrato no válido.");
-        }
-        // Obtener el tipo de bloque según el tipo de contrato
-
-        // Obtener el tipo de bloque
-        // Buscar la bóveda disponible según el tipo
-
-
-        // Si no se encuentra una bóveda, retornar null
-        return boveda;
-    }
-    public String getNumeroContrato(TipoContrato tipoContrato)
-    {
-        var year = DateTime.Now.Year;    // Obtener la bóveda asociada al contrato desde la sesión
-        var boveda = GetBovedaDisponibleByTipo(tipoContrato);
-        var tipo = "Bovedas"; // Valor por defecto en caso de que no se encuentre la bóveda
+        var year = DateTime.Now.Year;
+        var boveda = _context.Boveda
+            .Include(b => b.Piso)
+            .ThenInclude(p => p.Bloque)
+            .FirstOrDefault(b => b.Id == idBoveda);
+        var tipo = "Bovedas";
         if (boveda != null)
         {
             tipo = boveda.Piso.Bloque.Tipo;
         }
-        // Determinar el prefijo según el tipo de contrato y si la bóveda pertenece a un bloque de tipo "NICHOS"
 
         var prefix = tipo switch
         {
@@ -101,18 +68,20 @@ public class ContratoService
             _ => GetTipoContratoPrefix(TipoContratos.NUEVO)
         };
 
-        // Filtrar los contratos por año y prefijo
+        if (isRenovacion)
+        {
+            prefix = $"{GetTipoContratoPrefix(TipoContratos.RENOVACION)}-{prefix}";
+        }
+
         var lastContrato = _context.Contrato
             .Where(c => c.NumeroSecuencial.Contains($"-{year}-") && c.NumeroSecuencial.StartsWith(prefix))
             .OrderByDescending(c => c.Id)
             .FirstOrDefault();
 
-        // Determinar el siguiente número secuencial
         var nextNumber = lastContrato != null
             ? int.Parse(lastContrato.NumeroSecuencial.Split('-').Last()) + 1
             : 1;
 
-        // Generar el número secuencial
         return $"{prefix}-GADCHECA-{year}-{nextNumber:D3}";
     }
 
