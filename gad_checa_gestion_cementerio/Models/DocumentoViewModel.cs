@@ -10,4 +10,5 @@ public class DocumentoViewModel
     public IFormFile Archivo { get; set; }
 
     public string RutaGuardada { get; set; }
+    public bool esNuevo { get; set; } = true;
 }

@@ -1,0 +1,48 @@
+﻿@model gad_checa_gestion_cementerio.Models.DocumentoViewModel
+@{
+    ViewData["Title"] = "Cargar Comprobante de Contrato";
+}
+
+
+<form asp-action="SubirDocumento" enctype="multipart/form-data" method="post" class="mb-4">
+    <input type="hidden" name="idContrato" value="@ViewBag.IdContrato" />
+    <div class="form-group">
+        <label asp-for="Archivo" class="mb-2">Suba el Documento firmado</label>
+        <input asp-for="Archivo" type="file" class="form-control" />
+        <span asp-validation-for="Archivo" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();"><i
+            class="ti ti-upload"></i> Subir documento</button>
+
+</form>
+@if (!Model.esNuevo && !string.IsNullOrEmpty(Model.RutaGuardada))
+{
+    <div class="alert alert-info">
+        Documento firmado y cargado para este contrato. <br />
+        @* Ruta: <code>@Model.RutaGuardada</code> <br /> *@
+        <a href="@Model.RutaGuardada" target="_blank">Ver documento actual</a>
+    </div>
+}
+
+
+@if (Model.esNuevo && TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Mensaje"] <br />
+        @* Ruta: <code>@TempData["RutaGuardada"]</code> <br /> *@
+        <a href="@TempData["RutaGuardada"]" target="_blank">Ver archivo</a>
+    </div>
+}
+@if (Model.esNuevo && TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

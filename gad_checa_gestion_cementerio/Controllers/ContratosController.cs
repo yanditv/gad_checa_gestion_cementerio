@@ -16,10 +16,12 @@ namespace gad_checa_gestion_cementerio.Controllers
     {
         private readonly ContratoService _contratoService;
         private readonly ILogger<ContratosController> _logger;
-        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService) : base(context, userManager, mapper)
+        private readonly IWebHostEnvironment _env;
+        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper)
         {
             _logger = logger;
             _contratoService = contratoService;
+            _env = env;
 
         }
         private CreateContratoModel GetContratoFromSession()
@@ -605,6 +607,83 @@ namespace gad_checa_gestion_cementerio.Controllers
             };
 
             return Json(resultado);
+        }
+        #endregion
+
+        #region  Documentos
+
+        [HttpGet]
+        public IActionResult SubirDocumento(int idContrato)
+        {
+            var modelo = new DocumentoViewModel();
+
+            if (idContrato > 0)
+            {
+                var contrato = _context.Contrato.Find(idContrato);
+                if (contrato != null && !string.IsNullOrEmpty(contrato.PathDocumentoFirmado))
+                {
+                    modelo.RutaGuardada = contrato.PathDocumentoFirmado;
+                    modelo.esNuevo = false;
+                }
+                ViewBag.IdContrato = idContrato;
+            }
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SubirDocumento(DocumentoViewModel modelo, int idContrato)
+        {
+            modelo.esNuevo = true; // Aseguramos que sea un nuevo documento
+            if (modelo.Archivo == null || modelo.Archivo.Length == 0)
+            {
+                TempData["Error"] = "Debe seleccionar un archivo válido.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
+            // Limitar tamaño: 2 MB = 2 * 1024 * 1024 bytes
+            if (modelo.Archivo.Length > 2 * 1024 * 1024)
+            {
+                TempData["Error"] = "El archivo no debe superar los 2 MB.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
+
+            if (!modelo.Archivo.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Solo se permiten archivos PDF.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
+            var carpetaDestino = Path.Combine(_env.WebRootPath, "documentos");
+            if (!Directory.Exists(carpetaDestino))
+                Directory.CreateDirectory(carpetaDestino);
+
+            var nombreArchivo = Guid.NewGuid() + Path.GetExtension(modelo.Archivo.FileName);
+            var rutaCompleta = Path.Combine(carpetaDestino, nombreArchivo);
+
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await modelo.Archivo.CopyToAsync(stream);
+            }
+
+            var rutaRelativa = $"/documentos/{nombreArchivo}";
+
+            // Aquí puedes guardar en la BD si deseas
+
+            TempData["RutaGuardada"] = rutaRelativa;
+            TempData["Mensaje"] = "Archivo subido exitosamente.";
+
+            // Guardar la ruta en el contrato
+            if (idContrato > 0)
+            {
+                var contrato = _context.Contrato.Find(idContrato);
+                if (contrato != null)
+                {
+                    contrato.PathDocumentoFirmado = rutaRelativa;
+                    _context.SaveChanges();
+                }
+            }
+
+            // 🔁 Redirige a GET para evitar el reenvío en recarga
+            return RedirectToAction("SubirDocumento", new { idContrato });
         }
         #endregion
     }

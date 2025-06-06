@@ -47,10 +47,27 @@
                     @Html.DisplayFor(modelItem => item.Observaciones)
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
+                    @* <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                    <a asp-action="Create" asp-route-idContrato="@item.Id" class="btn btn-sm btn-danger">Renovar</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a> *@
+                    <a asp-action="Create" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-danger me-1"
+                        title="Renovar">
+                        <i class="ti ti-repeat"></i> Renovar Contrato
+                    </a>
+                    @if (string.IsNullOrEmpty(item.PathDocumentoFirmado))
+                    {
+                        <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-primary"
+                            title="Subir Documento">
+                            <i class="ti ti-upload"></i> Subir Documento
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-success"
+                            title="Ver Documento">
+                            <i class="ti ti-file-text"></i>Ver Documento
+                        </a>
+                    }
                 </td>
             </tr>
         }
