@@ -69,7 +69,7 @@ public class ContratoPDF : IDocument
                     text.Span(" Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ");
                     text.Span(presidente).Bold();
                     text.Span("; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ");
-                    text.Span(responsables.FirstOrDefault().NombresCompletos).Bold();
+                    text.Span(responsables.FirstOrDefault()?.NombresCompletos ?? "________________").Bold();
                     text.Span(" a quien en lo posterior se le llamará Arrendatario.");
                 });
 
@@ -87,10 +87,11 @@ public class ContratoPDF : IDocument
                     text.Span(" con número de cédula ");
                     text.Span(difunto.NumeroIdentificacion).Bold();
                     text.Span(", restos que serán depositados en la bóveda número ");
-                    text.Span(boveda.NumeroSecuecial).Bold();
+                    text.Span(boveda?.NumeroSecuecial ?? "________________").Bold();
                     text.Span(" en el bloque ");
-                    text.Span(boveda.Piso.Bloque.Descripcion).Bold();
-                    text.Span($", piso {boveda.Piso.NumeroPiso}").Bold();
+                    text.Span(boveda?.Piso?.Bloque?.Descripcion ?? "________________").Bold();
+                    if (boveda?.Piso?.NumeroPiso != null)
+                        text.Span($", piso {boveda.Piso.NumeroPiso}").Bold();
                 });
 
                 column.Item().Text(text =>
