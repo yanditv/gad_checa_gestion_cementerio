@@ -30,17 +30,30 @@ public class ContratoPDF : IDocument
         var numero_cuenta = "2000324704"; // Asumimos un número de cuenta fijo, se puede cambiar según sea necesario
         container.Page(page =>
         {
-            page.Margin(40);
             page.Size(PageSizes.A4);
             page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
-            page.Margin(70);
 
-            page.Background().Image("wwwroot/logo_gad.png", ImageScaling.FitArea);
+            page.Header().AlignCenter().Image(Image.FromFile("wwwroot/logo_gad.png")).FitWidth();
+            page.Background().AlignCenter().AlignMiddle().Image("wwwroot/images/background.jpg").FitWidth();
 
-            page.Content().Column(column =>
+
+            page.Footer().AlignCenter().PaddingBottom(20).Text(text =>
+            {
+                text.DefaultTextStyle(x => x.FontSize(9));
+                text.Span("Dirección: ").SemiBold();
+                text.Span(direccion_cementerio + "  |  ");
+                text.Span("Teléfono: ").SemiBold();
+                text.Span(telefono_cementerio + "  |  ");
+                text.Span("Correo: ").SemiBold();
+                text.Span(string.IsNullOrWhiteSpace(email_cementerio) ? "checa@example.gob.ec" : email_cementerio);
+            });
+            //page.Header().AlignCenter().Image(Image.FromFile("wwwroot/logo_gad.png")).FitHeight();
+            page.Content()
+            .PaddingHorizontal(60)
+            .PaddingVertical(20)
+            .Column(column =>
             {
                 column.Spacing(20);
-                column.Item().PaddingVertical(15);
                 column.Item().AlignCenter().Text("CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA").Bold().FontSize(13);
                 column.Item().Text(text =>
                 {
@@ -121,7 +134,7 @@ public class ContratoPDF : IDocument
                     text.Span(" Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.");
                 });
 
-                column.Item().Height(50);
+                column.Item().Height(20);
                 column.Item().AlignCenter().Row(row =>
                 {
                     row.Spacing(100); // Espacio horizontal entre columnas (ajustable)
