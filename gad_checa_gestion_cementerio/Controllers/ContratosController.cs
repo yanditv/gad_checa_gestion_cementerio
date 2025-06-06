@@ -330,7 +330,10 @@ namespace gad_checa_gestion_cementerio.Controllers
             var documento = new ContratoPDF(modelo);
             var pdfBytes = documento.GeneratePdf();
 
-            return File(pdfBytes, "application/pdf");
+            var fileName = $"CONTRATO_{modelo.contrato.NumeroSecuencial ?? "Arrendamiento"}.pdf";
+            ViewBag.NombreArchivo = fileName;
+            Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
+            return new FileContentResult(pdfBytes, "application/pdf");
         }
         // CREAR DIFUNTO
         [HttpGet]
@@ -405,10 +408,26 @@ namespace gad_checa_gestion_cementerio.Controllers
             var contrato = GetContratoFromSession();
             contrato.pago.Cuotas = contrato.contrato.Cuotas.Where(c => !c.Pagada).ToList();
             contrato.pago.FechaPago = DateTime.Now;
-            contrato.pago.Monto = contrato.pago.Cuotas.Sum(c => c.Monto);
+
+            // Verificar si el difunto tiene descuento y aplicarlo
+            decimal descuento = 0;
+            if (contrato.difunto != null && contrato.difunto.DescuentoId != 0)
+            {
+                var descuentoObj = _context.Descuento.FirstOrDefault(d => d.Id == contrato.difunto.DescuentoId);
+                if (descuentoObj != null)
+                {
+                    descuento = descuentoObj.Porcentaje;
+                }
+            }
+
+            decimal montoSinDescuento = contrato.pago.Cuotas.Sum(c => c.Monto);
+            decimal montoDescuento = montoSinDescuento * (descuento / 100m);
+            contrato.pago.Monto = montoSinDescuento - montoDescuento;
+
             foreach (var cuota in contrato.pago.Cuotas)
             {
                 Console.WriteLine(cuota.FechaVencimiento);
+                cuota.Monto = contrato.pago.Monto / contrato.pago.Cuotas.Count;
             }
             var firstResponsable = contrato.responsables.FirstOrDefault();
             if (firstResponsable != null)
@@ -426,6 +445,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 var contrato = GetContratoFromSession();
                 pago.Cuotas = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.TempId)).ToList();
+                pago.Monto = pago.Cuotas.Sum(c => c.Monto);
 
                 // Marcar las cuotas seleccionadas como pagadas
                 foreach (var cuota in contrato.contrato.Cuotas)
