@@ -677,6 +677,15 @@ namespace gad_checa_gestion_cementerio.Controllers
                 var contrato = _context.Contrato.Find(idContrato);
                 if (contrato != null)
                 {
+                    // Si ya existe un archivo, eliminar el archivo anterior físicamente
+                    if (!string.IsNullOrEmpty(contrato.PathDocumentoFirmado))
+                    {
+                        var rutaAnterior = Path.Combine(_env.WebRootPath, contrato.PathDocumentoFirmado.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                        if (System.IO.File.Exists(rutaAnterior))
+                        {
+                            System.IO.File.Delete(rutaAnterior);
+                        }
+                    }
                     contrato.PathDocumentoFirmado = rutaRelativa;
                     _context.SaveChanges();
                 }
