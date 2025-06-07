@@ -89,6 +89,16 @@ namespace gad_checa_gestion_cementerio.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Nombres,Apellidos,TipoIdentificacion,NumeroIdentificacion,Telefono,Email,Direccion")] Models.PersonaModel persona)
         {
+            bool existe = await _context.Persona
+    .AnyAsync(p => p.NumeroIdentificacion == persona.NumeroIdentificacion);
+            var tipos = new List<string> { "Cedula", "RUC" };
+            if (existe)
+            {
+
+                ViewData["TiposIdentificacion"] = new SelectList(tipos);
+                ModelState.AddModelError("NumeroIdentificacion", "Ya existe una persona con esta cédula.");
+                return View(persona);
+            }
             if (ModelState.IsValid)
             {
                 IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
@@ -110,7 +120,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            var tipos = new List<string> { "Cedula", "RUC" };
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
             return View(persona);
         }
@@ -275,6 +284,32 @@ namespace gad_checa_gestion_cementerio.Controllers
                 success = true,
                 id = p.Id,
                 nombreCompleto = $"{p.Nombres} {p.Apellidos}"
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BuscarPorCedula(string cedula)
+        {
+            var persona = await _context.Persona
+                .FirstOrDefaultAsync(p => p.NumeroIdentificacion == cedula);
+
+            if (persona == null)
+                return Json(new { existe = false });
+
+            return Json(new
+            {
+                existe = true,
+                persona = new
+                {
+                    persona.Nombres,
+                    persona.Apellidos,
+                    persona.Telefono,
+                    persona.Email,
+                    persona.Direccion,
+                    persona.TipoIdentificacion,
+                    persona.NumeroIdentificacion,
+
+                }
             });
         }
 

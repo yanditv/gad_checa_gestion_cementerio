@@ -52,12 +52,17 @@ namespace gad_checa_gestion_cementerio.Data
             {
                 entity.ToTable("UsuarioTokens");
             });
-
+            // Configuración de las entidades
+            builder.Entity<Persona>()
+                .HasIndex(p => p.NumeroIdentificacion)
+                .IsUnique();
             // Configuración de la herencia (TPH - Table Per Hierarchy)
             builder.Entity<Persona>()
                 .HasDiscriminator<string>("TipoPersona")
                 .HasValue<Persona>("Persona")
-                .HasValue<Responsable>("Responsable");
+                .HasValue<Responsable>("Responsable")
+                .HasValue<Propietario>("Propietario");
+
 
             // Configuración de relaciones con IdentityUser
             builder.Entity<Persona>()
