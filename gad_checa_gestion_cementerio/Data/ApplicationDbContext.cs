@@ -172,6 +172,8 @@ namespace gad_checa_gestion_cementerio.Data
         public DbSet<Boveda> Boveda { get; set; }
         public DbSet<Responsable> ContratoResponsable { get; set; }
         public DbSet<Responsable> Responsable { get; set; }
+        public DbSet<Responsable> BovedaPropietario { get; set; }
+        public DbSet<Propietario> Propietario { get; set; }
         public DbSet<GADInformacion> GadInformacion { get; set; }
         public DbSet<Piso> Piso { get; set; }
 

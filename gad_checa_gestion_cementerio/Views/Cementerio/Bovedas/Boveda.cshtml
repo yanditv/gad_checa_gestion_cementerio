@@ -1,45 +1,109 @@
 ﻿@model gad_checa_gestion_cementerio.Models.BovedaModel
 
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Edit" method="post" id="bovedaForm">
+                <input type="hidden" asp-for="Id" />
 
-    <div class="form-group">
-        <label asp-for="NumeroSecuecial" class="control-label"></label>
-        <input asp-for="NumeroSecuecial" class="form-control" />
+                <div class="mb-3">
+                    <label asp-for="NumeroSecuecial" class="form-label">Número Secuencial</label>
+                    <input asp-for="NumeroSecuecial" class="form-control" />
+                    <span asp-validation-for="NumeroSecuecial" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PropietarioId" class="form-label">Propietario</label>
+                        <select id="propietario-select" name="PropietarioId" class="form-control select2">
+                            <option value="">Seleccione un propietario</option>
+                            @foreach (var p in ViewBag.Propietarios as List<SelectListItem>)
+                            {
+                                <option value="@p.Value">@p.Text</option>
+                            }
+                        </select>
+
+                        <div class="mt-2">
+                            <small class="form-text text-muted">
+                                ¿No encuentras al propietario?
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                    onclick="abrirModalCrearPropietario()">Crear Persona</button>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 
-
-    <div class="form-group">
-        <label asp-for="PisoId" class="control-label"></label>
-        <select asp-for="PisoId" class="form-control" asp-items="ViewBag.Bloques"></select>
+<!-- Modal para crear nueva persona -->
+<div class="modal fade" id="modalNuevoPropietario" tabindex="-1" aria-labelledby="modalPropietarioLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear nuevo Propietario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalPropietarioContent">
+                <!-- Aquí se carga el formulario de persona -->
+            </div>
+        </div>
     </div>
+</div>
 
-    @* //TODO: submit es que tiene un propietario,asp-action muestra los datos del propietario, y permite editarlo,
-    propietario debe tener un boton para crear un nuevo propietario,asp-action submit es que no tiene propietario *@
+@section Scripts {
 
-    <button type="submit" class="btn btn-primary">Guardar</button>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#propietario-select').select2({
+                placeholder: 'Seleccione o busque un propietario',
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0, // 👈 Esto activa el buscador SIEMPRE
+                language: {
+                    noResults: function () {
+                        return `
+                            <div style='padding:5px'>
+                                <span>No encontrado</span><br/>
+                                <button type="button" onclick="abrirModalCrearPropietario()" class="btn btn-sm btn-primary mt-2">Crear nuevo</button>
+                            </div>
+                        `;
+                    }
+                },
+                escapeMarkup: function (markup) {
+                    return markup;
+                }
+            });
+        });
+
+        function abrirModalCrearPropietario() {
+            $('#modalPropietarioContent').load('/Propietario/CrearDesdeModal');
+            $('#modalNuevoPropietario').modal('show');
+        }
 
 
+        function personaCreada(id, nombreCompleto) {
+            const select = $('#propietario-select');
+            select.find('option').each(function () {
+                if ($(this).val() === id.toString() || $(this).text().trim() === nombreCompleto.trim()) {
+                    $(this).remove();
+                }
+            });
 
-</form>
+            const nuevaOpcion = new Option(nombreCompleto, id, true, true);
+            select.append(nuevaOpcion).val(id).trigger('change');
+            $('#modalNuevoPropietario').modal('hide');
+        }
 
-
-@*
-@{
-    ViewData["Title"] = "Boveda";
-    Layout = "~/Views/Cementerio/_CementerioLayout.cshtml";
+    </script>
 }
-<div class="form-group">
-    <label asp-for="PisoId" class="control-label"></label>
-    <input asp-for="Piso" class="form-control" />
-    <span asp-validation-for="Piso" class="text-danger"></span>
-</div>
- <div class="form-group">
-    <label asp-for="Descripcion" class="control-label"></label>
-    <input asp-for="Descripcion" class="form-control" />
-    <span asp-validation-for="Descripcion" class="text-danger"></span>
-</div>
-<div class="form-group">
-    <input type="submit" value="@(Model.Id == 0 ? "Crear" : "Guardar")" class="btn btn-primary" />
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</div> *@

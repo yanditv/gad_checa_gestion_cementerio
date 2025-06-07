@@ -34,19 +34,25 @@ namespace gad_checa_gestion_cementerio.Controllers
             var bovedas = await _context.Boveda
                 .Include(x => x.Piso)
                 .ToListAsync();
-            var bovedasModel = _mapper.Map<List<BovedaViewModel>>(bovedas);
+
+            // El problema está aquí. Estás mapeando a BovedaModel, pero BovedaFilterModel
+            // espera BovedaViewModel en su propiedad Bovedas.
+            // Si BovedaFilterModel.Bovedas es List<BovedaViewModel>, entonces debes mapear a BovedaViewModel.
+            var bovedasModel = _mapper.Map<List<BovedaViewModel>>(bovedas); // CAMBIO A BovedaViewModel
 
             var bloque = await _context.Bloque.ToListAsync();
 
             var viewModel = new BovedaFilterModel();
 
-            viewModel.Bovedas = bovedasModel;
+            viewModel.Bovedas = bovedasModel; // Ahora coincidirá con el tipo esperado
+
+            // Esta línea es problemática si bovedasModel está vacío, ya que FirstOrDefault() será null.
+            // Se abordará en las advertencias.
             viewModel.Piso = bovedasModel.FirstOrDefault()?.Piso.Id ?? 0;
 
             ViewData["Bloques"] = new SelectList(bloque, "Id", "Descripcion");
             return View("Bovedas/Index", viewModel);
         }
-
         public async Task<IActionResult> Difuntos()
         {
             var difuntos = await _context.Difunto.ToListAsync();
@@ -131,7 +137,20 @@ namespace gad_checa_gestion_cementerio.Controllers
                 case "bovedas":
                     var bloques = _context.Bloque.ToList();
                     ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
-                    var bovedaModel = Activator.CreateInstance(modelType);
+                    var bovedaModel = Activator.CreateInstance(modelType) as BovedaModel; // Asegúrate de que es BovedaModel
+
+                    // *** CAMBIO CLAVE AQUÍ: Crear un SelectList para Propietarios en Create ***
+                    var propietariosForCreate = await _context.Persona
+                        .Select(p => new SelectListItem
+                        {
+                            Value = p.Id.ToString(),
+                            Text = p.Nombres + " " + p.Apellidos
+                        })
+                        .ToListAsync();
+
+                    // Convertir a SelectList ANTES de pasarla a ViewData
+                    ViewData["Propietarios"] = new SelectList(propietariosForCreate, "Value", "Text");
+
                     return View("Bovedas/Boveda", bovedaModel);
 
                 case "cobros":
@@ -205,7 +224,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 case "bloques":
                     return typeof(BloqueModel);
                 case "bovedas":
-                    return typeof(BovedaViewModel);
+                    return typeof(BovedaModel);
                 case "cobros":
                     return typeof(PagoModel);
                 case "difuntos":
@@ -241,12 +260,29 @@ namespace gad_checa_gestion_cementerio.Controllers
                         return NotFound();
 
                     var bovedaModel = _mapper.Map<BovedaModel>(boveda);
+                    Console.WriteLine($"PropietarioId en el modelo: {bovedaModel.PropietarioId}");
+                    var pisos = await _context.Piso.ToListAsync();
+                    ViewBag.Pisos = new SelectList(pisos, "Id", "Numero", bovedaModel.PisoId);
 
-                    // Si necesitas cargar combos o datos relacionados:
-                    var bloques = await _context.Bloque.ToListAsync();
-                    ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
+                    // *** CAMBIO CLAVE AQUÍ: Crear una List<SelectListItem> ***
+                    var propietarios = await _context.Persona
+                        .Select(p => new SelectListItem
+                        {
+                            Value = p.Id.ToString(),
+                            Text = p.Nombres + " " + p.Apellidos,
+                            Selected = (p.Id == boveda.PropietarioId) // Utiliza las propiedades Nombres y Apellidos
+                        })
+                        .ToListAsync();
+
+                    ViewBag.Propietarios = propietarios; // Ahora es una List<SelectListItem> directamente
+
+                    foreach (var prop in propietarios)
+                    {
+                        Console.WriteLine($"Prop: {prop.Text}, Selected: {prop.Selected}");
+                    }
 
                     return View("Bovedas/Boveda", bovedaModel);
+
 
                 case "cobros":
                     var cobroModel = Activator.CreateInstance(modelType);
@@ -268,7 +304,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(BovedaViewModel model)
+        public async Task<IActionResult> Edit(BovedaModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -286,13 +322,53 @@ namespace gad_checa_gestion_cementerio.Controllers
             boveda.PisoId = model.PisoId;
             boveda.Estado = model.Estado;
             boveda.FechaActualizacion = DateTime.Now;
-            boveda.UsuarioActualizador = await _userManager.GetUserAsync(User); // ✅ Correcto
+            boveda.UsuarioActualizador = await _userManager.GetUserAsync(User);
+            boveda.PropietarioId = model.PropietarioId;
+            Console.WriteLine($"Propietario recibido del formulario: {model.PropietarioId}");
 
             _context.Update(boveda);
             _context.SaveChangesAsync();
+            boveda.PropietarioId = model.PropietarioId;
+            Console.WriteLine($"Asignado a boveda: {boveda.PropietarioId}");
 
             return RedirectToAction("Bovedas");
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(BovedaModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Cargar combos nuevamente si hay errores
+                var bloques = await _context.Bloque.ToListAsync();
+                ViewData["Bloques"] = new SelectList(bloques, "Id", "Descripcion");
+
+                var propietarios = await _context.Persona
+                    .OfType<Propietario>()
+                    .Where(p => p.Estado)
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.Id.ToString(),
+                        Text = p.Nombres + " " + p.Apellidos
+                    }).ToListAsync();
+
+                ViewBag.Propietarios = propietarios;
+
+                return View("Bovedas/Boveda", model);
+            }
+
+            // Guardar la nueva bóveda
+            var boveda = _mapper.Map<Boveda>(model);
+            boveda.FechaCreacion = DateTime.Now;
+            boveda.UsuarioCreador = await _userManager.GetUserAsync(User);
+            boveda.FechaActualizacion = DateTime.Now;
+
+            _context.Boveda.Add(boveda);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Bovedas");
+        }
+
 
 
 

@@ -1,6 +1,6 @@
-@model gad_checa_gestion_cementerio.Models.PersonaModel
+@model gad_checa_gestion_cementerio.Models.PropietarioModel
 
-<form id="formCrearPersona">
+<form id="formCrearPropietario">
     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
     <div class="row g-3">
@@ -42,25 +42,32 @@
             <input asp-for="Direccion" class="form-control" />
             <span asp-validation-for="Direccion" class="text-danger"></span>
         </div>
+
+        <div class="col-12">
+            <label asp-for="Catastro" class="form-label">Catastro</label>
+            <input asp-for="Catastro" class="form-control" />
+            <span asp-validation-for="Catastro" class="text-danger"></span>
+        </div>
     </div>
 
     <div class="mt-4 text-end">
         <button type="submit" class="btn btn-success">Guardar</button>
     </div>
 </form>
+
 @section Scripts {
     <script>
-        $('#formCrearPersona').submit(function (e) {
+        $('#formCrearPropietario').submit(function (e) {
             e.preventDefault();
             $.ajax({
-                url: '/Personas/GuardarDesdeModal',
+                url: '/Propietario/GuardarDesdeModal',
                 method: 'POST',
                 data: $(this).serialize(),
                 success: function (result) {
                     if (result.success) {
                         personaCreada(result.id, result.nombreCompleto);
                     } else {
-                        $('#modalPersonaContent').html(result); // volver a renderizar con errores
+                        $('#modalPropietarioContent').html(result); // volver a renderizar con errores
                     }
                 }
             });
