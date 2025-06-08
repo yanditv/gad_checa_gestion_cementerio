@@ -38,7 +38,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             int total = await personasQuery.CountAsync();
             var personas = await personasQuery
-            .OrderBy(c => c.Id)
+            .OrderBy(c => c.Apellidos)
             .Skip((pagina - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

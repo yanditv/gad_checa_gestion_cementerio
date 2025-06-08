@@ -71,7 +71,7 @@ namespace gad_checa_gestion_cementerio.Models
         {
             get
             {
-                return $"{Nombres} {Apellidos}";
+                return $"{Apellidos} {Nombres}";
             }
         }
     }

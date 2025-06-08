@@ -8,6 +8,8 @@ using gad_checa_gestion_cementerio.services;
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 // Configurar la sesións
 builder.Services.AddSession(options =>
@@ -22,7 +24,7 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<ContratoService>();
 // Agregar servicios al contenedor.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 // Agregar la administración de roles
 
@@ -105,12 +107,12 @@ using (var scope = app.Services.CreateScope())
     {
         adminUser = new IdentityUser()
         {
-            UserName = "admin@example.com",
-            Email = "admin@example.com",
+            UserName = "admin@teobu.com",
+            Email = "admin@teobu.com",
             EmailConfirmed = true,
             LockoutEnabled = false
         };
-        var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+        var result = await userManager.CreateAsync(adminUser, "teobu@123456");
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");

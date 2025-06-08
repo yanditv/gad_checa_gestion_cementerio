@@ -23,12 +23,12 @@
             <div class="row g-3">
 
                 <!-- Tipo de identificación y número -->
-                <div class="col-md-8">
+                <div class="col-md-4">
                     <label asp-for="NumeroIdentificacion" class="form-label">Número de Identificación</label>
                     <input asp-for="NumeroIdentificacion" class="form-control" />
                     <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-8">
                     <label asp-for="TipoIdentificacion" class="form-label">Tipo Identificación</label>
                     <select asp-for="TipoIdentificacion" class="form-select"
                         asp-items="ViewBag.TiposIdentificacion"></select>

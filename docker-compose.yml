@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "${MSSQL_PORT}:1433}"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_PID=${MSSQL_PID}
+    volumes:
+      - sql_data:/var/opt/mssql
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  app:
+    build:
+      context: ./app  # Ruta a la carpeta con el Dockerfile
+      dockerfile: Dockerfile
+    container_name: app
+    ports:
+      - "${APP_PORT}:3003"  # Ejemplo: 3003 (ajusta según tu app)
+    environment:
+      - DB_HOST=sqlserver
+      - DB_PORT=${MSSQL_PORT}
+      - DB_USER=sa
+      - DB_PASSWORD=${MSSQL_SA_PASSWORD}
+      # Otras variables (pueden cargarse desde .env)
+    depends_on:
+      - sqlserver
+    restart: unless-stopped
+    networks:
+      - app_network
+    volumes:
+      - ./app/.env:/app/.env  # Monta el .env de la app (opcional)
+
+volumes:
+  sql_data:
+
+networks:
+  app_network:
+    driver: bridge
