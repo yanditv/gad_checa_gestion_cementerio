@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using gad_checa_gestion_cementerio.Data;
 
@@ -11,9 +12,11 @@ using gad_checa_gestion_cementerio.Data;
 namespace gad_checa_gestion_cementerio.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250607185409_cementerio_data")]
+    partial class cementerio_data
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -394,9 +397,6 @@ namespace gad_checa_gestion_cementerio.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AbreviaturaTituloPresidente")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("AniosArriendoBovedas")
                         .HasColumnType("int");
 
@@ -409,9 +409,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EntidadFinanciera")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Estado")
@@ -430,12 +427,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("NombreEntidadFinanciera")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NumeroCuenta")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Presidente")
                         .HasColumnType("nvarchar(max)");
@@ -460,10 +451,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("tarifa_arriendo")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("tarifa_arriendo_nicho")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 

@@ -15,7 +15,8 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label asp-for="PropietarioId" class="form-label">Propietario</label>
-                        <select id="propietario-select" name="PropietarioId" class="form-control select2">
+                        <select asp-for="PropietarioId" id="propietario-select" name="PropietarioId"
+                            class="form-control select2">
                             <option value="">Seleccione un propietario</option>
                             @foreach (var p in ViewBag.Propietarios as List<SelectListItem>)
                             {
@@ -73,11 +74,11 @@
                 language: {
                     noResults: function () {
                         return `
-                            <div style='padding:5px'>
-                                <span>No encontrado</span><br/>
-                                <button type="button" onclick="abrirModalCrearPropietario()" class="btn btn-sm btn-primary mt-2">Crear nuevo</button>
-                            </div>
-                        `;
+                                                <div style='padding:5px'>
+                                                    <span>No encontrado</span><br/>
+                                                    <button type="button" onclick="abrirModalCrearPropietario()" class="btn btn-sm btn-primary mt-2">Crear nuevo</button>
+                                                </div>
+                                            `;
                     }
                 },
                 escapeMarkup: function (markup) {
@@ -87,8 +88,32 @@
         });
 
         function abrirModalCrearPropietario() {
-            $('#modalPropietarioContent').load('/Propietario/CrearDesdeModal');
             $('#modalNuevoPropietario').modal('show');
+
+            // Cargar el formulario
+            $('#modalPropietarioContent').load('/Propietario/CrearDesdeModal', function () {
+                // Configurar el submit del formulario
+                $('#formCrearPropietario').submit(function (e) {
+                    e.preventDefault();
+
+                    $.ajax({
+                        url: $(this).attr('action'),
+                        type: 'POST',
+                        data: $(this).serialize(),
+                        success: function (response) {
+                            if (response.success) {
+                                personaCreada(response.id, response.nombreCompleto);
+                                $('#modalNuevoPropietario').modal('hide');
+                            } else {
+                                $('#modalPropietarioContent').html(response);
+                            }
+                        },
+                        error: function (xhr) {
+                            $('#modalPropietarioContent').html(xhr.responseText);
+                        }
+                    });
+                });
+            });
         }
 
 

@@ -6,32 +6,172 @@
     ViewData["EntityType"] = "tarifas";
 }
 
-<div class="container mt-4">
-    <h1 class="mb-3">Configuración de Tarifas</h1>
-    <p class="text-muted">En esta sección puedes gestionar las tarifas del cementerio.</p>
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4>Configuración de Tarifas</h4>
+            <p class="text-muted">En esta sección puedes gestionar las tarifas del cementerio.</p>
+        </div>
+        <button id="btnEditar" type="button" class="btn btn-outline-primary">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
 
-    @* Mensaje de éxito *@
     @if (ViewBag.MensajeExito != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             @ViewBag.MensajeExito
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
+        <script>
+            // Deshabilitar el formulario después de guardar exitosamente
+            document.addEventListener('DOMContentLoaded', function () {
+                deshabilitarEdicion();
+            });
+        </script>
     }
 
-    <form asp-action="Tarifas" method="post" class="mt-4">
+    <form asp-action="Tarifas" method="post" id="formTarifas">
         @Html.AntiForgeryToken()
 
-        <div class="mb-3">
-            <label asp-for="tarifa_arriendo" class="form-label"></label>
-            <input asp-for="tarifa_arriendo" class="form-control" type="number" step="0.01" />
-            <span asp-validation-for="tarifa_arriendo" class="text-danger small"></span>
+        <!-- Campos de tarifas (monetarios) -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="tarifa_arriendo" class="form-label">Tarifa Arriendo Bóvedas</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input asp-for="tarifa_arriendo" class="form-control dinero" disabled />
+                </div>
+                <span asp-validation-for="tarifa_arriendo" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="tarifa_arriendo_nicho" class="form-label">Tarifa Arriendo Nicho</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input asp-for="tarifa_arriendo_nicho" class="form-control dinero" disabled />
+                </div>
+                <span asp-validation-for="tarifa_arriendo_nicho" class="text-danger small"></span>
+            </div>
         </div>
 
-        <div class="d-flex justify-content-start gap-2">
-            <a asp-action="Index" class="btn btn-dark">Cancelar</a>
+        <!-- Campos de años (enteros) -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="AniosArriendoBovedas" class="form-label">Años Arriendo Bóvedas</label>
+                <input asp-for="AniosArriendoBovedas" class="form-control entero" disabled />
+                <span asp-validation-for="AniosArriendoBovedas" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="AniosArriendoNicho" class="form-label">Años Arriendo Nicho</label>
+                <input asp-for="AniosArriendoNicho" class="form-control entero" disabled />
+                <span asp-validation-for="AniosArriendoNicho" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <!-- Campos de renovaciones (enteros) -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="VecesRenovacionBovedas" class="form-label">Veces Renovación Bóvedas</label>
+                <input asp-for="VecesRenovacionBovedas" class="form-control entero" disabled />
+                <span asp-validation-for="VecesRenovacionBovedas" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="VecesRenovacionNicho" class="form-label">Veces Renovación Nicho</label>
+                <input asp-for="VecesRenovacionNicho" class="form-control entero" disabled />
+                <span asp-validation-for="VecesRenovacionNicho" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <!-- Botones de acción (ocultos inicialmente) -->
+        <div id="botonesAccion" class="justify-content-start gap-2" style="display: none;">
             <button type="submit" class="btn btn-primary">Guardar</button>
+            <button id="btnCancelar" type="button" class="btn btn-secondary">Cancelar</button>
         </div>
-    </form>
 
+
+
+    </form>
 </div>
+
+<script>
+    // Declaramos las funciones en el ámbito global para que puedan ser llamadas desde cualquier lugar
+    function habilitarEdicion() {
+        const form = document.getElementById('formTarifas');
+        const inputs = form.querySelectorAll('input');
+        const botonesAccion = document.getElementById('botonesAccion');
+        const btnEditar = document.getElementById('btnEditar');
+
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+        botonesAccion.style.display = 'flex';
+        btnEditar.style.display = 'none';
+    }
+
+    function deshabilitarEdicion() {
+        const form = document.getElementById('formTarifas');
+        const inputs = form.querySelectorAll('input');
+        const botonesAccion = document.getElementById('botonesAccion');
+        const btnEditar = document.getElementById('btnEditar');
+
+        inputs.forEach(input => {
+            input.disabled = true;
+        });
+        botonesAccion.style.display = 'none';
+        btnEditar.style.display = 'block';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Elementos del DOM
+        const btnEditar = document.getElementById('btnEditar');
+        const btnCancelar = document.getElementById('btnCancelar');
+
+        // Campos monetarios
+        const camposDinero = document.querySelectorAll('.dinero');
+        // Campos enteros
+        const camposEnteros = document.querySelectorAll('.entero');
+
+        // Eventos
+        btnEditar.addEventListener('click', habilitarEdicion);
+        btnCancelar.addEventListener('click', deshabilitarEdicion);
+
+        // Validación para campos monetarios
+        function validarDinero(input) {
+            // Permite números con hasta 2 decimales
+            input.value = input.value.replace(/[^0-9.]/g, '');
+            if ((input.value.match(/\./g) || []).length > 1) {
+                input.value = input.value.substring(0, input.value.lastIndexOf('.'));
+            }
+            if (input.value.indexOf('.') >= 0) {
+                input.value = input.value.substring(0, input.value.indexOf('.') + 3);
+            }
+        }
+
+        // Validación para campos enteros
+        function validarEntero(input) {
+            // Solo permite números enteros
+            input.value = input.value.replace(/[^0-9]/g, '');
+        }
+
+        // Eventos de validación
+        camposDinero.forEach(input => {
+            input.addEventListener('input', function () {
+                validarDinero(this);
+            });
+        });
+
+        camposEnteros.forEach(input => {
+            input.addEventListener('input', function () {
+                validarEntero(this);
+            });
+        });
+
+        // Si hay errores de validación, mostramos el formulario editable
+        @if (!ViewData.ModelState.IsValid)
+            {
+                <text>
+                    habilitarEdicion();
+                </text>
+        }
+    });
+</script>

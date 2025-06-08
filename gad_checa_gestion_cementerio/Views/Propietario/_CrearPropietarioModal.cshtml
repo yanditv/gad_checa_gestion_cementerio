@@ -1,6 +1,6 @@
 @model gad_checa_gestion_cementerio.Models.PropietarioModel
 
-<form id="formCrearPropietario">
+<form id="formCrearPropietario" action="/Propietario/GuardarDesdeModal" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
     <div class="row g-3">
@@ -51,26 +51,6 @@
     </div>
 
     <div class="mt-4 text-end">
-        <button type="submit" class="btn btn-success">Guardar</button>
+        <button class="btn btn-success">Guardar</button>
     </div>
 </form>
-
-@section Scripts {
-    <script>
-        $('#formCrearPropietario').submit(function (e) {
-            e.preventDefault();
-            $.ajax({
-                url: '/Propietario/GuardarDesdeModal',
-                method: 'POST',
-                data: $(this).serialize(),
-                success: function (result) {
-                    if (result.success) {
-                        personaCreada(result.id, result.nombreCompleto);
-                    } else {
-                        $('#modalPropietarioContent').html(result); // volver a renderizar con errores
-                    }
-                }
-            });
-        });
-    </script>
-}

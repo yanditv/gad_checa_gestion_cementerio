@@ -18,9 +18,53 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var cementerios = await _context.Cementerio.ToListAsync();
-            var cementeriosModel = _mapper.Map<List<CementerioModel>>(cementerios);
+            var cementerios = await _context.Cementerio.FirstOrDefaultAsync();
+            var cementeriosModel = _mapper.Map<CementerioModel>(cementerios);
+            var entidades = new List<string> { "Banco", "Cooperativa de Ahorra y credito" };
+            ViewData["entidades"] = new SelectList(entidades);
             return View(cementeriosModel);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Index(CementerioModel cementerioModel)
+        {
+            var entidades = new List<string> { "Banco", "Cooperativa de Ahorra y credito" };
+            ViewData["endidades"] = new SelectList(entidades);
+            if (ModelState.IsValid)
+            {
+                var cementerio = await _context.Cementerio.FirstOrDefaultAsync();
+                if (cementerio == null)
+                {
+                    return NotFound();
+                }
+
+                // Actualizar los campos del cementerio
+                cementerio.Nombre = cementerioModel.Nombre;
+                cementerio.Direccion = cementerioModel.Direccion;
+                cementerio.Email = cementerioModel.Email;
+                cementerio.Telefono = cementerioModel.Telefono;
+                cementerio.Presidente = cementerioModel.Presidente;
+                cementerio.AbreviaturaTituloPresidente = cementerioModel.AbreviaturaTituloPresidente;
+                cementerio.FechaActualizacion = DateTime.Now;
+                //actualiza el banco y cooperativa
+                cementerio.EntidadFinanciera = cementerioModel.EntidadFinanciera;
+                cementerio.NombreEntidadFinanciera = cementerioModel.NombreEntidadFinanciera;
+                cementerio.NumeroCuenta = cementerioModel.NumeroCuenta;
+
+                cementerio.UsuarioActualizador = await _userManager.GetUserAsync(User);
+                cementerio.UsuarioActualizadorId = _userManager.GetUserId(User);
+                _context.Entry(cementerio).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                var actualizado = _mapper.Map<CementerioModel>(cementerio);
+                ViewData["endidades"] = new SelectList(entidades);
+                return View(actualizado);
+            }
+            else
+            {
+                ViewData["endidades"] = new SelectList(entidades);
+                return View(cementerioModel);
+            }
         }
         public async Task<IActionResult> Bloques()
         {
@@ -76,27 +120,23 @@ namespace gad_checa_gestion_cementerio.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Tarifas(CementerioModel cementerioModel)
         {
-            if (!ModelState.IsValid)
-                return View("Tarifas/Index", cementerioModel);
-
             var cementerio = await _context.Cementerio.FirstOrDefaultAsync();
+
             if (cementerio == null)
                 return NotFound();
+            // Actualizar las tarifas del cementerio
 
-            Console.WriteLine($"Valor anterior en DB: {cementerio.tarifa_arriendo}");
-            Console.WriteLine($"Valor recibido del formulario: {cementerioModel.tarifa_arriendo}");
-
+            cementerio.VecesRenovacionNicho = cementerioModel.VecesRenovacionNicho;
+            cementerio.VecesRenovacionBovedas = cementerioModel.VecesRenovacionBovedas;
+            cementerio.AniosArriendoNicho = cementerioModel.AniosArriendoNicho;
+            cementerio.AniosArriendoBovedas = cementerioModel.AniosArriendoBovedas;
+            cementerio.tarifa_arriendo_nicho = cementerioModel.tarifa_arriendo_nicho;
             cementerio.tarifa_arriendo = cementerioModel.tarifa_arriendo;
             cementerio.FechaActualizacion = DateTime.Now;
-
-            _context.Entry(cementerio).Property(c => c.tarifa_arriendo).IsModified = true;
-            _context.Entry(cementerio).Property(c => c.FechaActualizacion).IsModified = true;
-
+            cementerio.UsuarioActualizador = await _userManager.GetUserAsync(User);
+            cementerio.UsuarioActualizadorId = _userManager.GetUserId(User);
+            _context.Entry(cementerio).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-
-            Console.WriteLine($"Nuevo valor guardado: {cementerio.tarifa_arriendo}");
-
-            ViewBag.MensajeExito = "Tarifa actualizada correctamente.";
             var actualizado = _mapper.Map<CementerioModel>(cementerio);
             return View("Tarifas/Index", actualizado);
         }
@@ -318,17 +358,13 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return NotFound();
 
             // Actualiza campos
-            boveda.Numero = model.Numero;
-            boveda.PisoId = model.PisoId;
-            boveda.Estado = model.Estado;
+            boveda.NumeroSecuecial = model.NumeroSecuecial;
             boveda.FechaActualizacion = DateTime.Now;
             boveda.UsuarioActualizador = await _userManager.GetUserAsync(User);
             boveda.PropietarioId = model.PropietarioId;
             Console.WriteLine($"Propietario recibido del formulario: {model.PropietarioId}");
-
-            _context.Update(boveda);
-            _context.SaveChangesAsync();
-            boveda.PropietarioId = model.PropietarioId;
+            _context.Entry(boveda).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
             Console.WriteLine($"Asignado a boveda: {boveda.PropietarioId}");
 
             return RedirectToAction("Bovedas");

@@ -153,13 +153,26 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Crear cementerio si no existe
-    var cementerio = await dbContext.Cementerio.FirstOrDefaultAsync(c => c.Nombre == "Cementerio Ejemplo");
+    var cementerio = await dbContext.Cementerio.FirstOrDefaultAsync();
     if (cementerio == null)
     {
         cementerio = new Cementerio
         {
-            Nombre = "Cementerio Ejemplo",
-            Direccion = "Dirección Ejemplo",
+            Nombre = "Cementerio de checa",
+            Direccion = "Eloy Riera, Parroquia Checa",
+            AbreviaturaTituloPresidente = "Sr.",
+            Email = "jpcheca0@gmail.com,",
+
+            Telefono = "0987654321",
+            Presidente = "Bolívar Robles Iñamagua",
+            VecesRenovacionNicho = 1,
+            VecesRenovacionBovedas = 1,
+            AniosArriendoNicho = 5,
+            AniosArriendoBovedas = 5,
+            tarifa_arriendo = 240.00m,
+            tarifa_arriendo_nicho = 240.00m,
+            UsuarioCreadorId = adminUser.Id,
+            FechaActualizacion = DateTime.Now,
             Estado = true,
             FechaCreacion = DateTime.Now,
             UsuarioCreador = adminUser

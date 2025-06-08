@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using gad_checa_gestion_cementerio.Data;
 
@@ -11,9 +12,11 @@ using gad_checa_gestion_cementerio.Data;
 namespace gad_checa_gestion_cementerio.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250608000322_bancos")]
+    partial class bancos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -430,9 +433,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("NombreEntidadFinanciera")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NumeroCuenta")
                         .HasColumnType("nvarchar(max)");

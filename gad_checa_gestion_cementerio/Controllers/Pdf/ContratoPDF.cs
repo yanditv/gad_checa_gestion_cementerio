@@ -1,3 +1,4 @@
+using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -7,27 +8,33 @@ using System.Globalization;
 public class ContratoPDF : IDocument
 {
     private readonly CreateContratoModel model;
+    private readonly Cementerio cementerio;
 
-    public ContratoPDF(CreateContratoModel model)
+    public ContratoPDF(CreateContratoModel model, Cementerio cementerio)
     {
         this.model = model;
+        this.cementerio = cementerio;
     }
 
     public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
 
     public void Compose(IDocumentContainer container)
     {
+        //
         var contrato = model.contrato;
         var boveda = model.contrato.Boveda;
         var difunto = model.difunto;
         var responsables = model.responsables;
         var responsable = model.responsables.FirstOrDefault();
         var pago = model.pago;
-        var presidente = "Sr. Bolívar Robles Iñamagua"; // Asumimos que el presidente es un valor fijo, se puede cambiar según sea necesario
-        var telefono_cementerio = "0987654321"; // Asumimos un número de teléfono fijo para el cementerio, se puede cambiar según sea necesario
-        var email_cementerio = "";
-        var direccion_cementerio = "Calle Principal, Parroquia Checa"; // Asumimos una dirección fija para el cementerio, se puede cambiar según sea necesario
-        var numero_cuenta = "2000324704"; // Asumimos un número de cuenta fijo, se puede cambiar según sea necesario
+        var presidente = cementerio.Presidente ?? "Presidente del GAD Parroquial de Checa"; // Asumimos un presidente fijo, se puede cambiar según sea necesario
+        var telefono_cementerio = cementerio.Telefono; // Asumimos un número de teléfono fijo para el cementerio, se puede cambiar según sea necesario
+        var email_cementerio = cementerio.Email; // Asumimos un correo electrónico fijo para el cementerio, se puede cambiar según sea necesario
+        var direccion_cementerio = cementerio.Direccion; // Asumimos una dirección fija para el cementerio, se puede cambiar según sea necesario
+        var entidad_financiera = cementerio.EntidadFinanciera ?? "Banco"; // Asumimos una entidad financiera fija, se puede cambiar según sea necesario
+        var NombreEntidadFinanciera = cementerio.NombreEntidadFinanciera ?? "Banco del Austro"; // Asumimos un nombre de entidad financiera fijo, se puede cambiar según sea necesario
+        var numero_cuenta = cementerio.NumeroCuenta ?? "2000324704"; // Asumimos un número de cuenta fijo, se puede cambiar según sea necesario
+        var abreviatura_banco = cementerio.EntidadFinanciera == "BANCO" ? "el banco" : "la Cooperativa de Ahorro y Crédito"; // Asumimos una abreviatura de banco fija, se puede cambiar según sea necesario
         container.Page(page =>
         {
             page.Size(PageSizes.A4);
@@ -112,7 +119,7 @@ public class ContratoPDF : IDocument
                     text.Span("CUARTA: PRECIO. -").Bold();
                     text.Span(" El valor por arriendo de la Bóveda es de ");
                     text.Span(contrato.MontoTotal.ToString("C")).Bold();
-                    text.Span($", valor que fue cancelado con depósito en el banco del Austro cta. # ");
+                    text.Span($", valor que fue cancelado con depósito en {abreviatura_banco} del {NombreEntidadFinanciera} cta. # ");
                     text.Span(numero_cuenta).Bold();
                 });
 

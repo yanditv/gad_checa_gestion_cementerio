@@ -28,6 +28,8 @@ public class PropietarioController : BaseController
         {
             var tipos = new List<string> { "Cédula", "RUC" };
             ViewBag.TiposIdentificacion = new SelectList(tipos);
+
+            // Devuelve la vista parcial con los errores
             return PartialView("_CrearPropietarioModal", propietario);
         }
 

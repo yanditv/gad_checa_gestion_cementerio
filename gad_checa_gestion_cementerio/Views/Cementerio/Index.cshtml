@@ -1,7 +1,139 @@
-﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.CementerioModel>
+﻿@model gad_checa_gestion_cementerio.Models.CementerioModel
+
 @{
     ViewData["Title"] = "Cementerio";
     Layout = "~/Views/Cementerio/_CementerioLayout.cshtml";
     ViewData["EntityType"] = "cementerio";
 }
-@await Html.PartialAsync("_TablaGenerica", Model)
+
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4>Datos Generales del Cementerio</h4>
+            <p class="text-muted">En esta sección puedes gestionar los datos del cementerio.</p>
+        </div>
+        <button id="btnEditar" type="button" class="btn btn-outline-primary">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
+
+    @if (ViewBag.MensajeExito != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @ViewBag.MensajeExito
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    <form asp-action="Index" method="post" id="formCementerio">
+        @Html.AntiForgeryToken()
+
+        <!-- Campos del formulario -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <label asp-for="Nombre" class="form-label">Nombre del Cementerio</label>
+                <input asp-for="Nombre" class="form-control" disabled />
+                <span asp-validation-for="Nombre" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="Direccion" class="form-label">Dirección</label>
+                <input asp-for="Direccion" class="form-control" disabled />
+                <span asp-validation-for="Direccion" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Telefono" class="form-label">Teléfono</label>
+                <input asp-for="Telefono" class="form-control" disabled />
+                <span asp-validation-for="Telefono" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <label asp-for="Email" class="form-label">Correo Electrónico</label>
+                <input asp-for="Email" class="form-control" disabled />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label asp-for="AbreviaturaTituloPresidente" class="form-label">Título Presidente</label>
+                <input asp-for="AbreviaturaTituloPresidente" class="form-control" disabled />
+                <span asp-validation-for="AbreviaturaTituloPresidente" class="text-danger small"></span>
+            </div>
+            <div class="col-md-9">
+                <label asp-for="Presidente" class="form-label">Presidente</label>
+                <input asp-for="Presidente" class="form-control" disabled />
+                <span asp-validation-for="Presidente" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <!-- Campos de entidad financiera -->
+        <div class="row mb-3">
+            <div class="col-md-2">
+                <label asp-for="EntidadFinanciera" class="form-label">Entidad Financiera</label>
+                <select asp-for="EntidadFinanciera" class="form-select" disabled asp-items="ViewBag.entidades">
+
+                </select>
+                <span asp-validation-for="EntidadFinanciera" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="NombreEntidadFinanciera" class="form-label">Nombre de la Entidad</label>
+                <input asp-for="NombreEntidadFinanciera" class="form-control" disabled />
+                <span asp-validation-for="NombreEntidadFinanciera" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="NumeroCuenta" class="form-label"># Cuenta</label>
+                <input asp-for="NumeroCuenta" class="form-control" disabled />
+                <span asp-validation-for="NumeroCuenta" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div id="botonesAccion" class="d-flex justify-content-start gap-2 mt-3" style="display: none;">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button id="btnCancelar" type="button" class="btn btn-secondary">Cancelar</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnEditar = document.getElementById('btnEditar');
+            const btnCancelar = document.getElementById('btnCancelar');
+            const form = document.getElementById('formCementerio');
+            const inputs = form.querySelectorAll('input, select');
+            const botonesAccion = document.getElementById('botonesAccion');
+
+            // Función para activar el modo edición
+            function activarEdicion() {
+                inputs.forEach(input => input.disabled = false);
+                botonesAccion.style.display = 'flex';
+                btnEditar.style.display = 'none';
+            }
+
+            // Función para desactivar el modo edición
+            function desactivarEdicion() {
+                inputs.forEach(input => input.disabled = true);
+                botonesAccion.style.display = 'none';
+                btnEditar.style.display = 'block';
+            }
+
+            // Eventos
+            btnEditar.addEventListener('click', activarEdicion);
+            btnCancelar.addEventListener('click', desactivarEdicion);
+
+            // Si hay errores de validación, activar edición
+            @if (!ViewData.ModelState.IsValid)
+                {
+                    <text>
+                        activarEdicion();
+                    </text>
+            }
+                });
+    </script>
+}

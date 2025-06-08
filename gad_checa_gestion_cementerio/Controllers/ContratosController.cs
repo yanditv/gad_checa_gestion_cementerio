@@ -318,7 +318,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         public IActionResult GenerarContratoPDF(CreateContratoModel model)
         {
-            var documento = new ContratoPDF(model);
+            var cementerio = _context.Cementerio.FirstOrDefault();
+            var documento = new ContratoPDF(model, cementerio);
             var pdfBytes = documento.GeneratePdf();
 
             return File(pdfBytes, "application/pdf", "ContratoArrendamiento.pdf");
@@ -326,10 +327,11 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpGet]
         public IActionResult VerContratoPDF()
         {
+            var cementerio = _context.Cementerio.FirstOrDefault();
             var modelo = GetContratoFromSession(); // o pásalo por parámetro
             var boveda = _context.Boveda.Include(b => b.Piso.Bloque).FirstOrDefault(b => b.Id == modelo.contrato.BovedaId);
             modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
-            var documento = new ContratoPDF(modelo);
+            var documento = new ContratoPDF(modelo, cementerio);
             var pdfBytes = documento.GeneratePdf();
 
             var fileName = $"CONTRATO_{modelo.contrato.NumeroSecuencial ?? "Arrendamiento"}.pdf";

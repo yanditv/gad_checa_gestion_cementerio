@@ -22,11 +22,27 @@ namespace gad_checa_gestion_cementerio.Models
         [StringLength(200)]
         public string Direccion { get; set; }
 
+
+        public string? Email { get; set; }
+        public string? Telefono { get; set; }
+        public string? AbreviaturaTituloPresidente { get; set; } // Abreviatura del título del presidente (ej. Sr., Sra., Dr., etc.)
+        public string? Presidente { get; set; }
+
+        public int VecesRenovacionNicho { get; set; }
+        public int VecesRenovacionBovedas { get; set; } // cantidad de veces que se puede renovar el arriendo de bovedas
+        public int AniosArriendoNicho { get; set; } // año de inicio del arriendo 
+        public int AniosArriendoBovedas { get; set; } // año de inicio del arriendo
+
+        public string? EntidadFinanciera { get; set; } // Abreviatura del título del presidente (ej. Sr., Sra., Dr., etc.)
+        public string? NombreEntidadFinanciera { get; set; } // Entidad financiera donde se depositan los pagos
+        public string? NumeroCuenta { get; set; } // Número de cuenta bancaria para pagos
+
         [Required]
         public DateTime FechaCreacion { get; set; }
 
         [Display(Name = "Tarifa de Arriendo")]
         public decimal? tarifa_arriendo { get; set; }
+        public decimal? tarifa_arriendo_nicho { get; set; }
 
         [Required]
         public bool Estado { get; set; }
