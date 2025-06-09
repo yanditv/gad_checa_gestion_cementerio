@@ -23,8 +23,8 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // usa HTTPS si llegó por HTTPS
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = false;
-    options.Cookie.IsEssential = false;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 // Configurar servicios y opciones
