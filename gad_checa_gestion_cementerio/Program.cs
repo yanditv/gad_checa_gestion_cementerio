@@ -5,18 +5,26 @@ using System.Globalization;
 using gad_checa_gestion_cementerio.Utils;
 using DotNetEnv;
 using gad_checa_gestion_cementerio.services;
-DotNetEnv.Env.Load();
+using Microsoft.AspNetCore.DataProtection;
+if (Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Development")
+{
+    DotNetEnv.Env.Load();
+}
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(@"/app/keys"))
+    .SetApplicationName("CementerioApp");
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 // Configurar la sesións
 builder.Services.AddSession(options =>
 {
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // usa HTTPS si llegó por HTTPS
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
+    options.Cookie.HttpOnly = false;
+    options.Cookie.IsEssential = false;
 });
 
 // Configurar servicios y opciones
@@ -42,7 +50,12 @@ builder.Services.AddControllersWithViews().AddViewLocalization()
 builder.Services.AddRazorPages(); // Necesario para las páginas de identidad predeterminadas.
 
 var app = builder.Build();
-
+// Aplicar migraciones automáticamente al iniciar
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate(); // Aplica migraciones pendientes, crea DB si no existe
+}
 
 
 
@@ -70,7 +83,18 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+
+// ACEPTAR headers reenviados por Nginx (X-Forwarded-For, X-Forwarded-Proto)
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto,
+    // En producción: agregar IP o redes de confianza
+    // KnownProxies = { IPAddress.Parse("192.168.0.10") }
+};
+app.UseForwardedHeaders(forwardedHeadersOptions);
+
+
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -102,7 +126,7 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Crear usuario y asignarle un rol
-    var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+    var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
     if (adminUser == null)
     {
         adminUser = new IdentityUser()
