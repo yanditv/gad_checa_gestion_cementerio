@@ -11,7 +11,7 @@ services:
       - SA_PASSWORD=${MSSQL_SA_PASSWORD}
       - MSSQL_PID=${MSSQL_PID}
     volumes:
-      - sql_data:/var/opt/mssql
+      - sql_data:/var/opt/sqlserver-checa
     healthcheck:
       test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD} -Q 'SELECT 1'" ]
       interval: 5s
