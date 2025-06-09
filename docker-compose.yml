@@ -11,40 +11,34 @@ services:
       - SA_PASSWORD=${MSSQL_SA_PASSWORD}
       - MSSQL_PID=${MSSQL_PID}
     volumes:
-      - sql_data:/var/opt/sqlserver
+      - sql_data:/var/opt/sqlserver-checa
+      - ./init.sql:/init.sql:ro  # Montamos el archivo de inicialización
     healthcheck:
-      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD} -Q 'SELECT 1'" ]
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD} -Q 'SELECT 1' -C -N" ]
       interval: 5s
       timeout: 5s
       retries: 20
-    env_file:
-      - .env
-    networks:
-      - cementerio-net
-  sql-init:
-    image: mcr.microsoft.com/mssql-tools
-    container_name: sql-init
-    depends_on:
-      sqlserver-checa:
-        condition: service_healthy
-    volumes:
-      - ./init.sql:/init.sql
     entrypoint: >
       /bin/bash -c "
-      echo 'Esperando que SQL Server esté listo...' &&
-      for i in {1..30}; do
-        /opt/mssql-tools/bin/sqlcmd -S sqlserver-checa -U sa -P $${SA_PASSWORD} -Q 'SELECT 1' && break || sleep 1;
-      done &&
-      echo 'Ejecutando script SQL...' &&
-      /opt/mssql-tools/bin/sqlcmd -S sqlserver-checa -U sa -P $${SA_PASSWORD} -i /init.sql
+        /opt/mssql/bin/sqlservr &
+
+        echo 'Esperando que SQL Server esté listo...';
+
+        for i in {1..30}; do
+          /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD} -Q 'SELECT 1' -C -N && break
+          sleep 1
+        done
+
+        echo 'Ejecutando script SQL...';
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD} -i /init.sql -C -N
+
+        wait
       "
-    environment:
-      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
-    restart: "no"
     env_file:
       - .env
     networks:
       - cementerio-net
+
   app:
     build:
       context: .
