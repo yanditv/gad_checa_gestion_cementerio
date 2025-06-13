@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Models.Views;
@@ -12,7 +13,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class CementerioController : BaseController
     {
-        public CementerioController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager) : base(context, userManager, mapper)
+        public CementerioController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
         {
         }
 

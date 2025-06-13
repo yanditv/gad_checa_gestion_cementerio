@@ -1,66 +1,175 @@
-﻿@model gad_checa_gestion_cementerio.Data.Bloque
+﻿@model gad_checa_gestion_cementerio.Models.Views.BloqueViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Editar Bloque";
 }
 
-<h1>Edit</h1>
-
-<h4>Seccion</h4>
-<hr />
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="Tipo" class="control-label"></label>
-                <input asp-for="Tipo" class="form-control" />
-                <span asp-validation-for="Tipo" class="text-danger"></span>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Editar Bloque</h5>
             </div>
-            <div class="form-group">
-                <label asp-for="NumeroDePisos" class="control-label"></label>
-                <input asp-for="NumeroDePisos" class="form-control" />
-                <span asp-validation-for="NumeroDePisos" class="text-danger"></span>
+            <div class="card-body">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Descripcion" class="control-label"></label>
+                                <input asp-for="Descripcion" class="form-control" />
+                                <span asp-validation-for="Descripcion" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Tipo" class="control-label"></label>
+                                <select asp-for="Tipo" class="form-control">
+                                    <option value="Capilla">Capilla</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="Otros">Otros</option>
+                                </select>
+                                <span asp-validation-for="Tipo" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CalleA" class="control-label"></label>
+                                <input asp-for="CalleA" class="form-control" />
+                                <span asp-validation-for="CalleA" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CalleB" class="control-label"></label>
+                                <input asp-for="CalleB" class="form-control" />
+                                <span asp-validation-for="CalleB" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="NumeroDePisos" class="control-label"></label>
+                                <input asp-for="NumeroDePisos" class="form-control" min="1" max="20" />
+                                <span asp-validation-for="NumeroDePisos" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="BovedasPorPiso" class="control-label"></label>
+                                <input asp-for="BovedasPorPiso" class="form-control" min="1" max="100" />
+                                <span asp-validation-for="BovedasPorPiso" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="TarifaBase" class="control-label"></label>
+                                <input asp-for="TarifaBase" class="form-control" type="number" step="0.01" min="0.01" />
+                                <span asp-validation-for="TarifaBase" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CementerioId" class="control-label"></label>
+                                <select asp-for="CementerioId" class="form-control"
+                                    asp-items="@(new SelectList(ViewBag.Cementerios, "Id", "Nombre"))">
+                                    <option value="">-- Seleccione un cementerio --</option>
+                                </select>
+                                <span asp-validation-for="CementerioId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6>Configuración de Precios por Piso</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Piso</th>
+                                            <th>Usar Tarifa Base</th>
+                                            <th>Precio Personalizado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="preciosPisos">
+                                        <!-- Se llenará dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label asp-for="BovedasPorPiso" class="control-label"></label>
-                <input asp-for="BovedasPorPiso" class="form-control" />
-                <span asp-validation-for="BovedasPorPiso" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="TarifaBase" class="control-label"></label>
-                <input asp-for="TarifaBase" class="form-control" />
-                <span asp-validation-for="TarifaBase" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Estado" /> @Html.DisplayNameFor(model => model.Estado)
-                </label>
-            </div>
-            <div class="form-group">
-                <label asp-for="FechaCreacion" class="control-label"></label>
-                <input asp-for="FechaCreacion" class="form-control" />
-                <span asp-validation-for="FechaCreacion" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FechaActualizacion" class="control-label"></label>
-                <input asp-for="FechaActualizacion" class="form-control" />
-                <span asp-validation-for="FechaActualizacion" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FechaEliminacion" class="control-label"></label>
-                <input asp-for="FechaEliminacion" class="form-control" />
-                <span asp-validation-for="FechaEliminacion" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            function actualizarPreciosPisos() {
+                var numPisos = $('#NumeroDePisos').val();
+                var tarifaBase = $('#TarifaBase').val();
+                var html = '';
 
+                for (var i = 1; i <= numPisos; i++) {
+                    var precioPersonalizado = $('input[name="PreciosPorPiso[' + (i - 1) + '].PrecioPersonalizado"]').val() || tarifaBase;
+                    var usarTarifaBase = $('input[name="PreciosPorPiso[' + (i - 1) + '].UsarTarifaBase"]').is(':checked');
+
+                    html += `
+                                <tr>
+                                    <td>${i}</td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input usar-tarifa-base" 
+                                                   name="PreciosPorPiso[${i - 1}].UsarTarifaBase" 
+                                                   id="usarTarifaBase_${i}" ${usarTarifaBase ? 'checked' : ''}>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control precio-personalizado" 
+                                               name="PreciosPorPiso[${i - 1}].PrecioPersonalizado" 
+                                               id="precioPersonalizado_${i}" 
+                                               step="0.01" min="0.01" 
+                                               value="${precioPersonalizado}"
+                                               ${usarTarifaBase ? 'disabled' : ''}>
+                                        <input type="hidden" name="PreciosPorPiso[${i - 1}].NumeroPiso" value="${i}">
+                                    </td>
+                                </tr>
+                            `;
+                }
+                $('#preciosPisos').html(html);
+            }
+
+            $('#NumeroDePisos, #TarifaBase').on('change', actualizarPreciosPisos);
+            actualizarPreciosPisos();
+
+            $(document).on('change', '.usar-tarifa-base', function () {
+                var precioInput = $(this).closest('tr').find('.precio-personalizado');
+                precioInput.prop('disabled', $(this).is(':checked'));
+                if ($(this).is(':checked')) {
+                    precioInput.val($('#TarifaBase').val());
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,49 @@
+@model gad_checa_gestion_cementerio.Models.EditUserViewModel
+
+@{
+    ViewData["Title"] = "Editar Usuario";
+}
+
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">@ViewData["Title"]</h1>
+
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
+
+            <div class="mb-4">
+                <label asp-for="Email" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="Email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="Email" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="CurrentRole" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <select asp-for="CurrentRole" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Seleccione un rol</option>
+                    @foreach (var role in ViewBag.Roles)
+                    {
+                                <option value="@role.Name">@role.Name</option>
+                    }
+                </select>
+                <span asp-validation-for="CurrentRole" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Guardar Cambios
+                </button>
+                <a asp-action="Index" class="text-blue-500 hover:text-blue-700">
+                    Volver a la lista
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

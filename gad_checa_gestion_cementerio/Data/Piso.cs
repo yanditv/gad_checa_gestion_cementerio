@@ -26,5 +26,6 @@ namespace gad_checa_gestion_cementerio.Data
         [ForeignKey("BloqueId")]
         public Bloque Bloque { get; set; } // Relación con el bloque
 
+        public ICollection<Boveda> Bovedas { get; set; } // Relación con las bóvedas
     }
 }

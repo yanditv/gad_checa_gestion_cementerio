@@ -1,4 +1,5 @@
 using AutoMapper;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Utils;
@@ -10,7 +11,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class NotifyController : BaseController
     {
-        public NotifyController(ApplicationDbContext context, UserManager<IdentityUser> userManager, IMapper mapper)
+        public NotifyController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper)
             : base(context, userManager, mapper)
         {
         }

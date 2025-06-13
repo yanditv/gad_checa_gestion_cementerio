@@ -2,11 +2,34 @@
 
 # Esta fase se usa cuando se ejecuta desde VS en modo rápido (valor predeterminado para la configuración de depuración)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
+USER root
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+# Instalar wkhtmltopdf
+RUN apt-get update && \
+    apt-get install -y wget fontconfig libfreetype6 libx11-6 libxext6 libxrender1 && \
+    apt-get install -y wkhtmltopdf && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    which wkhtmltopdf && \
+    ls -l $(which wkhtmltopdf)
+
+# Crear directorios necesarios y establecer permisos
+RUN mkdir -p /app/keys && \
+    mkdir -p /app/wwwroot/Rotativa && \
+    chown -R $APP_UID:$APP_UID /app/keys && \
+    chown -R $APP_UID:$APP_UID /app/wwwroot/Rotativa && \
+    chmod -R 755 /app/keys && \
+    chmod -R 755 /app/wwwroot/Rotativa
+
+# Copiar wkhtmltopdf a la carpeta Rotativa
+RUN cp $(which wkhtmltopdf) /app/wwwroot/Rotativa/ && \
+    chown $APP_UID:$APP_UID /app/wwwroot/Rotativa/wkhtmltopdf && \
+    chmod +x /app/wwwroot/Rotativa/wkhtmltopdf
+
+USER $APP_UID
 
 # Esta fase se usa para compilar el proyecto de servicio
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -28,9 +51,5 @@ RUN dotnet publish "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATI
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-
-
-# Crear la carpeta keys y darle permisos
-RUN mkdir -p /app/keys && chmod 777 /app/keys
 
 ENTRYPOINT ["dotnet", "gad_checa_gestion_cementerio.dll"]

@@ -11,13 +11,15 @@ using gad_checa_gestion_cementerio.Utils;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using gad_checa_gestion_cementerio.Models.Listas;
+using Microsoft.AspNetCore.Authorization;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
+    [Authorize]
     public class PersonasController : BaseController
     {
-
-        public PersonasController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager) : base(context, userManager, mapper)
+        public PersonasController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
         {
         }
 
@@ -101,7 +103,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
             if (ModelState.IsValid)
             {
-                IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+                ApplicationUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
                 Data.Persona p = new Data.Persona
                 {
                     Id = persona.Id,
@@ -113,8 +115,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     Telefono = persona.Telefono,
                     FechaCreacion = DateTime.Now,
                     Apellidos = persona.Apellidos,
-                    UsuarioCreador = identityUser,
-
+                    UsuarioCreador = identityUser
                 };
                 _context.Add(p);
                 await _context.SaveChangesAsync();
@@ -262,7 +263,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return PartialView("_CrearPersonaModal", persona);
             }
 
-            IdentityUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+            ApplicationUser? identityUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
             Data.Persona p = new Data.Persona
             {
                 NumeroIdentificacion = persona.NumeroIdentificacion,

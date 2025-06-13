@@ -1,8 +1,8 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Mvc.Localization
-
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
+@using gad_checa_gestion_cementerio.Areas.Identity.Data
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 <!DOCTYPE html>
 <html lang="es">
 
@@ -33,6 +33,9 @@
   <link rel="stylesheet" href="~/css/style.css" id="main-style-link">
   <link rel="stylesheet" href="~/css/style-preset.css">
   <link rel="stylesheet" href="~/css/site.css">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+    rel="stylesheet" />
 </head>
 
 <body data-pc-preset="preset-1" data-pc-direction="ltr" data-pc-theme="light">
@@ -86,6 +89,12 @@
             </a>
           </li>
           <li class="pc-item">
+            <a href="~/Bloques" class="pc-link">
+              <span class="pc-micon"><i class="ti ti-building"></i></span>
+              <span class="pc-mtext">Bloques</span>
+            </a>
+          </li>
+          <li class="pc-item">
             <a href="~/Cobros" class="pc-link">
               <span class="pc-micon"><i class="ti ti-coin"></i></span>
               <span class="pc-mtext">Cobros</span>
@@ -98,44 +107,46 @@
             </a>
           </li>
           <li class="pc-item pc-caption">
-            <label>Other</label>
-            <i class="ti ti-brand-chrome"></i>
+            <label>Administración</label>
+            <i class="ti ti-shield"></i>
           </li>
-          @* <li class="pc-item pc-hasmenu">
-            <a href="#!" class="pc-link"><span class="pc-micon"><i class="ti ti-menu"></i></span><span
-                class="pc-mtext">Menu levels</span><span class="pc-arrow"><i
-                  data-feather="chevron-right"></i></span></a>
-            <ul class="pc-submenu">
-              <li class="pc-item"><a class="pc-link" href="#!">Level 2.1</a></li>
-              <li class="pc-item pc-hasmenu">
-                <a href="#!" class="pc-link">Level 2.2<span class="pc-arrow"><i
-                      data-feather="chevron-right"></i></span></a>
-                <ul class="pc-submenu">
-                  <li class="pc-item"><a class="pc-link" href="#!">Level 3.1</a></li>
-                  <li class="pc-item"><a class="pc-link" href="#!">Level 3.2</a></li>
-                  <li class="pc-item pc-hasmenu">
-                    <a href="#!" class="pc-link">Level 3.3<span class="pc-arrow"><i
-                          data-feather="chevron-right"></i></span></a>
-                    <ul class="pc-submenu">
-                      <li class="pc-item"><a class="pc-link" href="#!">Level 4.1</a></li>
-                      <li class="pc-item"><a class="pc-link" href="#!">Level 4.2</a></li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </li> *@
+          <li class="pc-item">
+            <a href="~/Identity/Account/Manage" class="pc-link">
+              <span class="pc-micon"><i class="ti ti-user"></i></span>
+              <span class="pc-mtext">Mi Cuenta</span>
+            </a>
+          </li>
+
+          @if (User.IsInRole("Admin") || User.IsInRole("Administrador"))
+          {
+            <li class="pc-item">
+              <a href="~/Admin/UserManagement" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-users"></i></span>
+                <span class="pc-mtext">Gestión de Usuarios</span>
+              </a>
+            </li>
+            <li class="pc-item">
+              <a href="~/Admin/Roles" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-shield-check"></i></span>
+                <span class="pc-mtext">Gestión de Roles</span>
+              </a>
+            </li>
+          }
+          <li class="pc-item pc-caption">
+            <label>Configuración</label>
+            <i class="ti ti-settings"></i>
+          </li>
           <li class="pc-item">
             <a href="~/Cementerio" class="pc-link">
-              <span class="pc-micon"><i class="ti ti-settings"></i></span>
+              <span class="pc-micon"><i class="ti ti-building"></i></span>
               <span class="pc-mtext">Ajustes</span>
             </a>
           </li>
-          <li class="pc-item"></li>
-          <a href="~/Reportes/CuentasPorCobrar" class="pc-link">
-            <span class="pc-micon"><i class="ti ti-chart-dots"></i></span>
-            <span class="pc-mtext">Reportes</span>
-          </a>
+          <li class="pc-item">
+            <a href="~/Reportes/CuentasPorCobrar" class="pc-link">
+              <span class="pc-micon"><i class="ti ti-chart-dots"></i></span>
+              <span class="pc-mtext">Reportes</span>
+            </a>
           </li>
         </ul>
       </div>
@@ -283,9 +294,13 @@
                 <h5 class="m-b-10">@ViewData["Title"]</h5>
               </div> *@
               <ul class="breadcrumb small">
-                @* <li class="breadcrumb-item">
-                  <a href="~/">Home</a>
-                </li> *@
+                @if (ViewContext.RouteData.Values["area"] != null)
+                {
+                  var area = ViewContext.RouteData.Values["area"]?.ToString();
+                  <li class="breadcrumb-item">
+                    <a href="~/@area">@area</a>
+                  </li>
+                }
                 @if (ViewContext.RouteData.Values["controller"] != null)
                 {
                   var controller = ViewContext.RouteData.Values["controller"]?.ToString();
@@ -293,7 +308,8 @@
                   @if (@action != @controller)
                   {
                     <li class="breadcrumb-item">
-                      <a href="~/@controller">@controller</a>
+                      <a
+                        href="~/@(ViewContext.RouteData.Values["area"] != null ? ViewContext.RouteData.Values["area"] + "/" : "")@controller">@controller</a>
                     </li>
                   }
                   @if (!string.Equals(action, "Index", StringComparison.OrdinalIgnoreCase))
@@ -357,7 +373,7 @@
   <script>layout_rtl_change('false');</script>
   <script>preset_change("preset-1");</script>
   <script>font_change("Public-Sans");</script>
-
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   @await RenderSectionAsync("Scripts", required: false)
 </body>
 <!-- [Body] end -->

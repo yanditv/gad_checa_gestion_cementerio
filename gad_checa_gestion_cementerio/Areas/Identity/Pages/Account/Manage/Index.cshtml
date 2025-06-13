@@ -1,7 +1,7 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Profile";
+    ViewData["Title"] = "Perfil";
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
@@ -12,15 +12,32 @@
         <form id="profile-form" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <div class="form-floating mb-3">
-                <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
-                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control" placeholder="Por favor elija su nombre de usuario."
+                    disabled />
+                <label asp-for="Username" class="form-label">Nombre de usuario</label>
             </div>
             <div class="form-floating mb-3">
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
-                <label asp-for="Input.PhoneNumber" class="form-label"></label>
+                <input asp-for="Input.Nombres" class="form-control" placeholder="Por favor ingrese sus nombres." />
+                <label asp-for="Input.Nombres" class="form-label">Nombres</label>
+                <span asp-validation-for="Input.Nombres" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Apellidos" class="form-control" placeholder="Por favor ingrese sus apellidos." />
+                <label asp-for="Input.Apellidos" class="form-label">Apellidos</label>
+                <span asp-validation-for="Input.Apellidos" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Cedula" class="form-control" placeholder="Por favor ingrese su cédula." />
+                <label asp-for="Input.Cedula" class="form-label">Cédula</label>
+                <span asp-validation-for="Input.Cedula" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.PhoneNumber" class="form-control"
+                    placeholder="Por favor ingrese su número de teléfono." />
+                <label asp-for="Input.PhoneNumber" class="form-label">Número de teléfono</label>
                 <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
             </div>
-            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
+            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Guardar</button>
         </form>
     </div>
 </div>

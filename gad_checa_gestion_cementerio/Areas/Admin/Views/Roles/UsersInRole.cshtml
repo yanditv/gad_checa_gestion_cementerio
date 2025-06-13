@@ -1,0 +1,43 @@
+@model IEnumerable<gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser>
+
+@{
+    ViewData["Title"] = $"Usuarios con Rol: {ViewBag.RoleName}";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Usuarios con Rol: @ViewBag.RoleName</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model)
+                            {
+                                            <tr>
+                                                <td>@user.Nombres @user.Apellidos</td>
+                                                <td>@user.Email</td>
+                                                <td>@user.PhoneNumber</td>
+                                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="ti ti-arrow-left"></i> Volver a Roles
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

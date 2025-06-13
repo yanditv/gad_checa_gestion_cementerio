@@ -1,0 +1,144 @@
+@model gad_checa_gestion_cementerio.Models.CreateUserViewModel
+
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
+
+<div class="my-4">
+    <div class="card">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+                <h4 class="card-title mb-2">@ViewData["Title"]</h4>
+                <p class="text-muted">
+                    Cree un nuevo usuario en el sistema.
+                </p>
+            </div>
+            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="ti ti-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-mail"></i>
+                                </span>
+                                <input asp-for="Email" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Cedula" class="form-label">Cédula</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-id"></i>
+                                </span>
+                                <input asp-for="Cedula" class="form-control" maxlength="10" />
+                            </div>
+                            <span asp-validation-for="Cedula" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Nombre" class="form-label">Nombres</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-user"></i>
+                                </span>
+                                <input asp-for="Nombre" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Apellido" class="form-label">Apellidos</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-user"></i>
+                                </span>
+                                <input asp-for="Apellido" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Apellido" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Password" class="form-label">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-lock"></i>
+                                </span>
+                                <input asp-for="Password" class="form-control" type="password" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="ConfirmPassword" class="form-label">Confirmar Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-lock-check"></i>
+                                </span>
+                                <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label asp-for="Role" class="form-label">Rol</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ti ti-shield"></i>
+                                </span>
+                                <select asp-for="Role" asp-items="ViewBag.Roles" class="form-select">
+                                    <option value="">Seleccione un rol</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-device-floppy me-1"></i>Guardar
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="ti ti-arrow-left me-1"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Solo permitir números en el campo de cédula
+        document.getElementById('Cedula').addEventListener('input', function (e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+}

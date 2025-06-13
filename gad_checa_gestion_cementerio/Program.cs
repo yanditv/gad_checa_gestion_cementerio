@@ -6,60 +6,111 @@ using gad_checa_gestion_cementerio.Utils;
 using DotNetEnv;
 using gad_checa_gestion_cementerio.services;
 using Microsoft.AspNetCore.DataProtection;
-if (Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Development")
-{
-    DotNetEnv.Env.Load();
-}
-var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(@"/app/keys"))
-    .SetApplicationName("CementerioApp");
-var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+using Microsoft.AspNetCore.HttpOverrides;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 
+// Cargar variables de entorno
+DotNetEnv.Env.Load();
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configuración de Data Protection
+var dataProtectionPath = builder.Environment.IsDevelopment()
+    ? Path.Combine(Directory.GetCurrentDirectory(), "data-protection-keys")
+    : "/app/keys";
+
+if (builder.Environment.IsDevelopment())
+{
+    Directory.CreateDirectory(dataProtectionPath);
+}
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
+    .SetApplicationName("CementerioApp");
+
+// Configuración de la base de datos
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+    ?? throw new InvalidOperationException("Connection string 'DB_CONNECTION_STRING' not found.");
+
+// Configuración de QuestPDF
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-// Configurar la sesións
+
+// Configuración de sesión
 builder.Services.AddSession(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // usa HTTPS si llegó por HTTPS
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = "CementerioApp.Session";
 });
 
-// Configurar servicios y opciones
+// Configuración de servicios
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<ContratoService>();
-// Agregar servicios al contenedor.
+
+// Configuración de MVC con áreas
+builder.Services.AddControllersWithViews()
+    .AddRazorOptions(options =>
+    {
+        options.AreaViewLocationFormats.Clear();
+        options.AreaViewLocationFormats.Add("/Areas/{2}/Views/{1}/{0}.cshtml");
+        options.AreaViewLocationFormats.Add("/Areas/{2}/Views/Shared/{0}.cshtml");
+        options.AreaViewLocationFormats.Add("/Views/Shared/{0}.cshtml");
+    });
+
+// Registrar área Admin
+gad_checa_gestion_cementerio.Areas.Admin.AdminAreaRegistration.ConfigureServices(builder.Services);
+
+// Configuración de Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    }));
 
-// Agregar la administración de roles
-
-
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+// Configuración de Identity
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+})
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// Añadir servicios de localización
+// Configuración de cookies de autenticación
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.Name = "CementerioApp.Auth";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.LoginPath = "/auth/login";
+    options.LogoutPath = "/auth/logout";
+    options.AccessDeniedPath = "/auth/access-denied";
+});
+
+// Configuración de localización
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization()
+    .AddDataAnnotationsLocalization();
 
-builder.Services.AddControllersWithViews().AddViewLocalization()
-            .AddDataAnnotationsLocalization();
-
-builder.Services.AddRazorPages(); // Necesario para las páginas de identidad predeterminadas.
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
-// Aplicar migraciones automáticamente al iniciar
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate(); // Aplica migraciones pendientes, crea DB si no existe
-}
 
-
-
-// Configurar la localización
+// Configuración de culturas soportadas
 var supportedCultures = new List<CultureInfo>
 {
     new CultureInfo("es-ES"),
@@ -75,99 +126,188 @@ var localizationOptions = new RequestLocalizationOptions
 
 app.UseRequestLocalization(localizationOptions);
 
+// Configuración de headers reenviados
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+};
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
-// Configurar el pipeline de solicitudes HTTP.
+// Middleware pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-//app.UseHttpsRedirection();
-
-// ACEPTAR headers reenviados por Nginx (X-Forwarded-For, X-Forwarded-Proto)
-var forwardedHeadersOptions = new ForwardedHeadersOptions
-{
-    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto,
-    // En producción: agregar IP o redes de confianza
-    // KnownProxies = { IPAddress.Parse("192.168.0.10") }
-};
-app.UseForwardedHeaders(forwardedHeadersOptions);
-
-
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
+
+// Configuración de rutas
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=index}/{id?}"); // Ruta personalizada
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages(); // Esto es necesario para las páginas de identidad predeterminadas.
+app.MapRazorPages();
 
-using (var scope = app.Services.CreateScope())
+// Inicialización de datos
+await InitializeData(app);
+
+// Configuración de Rotativa
+try
 {
-    var services = scope.ServiceProvider;
-    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var dbContext = services.GetRequiredService<ApplicationDbContext>();
-
-    // Crear roles si no existen
-    string[] roleNames = { "Admin", "User" };
-    foreach (var roleName in roleNames)
+    var rotativaPath = Path.Combine(app.Environment.WebRootPath, "Rotativa");
+    if (!Directory.Exists(rotativaPath))
     {
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole(roleName));
-        }
+        Directory.CreateDirectory(rotativaPath);
+    }
+    Rotativa.AspNetCore.RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Error configuring Rotativa. PDF generation may not work.");
+}
+
+app.Run();
+
+// Método para inicializar datos
+async Task InitializeData(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        // Aplicar migraciones pendientes
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+        // Crear roles
+        await CreateRoles(services);
+
+        // Crear usuario admin
+        await CreateAdminUser(services);
+
+        // Crear datos iniciales
+        await CreateInitialData(dbContext, userManager);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while initializing the database.");
+        throw;
+    }
+}
+
+static async Task CreateRoles(IServiceProvider serviceProvider)
+{
+    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+
+    // Crear rol Admin si no existe
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+        logger.LogInformation("Rol Admin creado exitosamente");
     }
 
-    // Crear usuario y asignarle un rol
-    var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
+    // Crear rol Usuario si no existe
+    if (!await roleManager.RoleExistsAsync("Usuario"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Usuario"));
+        logger.LogInformation("Rol Usuario creado exitosamente");
+    }
+
+    // Crear rol Administrador si no existe (solo se crea una vez)
+    if (!await roleManager.RoleExistsAsync("Administrador"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Administrador"));
+        logger.LogInformation("Rol Administrador creado exitosamente");
+    }
+}
+
+static async Task CreateAdminUser(IServiceProvider serviceProvider)
+{
+    var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+
+    // Verificar si el rol Administrador existe
+    if (!await roleManager.RoleExistsAsync("Administrador"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Administrador"));
+        logger.LogInformation("Rol Administrador creado exitosamente");
+    }
+
+    // Buscar el usuario administrador
+    var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+
     if (adminUser == null)
     {
-        adminUser = new IdentityUser()
+        // Crear el usuario administrador
+        adminUser = new ApplicationUser
         {
-            UserName = "admin@teobu.com",
-            Email = "admin@teobu.com",
+            UserName = "admin@example.com",
+            Email = "admin@example.com",
             EmailConfirmed = true,
-            LockoutEnabled = false
+            Nombres = "Administrador",
+            Apellidos = "Sistema",
+            PhoneNumber = string.Empty,
+            PhoneNumberConfirmed = false,
+            TwoFactorEnabled = false,
+            LockoutEnabled = true,
+            AccessFailedCount = 0
         };
-        var result = await userManager.CreateAsync(adminUser, "teobu@123456");
+
+        var result = await userManager.CreateAsync(adminUser, "Admin123!");
         if (result.Succeeded)
         {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            logger.LogInformation("Usuario administrador creado exitosamente");
         }
         else
         {
-            // Manejar errores de creación del usuario
-            foreach (var error in result.Errors)
-            {
-                Console.WriteLine(error.Description);
-            }
-        }
-    }
-    else
-    {
-        // Asignar el rol si el usuario ya existe
-        if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
-        {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            logger.LogError("Error al crear el usuario administrador: {0}", string.Join(", ", result.Errors.Select(e => e.Description)));
+            return;
         }
     }
 
+    // Asignar el rol Administrador al usuario
+    if (!await userManager.IsInRoleAsync(adminUser, "Administrador"))
+    {
+        var result = await userManager.AddToRoleAsync(adminUser, "Administrador");
+        if (result.Succeeded)
+        {
+            logger.LogInformation("Rol Administrador asignado al usuario administrador exitosamente");
+        }
+        else
+        {
+            logger.LogError("Error al asignar el rol Administrador: {0}", string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }
+}
+
+async Task CreateInitialData(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+{
     // Crear empresa si no existe
     var empresa = await dbContext.GadInformacion.FirstOrDefaultAsync(e => e.Nombre == "GAD CHECA");
     if (empresa == null)
     {
         empresa = new GADInformacion
         {
-            Nombre = "Empresa Ejemplo",
-            Direccion = "Dirección Ejemplo",
-            Telefono = "123456789",
+            Nombre = "GAD CHECA",
+            Direccion = "Eloy Riera, Parroquia Checa",
+            Telefono = "0987654321",
             Email = "",
             LogoUrl = "",
             Website = "",
@@ -175,20 +315,19 @@ using (var scope = app.Services.CreateScope())
             Vision = ""
         };
         dbContext.GadInformacion.Add(empresa);
-        await dbContext.SaveChangesAsync();
     }
 
     // Crear cementerio si no existe
     var cementerio = await dbContext.Cementerio.FirstOrDefaultAsync();
     if (cementerio == null)
     {
+        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
         cementerio = new Cementerio
         {
             Nombre = "Cementerio de checa",
             Direccion = "Eloy Riera, Parroquia Checa",
             AbreviaturaTituloPresidente = "Sr.",
-            Email = "jpcheca0@gmail.com,",
-
+            Email = "jpcheca0@gmail.com",
             Telefono = "0987654321",
             Presidente = "Bolívar Robles Iñamagua",
             VecesRenovacionNicho = 1,
@@ -204,40 +343,21 @@ using (var scope = app.Services.CreateScope())
             UsuarioCreador = adminUser
         };
         dbContext.Cementerio.Add(cementerio);
-        await dbContext.SaveChangesAsync();
     }
+
     // Crear descuentos si no existen
     var descuentos = await dbContext.Descuento.ToListAsync();
-    if (descuentos.Count == 0)
+    if (!descuentos.Any())
     {
-        var descuento1 = new Descuento
+        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
+        var descuentosIniciales = new[]
         {
-            Descripcion = "Ninguno",
-            Porcentaje = 0,
-            Estado = true,
-            FechaCreacion = DateTime.Now,
-            UsuarioCreador = adminUser
+            new Descuento { Descripcion = "Ninguno", Porcentaje = 0, Estado = true, FechaCreacion = DateTime.Now, UsuarioCreador = adminUser },
+            new Descuento { Descripcion = "50%", Porcentaje = 50, Estado = true, FechaCreacion = DateTime.Now, UsuarioCreador = adminUser },
+            new Descuento { Descripcion = "100%", Porcentaje = 100, Estado = true, FechaCreacion = DateTime.Now, UsuarioCreador = adminUser }
         };
-        var descuento2 = new Descuento
-        {
-            Descripcion = "50%",
-            Porcentaje = 50,
-            Estado = true,
-            FechaCreacion = DateTime.Now,
-            UsuarioCreador = adminUser
-        };
-        var descuento3 = new Descuento
-        {
-            Descripcion = "100%",
-            Porcentaje = 100,
-            Estado = true,
-            FechaCreacion = DateTime.Now,
-            UsuarioCreador = adminUser
-        };
-        dbContext.Descuento.AddRange(descuento1, descuento2, descuento3);
-        await dbContext.SaveChangesAsync();
+        dbContext.Descuento.AddRange(descuentosIniciales);
     }
-}
-app.Run();
 
-Rotativa.AspNetCore.RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
+    await dbContext.SaveChangesAsync();
+}

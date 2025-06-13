@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 using gad_checa_gestion_cementerio.Models;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 
 namespace gad_checa_gestion_cementerio.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -18,7 +19,7 @@ namespace gad_checa_gestion_cementerio.Data
             base.OnModelCreating(builder);
 
             // Personalizar los nombres de las tablas
-            builder.Entity<IdentityUser>(entity =>
+            builder.Entity<ApplicationUser>(entity =>
             {
                 entity.ToTable(name: "Usuarios");
             });
@@ -64,87 +65,87 @@ namespace gad_checa_gestion_cementerio.Data
                 .HasValue<Propietario>("Propietario");
 
 
-            // Configuración de relaciones con IdentityUser
+            // Configuración de relaciones con ApplicationUser
             builder.Entity<Persona>()
-                .HasOne<IdentityUser>(p => p.UsuarioCreador)
+                .HasOne<ApplicationUser>(p => p.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Contrato>()
-                .HasOne<IdentityUser>(c => c.UsuarioCreador)
+                .HasOne<ApplicationUser>(c => c.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Contrato>()
-                .HasOne<IdentityUser>(c => c.UsuarioActualizador)
+                .HasOne<ApplicationUser>(c => c.UsuarioActualizador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Contrato>()
-                .HasOne<IdentityUser>(c => c.UsuarioEliminador)
+                .HasOne<ApplicationUser>(c => c.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Difunto>()
-                .HasOne<IdentityUser>(d => d.UsuarioCreador)
+                .HasOne<ApplicationUser>(d => d.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Difunto>()
-                .HasOne<IdentityUser>(d => d.UsuarioActualizador)
+                .HasOne<ApplicationUser>(d => d.UsuarioActualizador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Difunto>()
-                .HasOne<IdentityUser>(d => d.UsuarioEliminador)
+                .HasOne<ApplicationUser>(d => d.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Descuento>()
-                .HasOne<IdentityUser>(d => d.UsuarioCreador)
+                .HasOne<ApplicationUser>(d => d.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Descuento>()
-                .HasOne<IdentityUser>(d => d.UsuarioActualizador)
+                .HasOne<ApplicationUser>(d => d.UsuarioActualizador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Descuento>()
-                .HasOne<IdentityUser>(d => d.UsuarioEliminador)
+                .HasOne<ApplicationUser>(d => d.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Bloque>()
-                .HasOne<IdentityUser>(s => s.UsuarioCreador)
+                .HasOne<ApplicationUser>(s => s.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Bloque>()
-                .HasOne<IdentityUser>(s => s.UsuarioActualizador)
+                .HasOne<ApplicationUser>(s => s.UsuarioActualizador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Bloque>()
-                .HasOne<IdentityUser>(s => s.UsuarioEliminador)
+                .HasOne<ApplicationUser>(s => s.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Cementerio>()
-                .HasOne<IdentityUser>(c => c.UsuarioCreador)
+                .HasOne<ApplicationUser>(c => c.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Cementerio>()
-                .HasOne<IdentityUser>(c => c.UsuarioActualizador)
+                .HasOne<ApplicationUser>(c => c.UsuarioActualizador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Cementerio>()
-                .HasOne<IdentityUser>(c => c.UsuarioEliminador)
+                .HasOne<ApplicationUser>(c => c.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Boveda>()
-                .HasOne<IdentityUser>(b => b.UsuarioCreador)
+                .HasOne<ApplicationUser>(b => b.UsuarioCreador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Boveda>()
-                .HasOne<IdentityUser>(b => b.UsuarioActualizador)
+                .HasOne<ApplicationUser>(b => b.UsuarioActualizador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Boveda>()
-                .HasOne<IdentityUser>(b => b.UsuarioEliminador)
+                .HasOne<ApplicationUser>(b => b.UsuarioEliminador)
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 

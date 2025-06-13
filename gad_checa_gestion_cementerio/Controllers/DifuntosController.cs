@@ -1,4 +1,5 @@
 using AutoMapper;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Utils;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +10,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class DifuntosController : BaseController
     {
-        public DifuntosController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager) : base(context, userManager, mapper)
+        public DifuntosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
         {
         }
 

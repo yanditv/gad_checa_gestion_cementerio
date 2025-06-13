@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using gad_checa_gestion_cementerio.Areas.Identity.Data;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.Contracts;
@@ -26,26 +27,27 @@ namespace gad_checa_gestion_cementerio.Data
         public DateTime FechaActualizacion { get; set; }
         public DateTime? FechaEliminacion { get; set; }
 
+        public string? UsuarioCreadorId { get; set; }
 
         [ForeignKey("UsuarioCreadorId")]
-        public IdentityUser UsuarioCreador { get; set; }
+        public ApplicationUser? UsuarioCreador { get; set; }
 
         [ForeignKey("UsuarioActualizadorId")]
-        public IdentityUser? UsuarioActualizador { get; set; }
+        public ApplicationUser? UsuarioActualizador { get; set; }
 
         [ForeignKey("UsuarioEliminadorId")]
-        public IdentityUser? UsuarioEliminador { get; set; }
+        public ApplicationUser? UsuarioEliminador { get; set; }
 
-        [Required]
-        public int PisoId { get; set; }
+        public int? PisoId { get; set; }
 
         [ForeignKey("PisoId")]
-        public Piso Piso { get; set; } // Relación con el piso
+        public Piso? Piso { get; set; } // Relación con el piso
 
         public int? PropietarioId { get; set; }
 
         [ForeignKey("PropietarioId")]
         public Propietario? Propietario { get; set; }
-    }
 
+        public ICollection<Contrato>? Contratos { get; set; } // Relación con los contratos
+    }
 }

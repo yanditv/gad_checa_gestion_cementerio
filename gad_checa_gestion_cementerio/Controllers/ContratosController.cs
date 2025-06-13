@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using gad_checa_gestion_cementerio.services;
 using gad_checa_gestion_cementerio.Models.Listas;
 using QuestPDF.Fluent;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
@@ -17,7 +18,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         private readonly ContratoService _contratoService;
         private readonly ILogger<ContratosController> _logger;
         private readonly IWebHostEnvironment _env;
-        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper)
+        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper)
         {
             _logger = logger;
             _contratoService = contratoService;

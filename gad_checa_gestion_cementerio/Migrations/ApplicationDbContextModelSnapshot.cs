@@ -104,71 +104,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.ToTable("RoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.ToTable("Usuarios", (string)null);
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -252,6 +187,83 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("UsuarioTokens", (string)null);
+                });
+
+            modelBuilder.Entity("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Apellidos")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Cedula")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Nombres")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("Usuarios", (string)null);
                 });
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Bloque", b =>
@@ -355,7 +367,7 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.Property<string>("NumeroSecuecial")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PisoId")
+                    b.Property<int?>("PisoId")
                         .HasColumnType("int");
 
                     b.Property<int?>("PropietarioId")
@@ -365,7 +377,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UsuarioCreadorId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UsuarioEliminadorId")
@@ -964,7 +975,7 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -973,7 +984,7 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -988,7 +999,7 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -997,7 +1008,7 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1012,18 +1023,18 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioEliminador")
                         .WithMany()
                         .HasForeignKey("UsuarioEliminadorId")
                         .OnDelete(DeleteBehavior.NoAction);
@@ -1040,27 +1051,24 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Boveda", b =>
                 {
                     b.HasOne("gad_checa_gestion_cementerio.Data.Piso", "Piso")
-                        .WithMany()
-                        .HasForeignKey("PisoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Bovedas")
+                        .HasForeignKey("PisoId");
 
                     b.HasOne("gad_checa_gestion_cementerio.Data.Propietario", "Propietario")
                         .WithMany("Bovedas")
                         .HasForeignKey("PropietarioId");
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioEliminador")
                         .WithMany()
                         .HasForeignKey("UsuarioEliminadorId")
                         .OnDelete(DeleteBehavior.NoAction);
@@ -1078,18 +1086,18 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Cementerio", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioEliminador")
                         .WithMany()
                         .HasForeignKey("UsuarioEliminadorId")
                         .OnDelete(DeleteBehavior.NoAction);
@@ -1104,7 +1112,7 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Contrato", b =>
                 {
                     b.HasOne("gad_checa_gestion_cementerio.Data.Boveda", "Boveda")
-                        .WithMany()
+                        .WithMany("Contratos")
                         .HasForeignKey("BovedaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1115,18 +1123,18 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioEliminador")
                         .WithMany()
                         .HasForeignKey("UsuarioEliminadorId")
                         .OnDelete(DeleteBehavior.NoAction);
@@ -1155,18 +1163,18 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Descuento", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioEliminador")
                         .WithMany()
                         .HasForeignKey("UsuarioEliminadorId")
                         .OnDelete(DeleteBehavior.NoAction);
@@ -1186,18 +1194,18 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioActualizador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioActualizador")
                         .WithMany()
                         .HasForeignKey("UsuarioActualizadorId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioEliminador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioEliminador")
                         .WithMany()
                         .HasForeignKey("UsuarioEliminadorId")
                         .OnDelete(DeleteBehavior.NoAction);
@@ -1220,7 +1228,7 @@ namespace gad_checa_gestion_cementerio.Migrations
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Persona", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "UsuarioCreador")
+                    b.HasOne("gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -1243,6 +1251,11 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Bloque", b =>
                 {
                     b.Navigation("Pisos");
+                });
+
+            modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Boveda", b =>
+                {
+                    b.Navigation("Contratos");
                 });
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Cementerio", b =>
@@ -1268,6 +1281,11 @@ namespace gad_checa_gestion_cementerio.Migrations
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Persona", b =>
                 {
                     b.Navigation("Pagos");
+                });
+
+            modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Piso", b =>
+                {
+                    b.Navigation("Bovedas");
                 });
 
             modelBuilder.Entity("gad_checa_gestion_cementerio.Data.Propietario", b =>

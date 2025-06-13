@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 
 namespace gad_checa_gestion_cementerio.Data
 {
@@ -44,15 +45,15 @@ namespace gad_checa_gestion_cementerio.Data
 
         [ForeignKey("UsuarioCreador")]
         public string UsuarioCreadorId { get; set; }
-        public IdentityUser UsuarioCreador { get; set; }
+        public ApplicationUser UsuarioCreador { get; set; }
 
         [ForeignKey("UsuarioActualizador")]
         public string? UsuarioActualizadorId { get; set; }
-        public IdentityUser UsuarioActualizador { get; set; }
+        public ApplicationUser UsuarioActualizador { get; set; }
 
         [ForeignKey("UsuarioEliminador")]
         public string? UsuarioEliminadorId { get; set; }
-        public IdentityUser UsuarioEliminador { get; set; }
+        public ApplicationUser UsuarioEliminador { get; set; }
 
         // Relaciones
         [ForeignKey("Boveda")]

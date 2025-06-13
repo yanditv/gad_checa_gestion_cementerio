@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using gad_checa_gestion_cementerio.Areas.Identity.Data;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -60,7 +61,7 @@ namespace gad_checa_gestion_cementerio.Data
         [ForeignKey("UsuarioCreadorId")]
         [Display(Name = "Usuario Creador")]
         [Required(ErrorMessage = "El usuario creador es obligatorio.")]
-        public IdentityUser UsuarioCreador { get; set; }
+        public ApplicationUser UsuarioCreador { get; set; }
 
 
         // Relaciones

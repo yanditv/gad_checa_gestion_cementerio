@@ -13,12 +13,13 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using gad_checa_gestion_cementerio.Areas.Identity.Data;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ReportesController : BaseController
     {
-        public ReportesController(ApplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager)
+        public ReportesController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager)
             : base(context, userManager, mapper)
         {
         }
