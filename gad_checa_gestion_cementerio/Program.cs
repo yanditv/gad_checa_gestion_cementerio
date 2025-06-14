@@ -74,7 +74,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }));
 
 // Configuración de Identity
-builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
@@ -84,7 +84,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Password.RequiredLength = 6;
 })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders()
+    .AddErrorDescriber<SpanishIdentityErrorDescriber>();
 
 // Configuración de cookies de autenticación
 builder.Services.ConfigureApplicationCookie(options =>
@@ -321,7 +323,11 @@ async Task CreateInitialData(ApplicationDbContext dbContext, UserManager<Applica
     var cementerio = await dbContext.Cementerio.FirstOrDefaultAsync();
     if (cementerio == null)
     {
-        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
+        var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+        if (adminUser == null)
+        {
+            throw new InvalidOperationException("No se encontró el usuario administrador. Asegúrese de que el usuario admin@example.com existe.");
+        }
         cementerio = new Cementerio
         {
             Nombre = "Cementerio de checa",
@@ -349,7 +355,11 @@ async Task CreateInitialData(ApplicationDbContext dbContext, UserManager<Applica
     var descuentos = await dbContext.Descuento.ToListAsync();
     if (!descuentos.Any())
     {
-        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
+        var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+        if (adminUser == null)
+        {
+            throw new InvalidOperationException("No se encontró el usuario administrador. Asegúrese de que el usuario admin@example.com existe.");
+        }
         var descuentosIniciales = new[]
         {
             new Descuento { Descripcion = "Ninguno", Porcentaje = 0, Estado = true, FechaCreacion = DateTime.Now, UsuarioCreador = adminUser },
