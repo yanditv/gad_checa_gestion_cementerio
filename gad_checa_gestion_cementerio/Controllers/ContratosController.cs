@@ -716,43 +716,58 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             return PartialView("_SelectBoveda", viewModel);
         }
-        public IActionResult BuscarBovedasJson(string filtro, int pagina = 1)
+        public IActionResult BuscarBovedasJson(string filtro = "", string tipo = "", int pagina = 1)
         {
-            int pageSize = 10;
-            var query = _context.Boveda.AsQueryable();
-
-            if (!string.IsNullOrEmpty(filtro))
+            try
             {
-                query = query.Where(b => b.NumeroSecuecial.Contains(filtro));
-            }
+                int pageSize = 10;
+                var query = _context.Boveda
+                    .Include(b => b.Piso.Bloque)
+                    .Where(b => b.Estado)
+                    .AsQueryable();
 
-            int total = query.Count();
-
-            var bovedas = query
-            .Include(b => b.Piso.Bloque)
-                .OrderBy(b => b.NumeroSecuecial)
-                .Skip((pagina - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var listaBovedas = _mapper.Map<List<BovedaModel>>(bovedas);
-
-            var resultado = new
-            {
-                bovedas = listaBovedas.Select(b => new
+                if (!string.IsNullOrEmpty(filtro))
                 {
-                    id = b.Id,
-                    numeroSecuecial = b.NumeroSecuecial,
-                    numero = b.Numero,
-                    tipo = b.Piso.Bloque.Tipo,
-                    estado = b.Estado ? "Activa" : "Inactiva"
-                }),
-                paginaActual = pagina,
-                totalPaginas = (int)Math.Ceiling(total / (double)pageSize),
-                filtro = filtro
-            };
+                    query = query.Where(b => b.NumeroSecuecial.Contains(filtro));
+                }
 
-            return Json(resultado);
+                if (!string.IsNullOrEmpty(tipo))
+                {
+                    query = query.Where(b => b.Piso.Bloque.Tipo == tipo);
+                }
+
+                int total = query.Count();
+
+                var bovedas = query
+                    .OrderBy(b => b.NumeroSecuecial)
+                    .Skip((pagina - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var listaBovedas = _mapper.Map<List<BovedaModel>>(bovedas);
+
+                var resultado = new
+                {
+                    bovedas = listaBovedas.Select(b => new
+                    {
+                        id = b.Id,
+                        numeroSecuecial = b.NumeroSecuecial,
+                        numero = b.Numero,
+                        tipo = b.Piso.Bloque.Tipo,
+                        estado = b.Estado ? "Activa" : "Inactiva"
+                    }),
+                    paginaActual = pagina,
+                    totalPaginas = (int)Math.Ceiling(total / (double)pageSize),
+                    filtro = filtro
+                };
+
+                return Json(resultado);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar bóvedas");
+                return StatusCode(500, new { error = "Error al buscar bóvedas" });
+            }
         }
         #endregion
 

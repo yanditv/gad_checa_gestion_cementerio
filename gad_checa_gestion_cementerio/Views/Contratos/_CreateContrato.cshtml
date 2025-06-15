@@ -28,7 +28,7 @@
                             <input asp-for="Boveda.NumeroSecuecial" readonly class="form-control" />
                             <button type="button" class="btn btn-outline-secondary" onclick="abrirModalBovedas('')"
                                 @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ?
-                                                                "disabled" : "")>
+                                                                "disabled" : "") >
                                 <i class="bi bi-search"></i> Buscar
                             </button>
                         </div>
@@ -168,9 +168,11 @@
 
     function buscarBovedasJson(pagina = 1) {
         const filtroInput = document.getElementById('filtroBoveda');
+        const tipoSelect = document.getElementById('tipoBoveda');
         const filtro = filtroInput ? filtroInput.value : '';
+        const tipo = tipoSelect ? tipoSelect.value : '';
 
-        fetch(`/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&pagina=${pagina}`)
+        fetch(`/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=${pagina}`)
             .then(response => {
                 if (!response.ok) throw new Error('Error en la solicitud');
                 return response.json();

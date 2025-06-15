@@ -15,6 +15,11 @@
                 <div class="input-group mb-3">
                     <input type="text" name="filtro" id="filtroBoveda" class="form-control"
                         placeholder="Buscar por Nro. Secuencial" value="@filtroActual" />
+                    <select id="tipoBoveda" class="form-select" style="max-width: 150px;">
+                        <option value="">Todos los tipos</option>
+                        <option value="Bovedas">Bóveda</option>
+                        <option value="Nichos">Nicho</option>
+                    </select>
                     <button type="button" class="btn btn-primary" onclick="buscarBovedasJson(1)">Buscar</button>
                 </div>
                 <table class="table table-bordered">
