@@ -687,31 +687,17 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         #region BusquedaBovedas
         [HttpGet]
-        public IActionResult BuscarBovedas(string filtro, int pagina = 1)
+        public IActionResult BuscarBovedas(string filtro = "", string tipo = "", int pagina = 1)
         {
-            int pageSize = 10;
-            var query = _context.Boveda.AsQueryable();
 
-            if (!string.IsNullOrEmpty(filtro))
-            {
-                query = query.Where(b => b.NumeroSecuecial.Contains(filtro));
-            }
-
-            int total = query.Count();
-            var bovedas = query
-                .Include(b => b.Piso.Bloque)
-                .OrderBy(b => b.NumeroSecuecial)
-                .Skip((pagina - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
 
             var viewModel = new BovedaPaginadaViewModel
             {
-                Bovedas = _mapper.Map<List<BovedaModel>>(bovedas),
+                Bovedas = new List<BovedaModel>(),
                 PaginaActual = pagina,
-                TotalPaginas = (int)Math.Ceiling(total / (double)pageSize),
-
-                Filtro = filtro
+                TotalPaginas = 0,
+                Filtro = filtro,
+                Tipo = tipo
             };
 
             return PartialView("_SelectBoveda", viewModel);
@@ -728,7 +714,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 if (!string.IsNullOrEmpty(filtro))
                 {
-                    query = query.Where(b => b.NumeroSecuecial.Contains(filtro));
+                    query = query.Where(b => b.NumeroSecuecial.Contains(filtro) || b.Numero.ToString().Contains(filtro));
                 }
 
                 if (!string.IsNullOrEmpty(tipo))
@@ -739,7 +725,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                 int total = query.Count();
 
                 var bovedas = query
-                    .OrderBy(b => b.NumeroSecuecial)
+                    .OrderByDescending(b => b.NumeroSecuecial != null)
+                    .ThenBy(b => b.NumeroSecuecial)
                     .Skip((pagina - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();

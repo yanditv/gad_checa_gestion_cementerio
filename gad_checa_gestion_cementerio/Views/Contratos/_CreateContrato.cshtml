@@ -24,7 +24,7 @@
                         <label asp-for="BovedaId" class="form-label">Bóveda</label>
                         <input asp-for="BovedaId" hidden readonly class="form-control" />
                         <div class="input-group">
-
+                            <input asp-for="BovedaId" hidden readonly class="form-control" />
                             <input asp-for="Boveda.NumeroSecuecial" readonly class="form-control" />
                             <button type="button" class="btn btn-outline-secondary" onclick="abrirModalBovedas('')"
                                 @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ?
@@ -143,7 +143,10 @@
         //renderPaginacion(data.paginaActual, data.totalPaginas);
     }
     function abrirModalBovedas(filtro) {
-        fetch('/Contratos/BuscarBovedas?filtro=' + encodeURIComponent(filtro))
+        const tipoSelect = document.getElementById('tipoBoveda');
+        const tipo = tipoSelect ? tipoSelect.value : '';
+
+        fetch(`/Contratos/BuscarBovedas?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=1`)
             .then(response => response.text())
             .then(html => {
                 document.getElementById('contenedorModalBovedas').innerHTML = html;
@@ -185,7 +188,8 @@
                 data.bovedas.forEach(b => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${b.numeroSecuecial}</td>
+                        <td>${b.numeroSecuecial == null ? "S/N" : b.numeroSecuecial}</td>
+                        
                         <td>${b.numero}</td>
                         <td>${b.tipo}</td>
                         <td>${b.estado}</td>

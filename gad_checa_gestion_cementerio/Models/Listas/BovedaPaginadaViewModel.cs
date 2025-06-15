@@ -7,4 +7,8 @@ public class BovedaPaginadaViewModel : PaginacionBaseViewModel
 {
     public IEnumerable<BovedaModel> Bovedas { get; set; }
     public override int TotalResultados { get; set; }
+    public int PaginaActual { get; set; }
+    public int TotalPaginas { get; set; }
+    public string Filtro { get; set; }
+    public string Tipo { get; set; }
 }

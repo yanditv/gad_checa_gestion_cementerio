@@ -17,7 +17,7 @@ namespace gad_checa_gestion_cementerio.Data
 
         [Required]
         public int Numero { get; set; }
-        public string? NumeroSecuecial { get; set; }
+        public string? NumeroSecuecial { get; set; } = "S/N";
 
         [Required]
         public bool Estado { get; set; }
