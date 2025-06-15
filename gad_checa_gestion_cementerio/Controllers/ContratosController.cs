@@ -30,13 +30,24 @@ namespace gad_checa_gestion_cementerio.Controllers
             var contratoJson = HttpContext.Session.GetString("NuevoContrato");
             if (string.IsNullOrEmpty(contratoJson))
             {
-                return new CreateContratoModel();
+                return new CreateContratoModel
+                {
+                    contrato = new ContratoModel(),
+                    difunto = new DifuntoModel(),
+                    responsables = new List<ResponsableModel>(),
+                    pago = new PagoModel()
+                };
             }
             return JsonConvert.DeserializeObject<CreateContratoModel>(contratoJson);
         }
 
         private void SaveContratoToSession(CreateContratoModel contrato)
         {
+            if (contrato == null)
+            {
+                HttpContext.Session.Remove("NuevoContrato");
+                return;
+            }
             var contratoJson = JsonConvert.SerializeObject(contrato);
             HttpContext.Session.SetString("NuevoContrato", contratoJson);
         }
@@ -99,6 +110,9 @@ namespace gad_checa_gestion_cementerio.Controllers
         // GET: Contratos/Create
         public IActionResult Create(int idContrato = 0)
         {
+            // Limpiar la sesión anterior si existe
+            HttpContext.Session.Remove("NuevoContrato");
+
             if (idContrato > 0)
             {
                 var contrato = _context.Contrato
@@ -107,28 +121,23 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .Include(c => c.Responsables)
                     .Include(c => c.Cuotas)
                     .FirstOrDefault(c => c.Id == idContrato);
-                contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true);
+
                 if (contrato != null)
                 {
-
                     var contratoModelView = new CreateContratoModel
                     {
                         contrato = _mapper.Map<ContratoModel>(contrato),
                         difunto = _mapper.Map<DifuntoModel>(contrato.Difunto),
                         responsables = _mapper.Map<List<ResponsableModel>>(contrato.Responsables),
+                        pago = new PagoModel()
                     };
+                    contratoModelView.contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true);
                     SaveContratoToSession(contratoModelView);
                     return View(contratoModelView);
                 }
-                else
-                {
-                    return NotFound();
-                }
+                return NotFound();
             }
-            else
-            {
-                return InitializeNewContrato();
-            }
+            return InitializeNewContrato();
         }
         private IActionResult InitializeNewContrato()
         {
@@ -165,63 +174,80 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return Json(new { success = false, errors = new List<string> { "No se encontró información del contrato en la sesión." } });
             }
 
-            if (!ModelState.IsValid)
+            // Validaciones adicionales
+            if (viewModel.difunto == null)
             {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return Json(new { success = false, errors });
+                return Json(new { success = false, errors = new List<string> { "Debe completar los datos del difunto." } });
+            }
+
+            if (viewModel.responsables == null || !viewModel.responsables.Any())
+            {
+                return Json(new { success = false, errors = new List<string> { "Debe agregar al menos un responsable." } });
+            }
+
+            if (viewModel.pago == null || !viewModel.pago.Cuotas.Any())
+            {
+                return Json(new { success = false, errors = new List<string> { "Debe realizar al menos un pago." } });
             }
 
             using (var transaction = _context.Database.BeginTransaction())
             {
                 try
                 {
-                    // Obtener usuario y su Id solo una vez
-                    var userTask = _userManager.GetUserAsync(User);
-                    userTask.Wait();
-                    var user = userTask.Result;
+                    var user = _userManager.GetUserAsync(User).Result;
                     var userId = user?.Id;
+                    var now = DateTime.Now;
 
+                    // Crear el contrato
                     var contrato = _mapper.Map<Contrato>(viewModel.contrato);
-                    contrato.FechaCreacion = DateTime.Now;
+                    contrato.FechaCreacion = now;
                     contrato.UsuarioCreadorId = userId;
                     contrato.UsuarioActualizadorId = userId;
-                    contrato.FechaActualizacion = DateTime.Now;
+                    contrato.FechaActualizacion = now;
+                    contrato.Estado = true; // Activo por defecto
 
-                    // Difunto
+                    // Crear el difunto
                     contrato.Difunto = _mapper.Map<Difunto>(viewModel.difunto);
-                    contrato.DifuntoId = viewModel.difunto.Id;
                     contrato.Difunto.UsuarioCreadorId = userId;
-                    contrato.Difunto.FechaCreacion = DateTime.Now;
+                    contrato.Difunto.FechaCreacion = now;
 
-                    // Responsables
+                    // Crear los responsables
                     contrato.Responsables = _mapper.Map<List<Responsable>>(viewModel.responsables);
-                    var now = DateTime.Now;
                     contrato.Responsables.ForEach(r =>
                     {
                         r.UsuarioCreador = user;
                         r.FechaCreacion = now;
                     });
 
+                    // Crear las cuotas
+                    contrato.Cuotas = _mapper.Map<List<Cuota>>(viewModel.contrato.Cuotas);
+                    contrato.Cuotas.ForEach(c =>
+                    {
+
+                    });
+
                     _context.Contrato.Add(contrato);
                     _context.SaveChanges();
 
-                    // Ahora sí, el primer responsable tiene Id
+                    // Crear el pago
                     var pago = _mapper.Map<Pago>(viewModel.pago);
-                    pago.PersonaPagoId = contrato.Responsables.FirstOrDefault()?.Id ?? 0;
-                    pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
+                    pago.PersonaPagoId = contrato.Responsables.First().Id;
                     pago.FechaPago = now;
                     _context.Pago.Add(pago);
 
                     _context.SaveChanges();
-
                     transaction.Commit();
-                    return Json(new { success = true });
+
+                    // Limpiar la sesión después de guardar exitosamente
+                    SaveContratoToSession(null);
+
+                    return Json(new { success = true, contratoId = contrato.Id });
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
                     _logger.LogError(ex, "Error al guardar el contrato");
-                    return Json(new { success = false, errors = new List<string> { "Ocurrió un error al guardar el contrato." } });
+                    return Json(new { success = false, errors = new List<string> { "Ocurrió un error al guardar el contrato: " + ex.Message } });
                 }
             }
         }
@@ -376,6 +402,20 @@ namespace gad_checa_gestion_cementerio.Controllers
             var responsables = contrato.responsables;
             var tipos = new List<string> { "Cedula", "RUC" };
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
+
+            // Cargar la lista de personas para el select2
+            var personas = _context.Persona
+                .Select(p => new ResponsableModel
+                {
+                    Id = p.Id,
+                    Nombres = p.Nombres,
+                    Apellidos = p.Apellidos,
+                    TipoIdentificacion = p.TipoIdentificacion,
+                    NumeroIdentificacion = p.NumeroIdentificacion
+                })
+                .ToList();
+            ViewBag.Personas = personas;
+
             return PartialView("_CreateResponsables", responsables);
         }
         [HttpPost]
@@ -445,14 +485,27 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpPost]
         public IActionResult CreatePago(PagoModel pago, List<Guid> CuotasSeleccionadas)
         {
-            Console.WriteLine("Cuotas seleccionadas: " + string.Join(", ", CuotasSeleccionadas));
             if (ModelState.IsValid)
             {
                 var contrato = GetContratoFromSession();
-                pago.Cuotas = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.TempId)).ToList();
-                pago.Monto = pago.Cuotas.Sum(c => c.Monto);
 
-                // Marcar las cuotas seleccionadas como pagadas
+                if (CuotasSeleccionadas == null || !CuotasSeleccionadas.Any())
+                {
+                    return Json(new { success = false, errors = new List<string> { "Debe seleccionar al menos una cuota para pagar." } });
+                }
+
+                // Validar que las cuotas seleccionadas existan
+                var cuotasValidas = contrato.contrato.Cuotas.Where(c => CuotasSeleccionadas.Contains(c.TempId)).ToList();
+                if (cuotasValidas.Count != CuotasSeleccionadas.Count)
+                {
+                    return Json(new { success = false, errors = new List<string> { "Una o más cuotas seleccionadas no son válidas." } });
+                }
+
+                pago.Cuotas = cuotasValidas;
+                pago.Monto = pago.Cuotas.Sum(c => c.Monto);
+                pago.FechaPago = DateTime.Now;
+
+                // Marcar las cuotas como pagadas
                 foreach (var cuota in contrato.contrato.Cuotas)
                 {
                     if (CuotasSeleccionadas.Contains(cuota.TempId))
@@ -466,7 +519,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return Json(new { success = true });
             }
 
-            return Json(new { success = false, errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
         // CREAR CONTRATO 
         [HttpGet]
@@ -497,40 +551,48 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         [HttpPost]
         public IActionResult CreateContrato(ContratoModel contrato)
-        {// Asegurarse de que el difunto no sea nulo
-            contrato.Difunto ??= new DifuntoModel()
-            {
-                Nombres = "",
-                Apellidos = "",
-                FechaNacimiento = DateTime.Now,
-                FechaFallecimiento = DateTime.Now,
-                NumeroIdentificacion = ""
-            };
-            contrato.Boveda = _mapper.Map<BovedaModel>(_context.Boveda.Include(x => x.Piso.Bloque).Include(x => x.UsuarioCreador).Where(x => x.Id == contrato.BovedaId).FirstOrDefault());
-
+        {
             if (ModelState.IsValid)
             {
                 var sessionContrato = GetContratoFromSession();
                 sessionContrato.contrato = contrato;
-                // crear cuotas a partir del numero de meses
+
+                // Validar fechas
+                if (contrato.FechaInicio >= contrato.FechaFin)
+                {
+                    return Json(new { success = false, errors = new List<string> { "La fecha de inicio debe ser anterior a la fecha de fin." } });
+                }
+
+                // Validar número de meses
+                if (contrato.NumeroDeMeses <= 0)
+                {
+                    return Json(new { success = false, errors = new List<string> { "El número de meses debe ser mayor a 0." } });
+                }
+
+                // Crear cuotas
+                sessionContrato.contrato.Cuotas = new List<CuotaModel>();
                 var montoCuota = contrato.MontoTotal / contrato.NumeroDeMeses;
+                var fechaActual = contrato.FechaInicio;
+
                 for (int i = 0; i < contrato.NumeroDeMeses; i++)
                 {
                     var cuota = new CuotaModel
                     {
                         Monto = montoCuota,
-                        FechaVencimiento = contrato.FechaInicio.AddYears(i + 1),
-                        Pagada = false
-
+                        FechaVencimiento = fechaActual.AddYears(1),
+                        Pagada = false,
+                        TempId = Guid.NewGuid()
                     };
                     sessionContrato.contrato.Cuotas.Add(cuota);
-
+                    fechaActual = fechaActual.AddYears(1);
                 }
+
                 SaveContratoToSession(sessionContrato);
                 return Json(new { success = true });
             }
 
-            return Json(new { success = false, errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
         //Documento
 
@@ -698,5 +760,156 @@ namespace gad_checa_gestion_cementerio.Controllers
             return RedirectToAction("SubirDocumento", new { idContrato });
         }
         #endregion
+
+        [HttpGet]
+        public IActionResult BuscarResponsable(string searchTerm)
+        {
+            var query = _context.Persona
+                .Where(p => p.Nombres.Contains(searchTerm) ||
+                           p.Apellidos.Contains(searchTerm) ||
+                           p.NumeroIdentificacion.Contains(searchTerm))
+                .Take(10);
+
+            var personas = query.Select(p => new ResponsableModel
+            {
+                Id = p.Id,
+                Nombres = p.Nombres,
+                Apellidos = p.Apellidos,
+                TipoIdentificacion = p.TipoIdentificacion,
+                NumeroIdentificacion = p.NumeroIdentificacion,
+                Telefono = p.Telefono,
+                Email = p.Email,
+                Direccion = p.Direccion
+            }).ToList();
+
+            return PartialView("_CreateResponsables", personas);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GuardarResponsable(ResponsableModel responsable)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Verificar si ya existe una persona con el mismo número de identificación
+                    var personaExistente = _context.Persona.AsNoTracking()
+                        .FirstOrDefault(p => p.NumeroIdentificacion == responsable.NumeroIdentificacion);
+
+                    var identityUser1 = await _userManager.GetUserAsync(User);
+                    if (identityUser1 == null)
+                    {
+                        return Json(new { success = false, errors = new List<string> { "Usuario no encontrado." } });
+                    }
+                    if (personaExistente != null)
+                    {
+                        // Si existe, verificar si ya es un responsable
+                        var responsableExistente = _context.Responsable
+                            .FirstOrDefault(r => r.Id == personaExistente.Id);
+
+                        if (responsableExistente != null)
+                        {
+                            // Si ya es un responsable, devolver error
+                            return Json(new
+                            {
+                                success = false,
+                                errors = new List<string> { "Esta persona ya es un responsable." }
+                            });
+                        }
+
+                        // Si no es un responsable, actualizar sus datos y crear el responsable
+                        personaExistente.Nombres = responsable.Nombres;
+                        personaExistente.Apellidos = responsable.Apellidos;
+                        personaExistente.Telefono = responsable.Telefono;
+                        personaExistente.Email = responsable.Email;
+                        personaExistente.Direccion = responsable.Direccion;
+                        personaExistente.UsuarioCreadorId = identityUser1.Id;
+
+                        var nuevoResponsable = _mapper.Map<Responsable>(responsable);
+
+                        _context.Responsable.Add(nuevoResponsable);
+                        await _context.SaveChangesAsync();
+
+                        return Json(new
+                        {
+                            success = true,
+                            responsable = new
+                            {
+                                id = nuevoResponsable.Id,
+                                nombres = personaExistente.Nombres,
+                                apellidos = personaExistente.Apellidos,
+                                tipoIdentificacion = personaExistente.TipoIdentificacion,
+                                numeroIdentificacion = personaExistente.NumeroIdentificacion,
+                                telefono = personaExistente.Telefono,
+                                email = personaExistente.Email,
+                                direccion = personaExistente.Direccion,
+                                fechaInicio = nuevoResponsable.FechaInicio.ToString("yyyy-MM-dd"),
+                                fechaFin = nuevoResponsable.FechaFin?.ToString("yyyy-MM-dd")
+                            }
+                        });
+                    }
+                    else
+                    {
+                        var identityUser = await _userManager.GetUserAsync(User);
+                        if (identityUser == null)
+                        {
+                            return Json(new { success = false, errors = new List<string> { "Usuario no encontrado." } });
+                        }
+                        // Si no existe, crear nueva persona y responsable
+                        var nuevoResponsable = _mapper.Map<Responsable>(responsable);
+                        nuevoResponsable.UsuarioCreador = identityUser;
+                        nuevoResponsable.UsuarioCreadorId = identityUser.Id;
+                        nuevoResponsable.FechaCreacion = DateTime.Now;
+                        _context.Responsable.Add(nuevoResponsable);
+                        await _context.SaveChangesAsync();
+
+                        return Json(new
+                        {
+                            success = true,
+                            responsable = new
+                            {
+                                id = nuevoResponsable.Id,
+                                nombres = nuevoResponsable.Nombres,
+                                apellidos = nuevoResponsable.Apellidos,
+                                tipoIdentificacion = nuevoResponsable.TipoIdentificacion,
+                                numeroIdentificacion = nuevoResponsable.NumeroIdentificacion,
+                                telefono = nuevoResponsable.Telefono,
+                                email = nuevoResponsable.Email,
+                                direccion = nuevoResponsable.Direccion,
+                                fechaInicio = nuevoResponsable.FechaInicio.ToString("yyyy-MM-dd"),
+                                fechaFin = nuevoResponsable.FechaFin?.ToString("yyyy-MM-dd")
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Construir mensaje de error detallado
+                    var errorMessage = "Error al guardar el responsable: " + ex.Message;
+
+                    // Agregar inner exception si existe
+                    if (ex.InnerException != null)
+                    {
+                        errorMessage += "\nInner Exception: " + ex.InnerException.Message;
+
+                        // Para errores de base de datos, mostrar aún más detalles
+                        if (ex.InnerException is DbUpdateException dbEx && dbEx.InnerException != null)
+                        {
+                            errorMessage += "\nDatabase Error: " + dbEx.InnerException.Message;
+                        }
+                    }
+
+                    _logger.LogError(ex, "Error al guardar el responsable");
+                    return Json(new
+                    {
+                        success = false,
+                        errors = new List<string> { errorMessage }
+                    });
+                }
+            }
+
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
+        }
     }
 }

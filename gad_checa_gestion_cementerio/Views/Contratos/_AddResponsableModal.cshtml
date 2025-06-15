@@ -1,136 +1,104 @@
 ﻿@model gad_checa_gestion_cementerio.Models.ResponsableModel
 
-<div class="modal fade" id="addResponsableModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+<div class="modal fade" id="crearResponsableModal" tabindex="-1" aria-labelledby="crearResponsableModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title text-white" id="modal-title">Agregar Responsable</h5>
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearResponsableModalLabel">Crear Nuevo Responsable</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="validationMessages" class="text-danger mb-3"></div>
+                <form id="formResponsable">
+                    <div class="alert alert-danger d-none" id="errorContainer" role="alert">
+                        <ul class="mb-0" id="errorList"></ul>
+                    </div>
 
-                <form id="addResponsableForm">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="NumeroIdentificacion" class="form-label">Nro. Identificación</label>
-                            <input asp-for="NumeroIdentificacion" class="form-control" />
-                            <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Nombres" class="form-label">Nombres</label>
+                                <input asp-for="Nombres" class="form-control" required />
+                                <span asp-validation-for="Nombres" class="text-danger"></span>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="TipoIdentificacion" class="form-label">Tipo de Identificación</label>
-                            <select asp-for="TipoIdentificacion" class="form-control"
-                                asp-items="ViewBag.TiposIdentificacion"></select>
-                            <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Apellidos" class="form-label">Apellidos</label>
+                                <input asp-for="Apellidos" class="form-control" required />
+                                <span asp-validation-for="Apellidos" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
+
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Nombres" class="form-label">Nombres</label>
-                            <input asp-for="Nombres" class="form-control" />
-                            <span asp-validation-for="Nombres" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="TipoIdentificacion" class="form-label">Tipo de Identificación</label>
+                                <select asp-for="TipoIdentificacion" class="form-select" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="Cédula">Cédula</option>
+                                    <option value="Pasaporte">Pasaporte</option>
+                                    <option value="RUC">RUC</option>
+                                </select>
+                                <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Apellidos" class="form-label">Apellidos</label>
-                            <input asp-for="Apellidos" class="form-control" />
-                            <span asp-validation-for="Apellidos" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NumeroIdentificacion" class="form-label">Número de
+                                    Identificación</label>
+                                <input asp-for="NumeroIdentificacion" class="form-control" required />
+                                <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
+
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Telefono" class="form-label">Teléfono</label>
-                            <input asp-for="Telefono" class="form-control" />
-                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Telefono" class="form-label">Teléfono</label>
+                                <input asp-for="Telefono" class="form-control" required />
+                                <span asp-validation-for="Telefono" class="text-danger"></span>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Direccion" class="form-label">Dirección</label>
-                            <input asp-for="Direccion" class="form-control" />
-                            <span asp-validation-for="Direccion" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label">Correo Electrónico</label>
+                                <input asp-for="Email" class="form-control" type="email" required />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
+
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Email" class="form-label">Email</label>
-                            <input asp-for="Email" class="form-control" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
+                                <input asp-for="FechaInicio" class="form-control" type="date" required />
+                                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FechaInicio" class="form-label">Fecha de Inicio</label>
-                            <input type="date" asp-for="FechaInicio" class="form-control" format="yyyy-MM-dd" />
-                            <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FechaFin" class="form-label">Fecha Fin</label>
+                                <input asp-for="FechaFin" class="form-control" type="date" />
+                                <span asp-validation-for="FechaFin" class="text-danger"></span>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FechaFin" class="form-label">Fecha Final de la responsabilidad</label>
-                            <input type="date" asp-for="FechaFin" class="form-control" format="yyyy-MM-dd" />
-                            <span asp-validation-for="FechaFin" class="text-danger"></span>
-                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Direccion" class="form-label">Dirección</label>
+                        <textarea asp-for="Direccion" class="form-control" rows="3" required></textarea>
+                        <span asp-validation-for="Direccion" class="text-danger"></span>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="saveResponsableButton">Guardar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarResponsable()">Guardar</button>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    document.getElementById('saveResponsableButton').addEventListener('click', function () {
-        var form = document.getElementById('addResponsableForm');
-        var formData = new FormData(form);
-        var validationMessages = document.getElementById('validationMessages');
-
-        fetch('@Url.Action("AddResponsable", "Contratos")', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Responsable added:', data.responsable);
-                    // Close the modal
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('addResponsableModal'));
-                    modal.hide();
-
-                    // Add the new responsable to the list
-                    var container = document.getElementById('responsablesContainer');
-                    if (container) {
-                        var newResponsable = document.createElement('div');
-                        newResponsable.classList.add('responsable', 'mb-4');
-                        newResponsable.innerHTML = `
-                        <div class="mb-3">
-                            <label class="form-label">Nombres</label>
-                            <input type="text" class="form-control" value="${data.responsable.nombres}" readonly />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Apellidos</label>
-                            <input type="text" class="form-control" value="${data.responsable.apellidos}" readonly />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" value="${data.responsable.telefono}" readonly />
-                        </div>
-                                    <div class="col-md-1 d-flex align-items-end">
-                <button type="button" class="btn btn-danger btn-sm remove-responsable-btn">Quitar</button>
-            </div>
-                        <hr class="my-4" />
-                    `;
-                        container.appendChild(newResponsable);
-                    } else {
-                        console.error('Container not found');
-                    }
-                } else {
-                    // Handle validation errors
-                    console.log(data.errors);
-                    validationMessages.innerHTML = '';
-                    data.errors.forEach(error => {
-                        var errorItem = document.createElement('div');
-                        errorItem.textContent = error;
-                        validationMessages.appendChild(errorItem);
-                    });
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    });
-</script>

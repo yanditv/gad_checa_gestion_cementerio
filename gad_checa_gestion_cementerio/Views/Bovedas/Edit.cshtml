@@ -81,7 +81,7 @@
                                         <div class="mb-3">
                                             <label class="form-label">Buscar Propietario</label>
                                             <div class="input-group">
-                                                <select id="selectPropietario" class="form-select" style="width: 100%;">
+                                                <select id="selectPropietario" class="form-select">
                                                     <option></option>
                                                 </select>
                                                 <button type="button" class="btn btn-success" id="btnCrearPropietario"
@@ -313,17 +313,17 @@
 
                         var option = new Option(
                         `${propietarioNombre} - ${propietarioIdentificacion}`,
-                                                        propietarioId,
-                                                        true,
-                                                        true
-                                                    );
-                                                    $('#selectPropietario').append(option).trigger('change');
-                                                    $('#propietarioId').val(propietarioId);
-                                                    $('#propietarioNombre').text(propietarioNombre);
-                                                    $('#propietarioInfo').removeClass('d-none');
-                                                </text>
-                            }
-                        });
+                                                                propietarioId,
+                                                                true,
+                                                                true
+                                                            );
+                                                            $('#selectPropietario').append(option).trigger('change');
+                                                            $('#propietarioId').val(propietarioId);
+                                                            $('#propietarioNombre').text(propietarioNombre);
+                                                            $('#propietarioInfo').removeClass('d-none');
+                                                        </text>
+                                }
+                            });
     </script>
 }
 

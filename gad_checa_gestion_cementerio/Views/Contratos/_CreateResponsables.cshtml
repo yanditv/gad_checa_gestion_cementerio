@@ -1,4 +1,5 @@
-﻿@model List<gad_checa_gestion_cementerio.Models.ResponsableModel>
+﻿@using System.Globalization
+@model List<gad_checa_gestion_cementerio.Models.ResponsableModel>
 
 @{
     ViewData["Title"] = "Asignar Responsables";
@@ -12,54 +13,177 @@
         <div class="card-body">
             <p class="text-muted mb-4">Asegúrate de completar los campos necesarios</p>
 
+            <div class="mb-4">
+                <label class="form-label">Buscar Responsable</label>
+                <div class="input-group">
+                    <select id="selectResponsable" class="form-select">
+                        <option value="">Seleccione un responsable...</option>
+                        @foreach (var persona in ViewBag.Personas ?? new List<ResponsableModel>())
+                        {
+                            <option value="@persona.Id">
+                                @persona.Nombres @persona.Apellidos - @persona.TipoIdentificacion:
+                                @persona.NumeroIdentificacion
+                            </option>
+                        }
+                    </select>
+                    <button type="button" class="btn btn-success" onclick="abrirModal()"
+                        title="Crear nuevo responsable">
+                        <i class="ti ti-plus"></i>
+                    </button>
+                </div>
+            </div>
+
             <div id="responsablesContainer">
                 @for (int i = 0; i < Model.Count; i++)
                 {
                     <div class="responsable mb-4">
-                        <div class="row g-3">
-
-                            <div class="col-md-4">
-                                <label asp-for="@Model[i].Nombres" class="form-label">Nombres</label>
-                                <input asp-for="@Model[i].Nombres" class="form-control" />
-                                <span asp-validation-for="@Model[i].Nombres" class="text-danger"></span>
-                            </div>
-
-
-                            <div class="col-md-4">
-                                <label asp-for="@Model[i].Apellidos" class="form-label">Apellidos</label>
-                                <input asp-for="@Model[i].Apellidos" class="form-control" />
-                                <span asp-validation-for="@Model[i].Apellidos" class="text-danger"></span>
-                            </div>
-
-
-                            <div class="col-md-4">
-                                <label asp-for="@Model[i].Telefono" class="form-label">Teléfono</label>
-                                <input asp-for="@Model[i].Telefono" class="form-control" />
-                                <span asp-validation-for="@Model[i].Telefono" class="text-danger"></span>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-user me-2 fs-4"></i>
+                                            <div class="flex-grow-1">
+                                                <h5 class="mb-1">@Model[i].Nombres @Model[i].Apellidos</h5>
+                                                <p class="mb-0 text-muted">
+                                                    @Model[i].TipoIdentificacion: @Model[i].NumeroIdentificacion
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Fecha Inicio</label>
+                                                    <input type="date" class="form-control fecha-inicio"
+                                                        value="@Model[i].FechaInicio.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Fecha Fin</label>
+                                                    <input type="date" class="form-control fecha-fin"
+                                                        value="@(Model[i].FechaFin.HasValue ? Model[i].FechaFin.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "")" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <button type="button" class="btn btn-danger btn-sm remove-responsable-btn">
+                                        <i class="ti ti-trash me-1"></i>Quitar
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <hr class="my-4" />
                     </div>
                 }
             </div>
-
-            <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                    data-bs-target="#addResponsableModal">
-                    Agregar Responsable
-                </button>
-            </div>
         </div>
-
     </div>
 </div>
+
+@await Html.PartialAsync("_AddResponsableModal", new gad_checa_gestion_cementerio.Models.ResponsableModel())
+
 <script>
-    document.getElementById('responsablesContainer').addEventListener('click', function (e) {
-        if (e.target && e.target.classList.contains('remove-responsable-btn')) {
-            const responsableDiv = e.target.closest('.responsable');
-            if (responsableDiv) {
-                responsableDiv.remove();
+    function abrirModal() {
+        var modal = new bootstrap.Modal(document.getElementById('crearResponsableModal'));
+        modal.show();
+    }
+
+    function guardarResponsable() {
+        const form = document.getElementById('formResponsable');
+        const formData = new FormData(form);
+        const errorContainer = document.getElementById('errorContainer');
+        const errorList = document.getElementById('errorList');
+
+        // Limpiar errores anteriores
+        errorContainer.classList.add('d-none');
+        errorList.innerHTML = '';
+
+        fetch('@Url.Action("GuardarResponsable", "Contratos")', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-        }
-    });
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Cerrar el modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('crearResponsableModal'));
+                    modal.hide();
+
+                    // Limpiar el formulario
+                    form.reset();
+
+                    // Agregar el nuevo responsable a la lista
+                    const responsable = data.responsable;
+                    const responsableHtml = `
+                <div class="responsable mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-user me-2 fs-4"></i>
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
+                                            <p class="mb-0 text-muted">
+                                                ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Fecha Inicio</label>
+                                                <input type="date" class="form-control fecha-inicio" value="${responsable.fechaInicio}" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Fecha Fin</label>
+                                                <input type="date" class="form-control fecha-fin" value="${responsable.fechaFin || ''}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-end mt-2">
+                                <button type="button" class="btn btn-danger btn-sm remove-responsable-btn">
+                                    <i class="ti ti-trash me-1"></i>Quitar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+                    document.getElementById('responsablesContainer').insertAdjacentHTML('beforeend', responsableHtml);
+                } else {
+                    // Mostrar errores en el modal
+                    errorContainer.classList.remove('d-none');
+                    errorList.innerHTML = '';
+                    data.errors.forEach(error => {
+                        const li = document.createElement('li');
+                        li.textContent = error;
+                        errorList.appendChild(li);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorContainer.classList.remove('d-none');
+                errorList.innerHTML = '<li>Error al guardar el responsable</li>';
+            });
+    }
 </script>

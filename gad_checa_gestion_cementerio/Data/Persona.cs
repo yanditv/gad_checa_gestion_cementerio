@@ -58,10 +58,11 @@ namespace gad_checa_gestion_cementerio.Data
         public DateTime FechaCreacion { get; set; }
 
 
-        [ForeignKey("UsuarioCreadorId")]
         [Display(Name = "Usuario Creador")]
         [Required(ErrorMessage = "El usuario creador es obligatorio.")]
         public ApplicationUser UsuarioCreador { get; set; }
+        [ForeignKey("UsuarioCreador")]
+        public string UsuarioCreadorId { get; set; }
 
 
         // Relaciones
