@@ -1,0 +1,73 @@
+@page
+@model gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage.EnableAuthenticatorModel
+@{
+    ViewData["Title"] = "Configurar aplicación de autenticación";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <partial name="_ManageNav" />
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-mobile-alt me-2"></i>@ViewData["Title"]
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h4 class="alert-heading">Para usar una aplicación de autenticación:</h4>
+                    <ol class="mb-0">
+                        <li>
+                            Descarga una aplicación de autenticación de dos factores como Microsoft Authenticator para
+                            <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> y
+                            <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a> o
+                            Google Authenticator para
+                            <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en">Android</a> y
+                            <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.
+                        </li>
+                        <li>Escanea el código QR o ingresa esta clave <kbd>@Model.SharedKey</kbd> en tu aplicación de autenticación de dos factores. Los espacios y el uso de mayúsculas y minúsculas no importan.</li>
+                        <li>
+                            Una vez que hayas escaneado el código QR o ingresado la clave anterior, tu aplicación de autenticación de dos factores te proporcionará
+                            un código único. Ingresa el código en el cuadro de confirmación a continuación.
+                        </li>
+                    </ol>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <form id="send-code" method="post">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Input.Code" class="form-control" autocomplete="off" placeholder="Ingresa el código." />
+                                <label asp-for="Input.Code" class="control-label form-label">Código de verificación</label>
+                                <span asp-validation-for="Input.Code" class="text-danger"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-2"></i>Verificar
+                            </button>
+                            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="qrCode"></div>
+                        <div id="qrCodeData" data-url="@Model.QrCodeUri"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+            <partial name="_ValidationScriptsPartial" />
+            <script type="text/javascript" src="~/lib/qrcode.js"></script>
+            <script type="text/javascript">
+                new QRCode(document.getElementById("qrCode"),
+                    {
+                        text: "@Html.Raw(Model.QrCodeUri)",
+                        width: 150,
+                        height: 150
+                    });
+            </script>
+}

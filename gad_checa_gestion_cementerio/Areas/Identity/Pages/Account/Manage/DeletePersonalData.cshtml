@@ -1,0 +1,49 @@
+@page
+@model gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage.DeletePersonalDataModel
+@{
+    ViewData["Title"] = "Eliminar datos personales";
+    ViewData["ActivePage"] = ManageNavPages.PersonalData;
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <partial name="_ManageNav" />
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-trash-alt me-2"></i>@ViewData["Title"]
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h4 class="alert-heading">¡Advertencia!</h4>
+                    <p>
+                        <strong>Eliminar estos datos eliminará permanentemente tu cuenta, y esto no se puede recuperar.</strong>
+                    </p>
+                </div>
+                <div>
+                    <form id="delete-user" method="post" class="form-group">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        @if (Model.RequirePassword)
+                        {
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Por favor ingresa tu contraseña." />
+                                        <label asp-for="Input.Password" class="form-label"></label>
+                                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                                    </div>
+                        }
+                        <button class="btn btn-danger" type="submit">
+                            <i class="fas fa-trash-alt me-2"></i>Eliminar datos y cerrar mi cuenta
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+            <partial name="_ValidationScriptsPartial" />
+}

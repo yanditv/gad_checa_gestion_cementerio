@@ -1,0 +1,41 @@
+@page
+@model gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage.PersonalDataModel
+@{
+    ViewData["Title"] = "Datos personales";
+    ViewData["ActivePage"] = ManageNavPages.PersonalData;
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <partial name="_ManageNav" />
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-shield me-2"></i>@ViewData["Title"]
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Tu cuenta contiene datos personales que nos has proporcionado. Esta página te permite descargar o eliminar esos datos.</p>
+                <p>
+                    <strong>Eliminar estos datos eliminará permanentemente tu cuenta, y esto no se puede recuperar.</strong>
+                </p>
+                <form asp-page="DownloadPersonalData" method="post" class="form-group">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-download me-2"></i>Descargar
+                    </button>
+                </form>
+                <p>
+                    <a asp-page="DeletePersonalData" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Eliminar
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+            <partial name="_ValidationScriptsPartial" />
+}

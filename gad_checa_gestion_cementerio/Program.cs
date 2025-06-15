@@ -8,6 +8,8 @@ using gad_checa_gestion_cementerio.services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using gad_checa_gestion_cementerio.Services;
 
 // Cargar variables de entorno
 DotNetEnv.Env.Load();
@@ -87,6 +89,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders()
     .AddErrorDescriber<SpanishIdentityErrorDescriber>();
+
+// Registrar el servicio de envío de correos
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 // Configuración de cookies de autenticación
 builder.Services.ConfigureApplicationCookie(options =>

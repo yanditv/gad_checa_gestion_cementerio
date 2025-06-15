@@ -1,0 +1,72 @@
+@page
+@model gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage.TwoFactorAuthenticationModel
+@{
+    ViewData["Title"] = "Autenticación de dos factores";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <partial name="_ManageNav" />
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>@ViewData["Title"]
+                </h5>
+            </div>
+            <div class="card-body">
+                <partial name="_StatusMessage" model="Model.StatusMessage" />
+                @if (Model.Is2faEnabled)
+                {
+                        if (Model.RecoveryCodesLeft == 0)
+                        {
+                                <div class="alert alert-warning">
+                                    <strong>No tienes códigos de recuperación.</strong>
+                                    <p>Debes <a asp-page="./GenerateRecoveryCodes">generar un nuevo conjunto de códigos de recuperación</a> antes de poder iniciar sesión con un código de recuperación.</p>
+                                </div>
+                        }
+                        else if (Model.RecoveryCodesLeft == 1)
+                        {
+                                <div class="alert alert-warning">
+                                    <strong>Te queda 1 código de recuperación.</strong>
+                                    <p>Puedes <a asp-page="./GenerateRecoveryCodes">generar un nuevo conjunto de códigos de recuperación</a>.</p>
+                                </div>
+                        }
+                        else if (Model.RecoveryCodesLeft <= 3)
+                        {
+                                <div class="alert alert-warning">
+                                    <strong>Te quedan @Model.RecoveryCodesLeft códigos de recuperación.</strong>
+                                    <p>Deberías <a asp-page="./GenerateRecoveryCodes">generar un nuevo conjunto de códigos de recuperación</a>.</p>
+                                </div>
+                        }
+
+                        if (Model.IsMachineRemembered)
+                        {
+                                <form method="post" style="display: inline-block">
+                                    <button type="submit" class="btn btn-primary">Olvidar este navegador</button>
+                                </form>
+                        }
+                        <a asp-page="./Disable2fa" class="btn btn-danger">Deshabilitar 2FA</a>
+                        <a asp-page="./GenerateRecoveryCodes" class="btn btn-secondary">Restablecer códigos de recuperación</a>
+                }
+
+                <h5 class="mt-4">Autenticador</h5>
+                @if (!Model.HasAuthenticator)
+                {
+                        <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Agregar autenticador</a>
+                }
+                else
+                {
+                        <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Configurar autenticador</a>
+                        <a id="reset-authenticator" asp-page="./ResetAuthenticator" class="btn btn-danger">Restablecer autenticador</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+}

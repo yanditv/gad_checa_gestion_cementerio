@@ -62,7 +62,7 @@ namespace gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage
             }
 
             await _signInManager.ForgetTwoFactorClientAsync();
-            StatusMessage = "El navegador actual ha sido olvidado. Cuando inicie sesión nuevamente desde este navegador, se le pedirá su código 2fa.";
+            StatusMessage = "El navegador actual ha sido olvidado. Cuando inicies sesión nuevamente desde este navegador, se te pedirá tu código 2fa.";
             return RedirectToPage();
         }
     }
