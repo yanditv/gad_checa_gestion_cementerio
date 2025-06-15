@@ -23,9 +23,12 @@
                     <div class="col-md-6 mb-3">
                         <label asp-for="BovedaId" class="form-label">Bóveda</label>
                         <input asp-for="BovedaId" hidden readonly class="form-control" />
+                        <input asp-for="Boveda.NumeroSecuecial" hidden readonly class="form-control" />
                         <div class="input-group">
-                            <input asp-for="BovedaId" hidden readonly class="form-control" />
-                            <input asp-for="Boveda.NumeroSecuecial" readonly class="form-control" />
+
+                            <input id="boveda_seleccionada"
+                                value="Bóveda #@(Model.Boveda?.NumeroSecuecial ?? Model.BovedaId.ToString())" readonly
+                                class="form-control" />
                             <button type="button" class="btn btn-outline-secondary" onclick="abrirModalBovedas('')"
                                 @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ?
                                                                 "disabled" : "") >
@@ -244,6 +247,7 @@
     // Seleccionar una bóveda y cerrar el modal
     function seleccionarBoveda(id, numeroSecuencial) {
         const inputBovedaId = document.getElementById('BovedaId');
+        const inputBovedaSeleccionada = document.getElementById('boveda_seleccionada');
         const inputNumeroSecuencial = document.querySelector('input[name="NumeroSecuencial"]')
         const numeroSecuencialSpan = document.querySelector('input[name="Boveda.NumeroSecuecial"]');
         if (inputBovedaId) {
@@ -265,6 +269,11 @@
             inputBovedaId.dispatchEvent(new Event('change'));
             inputNumeroSecuencial.dispatchEvent(new Event('change'));
             numeroSecuencialSpan.dispatchEvent(new Event('change'));
+
+
+            inputBovedaSeleccionada.value = `Bóveda #${numeroSecuencialSpan.value == "null" ? inputBovedaId.value : numeroSecuencialSpan.value}`;
+
+            inputBovedaSeleccionada.dispatchEvent(new Event('change'))
         }
 
         // Cerrar el modal
