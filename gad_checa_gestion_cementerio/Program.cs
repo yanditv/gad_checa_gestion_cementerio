@@ -258,15 +258,15 @@ static async Task CreateAdminUser(IServiceProvider serviceProvider)
     }
 
     // Buscar el usuario administrador
-    var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+    var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
 
     if (adminUser == null)
     {
         // Crear el usuario administrador
         adminUser = new ApplicationUser
         {
-            UserName = "admin@example.com",
-            Email = "admin@example.com",
+            UserName = "admin@teobu.com",
+            Email = "admin@teobu.com",
             EmailConfirmed = true,
             Nombres = "Administrador",
             Apellidos = "Sistema",
