@@ -96,7 +96,7 @@ namespace WebApp.Controllers
                 }
             }
 
-            // Obtener el total de resultados antes de la paginación
+            // Obtener el total de resultados después de aplicar los filtros
             var totalResultados = await query.CountAsync();
 
             // Aplicar paginación

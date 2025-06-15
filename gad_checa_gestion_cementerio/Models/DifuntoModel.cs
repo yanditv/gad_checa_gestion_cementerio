@@ -33,6 +33,9 @@ namespace gad_checa_gestion_cementerio.Models
         public int DescuentoId { get; set; }
 
         public string NombresCompletos => $"{Nombres} {Apellidos}";
+
+        public BovedaModel? Boveda { get; set; }
+        public ContratoModel? Contrato { get; set; }
     }
 
 }

@@ -1,99 +1,126 @@
-﻿@model IEnumerable<gad_checa_gestion_cementerio.Data.Difunto>
+﻿@model gad_checa_gestion_cementerio.Models.Listas.DifuntoPaginadaViewModel
 
 @{
     ViewData["Title"] = "Difuntos";
 }
 
-<div class="my-4">
-    <div class="card">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-            <div>
-                <h4 class="card-title mb-2">Lista de Difuntos</h4>
-                <p class="text-muted">
-                    Gestione los registros: puede listar, modificar, buscar y eliminar.
-                </p>
-            </div>
-            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
-                <div>
-                    <div class="input-group">
-                        <input type="text" id="hs-table-with-pagination-search" class="form-control form-control-sm"
-                            placeholder="Buscar..." aria-label="Search" />
-                        <span class="input-group-text">
-                            <i class="ti ti-search"></i>
-                        </span>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-users me-2"></i>
+            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
+        </div>
+        <p class="mt-2 mb-0">
+            Visualice y gestione los registros de difuntos. Utilice los filtros para encontrar información específica.
+        </p>
+    </div>
+
+    <div class="card-body">
+        <!-- Barra de Herramientas -->
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+            <!-- Filtros -->
+            <form id="searchForm" asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-grow-1">
+                <div class="input-group position-relative">
+                    <span class="input-group-text bg-light">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="searchInput" name="filtro" value="@Model.Filtro"
+                        placeholder="Buscar por número de identificación, nombres, apellidos o bóveda..."
+                        class="form-control form-control-sm" autocomplete="off" />
+                    <div id="searchSpinner" class="position-absolute end-0 top-50 translate-middle-y me-3 d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Buscando...</span>
+                        </div>
                     </div>
                 </div>
-                <a class="btn btn-outline-secondary btn-md" asp-action="Index">
-                    Ver todos
-                </a>
-                <a class="btn btn-primary btn-md" asp-action="Create">
-                    <i class="ti ti-plus"></i> <span class="no-wrap">Crear</span><span class="no-wrap"> Nuevo</span>
-                </a>
-            </div>
+                <button type="submit" class="btn btn-primary d-flex align-items-center">
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
+            </form>
         </div>
-        @if (Model != null && Model.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0">
-                    <thead class="table-secondary">
-                        <tr>
-                            <th scope="col">
-                                <input type="checkbox" class="form-check-input" id="hs-at-with-checkboxes-main" />
-                            </th>
-                            <th scope="col" class="text-uppercase small fw-bold">Id</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Nro. de identificación</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Nombres</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Fecha de fallecimiento</th>
-                            <th scope="col" class="text-uppercase small fw-bold">Contrato</th>
-                            <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>
-                                    <input type="checkbox" class="form-check-input" />
-                                </td>
-                                <td>@item.Id</td>
-                                <td>@item.NumeroIdentificacion</td>
-                                <td>@item.Nombres @item.Apellidos</td>
-                                <td>@item.FechaFallecimiento.ToString("dd/MM/yyyy")</td>
-                                <td>@item.Contrato.NumeroSecuencial</td>
-                                <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@item.Id">
-                                        <i class="ti ti-edit"></i>
-                                    </a>
-                                    @* <button type="button" class="btn btn-sm btn-outline-danger delete-button"
-                                        data-hs-overlay="#hs-vertically-centered-modal" data-id="@item.Id">
-                                        <i class="ti ti-trash"></i>
-                                    </button> *@
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <div class="p-3">
-                <p class="text-muted mb-0">No hay registros disponibles.</p>
-            </div>
-        }
 
-        <div class="card-footer d-flex justify-content-between">
-            <p class="mb-0">
-                <small>Página 1 de 10 • Total 12 resultados</small>
-            </p>
-            <div>
-                <button class="btn btn-sm btn-light me-2" type="button">
-                    <i class="ti ti-arrow-left"></i> Prev
-                </button>
-                <button class="btn btn-sm btn-light" type="button">
-                    Next <i class="ti ti-arrow-right"></i>
-                </button>
-            </div>
+        <!-- Lista de Difuntos -->
+        <div id="resultsContainer" class="table-responsive">
+            @await Html.PartialAsync("_ListaDifuntos", Model)
+        </div>
+
+        <!-- Paginación -->
+        <div id="paginationContainer" class="mt-4">
+            @await Html.PartialAsync("_Paginacion", Model)
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            const searchForm = document.getElementById('searchForm');
+            const searchSpinner = document.getElementById('searchSpinner');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const paginationContainer = document.getElementById('paginationContainer');
+
+            let searchTimeout = null;
+            let isSearching = false;
+
+            // Función para realizar la búsqueda
+            async function performSearch() {
+                if (isSearching) return;
+
+                isSearching = true;
+                searchSpinner.classList.remove('d-none');
+
+                try {
+                    const formData = new FormData(searchForm);
+                    const queryString = new URLSearchParams(formData).toString();
+                    const response = await fetch(`${searchForm.action}?${queryString}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) throw new Error('Error en la búsqueda');
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Actualizar solo las partes necesarias
+                    resultsContainer.innerHTML = doc.getElementById('resultsContainer').innerHTML;
+                    paginationContainer.innerHTML = doc.getElementById('paginationContainer').innerHTML;
+
+                    // Actualizar la URL sin recargar la página
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('filtro', searchInput.value);
+                    window.history.pushState({}, '', newUrl);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Opcional: Mostrar mensaje de error al usuario
+                } finally {
+                    isSearching = false;
+                    searchSpinner.classList.add('d-none');
+                }
+            }
+
+            // Evento de entrada en el campo de búsqueda
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(performSearch, 500);
+            });
+
+            // Prevenir el envío del formulario tradicional
+            searchForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                performSearch();
+            });
+
+            // Manejar la navegación del historial
+            window.addEventListener('popstate', function () {
+                const urlParams = new URLSearchParams(window.location.search);
+                searchInput.value = urlParams.get('filtro') || '';
+                performSearch();
+            });
+        });
+    </script>
+}
