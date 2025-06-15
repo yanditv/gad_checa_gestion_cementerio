@@ -14,6 +14,8 @@ using gad_checa_gestion_cementerio.Models.Views;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using gad_checa_gestion_cementerio.Models;
+using gad_checa_gestion_cementerio.Models.Listas;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -35,34 +37,54 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         // GET: Bloques
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string filtro, int pagina = 1, int registrosPorPagina = 10)
         {
-            var bloques = await _context.Bloque
+            var query = _context.Bloque
                 .Include(b => b.Cementerio)
-                .Include(b => b.Pisos)
                 .Where(b => b.FechaEliminacion == null)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                query = query.Where(b =>
+                    b.Descripcion.Contains(filtro) ||
+                    b.Tipo.Contains(filtro) ||
+                    b.CalleA.Contains(filtro) ||
+                    b.CalleB.Contains(filtro));
+            }
+
+            var total = await query.CountAsync();
+            var bloques = await query
+                .Skip((pagina - 1) * registrosPorPagina)
+                .Take(registrosPorPagina)
+                .Select(b => new BloqueModel
+                {
+                    Id = b.Id,
+                    Descripcion = b.Descripcion,
+                    Tipo = b.Tipo,
+                    CalleA = b.CalleA,
+                    CalleB = b.CalleB,
+                    NumeroDePisos = b.NumeroDePisos,
+                    BovedasPorPiso = b.BovedasPorPiso,
+                    TarifaBase = b.TarifaBase
+                })
                 .ToListAsync();
 
-            var viewModels = bloques.Select(b => new BloqueViewModel
+            var viewModel = new BloquePaginadaViewModel
             {
-                Id = b.Id,
-                Descripcion = b.Descripcion,
-                CalleA = b.CalleA,
-                CalleB = b.CalleB,
-                Tipo = b.Tipo,
-                NumeroDePisos = b.NumeroDePisos,
-                BovedasPorPiso = b.BovedasPorPiso,
-                TarifaBase = b.TarifaBase,
-                CementerioId = b.CementerioId,
-                PreciosPorPiso = b.Pisos.Select(p => new PisoPrecioViewModel
-                {
-                    NumeroPiso = p.NumeroPiso,
-                    PrecioPersonalizado = p.Precio,
-                    UsarTarifaBase = p.Precio == b.TarifaBase
-                }).ToList()
-            });
+                Bloque = bloques,
+                PaginaActual = pagina,
+                TotalPaginas = (int)Math.Ceiling(total / (double)registrosPorPagina),
+                Filtro = filtro,
+                TotalResultados = total
+            };
 
-            return View(viewModels);
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_ListaBloques", viewModel);
+            }
+
+            return View(viewModel);
         }
 
         // GET: Bloques/Create
@@ -364,6 +386,11 @@ namespace gad_checa_gestion_cementerio.Controllers
             var bloque = await _context.Bloque
                 .Include(b => b.Cementerio)
                 .Include(b => b.Pisos)
+                    .ThenInclude(p => p.Bovedas)
+                        .ThenInclude(b => b.Contratos)
+                .Include(b => b.Pisos)
+                    .ThenInclude(p => p.Bovedas)
+                        .ThenInclude(b => b.Propietario)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (bloque == null)
@@ -387,7 +414,23 @@ namespace gad_checa_gestion_cementerio.Controllers
                     NumeroPiso = p.NumeroPiso,
                     PrecioPersonalizado = p.Precio,
                     UsarTarifaBase = p.Precio == bloque.TarifaBase
-                }).ToList()
+                }).ToList(),
+                Bovedas = bloque.Pisos
+                    .SelectMany(p => p.Bovedas.Select(b => new BovedaInfo
+                    {
+                        Numero = b.Numero,
+                        NumeroSecuencial = b.NumeroSecuecial,
+                        NumeroPiso = p.NumeroPiso,
+                        TieneContratoActivo = b.Contratos.Any(c =>
+                            c.FechaInicio <= DateTime.Now &&
+                            (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
+                        TienePropietario = b.Propietario != null,
+                        FechaFinContrato = b.Contratos
+                            .Where(c => c.FechaInicio <= DateTime.Now &&
+                                      (c.FechaFin == null || c.FechaFin >= DateTime.Now))
+                            .Select(c => c.FechaFin)
+                            .FirstOrDefault()
+                    })).ToList()
             };
 
             ViewBag.CementerioNombre = bloque.Cementerio?.Nombre;
@@ -403,13 +446,51 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
 
             var bloque = await _context.Bloque
+                .Include(b => b.Cementerio)
+                .Include(b => b.Pisos)
+                    .ThenInclude(p => p.Bovedas)
+                        .ThenInclude(b => b.Contratos)
+                .Include(b => b.Pisos)
+                    .ThenInclude(p => p.Bovedas)
+                        .ThenInclude(b => b.Propietario)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (bloque == null)
             {
                 return NotFound();
             }
 
-            return View(bloque);
+            var viewModel = new BloqueViewModel
+            {
+                Id = bloque.Id,
+                Descripcion = bloque.Descripcion,
+                CalleA = bloque.CalleA,
+                CalleB = bloque.CalleB,
+                Tipo = bloque.Tipo,
+                NumeroDePisos = bloque.NumeroDePisos,
+                BovedasPorPiso = bloque.BovedasPorPiso,
+                TarifaBase = bloque.TarifaBase,
+                CementerioId = bloque.CementerioId,
+                Cementerio = bloque.Cementerio,
+                Bovedas = bloque.Pisos
+                    .SelectMany(p => p.Bovedas.Select(b => new BovedaInfo
+                    {
+                        Numero = b.Numero,
+                        NumeroPiso = p.NumeroPiso,
+                        TieneContratoActivo = b.Contratos.Any(c =>
+                            c.FechaInicio <= DateTime.Now &&
+                            (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
+                        TienePropietario = b.Propietario != null,
+                        Propietario = b.Propietario != null ? new PersonaModel
+                        {
+                            Id = b.Propietario.Id,
+                            Nombres = b.Propietario.Nombres,
+                            Apellidos = b.Propietario.Apellidos
+                        } : null
+                    })).ToList()
+            };
+
+            return View(viewModel);
         }
 
         // POST: Bloque/Delete/5
@@ -417,13 +498,27 @@ namespace gad_checa_gestion_cementerio.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var bloque = await _context.Bloque.FindAsync(id);
+            var bloque = await _context.Bloque
+                .Include(b => b.Pisos)
+                    .ThenInclude(p => p.Bovedas)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
             if (bloque != null)
             {
+                // Eliminar bóvedas
+                foreach (var piso in bloque.Pisos)
+                {
+                    _context.Boveda.RemoveRange(piso.Bovedas);
+                }
+
+                // Eliminar pisos
+                _context.Piso.RemoveRange(bloque.Pisos);
+
+                // Eliminar bloque
                 _context.Bloque.Remove(bloque);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

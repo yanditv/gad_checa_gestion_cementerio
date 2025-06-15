@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.ObjectModel;
+using gad_checa_gestion_cementerio.Models.Views;
 
 namespace gad_checa_gestion_cementerio.Models
 {
@@ -13,7 +14,7 @@ namespace gad_checa_gestion_cementerio.Models
 
         }
         [Key]
-        public readonly int Id;
+        public int Id { get; set; }
 
         [Required(ErrorMessage = "La descripción es obligatoria.")]
         [StringLength(100, ErrorMessage = "La descripción no puede exceder los 100 caracteres.")]
@@ -43,6 +44,13 @@ namespace gad_checa_gestion_cementerio.Models
 
         [Required]
         public int BovedasPorPiso { get; set; }
+
+        [Required]
+        public int CementerioId { get; set; }
+
+        public CementerioModel? Cementerio { get; set; }
+
+        public List<BovedaInfo>? Bovedas { get; set; }
 
         // Auditoría
         public DateTime FechaCreacion { get; set; }

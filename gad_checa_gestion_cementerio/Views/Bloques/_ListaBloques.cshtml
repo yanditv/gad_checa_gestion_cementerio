@@ -1,0 +1,66 @@
+@model gad_checa_gestion_cementerio.Models.Listas.BloquePaginadaViewModel
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>Ubicación</th>
+                <th>Pisos</th>
+                <th>Bóvedas/Piso</th>
+                <th>Tarifa Base</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Bloque != null && Model.Bloque.Any())
+            {
+                            foreach (var bloque in Model.Bloque)
+                            {
+                                            <tr>
+                                                <td>@bloque.Descripcion</td>
+                                                <td>
+                                                    <span class="badge bg-info">@bloque.Tipo</span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                                        @bloque.CalleA - @bloque.CalleB
+                                                    </small>
+                                                </td>
+                                                <td>@bloque.NumeroDePisos</td>
+                                                <td>@bloque.BovedasPorPiso</td>
+                                                <td>@bloque.TarifaBase.ToString("C")</td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a asp-action="Details" asp-route-id="@bloque.Id" class="btn btn-info" title="Detalles">
+                                                            <i class="fas fa-info-circle"></i>
+                                                        </a>
+                                                        <a asp-action="Edit" asp-route-id="@bloque.Id" class="btn btn-primary" title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a asp-action="Delete" asp-route-id="@bloque.Id" class="btn btn-danger" title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                            }
+            }
+            else
+            {
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-3"></i>
+                                        <p class="mb-0">No se encontraron bloques</p>
+                                    </div>
+                                </td>
+                            </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@await Html.PartialAsync("_Paginacion", Model) 

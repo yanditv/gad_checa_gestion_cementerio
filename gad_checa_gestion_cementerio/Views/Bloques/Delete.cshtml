@@ -1,69 +1,216 @@
-﻿@model gad_checa_gestion_cementerio.Data.Bloque
+﻿@model gad_checa_gestion_cementerio.Models.Views.BloqueViewModel
 
 @{
-    ViewData["Title"] = "Delete";
+    ViewData["Title"] = "Eliminar Bloque";
+    var tieneBovedasOcupadas = Model.Bovedas?.Any(b => b.TieneContratoActivo || b.TienePropietario) ?? false;
+    var puedeEliminar = !tieneBovedasOcupadas;
 }
 
-<h1>Delete</h1>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-trash-alt me-2"></i>
+            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
+        </div>
+        <p class="mt-2 mb-0">
+            Verifique la información antes de eliminar el bloque.
+        </p>
+    </div>
 
-<h3>Are you sure you want to delete this?</h3>
-<div>
-    <h4>Seccion</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Tipo)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Tipo)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.NumeroDePisos)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.NumeroDePisos)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.BovedasPorPiso)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.BovedasPorPiso)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TarifaBase)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TarifaBase)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Estado)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Estado)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaCreacion)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaCreacion)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaActualizacion)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaActualizacion)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaEliminacion)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaEliminacion)
-        </dd>
-    </dl>
-    
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
-    </form>
+    <div class="card-body">
+        @if (!puedeEliminar)
+        {
+            <div class="alert alert-warning">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>No se puede eliminar este bloque
+                </h5>
+                <p class="mb-0">
+                    <i class="fas fa-boxes me-2"></i>
+                    <span>Este bloque tiene bóvedas ocupadas o con propietarios asignados.</span>
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>¿Está seguro que desea eliminar este
+                    bloque?</h5>
+                <p class="mb-0">Esta acción no se puede deshacer.</p>
+            </div>
+        }
+
+        <div class="row">
+            <!-- Información Básica -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Básica</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-building text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Descripción</small>
+                                        <span class="fw-bold">@Model.Descripcion</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tag text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Tipo</small>
+                                        <span class="badge bg-info">@Model.Tipo</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-layer-group text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Número de Pisos</small>
+                                        <span class="badge bg-primary">@Model.NumeroDePisos</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-boxes text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Bóvedas por Piso</small>
+                                        <span class="badge bg-success">@Model.BovedasPorPiso</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ubicación y Precios -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Ubicación y Precios</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-road text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Calle A</small>
+                                        <span class="fw-bold">@Model.CalleA</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-road text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Calle B</small>
+                                        <span class="fw-bold">@Model.CalleB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-archway text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Cementerio</small>
+                                        <span class="fw-bold">@Model.Cementerio?.Nombre</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-dollar-sign text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Tarifa Base</small>
+                                        <span class="fw-bold">$@Model.TarifaBase.ToString("N2")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (tieneBovedasOcupadas)
+        {
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Bóvedas Ocupadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Piso</th>
+                                    <th>Número</th>
+                                    <th>Estado</th>
+                                    <th>Propietario</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var boveda in Model.Bovedas.Where(b => b.TieneContratoActivo ||
+                                                            b.TienePropietario))
+                                {
+                                    <tr>
+                                        <td>Piso @boveda.NumeroPiso</td>
+                                        <td>@boveda.Numero</td>
+                                        <td>
+                                            @if (boveda.TieneContratoActivo)
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-file-contract me-1"></i>Con Contrato
+                                                </span>
+                                            }
+                                            @if (boveda.TienePropietario)
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-user me-1"></i>Con Propietario
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (boveda.TienePropietario)
+                                            {
+                                                <span class="text-primary">@boveda.Propietario?.Nombres
+                                                    @boveda.Propietario?.Apellidos</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card-footer">
+        <div class="d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            @if (puedeEliminar)
+            {
+                <form asp-action="Delete" class="d-inline">
+                    <input type="hidden" asp-for="Id" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Eliminar
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
 </div>

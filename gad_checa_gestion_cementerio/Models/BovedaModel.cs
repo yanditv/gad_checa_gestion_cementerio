@@ -41,6 +41,12 @@ namespace gad_checa_gestion_cementerio.Models
         [ForeignKey("PropietarioId")]
         public Propietario? Propietario { get; set; }
 
-        public bool TienePropietario => PropietarioId.HasValue && Propietario != null;
+        public ICollection<Contrato>? Contratos { get; set; }
+
+        public bool TienePropietario => Propietario != null;
+
+        public bool TieneContratoActivo => Contratos?.Any(c =>
+            c.FechaInicio <= DateTime.Now &&
+            (c.FechaFin == null || c.FechaFin >= DateTime.Now)) ?? false;
     }
 }

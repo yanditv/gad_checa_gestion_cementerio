@@ -4,119 +4,189 @@
     ViewData["Title"] = "Editar Bloque";
 }
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>Editar Bloque</h5>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-building me-2"></i>
+            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
+        </div>
+        <p class="mt-2 mb-0">
+            Modifique los datos del bloque según sea necesario. Todos los campos marcados con * son obligatorios.
+        </p>
+    </div>
+
+    <div class="card-body">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            <div class="card-body">
-                <form asp-action="Edit">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    <input type="hidden" asp-for="Id" />
+        }
 
-                    <div class="row">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <!-- Información Básica -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Básica</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Descripcion" class="control-label"></label>
-                                <input asp-for="Descripcion" class="form-control" />
-                                <span asp-validation-for="Descripcion" class="text-danger"></span>
+                            <label asp-for="Descripcion" class="form-label">Descripción *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                <input asp-for="Descripcion" class="form-control"
+                                    placeholder="Ingrese la descripción del bloque" />
                             </div>
+                            <span asp-validation-for="Descripcion" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Tipo" class="control-label"></label>
-                                <select asp-for="Tipo" class="form-control">
-                                    <option value="Capilla">Capilla</option>
-                                    <option value="Normal">Normal</option>
-                                    <option value="Otros">Otros</option>
+                            <label asp-for="Tipo" class="form-label">Tipo *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                <select asp-for="Tipo" class="form-select">
+                                    <option value="">-- Seleccione un tipo --</option>
+                                    <option value="Bovedas">Bovedas</option>
+                                    <option value="Nichos">Nichos</option>
                                 </select>
-                                <span asp-validation-for="Tipo" class="text-danger"></span>
                             </div>
+                            <span asp-validation-for="Tipo" class="text-danger"></span>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="row">
+            <!-- Ubicación -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Ubicación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="CalleA" class="control-label"></label>
-                                <input asp-for="CalleA" class="form-control" />
-                                <span asp-validation-for="CalleA" class="text-danger"></span>
+                            <label asp-for="CalleA" class="form-label">Calle A *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-road"></i></span>
+                                <input asp-for="CalleA" class="form-control" placeholder="Ingrese la calle A" />
                             </div>
+                            <span asp-validation-for="CalleA" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="CalleB" class="control-label"></label>
-                                <input asp-for="CalleB" class="form-control" />
-                                <span asp-validation-for="CalleB" class="text-danger"></span>
+                            <label asp-for="CalleB" class="form-label">Calle B *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-road"></i></span>
+                                <input asp-for="CalleB" class="form-control" placeholder="Ingrese la calle B" />
                             </div>
+                            <span asp-validation-for="CalleB" class="text-danger"></span>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="row">
+            <!-- Configuración -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Configuración</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="NumeroDePisos" class="control-label"></label>
-                                <input asp-for="NumeroDePisos" class="form-control" min="1" max="20" />
-                                <span asp-validation-for="NumeroDePisos" class="text-danger"></span>
+                            <label asp-for="NumeroDePisos" class="form-label">Número de Pisos *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-layer-group"></i></span>
+                                <input asp-for="NumeroDePisos" class="form-control" type="number" min="1" max="20" />
                             </div>
+                            <span asp-validation-for="NumeroDePisos" class="text-danger"></span>
                         </div>
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="BovedasPorPiso" class="control-label"></label>
-                                <input asp-for="BovedasPorPiso" class="form-control" min="1" max="100" />
-                                <span asp-validation-for="BovedasPorPiso" class="text-danger"></span>
+                            <label asp-for="BovedasPorPiso" class="form-label">Bóvedas por Piso *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-boxes"></i></span>
+                                <input asp-for="BovedasPorPiso" class="form-control" type="number" min="1" max="100" />
                             </div>
+                            <span asp-validation-for="BovedasPorPiso" class="text-danger"></span>
                         </div>
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="TarifaBase" class="control-label"></label>
+                            <label asp-for="TarifaBase" class="form-label">Tarifa Base *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                 <input asp-for="TarifaBase" class="form-control" type="number" step="0.01" min="0.01" />
-                                <span asp-validation-for="TarifaBase" class="text-danger"></span>
                             </div>
+                            <span asp-validation-for="TarifaBase" class="text-danger"></span>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="row">
+            <!-- Cementerio -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-archway me-2"></i>Cementerio</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="CementerioId" class="control-label"></label>
-                                <select asp-for="CementerioId" class="form-control"
+                            <label asp-for="CementerioId" class="form-label">Cementerio *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-archway"></i></span>
+                                <select asp-for="CementerioId" class="form-select"
                                     asp-items="@(new SelectList(ViewBag.Cementerios, "Id", "Nombre"))">
                                     <option value="">-- Seleccione un cementerio --</option>
                                 </select>
-                                <span asp-validation-for="CementerioId" class="text-danger"></span>
                             </div>
+                            <span asp-validation-for="CementerioId" class="text-danger"></span>
                         </div>
                     </div>
-
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <h6>Configuración de Precios por Piso</h6>
-                            <div class="table-responsive">
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Piso</th>
-                                            <th>Usar Tarifa Base</th>
-                                            <th>Precio Personalizado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="preciosPisos">
-                                        <!-- Se llenará dinámicamente -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group mt-4">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a asp-action="Index" class="btn btn-secondary">Volver</a>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <!-- Precios por Piso -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Precios por Piso</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="tablaPrecios">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Piso</th>
+                                    <th>Usar Tarifa Base</th>
+                                    <th>Precio Personalizado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -125,48 +195,55 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
-        $(document).ready(function () {
-            function actualizarPreciosPisos() {
-                var numPisos = $('#NumeroDePisos').val();
-                var tarifaBase = $('#TarifaBase').val();
-                var html = '';
+        $(function () {
+            function actualizarTablaPrecios() {
+                const numeroPisos = parseInt($('#NumeroDePisos').val()) || 0;
+                const tarifaBase = parseFloat($('#TarifaBase').val()) || 0;
+                const tbody = $('#tablaPrecios tbody');
+                tbody.empty();
 
-                for (var i = 1; i <= numPisos; i++) {
-                    var precioPersonalizado = $('input[name="PreciosPorPiso[' + (i - 1) + '].PrecioPersonalizado"]').val() || tarifaBase;
-                    var usarTarifaBase = $('input[name="PreciosPorPiso[' + (i - 1) + '].UsarTarifaBase"]').is(':checked');
+                for (let i = 1; i <= numeroPisos; i++) {
+                    const precioPersonalizado = $(`input[name="PreciosPorPiso[${i - 1}].PrecioPersonalizado"]`).val() || tarifaBase;
+                    const usarTarifaBase = $(`input[name="PreciosPorPiso[${i - 1}].UsarTarifaBase"]`).is(':checked');
 
-                    html += `
+                    tbody.append(`
                                 <tr>
-                                    <td>${i}</td>
-                                    <td>
-                                        <div class="form-check">
+                                    <td class="align-middle">Piso ${i}</td>
+                                    <td class="align-middle">
+                                        <div class="form-check form-switch">
                                             <input type="checkbox" class="form-check-input usar-tarifa-base" 
-                                                   name="PreciosPorPiso[${i - 1}].UsarTarifaBase" 
-                                                   id="usarTarifaBase_${i}" ${usarTarifaBase ? 'checked' : ''}>
+                                                name="PreciosPorPiso[${i - 1}].UsarTarifaBase" 
+                                                value="true" 
+                                                ${usarTarifaBase ? 'checked' : ''} />
+                                            <input type="hidden" name="PreciosPorPiso[${i - 1}].UsarTarifaBase" value="false" />
                                         </div>
                                     </td>
                                     <td>
-                                        <input type="number" class="form-control precio-personalizado" 
-                                               name="PreciosPorPiso[${i - 1}].PrecioPersonalizado" 
-                                               id="precioPersonalizado_${i}" 
-                                               step="0.01" min="0.01" 
-                                               value="${precioPersonalizado}"
-                                               ${usarTarifaBase ? 'disabled' : ''}>
-                                        <input type="hidden" name="PreciosPorPiso[${i - 1}].NumeroPiso" value="${i}">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                            <input type="number" class="form-control precio-personalizado" 
+                                                name="PreciosPorPiso[${i - 1}].PrecioPersonalizado" 
+                                                value="${precioPersonalizado}" 
+                                                step="0.01" 
+                                                ${usarTarifaBase ? 'disabled' : ''} />
+                                            <input type="hidden" name="PreciosPorPiso[${i - 1}].NumeroPiso" value="${i}" />
+                                        </div>
                                     </td>
                                 </tr>
-                            `;
+                            `);
                 }
-                $('#preciosPisos').html(html);
             }
 
-            $('#NumeroDePisos, #TarifaBase').on('change', actualizarPreciosPisos);
-            actualizarPreciosPisos();
+            // Inicializar la tabla
+            actualizarTablaPrecios();
+
+            // Eventos
+            $('#NumeroDePisos, #TarifaBase').on('change', actualizarTablaPrecios);
 
             $(document).on('change', '.usar-tarifa-base', function () {
-                var precioInput = $(this).closest('tr').find('.precio-personalizado');
-                precioInput.prop('disabled', $(this).is(':checked'));
-                if ($(this).is(':checked')) {
+                const precioInput = $(this).closest('tr').find('.precio-personalizado');
+                precioInput.prop('disabled', this.checked);
+                if (this.checked) {
                     precioInput.val($('#TarifaBase').val());
                 }
             });

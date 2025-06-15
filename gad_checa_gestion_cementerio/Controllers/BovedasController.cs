@@ -9,30 +9,51 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
+using gad_checa_gestion_cementerio.Models;
+using gad_checa_gestion_cementerio.Models.Listas;
+using gad_checa_gestion_cementerio.Controllers;
+using AutoMapper;
 
 namespace WebApp.Controllers
 {
     [Authorize]
-    public class BovedasController : Controller
+    public class BovedasController : BaseController
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
-
-        public BovedasController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public BovedasController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
         {
-            _context = context;
-            _userManager = userManager;
         }
 
         // GET: Bovedas
-        public async Task<IActionResult> Index(int? bloqueId, string tipo, bool? estado)
+        public async Task<IActionResult> Index(string filtro, int? bloqueId, string tipo, bool? estado, bool? tienePropietario, int pagina = 1, int registrosPorPagina = 10)
         {
+            ViewBag.Bloques = new SelectList(await _context.Bloque
+                .Select(b => new { b.Id, b.Descripcion })
+                .ToListAsync(), "Id", "Descripcion");
+            ViewBag.Tipos = new SelectList(new[] { "Bovedas", "Nichos" });
+            ViewBag.Estados = new SelectList(new[] {
+                new { Value = "true", Text = "Disponible" },
+                new { Value = "false", Text = "Ocupada" }
+            }, "Value", "Text");
+
             var query = _context.Boveda
-            .Include(b => b.Propietario)
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
-                        .ThenInclude(b => b.Cementerio)
-                .Where(b => b.FechaEliminacion == null);
+                .Include(b => b.Propietario)
+                .Include(b => b.Contratos)
+                .AsQueryable();
+
+            // Aplicar filtros
+            if (!string.IsNullOrEmpty(filtro))
+            {
+                query = query.Where(b =>
+                    b.Numero.ToString().Contains(filtro) ||
+                    b.NumeroSecuecial.Contains(filtro) ||
+                    b.Piso.Bloque.Descripcion.Contains(filtro) ||
+                    (b.Propietario != null &&
+                        (b.Propietario.Nombres + " " + b.Propietario.Apellidos).Contains(filtro) ||
+                        b.Propietario.NumeroIdentificacion.Contains(filtro))
+                );
+            }
 
             if (bloqueId.HasValue)
             {
@@ -46,33 +67,70 @@ namespace WebApp.Controllers
 
             if (estado.HasValue)
             {
-                query = query.Where(b => b.Estado == estado.Value);
+                var fechaActual = DateTime.Now;
+                if (estado.Value)
+                {
+                    // Disponible: No tiene contratos activos
+                    query = query.Where(b => !b.Contratos.Any(c =>
+                        c.FechaInicio <= fechaActual &&
+                        (c.FechaFin == null || c.FechaFin >= fechaActual)));
+                }
+                else
+                {
+                    // Ocupada: Tiene al menos un contrato activo
+                    query = query.Where(b => b.Contratos.Any(c =>
+                        c.FechaInicio <= fechaActual &&
+                        (c.FechaFin == null || c.FechaFin >= fechaActual)));
+                }
             }
 
-            var bovedas = await query.ToListAsync();
-
-            ViewBag.Bloques = await _context.Bloque
-                .Where(b => b.FechaEliminacion == null)
-                .Select(b => new SelectListItem
+            if (tienePropietario.HasValue)
+            {
+                if (tienePropietario.Value)
                 {
-                    Value = b.Id.ToString(),
-                    Text = b.Descripcion
+                    query = query.Where(b => b.Propietario != null);
+                }
+                else
+                {
+                    query = query.Where(b => b.Propietario == null);
+                }
+            }
+
+            // Obtener el total de resultados antes de la paginación
+            var totalResultados = await query.CountAsync();
+
+            // Aplicar paginación
+            var bovedas = await query
+                .Skip((pagina - 1) * registrosPorPagina)
+                .Take(registrosPorPagina)
+                .Select(b => new BovedaModel
+                {
+                    Id = b.Id,
+                    Numero = b.Numero,
+                    NumeroSecuecial = b.NumeroSecuecial,
+                    Estado = b.Contratos.Any(c =>
+                        c.FechaInicio <= DateTime.Now &&
+                        (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
+                    Piso = _mapper.Map<PisoModel>(b.Piso),
+                    Propietario = b.Propietario
                 })
                 .ToListAsync();
 
-            ViewBag.Tipos = new List<SelectListItem>
+            var viewModel = new BovedaPaginadaViewModel
             {
-                new SelectListItem { Value = "Boveda", Text = "Bóveda" },
-                new SelectListItem { Value = "Nicho", Text = "Nicho" }
+                Bovedas = bovedas,
+                PaginaActual = pagina,
+                TotalPaginas = (int)Math.Ceiling(totalResultados / (double)registrosPorPagina),
+                Filtro = filtro,
+                TotalResultados = totalResultados
             };
 
-            ViewBag.Estados = new List<SelectListItem>
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                new SelectListItem { Value = "true", Text = "Disponible" },
-                new SelectListItem { Value = "false", Text = "Ocupado" }
-            };
+                return PartialView("_ListaBovedas", viewModel);
+            }
 
-            return View(bovedas);
+            return View(viewModel);
         }
 
         // GET: Bovedas/Details/5
@@ -84,10 +142,9 @@ namespace WebApp.Controllers
             }
 
             var boveda = await _context.Boveda
-            .Include(b => b.Propietario)
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
-                        .ThenInclude(b => b.Cementerio)
+                .Include(b => b.Propietario)
                 .Include(b => b.Contratos)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -96,7 +153,8 @@ namespace WebApp.Controllers
                 return NotFound();
             }
 
-            return View(boveda);
+            var bovedaModel = _mapper.Map<BovedaModel>(boveda);
+            return View(bovedaModel);
         }
 
         // GET: Bovedas/Create
@@ -252,7 +310,8 @@ namespace WebApp.Controllers
             var boveda = await _context.Boveda
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
-                        .ThenInclude(b => b.Cementerio)
+                .Include(b => b.Propietario)
+                .Include(b => b.Contratos)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (boveda == null)
@@ -260,12 +319,8 @@ namespace WebApp.Controllers
                 return NotFound();
             }
 
-            // Verificar si la bóveda tiene contratos asociados
-            var tieneContratos = await _context.Contrato
-                .AnyAsync(c => c.BovedaId == boveda.Id && c.FechaEliminacion == null);
-
-            ViewBag.TieneContratos = tieneContratos;
-            return View(boveda);
+            var bovedaModel = _mapper.Map<BovedaModel>(boveda);
+            return View(bovedaModel);
         }
 
         // POST: Bovedas/Delete/5

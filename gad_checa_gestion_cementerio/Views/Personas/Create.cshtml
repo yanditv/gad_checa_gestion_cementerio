@@ -4,80 +4,115 @@
     ViewData["Title"] = "Crear Nueva Persona";
 }
 
-<div class="card">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-        <div>
-            <h4 class="card-title mb-2">@ViewData["Title"]</h4>
-            <p class="text-muted">
-                Aquí puede crear un nuevo registro de persona. Asegúrese de ingresar todos los datos necesarios para
-                mantener la integridad de la información.
-            </p>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-user-plus me-2"></i>
+            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
         </div>
-
-
+        <p class="mt-2 mb-0">
+            Aquí puede crear un nuevo registro de persona. Asegúrese de ingresar todos los datos necesarios para
+            mantener la integridad de la información.
+        </p>
     </div>
+
     <div class="card-body">
         <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
 
-            <div class="row g-3">
-
-                <!-- Tipo de identificación y número -->
-                <div class="col-md-4">
-                    <label asp-for="NumeroIdentificacion" class="form-label">Número de Identificación</label>
-                    <input asp-for="NumeroIdentificacion" class="form-control" />
-                    <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
+            <!-- Información de Identificación -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Información de Identificación</h5>
                 </div>
-                <div class="col-md-8">
-                    <label asp-for="TipoIdentificacion" class="form-label">Tipo Identificación</label>
-                    <select asp-for="TipoIdentificacion" class="form-select"
-                        asp-items="ViewBag.TiposIdentificacion"></select>
-                    <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
-                </div>
-                <!-- Nombres y Apellidos -->
-                <div class="col-md-6">
-                    <label asp-for="Nombres" class="form-label">Nombres</label>
-                    <input asp-for="Nombres" class="form-control" />
-                    <span asp-validation-for="Nombres" class="text-danger"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Apellidos" class="form-label">Apellidos</label>
-                    <input asp-for="Apellidos" class="form-control" />
-                    <span asp-validation-for="Apellidos" class="text-danger"></span>
-                </div>
-
-
-                <!-- Teléfono y correo -->
-                <div class="col-md-6">
-                    <label asp-for="Telefono" class="form-label">Número de Contacto</label>
-                    <input asp-for="Telefono" class="form-control" />
-                    <span asp-validation-for="Telefono" class="text-danger"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Email" class="form-label">Correo Electrónico</label>
-                    <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
-                </div>
-
-                <!-- Dirección completa -->
-                <div class="col-12">
-                    <label asp-for="Direccion" class="form-label">Dirección</label>
-                    <input asp-for="Direccion" class="form-control" />
-                    <span asp-validation-for="Direccion" class="text-danger"></span>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="NumeroIdentificacion" class="form-label">Número de Identificación</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-fingerprint"></i></span>
+                                <input asp-for="NumeroIdentificacion" class="form-control" />
+                            </div>
+                            <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label asp-for="TipoIdentificacion" class="form-label">Tipo Identificación</label>
+                            <select asp-for="TipoIdentificacion" class="form-select"
+                                asp-items="ViewBag.TiposIdentificacion"></select>
+                            <span asp-validation-for="TipoIdentificacion" class="text-danger"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Botones -->
-            <div class="mt-4">
-                <a asp-action="Index" class="btn btn-secondary me-2">Cancelar</a>
-                <button type="submit" class="btn btn-primary">Guardar</button>
+            <!-- Información Personal -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Nombres" class="form-label">Nombres</label>
+                            <input asp-for="Nombres" class="form-control" />
+                            <span asp-validation-for="Nombres" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Apellidos" class="form-label">Apellidos</label>
+                            <input asp-for="Apellidos" class="form-control" />
+                            <span asp-validation-for="Apellidos" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Contacto -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Información de Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Telefono" class="form-label">Número de Contacto</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                <input asp-for="Telefono" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label">Correo Electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Direccion" class="form-label">Dirección</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                <input asp-for="Direccion" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Direccion" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Guardar
+                </button>
             </div>
         </form>
-
     </div>
-
 </div>
-
 
 @section Scripts {
     @{

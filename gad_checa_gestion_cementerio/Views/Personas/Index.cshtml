@@ -3,33 +3,127 @@
     ViewData["Title"] = "Personas";
 }
 
-<div class="card">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-        <div>
-            <h4 class="card-title mb-2">@ViewData["Title"]</h4>
-            <p class="text-muted">
-                Visualice y gestione los ingresos. Puede filtrar por un rango de fechas.
-            </p>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-users me-2"></i>
+            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
         </div>
+        <p class="mt-2 mb-0">
+            Visualice y gestione los registros de personas. Utilice los filtros para encontrar información específica.
+        </p>
+    </div>
 
-        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-nowrap overflow-auto">
+    <div class="card-body">
+        <!-- Barra de Herramientas -->
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
             <!-- Filtros -->
-            <form asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-nowrap">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">Filtro</span>
-                    <input type="text" name="Filtro" value="@ViewBag.Filtro"
-                        placeholder="Número de contrato, nombres del difunto" class="form-control form-control-sm" />
+            <form id="searchForm" asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-grow-1">
+                <div class="input-group position-relative">
+                    <span class="input-group-text bg-light">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="searchInput" name="Filtro" value="@ViewBag.Filtro"
+                        placeholder="Buscar por número de identificación, nombres o apellidos..."
+                        class="form-control form-control-sm" autocomplete="off" />
+                    <div id="searchSpinner" class="position-absolute end-0 top-50 translate-middle-y me-3 d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Buscando...</span>
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-success btn-sm d-flex align-items-center">
-                    <i class="ti ti-filter me-1"></i> Filtrar
+                <button type="submit" class="btn btn-primary d-flex align-items-center">
+                    <i class="fas fa-filter me-2"></i>Filtrar
                 </button>
             </form>
 
-            <a asp-action="Create" class="btn btn-primary btn-sm"> <i class="ti ti-download me-1"></i> Nuevo</a>
+            <a asp-action="Create" class="btn btn-success d-flex align-items-center">
+                <i class="fas fa-user-plus me-2"></i>Nueva Persona
+            </a>
+        </div>
+
+        <!-- Lista de Personas -->
+        <div id="resultsContainer" class="table-responsive">
+            @await Html.PartialAsync("_ListaPersonas", Model.Personas)
+        </div>
+
+        <!-- Paginación -->
+        <div id="paginationContainer" class="mt-4">
+            @await Html.PartialAsync("_Paginacion", Model)
         </div>
     </div>
-
-    @await Html.PartialAsync("_ListaPersonas", Model.Personas)
-    @await Html.PartialAsync("_Paginacion", Model)
-
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            const searchForm = document.getElementById('searchForm');
+            const searchSpinner = document.getElementById('searchSpinner');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const paginationContainer = document.getElementById('paginationContainer');
+
+            let searchTimeout = null;
+            let isSearching = false;
+
+            // Función para realizar la búsqueda
+            async function performSearch() {
+                if (isSearching) return;
+
+                isSearching = true;
+                searchSpinner.classList.remove('d-none');
+
+                try {
+                    const formData = new FormData(searchForm);
+                    const queryString = new URLSearchParams(formData).toString();
+                    const response = await fetch(`${searchForm.action}?${queryString}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) throw new Error('Error en la búsqueda');
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Actualizar solo las partes necesarias
+                    resultsContainer.innerHTML = doc.getElementById('resultsContainer').innerHTML;
+                    paginationContainer.innerHTML = doc.getElementById('paginationContainer').innerHTML;
+
+                    // Actualizar la URL sin recargar la página
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('Filtro', searchInput.value);
+                    window.history.pushState({}, '', newUrl);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Opcional: Mostrar mensaje de error al usuario
+                } finally {
+                    isSearching = false;
+                    searchSpinner.classList.add('d-none');
+                }
+            }
+
+            // Evento de entrada en el campo de búsqueda
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(performSearch, 500);
+            });
+
+            // Prevenir el envío del formulario tradicional
+            searchForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                performSearch();
+            });
+
+            // Manejar la navegación del historial
+            window.addEventListener('popstate', function () {
+                const urlParams = new URLSearchParams(window.location.search);
+                searchInput.value = urlParams.get('Filtro') || '';
+                performSearch();
+            });
+        });
+    </script>
+}
