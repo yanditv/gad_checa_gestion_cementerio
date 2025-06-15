@@ -17,6 +17,16 @@ namespace gad_checa_gestion_cementerio.Utils
             CreateMap<Persona, PersonaModel>();
             CreateMap<PersonaModel, Persona>();
 
+            CreateMap<Persona, Responsable>();
+            CreateMap<Responsable, Persona>();
+
+            CreateMap<Propietario, Responsable>();
+            CreateMap<Responsable, Propietario>();
+
+            CreateMap<PersonaModel, Responsable>();
+
+
+
             CreateMap<Boveda, BovedaViewModel>();
             CreateMap<BovedaViewModel, Boveda>();
             CreateMap<Boveda, BovedaModel>();

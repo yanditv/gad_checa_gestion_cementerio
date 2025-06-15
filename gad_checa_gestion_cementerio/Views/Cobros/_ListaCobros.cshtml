@@ -25,11 +25,11 @@
                         <td>@item.MontoTotal.ToString("C")</td>
                         <td class="@(item.MontoPagado == 0 ? "" : "text-success")">@item.MontoPagado.ToString("C")</td>
                         <td class="@(item.MontoPendiente == 0 ? "" : "text-danger")">@item.MontoPendiente.ToString("C")</td>
-                        <td>@item.FechaFin.ToString("dd/MM/yyyy")</td>
+                        <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
                         <td class="text-end">
                             <div class="btn-group" role="group">
                                 <a class="btn btn-sm btn-outline-info me-2" asp-action="Facturas" asp-route-id="@item.Id">
-                                    <i class="ti ti-file-text"></i> Ver Facturas
+                                    <i class="ti ti-file-text"></i> Ver Pagos
                                 </a>
                                 @if (item.MontoPendiente > 0)
                                 {

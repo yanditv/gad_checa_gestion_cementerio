@@ -212,30 +212,92 @@
         @if (Model.Difuntos?.Any() == true)
         {
             <div class="card border-0 shadow-sm mt-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Difuntos en el Bloque</h5>
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Difuntos en el Bloque
+                    </h5>
+                    <span class="badge bg-primary">@Model.Difuntos.Count() registros</span>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Fecha de Fallecimiento</th>
-                                    <th>Bóveda</th>
-                                    <th>Piso</th>
-                                    <th>Propietario</th>
+                                    <th class="border-0">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user me-2 text-primary"></i>
+                                            <span>Nombre Completo</span>
+                                        </div>
+                                    </th>
+                                    <th class="border-0">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                            <span>Fecha de Fallecimiento</span>
+                                        </div>
+                                    </th>
+                                    <th class="border-0">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                            <span>Ubicación</span>
+                                        </div>
+                                    </th>
+                                    <th class="border-0">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user-tie me-2 text-primary"></i>
+                                            <span>Propietario</span>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var difunto in Model.Difuntos)
                                 {
                                     <tr>
-                                        <td>@difunto.Nombres @difunto.Apellidos</td>
-                                        <td>@difunto.FechaFallecimiento.ToString("dd/MM/yyyy")</td>
-                                        <td>@difunto.NumeroBoveda</td>
-                                        <td>Piso @difunto.NumeroPiso</td>
-                                        <td>@difunto.Propietario</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle bg-primary text-white me-3">
+                                                    @difunto.Nombres[0]@difunto.Apellidos[0]
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">@difunto.Nombres @difunto.Apellidos</h6>
+                                                    <small class="text-muted">ID: @difunto.Id</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-light text-dark">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    @difunto.FechaFallecimiento.ToString("dd/MM/yyyy")
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-building me-1"></i>
+                                                    Piso @difunto.NumeroPiso - Bóveda @difunto.NumeroBoveda
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                @if (!string.IsNullOrEmpty(difunto.Propietario))
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-user-tie me-1"></i>
+                                                        @difunto.Propietario
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-user-slash me-1"></i>
+                                                        Sin propietario
+                                                    </span>
+                                                }
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -377,4 +439,32 @@
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
     </script>
+}
+
+@section Styles {
+    <style>
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1rem;
+        }
+
+        .badge {
+            padding: 0.5rem 0.75rem;
+            font-weight: 500;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,0,0,.02);
+        }
+    </style>
 }

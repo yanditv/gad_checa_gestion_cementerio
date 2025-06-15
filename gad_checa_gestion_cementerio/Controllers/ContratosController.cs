@@ -98,13 +98,40 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var contrato = await _context.Contrato
                 .Include(c => c.Boveda)
+                    .ThenInclude(b => b.Piso)
+                        .ThenInclude(p => p.Bloque)
+                .Include(c => c.Boveda)
+                    .ThenInclude(b => b.Propietario)
+                .Include(c => c.Difunto)
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(c => c.Pagos)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (contrato == null)
             {
                 return NotFound();
             }
 
-            return View(contrato);
+            var contratoModel = _mapper.Map<ContratoModel>(contrato);
+
+            // Mapear las fechas de pago a las cuotas
+            foreach (var cuota in contratoModel.Cuotas)
+            {
+                var cuotaEntity = contrato.Cuotas.FirstOrDefault(c => c.Id == cuota.Id);
+                if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
+                {
+                    cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
+                }
+            }
+
+            // Asegurar que la bóveda y el propietario estén correctamente mapeados
+            if (contrato.Boveda != null)
+            {
+                contratoModel.Boveda = _mapper.Map<BovedaModel>(contrato.Boveda);
+            }
+
+            return View(contratoModel);
         }
 
         // GET: Contratos/Create
@@ -190,66 +217,112 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return Json(new { success = false, errors = new List<string> { "Debe realizar al menos un pago." } });
             }
 
-            using (var transaction = _context.Database.BeginTransaction())
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return strategy.Execute(() =>
             {
-                try
+                using (var transaction = _context.Database.BeginTransaction())
                 {
-                    var user = _userManager.GetUserAsync(User).Result;
-                    var userId = user?.Id;
-                    var now = DateTime.Now;
-
-                    // Crear el contrato
-                    var contrato = _mapper.Map<Contrato>(viewModel.contrato);
-                    contrato.FechaCreacion = now;
-                    contrato.UsuarioCreadorId = userId;
-                    contrato.UsuarioActualizadorId = userId;
-                    contrato.FechaActualizacion = now;
-                    contrato.Estado = true; // Activo por defecto
-
-                    // Crear el difunto
-                    contrato.Difunto = _mapper.Map<Difunto>(viewModel.difunto);
-                    contrato.Difunto.UsuarioCreadorId = userId;
-                    contrato.Difunto.FechaCreacion = now;
-
-                    // Crear los responsables
-                    contrato.Responsables = _mapper.Map<List<Responsable>>(viewModel.responsables);
-                    contrato.Responsables.ForEach(r =>
+                    try
                     {
-                        r.UsuarioCreador = user;
-                        r.FechaCreacion = now;
-                    });
+                        var user = _userManager.GetUserAsync(User).Result;
+                        var userId = user?.Id;
+                        var now = DateTime.Now;
 
-                    // Crear las cuotas
-                    contrato.Cuotas = _mapper.Map<List<Cuota>>(viewModel.contrato.Cuotas);
-                    contrato.Cuotas.ForEach(c =>
+                        // Convertir las personas a responsables antes de asociarlas al contrato
+                        // Primero verifica si las personas ya existen
+                        var responsables = new List<Responsable>();
+                        foreach (var persona in viewModel.responsables)
+                        {
+                            var responsable = _mapper.Map<Responsable>(persona);
+                            responsable.Id = 0; // Resetear el ID para que sea generado automáticamente
+                            responsable.FechaInicio = now;
+                            responsable.FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
+                            responsable.FechaCreacion = now;
+                            responsable.UsuarioCreadorId = userId;
+                            _context.Responsable.Add(responsable);
+                            responsables.Add(responsable);
+                        }
+
+                        // Crear el contrato
+                        var contrato = new Contrato
+                        {
+                            NumeroSecuencial = viewModel.contrato.NumeroSecuencial,
+                            BovedaId = viewModel.contrato.BovedaId,
+                            FechaInicio = viewModel.contrato.FechaInicio,
+                            FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5),
+                            NumeroDeMeses = viewModel.contrato.NumeroDeMeses,
+                            MontoTotal = viewModel.contrato.MontoTotal,
+                            Observaciones = viewModel.contrato.Observaciones ?? "",
+                            FechaCreacion = now,
+                            UsuarioCreadorId = userId,
+                            UsuarioActualizadorId = userId,
+                            Responsables = responsables,
+                            FechaActualizacion = now,
+                            Estado = true
+                        };
+
+                        // Crear el difunto
+                        var difunto = new Difunto
+                        {
+                            NumeroIdentificacion = viewModel.difunto.NumeroIdentificacion,
+                            Nombres = viewModel.difunto.Nombres,
+                            Apellidos = viewModel.difunto.Apellidos,
+                            FechaFallecimiento = viewModel.difunto.FechaFallecimiento,
+                            UsuarioCreadorId = userId,
+                            FechaCreacion = now,
+                            DescuentoId = viewModel.difunto.DescuentoId
+
+                        };
+                        contrato.Difunto = difunto;
+
+
+                        _context.Contrato.Add(contrato);
+                        _context.SaveChanges();
+
+                        // Crear las cuotas después de que el contrato tenga ID
+                        contrato.Cuotas = _mapper.Map<List<Cuota>>(viewModel.contrato.Cuotas);
+                        foreach (var cuota in contrato.Cuotas)
+                        {
+                            cuota.ContratoId = contrato.Id;
+                            _context.Cuota.Add(cuota);
+                        }
+
+                        // Crear el pago
+                        var pago = _mapper.Map<Pago>(viewModel.pago);
+                        pago.PersonaPagoId = viewModel.responsables.First().Id;
+                        pago.FechaPago = now;
+                        pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
+                        _context.Pago.Add(pago);
+
+                        _context.SaveChanges();
+                        transaction.Commit();
+
+                        // Limpiar la sesión después de guardar exitosamente
+                        SaveContratoToSession(null);
+
+                        return Json(new { success = true, contratoId = contrato.Id });
+                    }
+                    catch (Exception ex)
                     {
+                        transaction.Rollback();
+                        _logger.LogError(ex, "Error al guardar el contrato");
 
-                    });
+                        var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                        if (errorMessage.Contains("See the inner exception for details"))
+                        {
+                            errorMessage = ex.InnerException?.InnerException?.Message ?? errorMessage;
+                        }
 
-                    _context.Contrato.Add(contrato);
-                    _context.SaveChanges();
-
-                    // Crear el pago
-                    var pago = _mapper.Map<Pago>(viewModel.pago);
-                    pago.PersonaPagoId = contrato.Responsables.First().Id;
-                    pago.FechaPago = now;
-                    _context.Pago.Add(pago);
-
-                    _context.SaveChanges();
-                    transaction.Commit();
-
-                    // Limpiar la sesión después de guardar exitosamente
-                    SaveContratoToSession(null);
-
-                    return Json(new { success = true, contratoId = contrato.Id });
+                        return Json(new
+                        {
+                            success = false,
+                            errors = new List<string> {
+                                "Error al guardar el contrato: " + errorMessage
+                            }
+                        });
+                    }
                 }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    _logger.LogError(ex, "Error al guardar el contrato");
-                    return Json(new { success = false, errors = new List<string> { "Ocurrió un error al guardar el contrato: " + ex.Message } });
-                }
-            }
+            });
         }
 
         // GET: Contratos/Edit/5

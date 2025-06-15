@@ -388,6 +388,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(b => b.Pisos)
                     .ThenInclude(p => p.Bovedas)
                         .ThenInclude(b => b.Contratos)
+                            .ThenInclude(c => c.Difunto)
                 .Include(b => b.Pisos)
                     .ThenInclude(p => p.Bovedas)
                         .ThenInclude(b => b.Propietario)
@@ -409,6 +410,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 BovedasPorPiso = bloque.BovedasPorPiso,
                 TarifaBase = bloque.TarifaBase,
                 CementerioId = bloque.CementerioId,
+                Cementerio = bloque.Cementerio,
+                BovedasOcupadas = bloque.Pisos
+                    .SelectMany(p => p.Bovedas)
+                    .Count(b => b.Contratos.Any(c => c.FechaEliminacion == null)),
                 PreciosPorPiso = bloque.Pisos.Select(p => new PisoPrecioViewModel
                 {
                     NumeroPiso = p.NumeroPiso,
@@ -430,7 +435,23 @@ namespace gad_checa_gestion_cementerio.Controllers
                                       (c.FechaFin == null || c.FechaFin >= DateTime.Now))
                             .Select(c => c.FechaFin)
                             .FirstOrDefault()
-                    })).ToList()
+                    })).ToList(),
+                Difuntos = bloque.Pisos
+                    .SelectMany(p => p.Bovedas
+                        .SelectMany(b => b.Contratos
+                            .Where(c => c.Difunto != null)
+                            .Select(c => new DifuntoInfo
+                            {
+                                Id = c.Difunto.Id,
+                                Nombres = c.Difunto.Nombres,
+                                Apellidos = c.Difunto.Apellidos,
+                                FechaFallecimiento = c.Difunto.FechaFallecimiento,
+                                NumeroBoveda = b.Numero.ToString(),
+                                NumeroPiso = p.NumeroPiso,
+                                Propietario = b.Propietario != null ?
+                                    $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" :
+                                    "Sin propietario"
+                            }))).ToList()
             };
 
             ViewBag.CementerioNombre = bloque.Cementerio?.Nombre;

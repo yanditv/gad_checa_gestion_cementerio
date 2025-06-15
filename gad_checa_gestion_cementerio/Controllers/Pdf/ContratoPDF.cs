@@ -131,7 +131,7 @@ public class ContratoPDF : IDocument
                     text.Span(" a partir de la fecha del ");
                     text.Span($"{contrato.FechaInicio:dd} de {contrato.FechaInicio.ToString("MMMM", new CultureInfo("es-ES"))} del {contrato.FechaInicio:yyyy}").Bold();
                     text.Span(", la parte arrendataria. Vence el contrato el ");
-                    text.Span($"{contrato.FechaFin:dd} de {contrato.FechaFin.ToString("MMMM", new CultureInfo("es-ES"))} del {contrato.FechaFin:yyyy}").Bold();
+                    text.Span($"{contrato.FechaFin?.ToString("dd") ?? "--"} de {contrato.FechaFin?.ToString("MMMM", new CultureInfo("es-ES")) ?? "--------"} del {contrato.FechaFin?.ToString("yyyy") ?? "----"}").Bold();
                     text.Span(".");
                 });
 

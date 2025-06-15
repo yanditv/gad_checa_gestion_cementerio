@@ -55,8 +55,8 @@ namespace gad_checa_gestion_cementerio.Data
             });
             // Configuración de las entidades
             builder.Entity<Persona>()
-                .HasIndex(p => p.NumeroIdentificacion)
-                .IsUnique();
+                .HasIndex(p => p.NumeroIdentificacion);
+            //.IsUnique();
             // Configuración de la herencia (TPH - Table Per Hierarchy)
             builder.Entity<Persona>()
                 .HasDiscriminator<string>("TipoPersona")

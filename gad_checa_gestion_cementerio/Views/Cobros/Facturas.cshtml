@@ -13,40 +13,121 @@
     }).ToList();
 }
 
-<h2>Cuotas Pagadas del Contrato: <span class="text-primary">@contratoSerie</span></h2>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Facturas del Contrato
+                </h4>
+                <p class="text-muted mb-0 mt-1">Contrato #@contratoSerie</p>
+            </div>
+            <div>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
 
-<table class="table table-bordered">
-    <thead class="table-secondary">
-        <tr>
-            <th># Cuota</th>
-            <th>Fecha Vencimiento</th>
-            <th>Monto</th>
-            <th>Fecha de Pago</th>
-            <th>Tipo de Pago</th>
-            <th>Comprobante</th>
-            <th>Factura</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in cuotasPagadas)
-        {
-            <tr>
-                <td>@item.Cuota.Id</td>
-                <td>@item.Cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
-                <td>@item.Cuota.Monto.ToString("C")</td>
-                <td>@item.Pago?.FechaPago.ToString("dd/MM/yyyy")</td>
-                <td>@item.Pago?.TipoPago</td>
-                <td>@item.Pago?.NumeroComprobante</td>
-                <td>
-                    @if (item.Pago != null)
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-hashtag me-2 text-primary"></i>
+                                <span># Cuota</span>
+                            </div>
+                        </th>
+                        <th class="border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                <span>Fecha Vencimiento</span>
+                            </div>
+                        </th>
+                        <th class="border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-dollar-sign me-2 text-primary"></i>
+                                <span>Monto</span>
+                            </div>
+                        </th>
+                        <th class="border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-check me-2 text-primary"></i>
+                                <span>Fecha de Pago</span>
+                            </div>
+                        </th>
+                        <th class="border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-credit-card me-2 text-primary"></i>
+                                <span>Tipo de Pago</span>
+                            </div>
+                        </th>
+                        <th class="border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-receipt me-2 text-primary"></i>
+                                <span>Comprobante</span>
+                            </div>
+                        </th>
+                        <th class="border-0 text-end">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <i class="fas fa-file-pdf me-2 text-primary"></i>
+                                <span>Factura</span>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in cuotasPagadas)
                     {
-                        <a class="btn btn-sm btn-outline-dark" target="_blank" asp-action="FacturaPdf"
-                            asp-route-id="@item.Pago.Id">
-                            <i class="ti ti-file-download"></i> Ver PDF
-                        </a>
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary">@item.Cuota.Id</span>
+                            </td>
+                            <td>@item.Cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                            <td class="fw-bold">@item.Cuota.Monto.ToString("C")</td>
+                            <td>@item.Pago?.FechaPago.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="badge bg-info">@item.Pago?.TipoPago</span>
+                            </td>
+                            <td>@item.Pago?.NumeroComprobante</td>
+                            <td class="text-end">
+                                @if (item.Pago != null)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary" target="_blank" asp-action="FacturaPdf"
+                                        asp-route-id="@item.Pago.Id">
+                                        <i class="fas fa-file-pdf me-2"></i>Ver PDF
+                                    </a>
+                                }
+                            </td>
+                        </tr>
                     }
-                </td>
-            </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .table> :not(caption)>*>* {
+            padding: 1rem;
         }
-    </tbody>
-</table>
+
+        .badge {
+            padding: 0.5rem 0.75rem;
+            font-weight: 500;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, .02);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+}

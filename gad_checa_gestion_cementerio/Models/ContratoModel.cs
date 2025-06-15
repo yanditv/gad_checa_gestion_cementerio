@@ -22,8 +22,7 @@ public class ContratoModel
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public DateTime FechaInicio { get; set; }
 
-    [Required(ErrorMessage = "El campo {0} es requerido")]
-    public DateTime FechaFin { get; set; }
+    public DateTime? FechaFin { get; set; }
 
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public int NumeroDeMeses { get; set; }

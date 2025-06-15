@@ -4,77 +4,146 @@
     ViewData["Title"] = "Crear Pago";
 }
 
-<div class="container mt-5">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="h4 mb-0 text-white">Datos del Pago</h2>
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-money-bill-wave me-2"></i>Crear Pago
+                </h4>
+                <p class="text-muted mb-0 mt-1">Registre los detalles del pago</p>
+            </div>
+            <div>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
         </div>
-        <div class="card-body">
-            <form asp-action="Cobrar" method="post">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="TipoPago" class="form-label">Tipo de Pago</label>
-                        <select asp-for="TipoPago" class="form-control" asp-items="ViewBag.TiposPago"></select>
-                        <span asp-validation-for="TipoPago" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Número de Comprobante</label>
-                        <input name="NumeroComprobante" class="form-control" />
-                        <span asp-validation-for="NumeroComprobante" class="text-danger"></span>
+    </div>
+
+    <div class="card-body">
+        <form asp-action="Cobrar" method="post">
+            <div class="row g-3">
+                <!-- Información del Pago -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Pago</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label asp-for="TipoPago" class="form-label">Tipo de Pago</label>
+                                <select asp-for="TipoPago" class="form-select" asp-items="ViewBag.TiposPago">
+                                    <option value="">Seleccione un tipo de pago</option>
+                                </select>
+                                <span asp-validation-for="TipoPago" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Número de Comprobante</label>
+                                <input name="NumeroComprobante" class="form-control" placeholder="Ingrese el número de comprobante" />
+                                <span asp-validation-for="NumeroComprobante" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Monto" class="form-label">Monto</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="Monto" class="form-control" placeholder="0.00" />
+                                </div>
+                                <span asp-validation-for="Monto" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="FechaPago" class="form-label">Fecha de Pago</label>
+                                <input asp-for="FechaPago" type="date" class="form-control" />
+                                <span asp-validation-for="FechaPago" class="text-danger"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="Monto" class="form-label">Monto</label>
-                        <input asp-for="Monto" class="form-control" />
-                        <span asp-validation-for="Monto" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="FechaPago" class="form-label">Fecha de Pago</label>
-                        <input asp-for="FechaPago" type="date" class="form-control" />
-                        <span asp-validation-for="FechaPago" class="text-danger"></span>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="PersonaPagoId" class="form-label">Responsable que realiza el pago</label>
-                        <select id="PersonaPagoId" name="PersonaPagoId" class="form-control select2">
-                            <option value="">-- Buscar persona --</option>
-                            @foreach (var persona in (List<SelectListItem>)ViewBag.Responsables)
-                            {
-                                @Html.Raw($"<option value=\"{persona.Value}\"{(Model.PersonaPagoId.ToString() == persona.Value ? " selected" : "")}>{persona.Text}</option>")
-                            }
-                        </select>
-                        <span asp-validation-for="PersonaPagoId" class="text-danger"></span>
+                <!-- Responsable del Pago -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-user me-2"></i>Responsable del Pago</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label asp-for="PersonaPagoId" class="form-label">Seleccione el responsable</label>
+                                <select id="PersonaPagoId" name="PersonaPagoId" class="form-control select2">
+                                    <option value="">-- Buscar persona --</option>
+                                    @foreach (var persona in (List<SelectListItem>)ViewBag.Responsables)
+                                    {
+                                        @Html.Raw($"<option value=\"{persona.Value}\"{(Model.PersonaPagoId.ToString() == persona.Value ? " selected" : "")}>{persona.Text}</option>")
+                                    }
+                                </select>
+                                <span asp-validation-for="PersonaPagoId" class="text-danger"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Seleccionar</th>
-                            <th>Fecha de Vencimiento</th>
-                            <th>Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (int i = 0; i < Model.Cuotas.Count; i++)
-                        {
-                            <tr>
-                                <td>
-                                    <input type="checkbox" name="CuotasSeleccionadas" value="@Model.Cuotas[i].Id" />
-                                </td>
-                                <td>@Model.Cuotas[i].FechaVencimiento.ToString("dd/MM/yyyy")</td>
-                                <td>@Model.Cuotas[i].Monto.ToString("C")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-                <button type="submit" class="btn btn-primary">Cobrar</button>
-            </form>
-        </div>
+                <!-- Cuotas a Pagar -->
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Cuotas a Pagar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="border-0" style="width: 50px;">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                                </div>
+                                            </th>
+                                            <th class="border-0">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                                    <span>Fecha de Vencimiento</span>
+                                                </div>
+                                            </th>
+                                            <th class="border-0">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-dollar-sign me-2 text-primary"></i>
+                                                    <span>Monto</span>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (int i = 0; i < Model.Cuotas.Count; i++)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input cuota-checkbox" 
+                                                               name="CuotasSeleccionadas" value="@Model.Cuotas[i].Id" />
+                                                    </div>
+                                                </td>
+                                                <td>@Model.Cuotas[i].FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                                <td class="fw-bold">@Model.Cuotas[i].Monto.ToString("C")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de Envío -->
+                <div class="col-12 text-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Registrar Pago
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -82,8 +151,10 @@
 <div class="modal fade" id="modalNuevaPersona" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Crear Nueva Persona</h5>
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Crear Nueva Persona
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="modalPersonaContent">
@@ -101,52 +172,66 @@
 
     <script>
         $(document).ready(function () {
+            // Inicializar Select2
             const select = $('.select2');
-
             select.select2({
                 placeholder: "Buscar persona...",
                 allowClear: true,
                 width: '100%',
                 language: {
                     noResults: function () {
-                         return `
-                    <div class="text-center py-2">
-                        <span class="d-block mb-2 text-muted">No se encontraron personas</span>
-                        <button type="button" onclick="abrirModalCrearPersona()" class="btn btn-outline-primary btn-sm">
-                            <i class="ti ti-plus"></i> Crear nueva persona
-                        </button>
-                    </div>
-                `;
+                        return `
+                            <div class="text-center py-2">
+                                <span class="d-block mb-2 text-muted">No se encontraron personas</span>
+                                <button type="button" onclick="abrirModalCrearPersona()" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus me-2"></i>Crear nueva persona
+                                </button>
+                            </div>
+                        `;
                     }
                 },
                 escapeMarkup: function (markup) { return markup; }
             });
 
-                // Estilizar el contenedor visible de Select2 al abrir
-    function aplicarEstiloBootstrap() {
-        $('.select2-container--default .select2-selection--single')
-            .addClass('form-control form-control-md')
-           .removeClass('select2-selection--single');
+            // Estilizar Select2
+            function aplicarEstiloBootstrap() {
+                $('.select2-container--default .select2-selection--single')
+                    .addClass('form-control form-control-md')
+                    .removeClass('select2-selection--single');
 
-        // Estilo al input interno de búsqueda
-        $('.select2-container--open .select2-search__field')
-            .addClass('form-control form-control-md');
+                $('.select2-container--open .select2-search__field')
+                    .addClass('form-control form-control-md');
 
-        // Estilo al dropdown de resultados
-    // Mejorar estilo del botón de limpiar selección (ícono "x")
-    $('.select2-selection__clear')
-        .removeClass('select2-selection__clear')
-        .addClass('btn-close position-absolute top-50 translate-middle-y end-0 me-2')
+                $('.select2-selection__clear')
+                    .removeClass('select2-selection__clear')
+                    .addClass('btn-close position-absolute top-50 translate-middle-y end-0 me-2');
+            }
 
-    }
+            select.on('select2:open', function () {
+                setTimeout(aplicarEstiloBootstrap, 0);
+            });
 
-    // Al abrir el select
-    select.on('select2:open', function () {
-        setTimeout(aplicarEstiloBootstrap, 0);
-    });
+            aplicarEstiloBootstrap();
 
-    // Aplicar también al cargar la página
-    aplicarEstiloBootstrap();
+            // Manejar selección de todas las cuotas
+            $('#selectAll').change(function() {
+                $('.cuota-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            $('.cuota-checkbox').change(function() {
+                if (!$(this).prop('checked')) {
+                    $('#selectAll').prop('checked', false);
+                } else {
+                    let allChecked = true;
+                    $('.cuota-checkbox').each(function() {
+                        if (!$(this).prop('checked')) {
+                            allChecked = false;
+                            return false;
+                        }
+                    });
+                    $('#selectAll').prop('checked', allChecked);
+                }
+            });
         });
 
         function abrirModalCrearPersona() {
@@ -156,16 +241,47 @@
 
         function personaCreada(id, nombreCompleto) {
             const select = $('.select2');
-
             select.find('option').each(function () {
                 if ($(this).val() === id.toString() || $(this).text().trim() === nombreCompleto.trim()) {
                     $(this).remove();
                 }
             });
-
             const nuevaOpcion = new Option(nombreCompleto, id, true, true);
             select.append(nuevaOpcion).val(id).trigger('change');
             $('#modalNuevaPersona').modal('hide');
         }
     </script>
+}
+
+@section Styles {
+    <style>
+        .card {
+            margin-bottom: 1rem;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1rem;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 38px;
+            line-height: 38px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, .02);
+        }
+    </style>
 }
