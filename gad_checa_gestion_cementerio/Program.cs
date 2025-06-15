@@ -328,10 +328,10 @@ async Task CreateInitialData(ApplicationDbContext dbContext, UserManager<Applica
     var cementerio = await dbContext.Cementerio.FirstOrDefaultAsync();
     if (cementerio == null)
     {
-        var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
         if (adminUser == null)
         {
-            throw new InvalidOperationException("No se encontró el usuario administrador. Asegúrese de que el usuario admin@example.com existe.");
+            throw new InvalidOperationException("No se encontró el usuario administrador. Asegúrese de que el usuario admin@teobu.com existe.");
         }
         cementerio = new Cementerio
         {
@@ -360,10 +360,10 @@ async Task CreateInitialData(ApplicationDbContext dbContext, UserManager<Applica
     var descuentos = await dbContext.Descuento.ToListAsync();
     if (!descuentos.Any())
     {
-        var adminUser = await userManager.FindByEmailAsync("admin@example.com");
+        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
         if (adminUser == null)
         {
-            throw new InvalidOperationException("No se encontró el usuario administrador. Asegúrese de que el usuario admin@example.com existe.");
+            throw new InvalidOperationException("No se encontró el usuario administrador. Asegúrese de que el usuario admin@teobu.com existe.");
         }
         var descuentosIniciales = new[]
         {
