@@ -246,7 +246,11 @@
                     }
                     <span>@roles.FirstOrDefault()</span>
                   </div>
-                  <a href="#!" class="pc-head-link bg-transparent"><i class="ti ti-power text-danger"></i></a>
+                  <form id="formLog" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                    <button type="submit" class="pc-head-link bg-transparent border-0">
+                      <i class="ti ti-power text-danger"></i>
+                    </button>
+                  </form>
                 </div>
               </div>
               <ul class="nav drp-tabs nav-fill nav-tabs" id="mydrpTab" role="tablist">
@@ -264,7 +268,7 @@
               <div class="tab-content" id="mysrpTabContent">
                 <div class="tab-pane fade show active" id="drp-tab-1" role="tabpanel" aria-labelledby="drp-t1"
                   tabindex="0">
-                  <a href="#!" class="dropdown-item">
+                  <a href="~/Identity/Account/Manage" class="dropdown-item">
                     <i class="ti ti-edit-circle"></i>
                     <span>Edit Profile</span>
                   </a>
@@ -278,9 +282,9 @@
                 </div>
                 <div class="tab-pane fade" id="drp-tab-2" role="tabpanel" aria-labelledby="drp-t2" tabindex="0">
 
-                  <a href="#!" class="dropdown-item">
-                    <i class="ti ti-user"></i>
-                    <span>Account Settings</span>
+                  <a href="~/Identity/Account/Manage/ChangePassword" class="dropdown-item">
+                    <i class="ti ti-lock"></i>
+                    <span>Cambiar Contraseña</span>
                   </a>
                 </div>
               </div>
