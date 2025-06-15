@@ -1,5 +1,4 @@
 ﻿@model gad_checa_gestion_cementerio.Models.CreateContratoModel
-
 @{
     ViewData["Title"] = "Crear Contrato";
 }
@@ -39,111 +38,254 @@
         <div id="stepper">
             <!-- Stepper Nav -->
             <div class="stepper">
-                <div class="step completed" data-step="1" data-url="@Url.Action("CreateContrato", "Contratos")">
+                <div class="step completed" data-step="1">
                     <div class="circle">1</div>
                     <div>Datos del contrato</div>
                 </div>
-                <div class="step" data-step="2" data-url="@Url.Action("CreateDifunto", "Contratos")">
+                <div class="step" data-step="2">
                     <div class="circle">2</div>
                     <div>Datos del Difunto</div>
                 </div>
-                <div class="step" data-step="3" data-url="@Url.Action("CreateResponsables", "Contratos")">
+                <div class="step" data-step="3">
                     <div class="circle">3</div>
                     <div>Datos de los Responsables</div>
                 </div>
-                <div class="step" data-step="4" data-url="@Url.Action("CreatePago", "Contratos")">
+                <div class="step" data-step="4">
                     <div class="circle">4</div>
                     <div>Pago</div>
                 </div>
-                <div class="step" data-step="5" data-url="@Url.Action("DocumentoContrato", "Contratos")">
+                <div class="step" data-step="5">
                     <div class="circle">5</div>
                     <div>Verificación de Datos</div>
                 </div>
             </div>
             <div class="bg-light" id="mensajes"></div>
             <!-- End Stepper Nav -->
+
             <!-- Stepper Content -->
             <div class="mt-4">
-                <!-- First Content -->
+                <!-- Contenido dinámico -->
                 <div data-content="1">
                     @await Html.PartialAsync("_CreateContrato", Model.contrato)
+                </div>
+                <div data-content="2" style="display: none;"></div>
+                <div data-content="3" style="display: none;"></div>
+                <div data-content="4" style="display: none;"></div>
+                <div data-content="5" style="display: none;"></div>
 
-                </div>
-                <!-- End First Content -->
-                <!-- Second Content -->
-                <div data-content="2" style="display: none;">
-                    @await Html.PartialAsync("_CreateDifunto", Model.difunto)
-                </div>
-                <!-- End Second Content -->
-                <!-- Third Content -->
-                <div data-content="3" style="display: none;">
-                    @await Html.PartialAsync("_CreateResponsables", Model.responsables)
-                </div>
-                <!-- End Third Content -->
-                <!-- Fourth Content -->
-                <div data-content="4" style="display: none;">
-                    @await Html.PartialAsync("_CreatePago", Model.pago)
-                </div>
-                <!-- End Fourth Content -->
-                <!-- Fifth Content -->
-                <div data-content="5" style="display: none;">
-                    @await Html.PartialAsync("_DocumentoContrato", Model)
-                </div>
-                <!-- End Fifth Content -->
                 <!-- Button Group -->
                 <div class="mt-4 mb-4 d-flex justify-content-between">
                     <button type="button" class="btn btn-outline-secondary" id="backBtn" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-arrow-left" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd"
-                                d="M15 8a.5.5 0 0 1-.5.5H2.707l4.147 4.146a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z" />
-                        </svg>
-                        Atrás
+                        <i class="ti ti-arrow-left me-1"></i> Atrás
                     </button>
                     <button type="button" class="btn btn-primary" id="nextBtn">
-                        Siguiente
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-arrow-right" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd"
-                                d="M1 8a.5.5 0 0 1 .5-.5h11.793l-4.147-4.146a.5.5 0 1 1 .708-.708l5 5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
-                        </svg>
+                        Siguiente <i class="ti ti-arrow-right me-1"></i>
                     </button>
                     <button type="button" class="btn btn-success" id="finishBtn" style="display: none;">
                         Finalizar
                     </button>
-                    <button type="reset" class="btn btn-warning" id="resetBtn" style="display: none;">
-                        Reiniciar
-                    </button>
                 </div>
-                <!-- End Button Group -->
             </div>
-            <!-- End Stepper Content -->
         </div>
-        <!-- End Stepper -->
     </div>
 </div>
 
-<!-- Script del Stepper (dentro de la página) -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            height: calc(1.5em + 1rem + 2px);
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(1.5em + 1rem + 2px);
+        }
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        // Configuración global
+        const stepUrls = {
+            1: '@Url.Action("CreateContrato", "Contratos")',
+            2: '@Url.Action("CreateDifunto", "Contratos")',
+            3: '@Url.Action("CreateResponsables", "Contratos")',
+            4: '@Url.Action("CreatePago", "Contratos")',
+            5: '@Url.Action("DocumentoContrato", "Contratos")'
+        };
+
+        // Variables de estado
+        let currentStep = 1;
         const steps = document.querySelectorAll('.step');
         const contents = document.querySelectorAll('[data-content]');
-        const backBtn = document.getElementById('backBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const finishBtn = document.getElementById('finishBtn');
-        const resetBtn = document.getElementById('resetBtn');
         const mensajesDiv = document.getElementById('mensajes');
-        let currentStep = 0;
 
-        // Pasos que no requieren validación
-        const noValidationSteps = [2]; // Ejemplo: pasos 2 y 4 no requieren validación (índices 1 y 3)
+        // Función para cargar contenido del paso
+        async function loadStepContent(step) {
+            const contentDiv = document.querySelector(`[data-content="${step}"]`);
 
+            if (contentDiv.innerHTML.trim() === '') {
+                try {
+                    const response = await fetch(stepUrls[step]);
+                    if (!response.ok) throw new Error('Error al cargar el paso');
+
+                    contentDiv.innerHTML = await response.text();
+
+                    // Inicializar componentes específicos
+                    if (step === 3) {
+                        initSelect2();
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error loading step:', error);
+                    contentDiv.innerHTML = `                                                                                                                                        Error al cargar el contenido. Intente nuevamente.
+                                                                                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                                                                                    `;
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Inicializar Select2
+        function initSelect2() {
+            $('#searchResponsable').select2({
+                placeholder: 'Buscar responsable...',
+                allowClear: true
+            }).on('select2:select', function (e) {
+                const selectedOption = $(this).find('option:selected');
+                const formData = new FormData();
+                formData.append('Id', selectedOption.val());
+                formData.append('Nombres', selectedOption.data('nombres'));
+                formData.append('Apellidos', selectedOption.data('apellidos'));
+                formData.append('TipoIdentificacion', selectedOption.data('tipo'));
+                formData.append('NumeroIdentificacion', selectedOption.data('numero'));
+
+                console.log('Enviando responsable:', {
+                    Id: selectedOption.val(),
+                    Nombres: selectedOption.data('nombres'),
+                    Apellidos: selectedOption.data('apellidos'),
+                    TipoIdentificacion: selectedOption.data('tipo'),
+                    NumeroIdentificacion: selectedOption.data('numero')
+                });
+
+                fetch('@Url.Action("AddResponsable", "Contratos")', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Agregar el nuevo responsable al contenedor
+                            var responsableHtml = `
+                                <div class="responsable mb-4" data-id="${selectedOption.val()}">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ti ti-user me-2 fs-4"></i>
+                                                        <div class="flex-grow-1">
+                                                            <h5 class="mb-1">${selectedOption.data('nombres')} ${selectedOption.data('apellidos')}</h5>
+                                                            <p class="mb-0 text-muted">
+                                                                ${selectedOption.data('tipo')}: ${selectedOption.data('numero')}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Fecha Inicio</label>
+                                                                <input type="date" class="form-control fecha-inicio" 
+                                                                    value="${new Date().toISOString().split('T')[0]}" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Fecha Fin</label>
+                                                                <input type="date" class="form-control fecha-fin" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="text-end mt-2">
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${selectedOption.val()})">
+                                                    <i class="ti ti-trash me-1"></i>Quitar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            document.getElementById('responsablesContainer').innerHTML += responsableHtml;
+                            // Limpiar la selección
+                            $('#searchResponsable').val(null).trigger('change');
+                        } else {
+                            console.error('Error:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            });
+        }
+
+        function removeResponsable(id) {
+            if (!confirm('¿Está seguro de quitar este responsable?')) {
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('id', id);
+
+            fetch('@Url.Action("RemoveResponsable", "Contratos")', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Eliminar solo el elemento específico del DOM
+                        var elementToRemove = document.querySelector(`.responsable[data-id="${id}"]`);
+                        if (elementToRemove) {
+                            elementToRemove.remove();
+                        }
+                    } else {
+                        alert(data.message || 'Error al quitar el responsable');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al quitar el responsable');
+                });
+        }
+
+        // Función para actualizar el stepper
         function updateStepper() {
             steps.forEach((step, index) => {
-                if (index === currentStep) {
+                const stepNumber = parseInt(step.dataset.step);
+                if (stepNumber === currentStep) {
                     step.classList.add('active');
                     step.classList.remove('completed');
-                } else if (index < currentStep) {
+                } else if (stepNumber < currentStep) {
                     step.classList.add('completed');
                     step.classList.remove('active');
                 } else {
@@ -152,185 +294,171 @@
             });
 
             contents.forEach((content, index) => {
-                if (index === currentStep) {
-                    content.style.display = 'block';
-                } else {
-                    content.style.display = 'none';
+                const contentStep = parseInt(content.dataset.content);
+                content.style.display = contentStep === currentStep ? 'block' : 'none';
+            });
+
+            document.getElementById('backBtn').disabled = currentStep === 1;
+            document.getElementById('nextBtn').style.display = currentStep === 5 ? 'none' : 'block';
+            document.getElementById('finishBtn').style.display = currentStep === 5 ? 'block' : 'none';
+        }
+
+        // Función global para abrir modal
+        window.abrirModal = function () {
+            new bootstrap.Modal(document.getElementById('crearResponsableModal')).show();
+        };
+
+        // Manejar navegación
+        document.getElementById('nextBtn').addEventListener('click', async function () {
+            if (currentStep < 5) {
+                const success = await loadStepContent(currentStep + 1);
+                if (success) {
+                    currentStep++;
+                    updateStepper();
                 }
-            });
-
-            backBtn.disabled = currentStep === 0;
-            nextBtn.style.display = currentStep === steps.length - 1 ? 'none' : 'inline-block';
-            finishBtn.style.display = currentStep === steps.length - 1 ? 'inline-block' : 'none';
-        }
-
-        function hideAllContentsExceptFirst() {
-            contents.forEach((content, index) => {
-                if (index !== 0) {
-                    content.style.display = 'none';
-                }
-            });
-        }
-
-        function initStepper() {
-            hideAllContentsExceptFirst();
-            updateStepper();
-        }
-
-        function validateStep(step) {
-            if (noValidationSteps.includes(step)) {
-                return true;
-            }
-            const form = contents[step].querySelector('form');
-            if (form) {
-                return form.checkValidity();
-            }
-            return true;
-        }
-
-        function postStepData(step) {
-            const form = contents[step].querySelector('form');
-            if (form) {
-                const formData = new FormData(form);
-                return fetch(form.action, {
-                    method: 'POST',
-                    body: formData
-                }).then(response => response.json());
-            }
-            return Promise.resolve({ success: true });
-        }
-
-        function getStepData(step) {
-            const content = contents[step];
-            const url = steps[step].getAttribute('data-url');
-            if (url) {
-                return fetch(url).then(response => response.text()).then(html => {
-                    content.innerHTML = html;
-                });
-            }
-            return Promise.resolve();
-        }
-
-        function showErrors(errors) {
-            mensajesDiv.innerHTML = '';
-            errors.forEach(error => {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'alert alert-danger';
-                errorDiv.textContent = error;
-                mensajesDiv.appendChild(errorDiv);
-            });
-        }
-
-        function clearErrors() {
-            mensajesDiv.innerHTML = '';
-        }
-
-        steps.forEach((step, index) => {
-            step.addEventListener('click', () => {
-                if (validateStep(currentStep)) {
-                    postStepData(currentStep).then(data => {
-                        if (data.success) {
-                            currentStep = index;
-                            clearErrors();
-                            getStepData(currentStep).then(() => {
-                                updateStepper();
-                            });
-                        } else {
-                            showErrors(data.errors);
-                        }
-                    });
-                } else {
-                    showErrors(['Por favor, complete todos los campos requeridos antes de continuar.']);
-                }
-            });
-        });
-
-        backBtn.addEventListener('click', () => {
-            if (currentStep > 0) {
-                currentStep--;
-                clearErrors();
-                updateStepper();
             }
         });
 
-        nextBtn.addEventListener('click', () => {
-            if (validateStep(currentStep)) {
-                postStepData(currentStep).then(data => {
-                    if (data.success) {
-                        if (currentStep < steps.length - 1) {
-                            currentStep++;
-                            clearErrors();
-                            getStepData(currentStep).then(() => {
-                                updateStepper();
-                            });
-                        }
-                    } else {
-                        showErrors(data.errors);
+        document.getElementById('backBtn').addEventListener('click', async function () {
+            if (currentStep > 1) {
+                const success = await loadStepContent(currentStep - 1);
+                if (success) {
+                    currentStep--;
+                    updateStepper();
+                }
+            }
+        });
+
+        // Manejar finalización
+        document.getElementById('finishBtn').addEventListener('click', function () {
+            // Tu lógica para finalizar el contrato
+            console.log('Contrato finalizado');
+        });
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function () {
+            // Cargar el primer paso
+            loadStepContent(1);
+
+            // Configurar tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        function guardarResponsable() {
+            const form = document.getElementById('formResponsable');
+            const formData = new FormData(form);
+            const errorContainer = document.getElementById('errorContainer');
+            const errorList = document.getElementById('errorList');
+
+            // Limpiar errores anteriores
+            errorContainer.classList.add('d-none');
+            errorList.innerHTML = '';
+
+            fetch('@Url.Action("GuardarResponsable", "Contratos")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
                     }
-                });
-            } else {
-                showErrors(['Por favor, complete todos los campos requeridos antes de continuar.']);
-            }
-        });
-
-        finishBtn.addEventListener('click', () => {
-            if (validateStep(currentStep)) {
-                postStepData(currentStep).then(data => {
+                    return response.json();
+                })
+                .then(data => {
                     if (data.success) {
-                        // Crear un formulario en memoria
-                        const form = document.createElement('form');
-                        form.innerHTML = document.querySelector('form').innerHTML;
+                        // Cerrar el modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('crearResponsableModal'));
+                        modal.hide();
 
-                        // Agregar los datos del modelo al FormData
-                        const formData = new FormData(form);
-                        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-                        if (token) {
-                            formData.append('__RequestVerificationToken', token);
-                        }
-                        // Si tienes datos adicionales en data.model, agrégalos aquí
+                        // Limpiar el formulario
+                        form.reset();
 
-
-                        fetch('@Url.Action("Save", "Contratos")', {
-                            method: 'POST',
-                            //body: formData
-                        })
-                            .then(response => response.json())
-                            .then(result => {
-                                if (result.success) {
-                                    window.location.href = '@Url.Action("Index", "Contratos")';
-                                } else {
-                                    showErrors(result.errors || ['Ocurrió un error al finalizar el proceso.']);
-                                }
-                            })
-                            .catch(() => {
-                                showErrors(['Ocurrió un error al finalizar el proceso.']);
-                            });
+                        // Agregar el nuevo responsable a la lista
+                        const responsable = data.responsable;
+                        const responsableHtml = `
+                                                                        <div class="responsable mb-4">
+                                                                            <div class="card border-0 shadow-sm">
+                                                                                <div class="card-body">
+                                                                                    <div class="row">
+                                                                                        <div class="col-md-8">
+                                                                                            <div class="d-flex align-items-center">
+                                                                                                <i class="ti ti-user me-2 fs-4"></i>
+                                                                                                <div class="flex-grow-1">
+                                                                                                    <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
+                                                                                                    <p class="mb-0 text-muted">
+                                                                                                        ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div class="col-md-4">
+                                                                                            <div class="row">
+                                                                                                <div class="col-md-6">
+                                                                                                    <div class="mb-3">
+                                                                                                        <label class="form-label">Fecha Inicio</label>
+                                                                                                        <input type="date" class="form-control fecha-inicio" value="${responsable.fechaInicio}" />
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <div class="col-md-6">
+                                                                                                    <div class="mb-3">
+                                                                                                        <label class="form-label">Fecha Fin</label>
+                                                                                                        <input type="date" class="form-control fecha-fin" value="${responsable.fechaFin || ''}" />
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="text-end mt-2">
+                                                                                        <button type="button" class="btn btn-danger btn-sm remove-responsable-btn">
+                                                                                            <i class="ti ti-trash me-1"></i>Quitar
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    `;
+                        document.getElementById('responsablesContainer').insertAdjacentHTML('beforeend', responsableHtml);
                     } else {
-                        showErrors(data.errors);
+                        // Mostrar errores en el modal
+                        errorContainer.classList.remove('d-none');
+                        errorList.innerHTML = '';
+                        data.errors.forEach(error => {
+                            const li = document.createElement('li');
+                            li.textContent = error;
+                            errorList.appendChild(li);
+                        });
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorContainer.classList.remove('d-none');
+                    errorList.innerHTML = '<li>Error al guardar el responsable</li>';
                 });
-            } else {
-                showErrors(['Por favor, complete todos los campos requeridos antes de continuar.']);
-            }
-        });
+        }
 
-        resetBtn.addEventListener('click', () => {
-            currentStep = 0;
-            clearErrors();
-            updateStepper();
-        });
+        function loadResponsables() {
+            var container = document.getElementById('responsablesContainer');
+            container.innerHTML = ''; // Limpiar contenedor
 
-        initStepper();
-    });
-</script>
-
-<!-- Incluir la vista parcial del modal -->
-@await Html.PartialAsync("_AddResponsableModal", new gad_checa_gestion_cementerio.Models.ResponsableModel())
-
-@section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
+            fetch('@Url.Action("CreateResponsables", "Contratos")', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    container.innerHTML = html;
+                    // Reinicializar Select2 después de cargar los responsables
+                    initSelect2();
+                })
+                .catch(error => {
+                    console.error('Error al cargar responsables:', error);
+                });
+        }
+    </script>
 
 }

@@ -419,31 +419,112 @@ namespace gad_checa_gestion_cementerio.Controllers
             return PartialView("_CreateResponsables", responsables);
         }
         [HttpPost]
-        public IActionResult CreateResponsables(List<ResponsableModel> responsables)
+        public IActionResult CreateResponsables([FromBody] List<ResponsableModel> responsables)
         {
             if (ModelState.IsValid)
             {
-                var contrato = GetContratoFromSession();
-                contrato.contrato.Responsables = responsables;
-                SaveContratoToSession(contrato);
-                return Json(new { success = true });
+                try
+                {
+                    var contrato = GetContratoFromSession();
+                    contrato.responsables = responsables;
+                    SaveContratoToSession(contrato);
+                    return Json(new { success = true });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al guardar los responsables");
+                    return Json(new { success = false, errors = new List<string> { ex.Message } });
+                }
             }
 
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, errors });
         }
         [HttpPost]
-        public IActionResult AddResponsable(ResponsableModel responsable)
+        public async Task<IActionResult> AddResponsable(ResponsableModel responsable)
         {
-            if (ModelState.IsValid)
+            _logger.LogInformation("Datos recibidos: {@Responsable}", responsable);
+
+            if (responsable == null || responsable.Id <= 0)
             {
-                var contrato = GetContratoFromSession();
-                contrato.responsables.Add(responsable);
-                SaveContratoToSession(contrato);
-                return Json(new { success = true, responsable });
+                return Json(new { success = false, message = "Datos del responsable inválidos" });
             }
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            return Json(new { success = false, errors });
+
+            var persona = _context.Persona.AsNoTracking()
+                .FirstOrDefault(p => p.Id == responsable.Id);
+
+            if (persona == null)
+            {
+                _logger.LogWarning("Persona no encontrada con ID: {Id}", responsable.Id);
+                return Json(new { success = false, message = "Persona no encontrada" });
+            }
+
+            // Verificar si ya existe en la lista de responsables
+            var contrato = GetContratoFromSession();
+            if (contrato.responsables.Any(r => r.Id == responsable.Id))
+            {
+                return Json(new { success = false, message = "Esta persona ya está en la lista de responsables" });
+            }
+
+            // Crear el modelo de responsable con los datos de la persona
+            var responsableModel = new ResponsableModel
+            {
+                Id = persona.Id,
+                Nombres = persona.Nombres,
+                Apellidos = persona.Apellidos,
+                TipoIdentificacion = persona.TipoIdentificacion,
+                NumeroIdentificacion = persona.NumeroIdentificacion,
+                Telefono = persona.Telefono,
+                Email = persona.Email,
+                Direccion = persona.Direccion,
+                FechaInicio = DateTime.Now,
+                FechaFin = null
+            };
+
+            contrato.responsables.Add(responsableModel);
+            SaveContratoToSession(contrato);
+
+            return Json(new { success = true, contrato.responsables });
+        }
+        [HttpPost]
+        public IActionResult RemoveResponsable(int id)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    _logger.LogWarning("ID de responsable inválido");
+                    return Json(new { success = false, message = "ID de responsable inválido." });
+                }
+
+                _logger.LogInformation($"Intentando remover responsable con ID: {id}");
+
+                var contrato = GetContratoFromSession();
+                if (contrato?.responsables == null)
+                {
+                    _logger.LogWarning("No se encontró el contrato en la sesión");
+                    return Json(new { success = false, message = "No se encontró el contrato en la sesión." });
+                }
+
+                _logger.LogInformation($"Responsables en sesión: {contrato.responsables.Count}");
+
+                var responsableToRemove = contrato.responsables.FirstOrDefault(r => r.Id == id);
+                if (responsableToRemove != null)
+                {
+                    contrato.responsables.Remove(responsableToRemove);
+                    SaveContratoToSession(contrato);
+                    _logger.LogInformation($"Responsable {id} removido exitosamente");
+                    return Json(new { success = true, message = "Responsable removido exitosamente" });
+                }
+
+                _logger.LogWarning($"No se encontró el responsable con ID: {id}");
+                return Json(new { success = false, message = "Responsable no encontrado." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al remover el responsable");
+                return Json(new { success = false, message = ex.Message });
+            }
         }
         // CREAR PAGO
         [HttpGet]
