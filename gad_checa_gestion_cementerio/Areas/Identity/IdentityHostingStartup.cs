@@ -11,6 +11,7 @@ namespace gad_checa_gestion_cementerio.Areas.Identity
                 {
                     options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "auth/login");
                     options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/Index", "account/manage");
+                    options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "auth/logout");
 
                     // Deshabilitar el registro público
                     options.Conventions.AuthorizeAreaPage("Identity", "/Account/Register");
