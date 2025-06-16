@@ -144,21 +144,56 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 var contrato = _context.Contrato
                     .Include(c => c.Boveda)
+                        .ThenInclude(b => b.Piso)
+                            .ThenInclude(p => p.Bloque)
                     .Include(c => c.Difunto)
                     .Include(c => c.Responsables)
                     .Include(c => c.Cuotas)
+                    .AsNoTracking() // Evitar el seguimiento de cambios
                     .FirstOrDefault(c => c.Id == idContrato);
 
                 if (contrato != null)
                 {
+                    // Crear un nuevo modelo sin las referencias circulares
                     var contratoModelView = new CreateContratoModel
                     {
-                        contrato = _mapper.Map<ContratoModel>(contrato),
-                        difunto = _mapper.Map<DifuntoModel>(contrato.Difunto),
-                        responsables = _mapper.Map<List<ResponsableModel>>(contrato.Responsables),
+                        contrato = new ContratoModel
+                        {
+                            Id = contrato.Id,
+                            BovedaId = contrato.BovedaId,
+                            FechaInicio = contrato.FechaInicio,
+                            FechaFin = contrato.FechaFin,
+                            NumeroDeMeses = contrato.NumeroDeMeses,
+                            MontoTotal = contrato.MontoTotal,
+                            Observaciones = contrato.Observaciones,
+                            Estado = contrato.Estado,
+                            NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true)
+                        },
+                        difunto = contrato.Difunto != null ? new DifuntoModel
+                        {
+                            Id = contrato.Difunto.Id,
+                            Nombres = contrato.Difunto.Nombres,
+                            Apellidos = contrato.Difunto.Apellidos,
+                            NumeroIdentificacion = contrato.Difunto.NumeroIdentificacion,
+                            FechaFallecimiento = contrato.Difunto.FechaFallecimiento,
+                            DescuentoId = contrato.Difunto.DescuentoId
+                        } : null,
+                        responsables = contrato.Responsables?.Select(r => new ResponsableModel
+                        {
+                            Id = r.Id,
+                            Nombres = r.Nombres,
+                            Apellidos = r.Apellidos,
+                            TipoIdentificacion = r.TipoIdentificacion,
+                            NumeroIdentificacion = r.NumeroIdentificacion,
+                            Telefono = r.Telefono,
+                            Email = r.Email,
+                            Direccion = r.Direccion,
+                            FechaInicio = r.FechaInicio,
+                            FechaFin = r.FechaFin
+                        }).ToList() ?? new List<ResponsableModel>(),
                         pago = new PagoModel()
                     };
-                    contratoModelView.contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true);
+
                     SaveContratoToSession(contratoModelView);
                     return View(contratoModelView);
                 }

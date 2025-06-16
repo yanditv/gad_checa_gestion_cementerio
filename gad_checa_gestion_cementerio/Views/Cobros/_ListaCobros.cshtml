@@ -1,4 +1,5 @@
-﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
+﻿@using gad_checa_gestion_cementerio.Utils
+@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
 
 @if (Model != null && Model.Any())
 {
@@ -11,7 +12,6 @@
                     <th scope="col" class="text-uppercase small fw-bold">Monto Contrato</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Pagado</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Pendiente</th>
-
                     <th scope="col" class="text-uppercase small fw-bold">Fecha de vencimiento</th>
                     <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
                 </tr>
@@ -22,9 +22,11 @@
                     <tr>
                         <td>@item.Id</td>
                         <td>@item.NumeroSecuencial</td>
-                        <td>@item.MontoTotal.ToString("C")</td>
-                        <td class="@(item.MontoPagado == 0 ? "" : "text-success")">@item.MontoPagado.ToString("C")</td>
-                        <td class="@(item.MontoPendiente == 0 ? "" : "text-danger")">@item.MontoPendiente.ToString("C")</td>
+                        <td>@CurrencyHelper.FormatCurrency(item.MontoTotal)</td>
+                        <td class="@(item.MontoPagado == 0 ? "" : "text-success")">
+                            @CurrencyHelper.FormatCurrency(item.MontoPagado)</td>
+                        <td class="@(item.MontoPendiente == 0 ? "" : "text-danger")">
+                            @CurrencyHelper.FormatCurrency(item.MontoPendiente)</td>
                         <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
                         <td class="text-end">
                             <div class="btn-group" role="group">

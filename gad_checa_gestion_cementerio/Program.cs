@@ -16,6 +16,11 @@ DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar la cultura para usar dólares
+var cultureInfo = new System.Globalization.CultureInfo("en-US");
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
 // Configuración de Data Protection
 var dataProtectionPath = builder.Environment.IsDevelopment()
     ? Path.Combine(Directory.GetCurrentDirectory(), "data-protection-keys")
