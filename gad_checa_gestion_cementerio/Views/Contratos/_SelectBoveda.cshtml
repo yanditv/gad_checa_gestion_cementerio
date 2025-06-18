@@ -37,13 +37,13 @@
                         @foreach (var boveda in Model.Bovedas)
                         {
                             <tr>
-                                <td>@boveda.NumeroSecuecial</td>
+                                <td>@boveda.NumeroSecuencial</td>
                                 <td>@boveda.Numero</td>
                                 <td>@boveda.Piso.Bloque.Tipo</td>
                                 <td>@(boveda.Estado ? "Activa" : "Inactiva")</td>
                                 <td>
                                     <button type="button" class="btn btn-success btn-sm"
-                                        onclick="seleccionarBoveda(@boveda.Id, '@boveda.NumeroSecuecial')">
+                                        onclick="seleccionarBoveda(@boveda.Id, '@boveda.NumeroSecuencial')">
                                         Seleccionar
                                     </button>
                                 </td>

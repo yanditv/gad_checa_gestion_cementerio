@@ -107,7 +107,7 @@ public class ContratoPDF : IDocument
                     text.Span(" con número de cédula ");
                     text.Span(difunto.NumeroIdentificacion).Bold();
                     text.Span(", restos que serán depositados en la bóveda número ");
-                    text.Span(boveda?.NumeroSecuecial ?? "________________").Bold();
+                    text.Span(boveda?.NumeroSecuencial ?? "________________").Bold();
                     text.Span(" en el bloque ");
                     text.Span(boveda?.Piso?.Bloque?.Descripcion ?? "________________").Bold();
                     if (boveda?.Piso?.NumeroPiso != null)

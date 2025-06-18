@@ -424,7 +424,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .SelectMany(p => p.Bovedas.Select(b => new BovedaInfo
                     {
                         Numero = b.Numero,
-                        NumeroSecuencial = b.NumeroSecuecial,
+                        NumeroSecuencial = b.NumeroSecuencial,
                         NumeroPiso = p.NumeroPiso,
                         TieneContratoActivo = b.Contratos.Any(c =>
                             c.FechaInicio <= DateTime.Now &&

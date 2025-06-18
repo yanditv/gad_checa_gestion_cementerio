@@ -2,37 +2,110 @@
 
 @{
     ViewData["Title"] = "Gestión de Contratos";
+
+    // Obtener estadísticas de contratos para mostrar en el dashboard
+    var totalContratos = Model.Contratos?.Count() ?? 0;
+    var contratosActivos = Model.Contratos?.Count(c => c.Estado) ?? 0;
+    var contratosRenovados = Model.Contratos?.Count(c => c.EsRenovacion) ?? 0;
+
+    // Obtener información del cementerio
+    var cementerio = ViewBag.Cementerio;
 }
 
-
-<div class="card">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-        <div>
-            <h4 class="card-title mb-2">@ViewData["Title"]</h4>
-            <p class="text-muted">
-                Visualice y gestione los ingresos. Puede filtrar por un rango de fechas.
-            </p>
-        </div>
-
-        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-nowrap overflow-auto">
-            <!-- Filtros -->
-            <form asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-nowrap">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">Filtro</span>
-                    <input type="text" name="Filtro" value="@ViewBag.Filtro"
-                        placeholder="Número de contrato, nombres del difunto" class="form-control form-control-sm" />
+<div class="row mb-4">
+    <!-- Tarjeta de resumen de contratos -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-uppercase text-muted fw-semibold mb-3">Total Contratos</h6>
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary-subtle p-3 rounded me-3">
+                        <i class="fas fa-file-contract text-primary fa-2x"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">@Model.TotalResultados</h3>
+                        <small class="text-muted">Contratos registrados</small>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-success btn-sm d-flex align-items-center">
-                    <i class="ti ti-filter me-1"></i> Filtrar
-                </button>
-            </form>
-
-            <!-- Botón PDF -->
-            <a asp-action="Create" class="btn btn-primary btn-sm"> <i class="ti ti-download me-1"></i> Nuevo</a>
+            </div>
         </div>
     </div>
 
-    @await Html.PartialAsync("_ListaContratos", Model.Contratos)
-    @await Html.PartialAsync("_Paginacion", Model)
+    <!-- Tarjeta de renovaciones -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-uppercase text-muted fw-semibold mb-3">Renovaciones</h6>
+                <div class="d-flex align-items-center">
+                    <div class="bg-info-subtle p-3 rounded me-3">
+                        <i class="fas fa-sync-alt text-info fa-2x"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">@contratosRenovados</h3>
+                        <small class="text-muted">Contratos renovados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Tarjeta de configuración -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-uppercase text-muted fw-semibold mb-3">Configuración</h6>
+                <div class="d-flex flex-column">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Máx. renovaciones bóvedas:</span>
+                        <span class="badge bg-primary">@ViewBag.MaxRenovacionesBovedas</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Máx. renovaciones nichos:</span>
+                        <span class="badge bg-info">@ViewBag.MaxRenovacionesNichos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h4 class="card-title mb-1">@ViewData["Title"]</h4>
+            <p class="text-muted mb-0">
+                Gestione contratos y sus renovaciones según los límites configurados.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap">
+            <!-- Filtros -->
+            <form asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-wrap">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="Filtro" value="@ViewBag.Filtro"
+                        placeholder="Buscar por número, nombre o difunto" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-success d-flex align-items-center">
+                    <i class="fas fa-filter me-2"></i> Filtrar
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-broom me-1"></i> Limpiar
+                </a>
+            </form>
+
+            <!-- Botón Nuevo -->
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i> Nuevo Contrato
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        @await Html.PartialAsync("_ListaContratos", Model.Contratos)
+    </div>
+
+    <div class="card-footer bg-white">
+        @await Html.PartialAsync("_Paginacion", Model)
+    </div>
 </div>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using gad_checa_gestion_cementerio.Data;
 
@@ -11,9 +12,11 @@ using gad_checa_gestion_cementerio.Data;
 namespace gad_checa_gestion_cementerio.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250618030556_AgregarSoporteRenovaciones")]
+    partial class AgregarSoporteRenovaciones
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -496,9 +499,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.Property<int>("BovedaId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ContratoOrigenId")
-                        .HasColumnType("int");
-
                     b.Property<int>("DifuntoId")
                         .HasColumnType("int");
 
@@ -557,8 +557,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BovedaId");
-
-                    b.HasIndex("ContratoOrigenId");
 
                     b.HasIndex("DifuntoId")
                         .IsUnique();
@@ -1120,10 +1118,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("gad_checa_gestion_cementerio.Data.Contrato", "ContratoOrigen")
-                        .WithMany()
-                        .HasForeignKey("ContratoOrigenId");
-
                     b.HasOne("gad_checa_gestion_cementerio.Data.Difunto", "Difunto")
                         .WithOne("Contrato")
                         .HasForeignKey("gad_checa_gestion_cementerio.Data.Contrato", "DifuntoId")
@@ -1147,8 +1141,6 @@ namespace gad_checa_gestion_cementerio.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Boveda");
-
-                    b.Navigation("ContratoOrigen");
 
                     b.Navigation("Difunto");
 

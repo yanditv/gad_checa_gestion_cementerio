@@ -70,7 +70,16 @@ public class ContratoService
 
         if (isRenovacion)
         {
-            prefix = $"{GetTipoContratoPrefix(TipoContratos.RENOVACION)}-{prefix}";
+            // Para renovaciones, usamos una combinación de prefijos
+            // RNV-CTR para bóvedas y RNV-NCH para nichos
+            var basePrefix = tipo switch
+            {
+                "Bovedas" => GetTipoContratoPrefix(TipoContratos.NUEVO),
+                "Nichos" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
+                _ => GetTipoContratoPrefix(TipoContratos.NUEVO)
+            };
+
+            prefix = $"{GetTipoContratoPrefix(TipoContratos.RENOVACION)}-{basePrefix}";
         }
 
         var lastContrato = _context.Contrato

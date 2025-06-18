@@ -1,79 +1,259 @@
 ﻿@model IEnumerable<gad_checa_gestion_cementerio.Models.ContratoModel>
-<div class="table-responsive"></div>
-<table class="table table-bordered table-hover mb-0">
-    <thead class="table-secondary small">
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.NumeroSecuencial)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaInicio)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaFin)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.MontoTotal)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Difunto)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Observaciones)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody class="small">
-        @foreach (var item in Model)
+
+@inject gad_checa_gestion_cementerio.Data.ApplicationDbContext DbContext
+@inject Microsoft.AspNetCore.Identity.UserManager<gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser> UserManager
+
+@{
+    // Método para contar recursivamente todas las renovaciones en la cadena
+    int ContarRenovacionesEnCadena(int contratoId, gad_checa_gestion_cementerio.Data.ApplicationDbContext db)
+    {
+        // Obtener todos los hijos directos
+        var hijos = db.Contrato
+            .Where(c => c.ContratoOrigenId == contratoId && c.EsRenovacion)
+            .ToList();
+        
+        if (hijos.Count == 0)
+            return 0;
+            
+        int total = hijos.Count;
+        
+        // Contar recursivamente los hijos de cada hijo
+        foreach (var hijo in hijos)
         {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.NumeroSecuencial)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.FechaInicio)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.FechaFin)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.MontoTotal)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Difunto.NombresCompletos)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Observaciones)
-                </td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detalles">
-                        <i class="fas fa-info-circle"></i>
-                    </a>
-                    @* <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a> *@
-                    <a asp-action="Create" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-danger me-1"
-                        title="Renovar">
-                        <i class="ti ti-repeat"></i> Renovar Contrato
-                    </a>
-                    @if (string.IsNullOrEmpty(item.PathDocumentoFirmado))
-                    {
-                        <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-primary"
-                            title="Subir Documento">
-                            <i class="ti ti-upload"></i> Subir Documento
-                        </a>
-                    }
-                    else
-                    {
-                        <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-success"
-                            title="Ver Documento">
-                            <i class="ti ti-file-text"></i>Ver Documento
-                        </a>
-                    }
-                </td>
-            </tr>
+            total += ContarRenovacionesEnCadena(hijo.Id, db);
         }
-</table>
+        
+        return total;
+    }
+    
+    // Método para determinar si un contrato es el último en una cadena
+    bool EsUltimoContratoEnCadena(int contratoId, gad_checa_gestion_cementerio.Data.ApplicationDbContext db)
+    {
+        // Si el contrato no tiene hijos, es el último
+        bool tieneHijos = db.Contrato.Any(c => c.ContratoOrigenId == contratoId);
+        return !tieneHijos;
+    }
+    
+    // Método para encontrar el contrato raíz de una cadena
+    int EncontrarContratoRaiz(int contratoId, gad_checa_gestion_cementerio.Data.ApplicationDbContext db)
+    {
+        var contrato = db.Contrato.FirstOrDefault(c => c.Id == contratoId);
+        if (contrato == null || !contrato.EsRenovacion || !contrato.ContratoOrigenId.HasValue)
+            return contratoId; // Es el contrato raíz o no se encontró
+            
+        // Seguir la cadena hacia arriba
+        return EncontrarContratoRaiz(contrato.ContratoOrigenId.Value, db);
+    }
+    
+    // Obtener configuración del cementerio para validar renovaciones
+    var cementerio = DbContext.Cementerio.FirstOrDefault();
+    int maxRenovacionesNicho = cementerio?.VecesRenovacionNicho ?? 0;
+    int maxRenovacionesBovedas = cementerio?.VecesRenovacionBovedas ?? 0;
+}
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover mb-0">
+        <thead class="table-secondary small">
+            <tr>
+                <th>Nro. Contrato</th>
+                <th>Tipo</th>
+                <th>Bóveda/Nicho</th>
+                <th>Difunto</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="small">
+            @foreach (var item in Model)
+            {
+                // Calcular si este contrato se puede renovar
+                bool esRenovable = false;
+                string? tipoBoveda = item.Boveda?.Piso?.Bloque?.Tipo?.ToLower();
+                int maxRenovacionesPermitidas = tipoBoveda == "nichos" ? maxRenovacionesNicho : maxRenovacionesBovedas;
+                
+                // Contar renovaciones directas (contratos hijos)
+                int hijoDirectos = DbContext.Contrato.Count(c => c.ContratoOrigenId == item.Id);
+                
+                // Encontrar el contrato raíz (primer contrato en la cadena)
+                int contratoRaizId;
+                
+                if (item.EsRenovacion && item.ContratoOrigenId.HasValue) 
+                {
+                    // Si es una renovación, buscar el contrato original (la raíz)
+                    var contratoActual = item;
+                    int idTemporal = item.Id;
+                    
+                    // Buscar el contrato raíz siguiendo la cadena hacia arriba
+                    while (contratoActual.EsRenovacion && contratoActual.ContratoOrigenId.HasValue)
+                    {
+                        var contratoOrigen = DbContext.Contrato.FirstOrDefault(c => c.Id == contratoActual.ContratoOrigenId);
+                        if (contratoOrigen == null) break;
+                        
+                        idTemporal = contratoOrigen.Id;
+                        
+                        // Convertir el contrato de la base de datos a modelo
+                        var origenModel = new gad_checa_gestion_cementerio.Models.ContratoModel {
+                            Id = contratoOrigen.Id,
+                            EsRenovacion = contratoOrigen.EsRenovacion,
+                            ContratoOrigenId = contratoOrigen.ContratoOrigenId
+                        };
+                        
+                        contratoActual = origenModel;
+                    }
+                    
+                    contratoRaizId = idTemporal; // Este es nuestro contrato original (raíz)
+                }
+                else 
+                {
+                    // Si no es una renovación, ya es un contrato raíz
+                    contratoRaizId = item.Id;
+                }
+                
+                // Contar el número total de renovaciones que ha tenido el contrato raíz
+                int renovacionesTotales = ContarRenovacionesEnCadena(contratoRaizId, DbContext);
+                
+                // Para que un contrato sea renovable, TODAS estas condiciones deben cumplirse:
+                // 1. Debe haber un límite de renovaciones positivo
+                // 2. La cadena completa NO debe haber alcanzado el límite de renovaciones
+                // 3. Debe ser el último contrato en la cadena (el más reciente)
+                bool tieneLimitePositivo = maxRenovacionesPermitidas > 0;
+                bool noAlcanzaLimite = renovacionesTotales < maxRenovacionesPermitidas;
+                bool esUltimoContrato = EsUltimoContratoEnCadena(item.Id, DbContext);
+                
+                // Motivo por el que no es renovable (para mostrar el mensaje adecuado)
+                string? motivoNoRenovable = null;
+                if (!tieneLimitePositivo)
+                    motivoNoRenovable = "La configuración del cementerio no permite renovar este tipo de espacio";
+                else if (!noAlcanzaLimite)
+                    motivoNoRenovable = $"La cadena ha alcanzado el límite de {maxRenovacionesPermitidas} renovaciones";
+                else if (!esUltimoContrato)
+                    motivoNoRenovable = "No es el último contrato en la cadena";
+                
+                // Un contrato solo es renovable si cumple TODAS las condiciones
+                esRenovable = tieneLimitePositivo && noAlcanzaLimite && esUltimoContrato;
+                
+                // Determinar si es un contrato original o una renovación
+                string tipoContrato = item.EsRenovacion ? "Renovación" : "Original";
+                string claseTipoContrato = item.EsRenovacion ? "text-primary" : "text-success";
+                
+                <tr class="@(item.EsRenovacion ? "table-info" : "")">
+                    <td>
+                        <span class="fw-semibold">@item.NumeroSecuencial</span>
+                        @if (item.ContratoOrigenId.HasValue)
+                        {
+                            <span class="badge bg-info text-white ms-1" title="Este es un contrato renovado">R</span>
+                        }
+                        @if (hijoDirectos > 0)
+                        {
+                            <span class="badge bg-warning text-dark ms-1" title="Este contrato tiene renovaciones">
+                                <i class="fas fa-child"></i> @hijoDirectos
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        <span class="@claseTipoContrato">@tipoContrato</span>
+                    </td>
+                    <td>
+                        @(item.Boveda?.NumeroSecuencial ?? item.BovedaId.ToString())
+                        <small class="text-muted d-block">
+                            @(item.Boveda?.Piso?.Bloque?.Tipo ?? "No especificado")
+                        </small>
+                    </td>
+                    <td>
+                        @(item.Difunto?.NombresCompletos ?? "No registrado")
+                    </td>
+                    <td>
+                        @item.FechaInicio.ToString("dd/MM/yyyy")
+                    </td>
+                    <td>
+                        @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "No definida")
+                    </td>
+                    <td class="text-end">
+                        $@item.MontoTotal.ToString("N2")
+                    </td>
+                    <td>
+                        @if (item.Estado)
+                        {
+                            <span class="badge bg-success">Activo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Inactivo</span>
+                        }
+                    </td>
+                    <td class="text-nowrap">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detalles">
+                            <i class="fas fa-info-circle"></i>
+                        </a>
+                        
+                        <!-- Mostrar botón de renovar solo si es renovable -->
+                        @if (esRenovable)
+                        {
+                            <a asp-action="Create" asp-route-idContrato="@item.Id" class="btn btn-primary btn-sm ms-1"
+                                title="Renovar contrato">
+                                <i class="ti ti-repeat"></i> Renovar
+                            </a>
+                            
+                            @if (maxRenovacionesPermitidas > 0)
+                            {
+                                <small class="d-block text-muted mt-1">
+                                    Renovaciones: @renovacionesTotales de @maxRenovacionesPermitidas
+                                </small>
+                            }
+                        }
+                        else
+                        {
+                            <small class="text-warning d-block">
+                                @if (!tieneLimitePositivo)
+                                {
+                                    <span>No renovable - Según configuración del cementerio</span>
+                                }
+                                else if (!noAlcanzaLimite)
+                                {
+                                    <span>Límite de renovaciones alcanzado (@renovacionesTotales de @maxRenovacionesPermitidas)</span>
+                                }
+                                else if (!esUltimoContrato)
+                                {
+                                    <span>Debe renovar el contrato más reciente en la cadena</span>
+                                }
+                                else
+                                {
+                                    <span>No renovable</span>
+                                }
+                            </small>
+                        }
+                        
+                        <!-- Acciones para documentos -->
+                        @if (string.IsNullOrEmpty(item.PathDocumentoFirmado))
+                        {
+                            <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-primary ms-1"
+                                title="Subir Documento">
+                                <i class="ti ti-upload"></i> Subir
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-success ms-1"
+                                title="Ver Documento">
+                                <i class="ti ti-file-text"></i> Ver Doc
+                            </a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
+
+<!-- Mensaje si no hay contratos -->
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center my-4">
+        <i class="fas fa-info-circle fa-2x mb-3"></i>
+        <h5>No se encontraron contratos</h5>
+        <p class="mb-0">No hay contratos que coincidan con los criterios de búsqueda.</p>
+    </div>
+}

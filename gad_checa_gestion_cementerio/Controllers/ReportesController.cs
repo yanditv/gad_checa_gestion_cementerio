@@ -69,7 +69,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.NumeroSecuecial,
+                    NumeroBoveda = b.NumeroSecuencial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
@@ -206,7 +206,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             return bovedas.Select(b => new ReporteBovedasViewModel
             {
                 BovedaId = b.Id,
-                NumeroBoveda = b.NumeroSecuecial,
+                NumeroBoveda = b.NumeroSecuencial,
                 NumeroPiso = b.Piso.NumeroPiso,
                 EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                 FechaCreacionBoveda = b.FechaCreacion,
@@ -324,7 +324,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.NumeroSecuecial,
+                    NumeroBoveda = b.NumeroSecuencial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,

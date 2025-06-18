@@ -16,7 +16,7 @@ namespace gad_checa_gestion_cementerio.Models
 
         [Required]
         public int Numero { get; set; }
-        public string? NumeroSecuecial { get; set; }
+        public string? NumeroSecuencial { get; set; }
 
         [Required]
         public bool Estado { get; set; }

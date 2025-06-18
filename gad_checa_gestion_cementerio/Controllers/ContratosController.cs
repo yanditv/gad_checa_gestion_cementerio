@@ -41,7 +41,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             return JsonConvert.DeserializeObject<CreateContratoModel>(contratoJson);
         }
 
-        private void SaveContratoToSession(CreateContratoModel contrato)
+        private void SaveContratoToSession(CreateContratoModel? contrato)
         {
             if (contrato == null)
             {
@@ -59,6 +59,8 @@ namespace gad_checa_gestion_cementerio.Controllers
             .Include(c => c.Difunto)
             .Include(c => c.Cuotas)
             .Include(c => c.Boveda)
+                .ThenInclude(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
             .AsQueryable();
 
             if (!string.IsNullOrEmpty(filtro))
@@ -84,7 +86,16 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Filtro = filtro,
                 TotalResultados = total
             };
+
+            // Agregar información adicional para la vista
             ViewBag.Filtro = filtro;
+
+            // Obtener configuración del cementerio
+            var cementerio = _context.Cementerio.FirstOrDefault();
+            ViewBag.Cementerio = cementerio;
+            ViewBag.MaxRenovacionesBovedas = cementerio?.VecesRenovacionBovedas ?? 0;
+            ViewBag.MaxRenovacionesNichos = cementerio?.VecesRenovacionNicho ?? 0;
+
             return View(viewModel);
         }
 
@@ -106,6 +117,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(c => c.Responsables)
                 .Include(c => c.Cuotas)
                     .ThenInclude(c => c.Pagos)
+                .Include(c => c.ContratoOrigen) // Incluir el contrato original si existe
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (contrato == null)
@@ -131,6 +143,62 @@ namespace gad_checa_gestion_cementerio.Controllers
                 contratoModel.Boveda = _mapper.Map<BovedaModel>(contrato.Boveda);
             }
 
+            // Si es una renovación, cargar los datos del contrato original
+            if (contrato.EsRenovacion && contrato.ContratoOrigenId.HasValue && contrato.ContratoOrigen != null)
+            {
+                contratoModel.ContratoOrigen = _mapper.Map<ContratoModel>(contrato.ContratoOrigen);
+                ViewBag.ContratoOrigen = contratoModel.ContratoOrigen;
+            }            // Buscar contratos que son renovaciones de este (contratos hijos)
+            var contratosHijos = _context.Contrato
+                .Where(c => c.ContratoOrigenId == id)
+                .OrderBy(c => c.FechaInicio)
+                .ToList();
+
+            if (contratosHijos.Any())
+            {
+                ViewBag.ContratosHijos = _mapper.Map<List<ContratoModel>>(contratosHijos);
+            }
+
+            // Obtener el contrato raíz para calcular renovaciones totales
+            int contratoRaizId = contrato.Id;
+            if (contrato.EsRenovacion && contrato.ContratoOrigenId.HasValue)
+            {
+                // Encontrar el contrato raíz siguiendo la cadena hacia arriba
+                var contratoActual = contrato;
+                while (contratoActual.EsRenovacion && contratoActual.ContratoOrigenId.HasValue)
+                {
+                    var contratoAnterior = _context.Contrato
+                        .FirstOrDefault(c => c.Id == contratoActual.ContratoOrigenId);
+
+                    if (contratoAnterior == null) break;
+
+                    contratoRaizId = contratoAnterior.Id;
+                    contratoActual = contratoAnterior;
+                }
+            }
+
+            // Contar todas las renovaciones en la cadena y obtener límites
+            int totalRenovaciones = ContarRenovacionesEnCadena(contratoRaizId);
+
+            // Obtener configuración del cementerio para límites de renovaciones
+            var cementerio = _context.Cementerio.FirstOrDefault();
+            int maxRenovaciones = 0;
+
+            // Determinar el tipo de espacio y su límite máximo de renovaciones
+            string? tipoBoveda = contrato.Boveda?.Piso?.Bloque?.Tipo?.ToLower();
+            if (tipoBoveda == "nichos")
+            {
+                maxRenovaciones = cementerio?.VecesRenovacionNicho ?? 0;
+            }
+            else
+            {
+                maxRenovaciones = cementerio?.VecesRenovacionBovedas ?? 0;
+            }
+
+            // Pasar estos datos a la vista
+            ViewBag.TotalRenovacionesEnCadena = totalRenovaciones;
+            ViewBag.MaxRenovacionesPermitidas = maxRenovaciones;
+
             return View(contratoModel);
         }
 
@@ -140,7 +208,10 @@ namespace gad_checa_gestion_cementerio.Controllers
             // Limpiar la sesión anterior si existe
             HttpContext.Session.Remove("NuevoContrato");
 
-            if (idContrato > 0)
+            // Si idContrato > 0, entonces es una renovación
+            bool esRenovacion = idContrato > 0;
+
+            if (esRenovacion)
             {
                 var contrato = _context.Contrato
                     .Include(c => c.Boveda)
@@ -154,6 +225,91 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 if (contrato != null)
                 {
+                    // Verificar límites de renovación
+                    var cementerio = _context.Cementerio.FirstOrDefault();
+                    if (cementerio == null)
+                    {
+                        TempData["Error"] = "No se encontró información del cementerio para verificar renovaciones.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    // Obtener el tipo de bóveda (nichos o bovedas)
+                    string? tipoBoveda = null;
+                    if (contrato.Boveda?.Piso?.Bloque != null)
+                    {
+                        tipoBoveda = contrato.Boveda.Piso.Bloque.Tipo;
+                    }
+
+                    // Contar cuántas veces se ha renovado este contrato (hijos generados directamente)
+                    int vecesRenovado = _context.Contrato
+                        .Count(c => c.ContratoOrigenId == contrato.Id);
+
+                    // Determinar máximo de renovaciones según el tipo
+                    int maxRenovaciones;
+                    if (tipoBoveda?.ToLower() == "nichos")
+                    {
+                        maxRenovaciones = cementerio.VecesRenovacionNicho;
+                    }
+                    else // Por defecto consideramos que es una bóveda
+                    {
+                        maxRenovaciones = cementerio.VecesRenovacionBovedas;
+                    }
+
+                    // Si el máximo de renovaciones es 0, no se permite ninguna renovación
+                    if (maxRenovaciones == 0)
+                    {
+                        TempData["Error"] = $"No se permite renovar este tipo de contrato según la configuración del cementerio.";
+                        return RedirectToAction(nameof(Details), new { id = idContrato });
+                    }
+
+                    // Encontrar el contrato raíz (primer contrato en la cadena)
+                    int contratoRaizId = contrato.Id;
+
+                    // Si es una renovación, buscar el contrato raíz original
+                    if (contrato.EsRenovacion && contrato.ContratoOrigenId.HasValue)
+                    {
+                        // Buscar el contrato raíz siguiendo la cadena hasta el inicio
+                        var contratoActual = contrato;
+
+                        // Seguir la cadena hacia arriba hasta encontrar el contrato raíz
+                        while (contratoActual.EsRenovacion && contratoActual.ContratoOrigenId.HasValue)
+                        {
+                            var contratoAnterior = _context.Contrato
+                                .FirstOrDefault(c => c.Id == contratoActual.ContratoOrigenId);
+
+                            if (contratoAnterior == null) break;
+
+                            contratoRaizId = contratoAnterior.Id;
+                            contratoActual = contratoAnterior;
+                        }
+                    }
+
+                    // Encontrar el último contrato en la cadena de renovaciones
+                    var ultimoContrato = EncontrarUltimoContratoEnCadena(contratoRaizId);
+
+                    // Verificar si este contrato es el último de la cadena
+                    if (ultimoContrato != null && ultimoContrato.Id != contrato.Id)
+                    {
+                        // Si no es el último, redirigir al usuario a los detalles del último contrato
+                        TempData["Error"] = $"Solo se puede renovar el contrato más reciente en la cadena de renovaciones. " +
+                            $"Debe renovar el contrato {ultimoContrato.NumeroSecuencial} en su lugar.";
+                        return RedirectToAction(nameof(Details), new { id = ultimoContrato.Id });
+                    }
+
+                    // IMPORTANTE: Verificar el número total de renovaciones en toda la cadena
+                    int totalRenovacionesEnCadena = ContarRenovacionesEnCadena(contratoRaizId);
+
+                    // Verificar si ya se alcanzó el límite total de renovaciones permitidas para esta cadena
+                    if (totalRenovacionesEnCadena >= maxRenovaciones)
+                    {
+                        string tipoEspacio = tipoBoveda?.ToLower() == "nichos" ? "nicho" : "bóveda";
+                        TempData["Error"] = $"No se puede renovar este {tipoEspacio}. La cadena completa ya ha alcanzado el límite máximo de {maxRenovaciones} renovaciones.";
+                        return RedirectToAction(nameof(Details), new { id = idContrato });
+                    }
+
+                    // En una renovación, la fecha de inicio debe ser justo después de la fecha fin del contrato anterior
+                    DateTime nuevaFechaInicio = contrato.FechaFin.AddDays(1); // La fecha fin del contrato anterior será la inicial del nuevo
+
                     // Crear un nuevo modelo sin las referencias circulares
                     var contratoModelView = new CreateContratoModel
                     {
@@ -161,13 +317,15 @@ namespace gad_checa_gestion_cementerio.Controllers
                         {
                             Id = contrato.Id,
                             BovedaId = contrato.BovedaId,
-                            FechaInicio = contrato.FechaInicio,
-                            FechaFin = contrato.FechaFin,
+                            FechaInicio = nuevaFechaInicio, // Usar la nueva fecha de inicio
+                            FechaFin = nuevaFechaInicio.AddYears(contrato.NumeroDeMeses), // Calcular nueva fecha fin
                             NumeroDeMeses = contrato.NumeroDeMeses,
                             MontoTotal = contrato.MontoTotal,
-                            Observaciones = contrato.Observaciones,
+                            Observaciones = $"Renovación del contrato {contrato.NumeroSecuencial} de fecha {contrato.FechaInicio:dd/MM/yyyy} al {contrato.FechaFin:dd/MM/yyyy}",
                             Estado = contrato.Estado,
-                            NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true)
+                            NumeroSecuencial = _contratoService.getNumeroContrato(contrato.BovedaId, isRenovacion: true),
+                            EsRenovacion = true, // Marcar como renovación
+                            ContratoOrigenId = contrato.Id // Establecer referencia al contrato original
                         },
                         difunto = contrato.Difunto != null ? new DifuntoModel
                         {
@@ -193,6 +351,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                         }).ToList() ?? new List<ResponsableModel>(),
                         pago = new PagoModel()
                     };
+
+                    // Añadir información sobre renovaciones a ViewBag
+                    ViewBag.VecesRenovado = vecesRenovado + 1;
+                    ViewBag.MaxRenovaciones = maxRenovaciones;
 
                     SaveContratoToSession(contratoModelView);
                     return View(contratoModelView);
@@ -250,6 +412,112 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (viewModel.pago == null || !viewModel.pago.Cuotas.Any())
             {
                 return Json(new { success = false, errors = new List<string> { "Debe realizar al menos un pago." } });
+            }            // Validar si se puede renovar según la configuración del cementerio
+            if (viewModel.contrato.EsRenovacion && viewModel.contrato.ContratoOrigenId.HasValue)
+            {
+                var cementerio = _context.Cementerio.FirstOrDefault();
+                if (cementerio == null)
+                {
+                    return Json(new { success = false, errors = new List<string> { "No se encontró información del cementerio para verificar renovaciones." } });
+                }
+
+                // Obtener el contrato padre inmediato
+                var contratoPadre = _context.Contrato
+                    .Include(c => c.Boveda)
+                        .ThenInclude(b => b.Piso)
+                            .ThenInclude(p => p.Bloque)
+                    .FirstOrDefault(c => c.Id == viewModel.contrato.ContratoOrigenId);
+
+                if (contratoPadre == null)
+                {
+                    return Json(new { success = false, errors = new List<string> { "No se pudo encontrar el contrato padre." } });
+                }
+
+                // Encontrar el contrato raíz (primer contrato en la cadena)
+                int contratoRaizId = contratoPadre.Id;
+                var contratoActual = contratoPadre;
+
+                // Seguir la cadena hacia arriba hasta encontrar el contrato raíz
+                while (contratoActual.EsRenovacion && contratoActual.ContratoOrigenId.HasValue)
+                {
+                    var contratoAnterior = _context.Contrato
+                        .FirstOrDefault(c => c.Id == contratoActual.ContratoOrigenId);
+
+                    if (contratoAnterior == null) break;
+
+                    contratoRaizId = contratoAnterior.Id;
+                    contratoActual = contratoAnterior;
+                }
+
+                // El contrato raíz es el contrato original de toda la cadena
+                var contratoOriginal = _context.Contrato
+                    .Include(c => c.Boveda)
+                        .ThenInclude(b => b.Piso)
+                            .ThenInclude(p => p.Bloque)
+                    .FirstOrDefault(c => c.Id == contratoRaizId);
+
+                if (contratoOriginal == null)
+                {
+                    return Json(new { success = false, errors = new List<string> { "No se pudo encontrar el contrato original de la cadena." } });
+                }
+
+                // Obtener el tipo de bóveda (nichos o bovedas)
+                string? tipoBoveda = contratoOriginal.Boveda?.Piso?.Bloque?.Tipo;
+
+                // Contar cuántas veces se ha renovado en toda la cadena
+                int renovacionesTotales = ContarRenovacionesEnCadena(contratoRaizId);
+
+                // Determinar máximo de renovaciones según el tipo
+                int maxRenovaciones = 0; // Por defecto 0 si no se puede determinar el tipo
+                if (tipoBoveda?.ToLower() == "nichos")
+                {
+                    maxRenovaciones = cementerio.VecesRenovacionNicho;
+                }
+                else if (tipoBoveda?.ToLower() == "bovedas")
+                {
+                    maxRenovaciones = cementerio.VecesRenovacionBovedas;
+                }
+
+                // Verificar si se alcanzó el límite de renovaciones total en la cadena
+                if (renovacionesTotales >= maxRenovaciones)
+                {
+                    string mensaje = tipoBoveda?.ToLower() == "nichos" ?
+                        $"No se puede renovar este nicho. La cadena ha alcanzado el límite máximo de {maxRenovaciones} renovaciones." :
+                        $"No se puede renovar esta bóveda. La cadena ha alcanzado el límite máximo de {maxRenovaciones} renovaciones.";
+
+                    return Json(new { success = false, errors = new List<string> { mensaje } });
+                }
+
+                // Encontrar el último contrato en la cadena de renovaciones
+                var ultimoContrato = EncontrarUltimoContratoEnCadena(contratoRaizId);
+
+                // Verificar si este contrato es el último de la cadena
+                if (ultimoContrato != null && ultimoContrato.Id != contratoPadre.Id)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        errors = new List<string> {
+                            $"Solo se puede renovar el contrato más reciente en la cadena de renovaciones. " +
+                            $"Debe renovar el contrato {ultimoContrato.NumeroSecuencial} en su lugar."
+                        }
+                    });
+                }
+
+                // Verificar si el contrato padre ya tiene hijos (no puede tener más de 1 renovación directa)
+                bool padreYaTieneHijos = _context.Contrato
+                    .Any(c => c.ContratoOrigenId == contratoPadre.Id && c.Id != viewModel.contrato.Id);
+
+                if (padreYaTieneHijos)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        errors = new List<string> {
+                        "Este contrato ya ha sido renovado anteriormente. No se puede renovar más de una vez el mismo contrato."
+                    }
+                    });
+                }
             }
 
             var strategy = _context.Database.CreateExecutionStrategy();
@@ -268,14 +536,29 @@ namespace gad_checa_gestion_cementerio.Controllers
                         var responsables = new List<Responsable>();
                         foreach (var persona in viewModel.responsables)
                         {
-                            var responsable = _mapper.Map<Responsable>(persona);
-                            responsable.Id = 0; // Resetear el ID para que sea generado automáticamente
-                            responsable.FechaInicio = now;
-                            responsable.FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
-                            responsable.FechaCreacion = now;
-                            responsable.UsuarioCreadorId = userId;
-                            _context.Responsable.Add(responsable);
-                            responsables.Add(responsable);
+                            // Verifica si ya existe un responsable para esta persona
+                            var responsableExistente = _context.Responsable
+                                .FirstOrDefault(r => r.NumeroIdentificacion == persona.NumeroIdentificacion);
+
+                            if (responsableExistente != null)
+                            {
+                                // Si existe, actualiza sus datos si es necesario
+                                responsableExistente.FechaInicio = now;
+                                responsableExistente.FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
+                                responsables.Add(responsableExistente);
+                            }
+                            else
+                            {
+                                // Si no existe, crea uno nuevo
+                                var responsable = _mapper.Map<Responsable>(persona);
+                                responsable.Id = 0;
+                                responsable.FechaInicio = now;
+                                responsable.FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
+                                responsable.FechaCreacion = now;
+                                responsable.UsuarioCreadorId = userId;
+                                _context.Responsable.Add(responsable);
+                                responsables.Add(responsable);
+                            }
                         }
 
                         // Crear el contrato
@@ -293,7 +576,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                             UsuarioActualizadorId = userId,
                             Responsables = responsables,
                             FechaActualizacion = now,
-                            Estado = true
+                            Estado = true,
+                            EsRenovacion = viewModel.contrato.EsRenovacion, // Incluir información sobre si es renovación
+                            ContratoOrigenId = viewModel.contrato.ContratoOrigenId // Establecer referencia al contrato original
                         };
 
                         // Crear el difunto
@@ -333,7 +618,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                         transaction.Commit();
 
                         // Limpiar la sesión después de guardar exitosamente
-                        SaveContratoToSession(null);
+                        HttpContext.Session.Remove("NuevoContrato");
 
                         return Json(new { success = true, contratoId = contrato.Id });
                     }
@@ -454,6 +739,11 @@ namespace gad_checa_gestion_cementerio.Controllers
         public IActionResult GenerarContratoPDF(CreateContratoModel model)
         {
             var cementerio = _context.Cementerio.FirstOrDefault();
+            if (cementerio == null)
+            {
+                TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
+                return RedirectToAction(nameof(Index));
+            }
             var documento = new ContratoPDF(model, cementerio);
             var pdfBytes = documento.GeneratePdf();
 
@@ -463,9 +753,25 @@ namespace gad_checa_gestion_cementerio.Controllers
         public IActionResult VerContratoPDF()
         {
             var cementerio = _context.Cementerio.FirstOrDefault();
+            if (cementerio == null)
+            {
+                TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var modelo = GetContratoFromSession(); // o pásalo por parámetro
-            var boveda = _context.Boveda.Include(b => b.Piso.Bloque).FirstOrDefault(b => b.Id == modelo.contrato.BovedaId);
-            modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
+            if (modelo?.contrato == null || modelo.contrato.BovedaId <= 0)
+            {
+                TempData["Error"] = "No hay información de contrato para visualizar.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var boveda = _context.Boveda.Include(b => b.Piso).ThenInclude(p => p.Bloque)
+                .FirstOrDefault(b => b.Id == modelo.contrato.BovedaId);
+            if (boveda != null)
+            {
+                modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
+            }
             var documento = new ContratoPDF(modelo, cementerio);
             var pdfBytes = documento.GeneratePdf();
 
@@ -549,7 +855,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             return Json(new { success = false, errors });
         }
         [HttpPost]
-        public async Task<IActionResult> AddResponsable(ResponsableModel responsable)
+        public IActionResult AddResponsable(ResponsableModel responsable)
         {
             _logger.LogInformation("Datos recibidos: {@Responsable}", responsable);
 
@@ -722,6 +1028,26 @@ namespace gad_checa_gestion_cementerio.Controllers
             contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
             contrato_model.contrato.Difunto = new DifuntoModel();
             contrato_model.contrato.MontoTotal = tarifa;
+
+            // Asegurarse de que la propiedad EsRenovacion se mantenga
+            // Esto es especialmente importante si estamos renovando un contrato existente
+
+            // Si tenemos información de renovación en la sesión, mantenerla
+            if (contrato_model.contrato.EsRenovacion && contrato_model.contrato.ContratoOrigenId.HasValue)
+            {
+                ViewBag.EsRenovacion = true;
+                ViewBag.ContratoOrigenId = contrato_model.contrato.ContratoOrigenId;
+
+                // Obtener información del contrato original para mostrarla
+                var contratoOriginal = _context.Contrato
+                    .FirstOrDefault(c => c.Id == contrato_model.contrato.ContratoOrigenId);
+
+                if (contratoOriginal != null)
+                {
+                    ViewBag.ContratoOriginalNumero = contratoOriginal.NumeroSecuencial;
+                }
+            }
+
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
             return PartialView("_CreateContrato", contrato_model.contrato);
         }
@@ -731,11 +1057,32 @@ namespace gad_checa_gestion_cementerio.Controllers
             // Lógica para obtener el modelo actualizado según el tipo
             var contratoSession = GetContratoFromSession();
             var contrato_model = contratoSession.contrato;
-            contrato_model.NumeroSecuencial = _contratoService.getNumeroContrato(idBoveda);
+
+            // Verificar si es una renovación basándose en la EsRenovacion del modelo
+            bool isRenovacion = contrato_model.EsRenovacion;
+
+            // Información adicional a devolver en el Json
+            var responseData = new Dictionary<string, object>();
+
+            // Generar el número secuencial indicando si es renovación
+            contrato_model.NumeroSecuencial = _contratoService.getNumeroContrato(idBoveda, isRenovacion);
+            responseData["numeroSecuencial"] = contrato_model.NumeroSecuencial;
+
+            // Si es una renovación, incluir información sobre el contrato original
+            if (isRenovacion && contrato_model.ContratoOrigenId.HasValue)
+            {
+                var contratoOriginal = _context.Contrato
+                    .FirstOrDefault(c => c.Id == contrato_model.ContratoOrigenId);
+
+                if (contratoOriginal != null)
+                {
+                    responseData["contratoOriginalNumero"] = contratoOriginal.NumeroSecuencial;
+                    responseData["contratoOriginalId"] = contratoOriginal.Id;
+                }
+            }
+
             SaveContratoToSession(contratoSession);
-            //return Json(new { success = true, contrato = contrato_model });
-            return Json(new { success = true, numeroSecuencial = contrato_model.NumeroSecuencial });
-            // return View("Create", contratoSession); // O puedes retornar Json(model) si prefieres trabajar con JS puro
+            return Json(new { success = true, data = responseData });
         }
 
         [HttpPost]
@@ -816,25 +1163,27 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 int pageSize = 10;
                 var query = _context.Boveda
-                    .Include(b => b.Piso.Bloque)
+                    .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
                     .Where(b => b.Estado)
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(filtro))
                 {
-                    query = query.Where(b => b.NumeroSecuecial.Contains(filtro) || b.Numero.ToString().Contains(filtro));
+                    query = query.Where(b => (b.NumeroSecuencial != null && b.NumeroSecuencial.Contains(filtro))
+                        || b.Numero.ToString().Contains(filtro));
                 }
 
                 if (!string.IsNullOrEmpty(tipo))
                 {
-                    query = query.Where(b => b.Piso.Bloque.Tipo == tipo);
+                    query = query.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == tipo);
                 }
 
                 int total = query.Count();
 
                 var bovedas = query
-                    .OrderByDescending(b => b.NumeroSecuecial != null)
-                    .ThenBy(b => b.NumeroSecuecial)
+                    .OrderByDescending(b => b.NumeroSecuencial != null)
+                    .ThenBy(b => b.NumeroSecuencial)
                     .Skip((pagina - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
@@ -846,9 +1195,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                     bovedas = listaBovedas.Select(b => new
                     {
                         id = b.Id,
-                        numeroSecuecial = b.NumeroSecuecial,
+                        numeroSecuencial = b.NumeroSecuencial,
                         numero = b.Numero,
-                        tipo = b.Piso.Bloque.Tipo,
+                        tipo = b.Piso?.Bloque?.Tipo ?? "No especificado",
                         estado = b.Estado ? "Activa" : "Inactiva"
                     }),
                     paginaActual = pagina,
@@ -1101,6 +1450,71 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, errors });
+        }
+
+        // Método para contar recursivamente todas las renovaciones en la cadena
+        private int ContarRenovacionesEnCadena(int contratoId)
+        {
+            // Obtener todos los hijos directos
+            var hijos = _context.Contrato
+                .Where(c => c.ContratoOrigenId == contratoId && c.EsRenovacion)
+                .ToList();
+
+            if (hijos.Count == 0)
+                return 0;
+
+            int total = hijos.Count;
+
+            // Contar recursivamente los hijos de cada hijo
+            foreach (var hijo in hijos)
+            {
+                total += ContarRenovacionesEnCadena(hijo.Id);
+            }
+
+            return total;
+        }
+
+        // Método para encontrar el último contrato en una cadena de renovaciones
+        private Contrato? EncontrarUltimoContratoEnCadena(int contratoRaizId)
+        {
+            // Obtener todos los contratos relacionados con este contrato raíz
+            var contratosRelacionados = _context.Contrato
+                .Include(c => c.Boveda)
+                .Where(c => c.Id == contratoRaizId ||
+                            c.ContratoOrigenId == contratoRaizId ||
+                            _context.Contrato.Any(pc => pc.Id == c.ContratoOrigenId &&
+                                                       (pc.Id == contratoRaizId || pc.ContratoOrigenId == contratoRaizId)))
+                .ToList();
+
+            // Construir un diccionario de padres a hijos
+            var hijosPorPadre = new Dictionary<int, List<Contrato>>();
+
+            foreach (var c in contratosRelacionados)
+            {
+                if (c.ContratoOrigenId.HasValue)
+                {
+                    if (!hijosPorPadre.ContainsKey(c.ContratoOrigenId.Value))
+                    {
+                        hijosPorPadre[c.ContratoOrigenId.Value] = new List<Contrato>();
+                    }
+
+                    hijosPorPadre[c.ContratoOrigenId.Value].Add(c);
+                }
+            }
+
+            // Empezamos con el contrato raíz
+            var contratoActual = contratosRelacionados.FirstOrDefault(c => c.Id == contratoRaizId);
+
+            if (contratoActual == null)
+                return null;
+
+            // Mientras el contrato actual tenga hijos, avanzamos al hijo
+            while (hijosPorPadre.ContainsKey(contratoActual.Id) && hijosPorPadre[contratoActual.Id].Any())
+            {
+                contratoActual = hijosPorPadre[contratoActual.Id].OrderByDescending(c => c.FechaCreacion).First();
+            }
+
+            return contratoActual;
         }
     }
 }

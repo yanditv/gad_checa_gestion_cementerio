@@ -53,12 +53,20 @@ public class ContratoModel
     // Nuevo campo para el número secuencial
     [Required]
     [StringLength(50)]
-    public string NumeroSecuencial { get; set; }
+    public string? NumeroSecuencial { get; set; } = string.Empty;
 
     // Campo para indicar si es renovación
     [Required]
     public bool EsRenovacion { get; set; }
 
+    // Contador de veces renovado
+    public int VecesRenovado { get; set; }
+
+    // ID del contrato original del que se deriva esta renovación
+    public int? ContratoOrigenId { get; set; }
+
+    // Referencia al contrato original (para mostrar información)
+    public ContratoModel? ContratoOrigen { get; set; }
 
     public string? PathDocumentoFirmado { get; set; }
     //Datos para reportes

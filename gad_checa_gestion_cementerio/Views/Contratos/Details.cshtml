@@ -91,7 +91,71 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-sync text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Tipo de Contrato</small>
+                                        <span class="fw-bold">@(Model.EsRenovacion ? "Renovación" : "Original")</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        @if (Model.EsRenovacion && Model.ContratoOrigenId.HasValue && ViewBag.ContratoOrigen != null)
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-info mb-0">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <span class="fw-bold">Este contrato es una renovación</span>
+                                    </div>
+                                    <p class="mb-1">Contrato original: <span class="fw-bold">@ViewBag.ContratoOrigen.NumeroSecuencial</span></p>
+                                    <p class="mb-1">Fecha de inicio original: <span class="fw-bold">@ViewBag.ContratoOrigen.FechaInicio.ToString("dd/MM/yyyy")</span></p>
+                                    <p class="mb-0">Fecha de finalización original: <span class="fw-bold">@(ViewBag.ContratoOrigen.FechaFin?.ToString("dd/MM/yyyy") ?? "No definida")</span></p>
+                                    <a asp-action="Details" asp-route-id="@Model.ContratoOrigenId" class="btn btn-outline-info btn-sm mt-2">
+                                        <i class="fas fa-arrow-left me-1"></i> Ver contrato original
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                        
+                        @if (ViewBag.ContratosHijos != null && ViewBag.ContratosHijos.Count > 0)
+                        {
+                            <div class="col-12 mt-3">
+                                <div class="alert alert-warning mb-0">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <i class="fas fa-code-branch me-2"></i>
+                                            <span class="fw-bold">Este contrato ha sido renovado</span>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-primary">
+                                                @(ViewBag.TotalRenovacionesEnCadena ?? ViewBag.ContratosHijos.Count) de @ViewBag.MaxRenovacionesPermitidas
+                                                renovaciones
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="mb-2">Este contrato tiene @ViewBag.ContratosHijos.Count renovación(es) directa(s):</p>
+                                    <ul class="mb-0">
+                                    @foreach (var hijo in ViewBag.ContratosHijos)
+                                    {
+                                        <li class="mb-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="fw-bold">@hijo.NumeroSecuencial</span> - 
+                                                    @hijo.FechaInicio.ToString("dd/MM/yyyy") al @(hijo.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha fin")
+                                                </div>
+                                                <a asp-action="Details" asp-route-id="@hijo.Id" class="btn btn-outline-info btn-sm ms-1">
+                                                    <i class="fas fa-arrow-right me-1"></i> Ver
+                                                </a>
+                                            </div>
+                                        </li>
+                                    }
+                                    </ul>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

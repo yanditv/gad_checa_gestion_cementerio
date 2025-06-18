@@ -71,7 +71,7 @@
                                     <i class="fas fa-sort-numeric-up text-primary me-2"></i>
                                     <div>
                                         <small class="text-muted d-block">Número Secuencial</small>
-                                        <span class="fw-bold">@Model.NumeroSecuecial</span>
+                                        <span class="fw-bold">@Model.NumeroSecuencial</span>
                                     </div>
                                 </div>
                             </div>
@@ -231,15 +231,16 @@
                                     <tr>
                                         <td>@contrato.NumeroSecuencial</td>
                                         <td>@contrato.FechaInicio.ToString("dd/MM/yyyy")</td>
-                                        <td>@(contrato.FechaFin == null ? "Indefinido" : contrato.FechaFin.ToString("dd/MM/yyyy"))</td>
-                                        <td>
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check-circle me-1"></i>Activo
-                                            </span>
-                                        </td>
-                                        <td>$@contrato.MontoTotal.ToString("N2")</td>
-                                    </tr>
-                                }
+                                        <td>@(contrato.FechaFin == null ? "Indefinido" :
+                                                                                contrato.FechaFin.ToString("dd/MM/yyyy"))</td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Activo
+                                    </span>
+                                </td>
+                                <td>$@contrato.MontoTotal.ToString("N2")</td>
+                            </tr>
+                                                        }
                             </tbody>
                         </table>
                     </div>

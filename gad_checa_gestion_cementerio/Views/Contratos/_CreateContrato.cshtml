@@ -3,6 +3,23 @@
     ViewData["Title"] = "Crear Contrato";
 }
 
+@if (Model.EsRenovacion && Model.ContratoOrigenId.HasValue)
+{
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3 fs-5"></i>
+            <div>
+                <h5 class="mb-1">Este es un contrato de renovación</h5>
+                <p class="mb-0">Este contrato renueva el contrato original con ID: @Model.ContratoOrigenId</p>
+                @if (ViewBag.ContratoOriginalNumero != null)
+                {
+                    <p class="mb-0">Número de contrato original: <strong>@ViewBag.ContratoOriginalNumero</strong></p>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 <div class="container mt-5">
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
@@ -23,15 +40,20 @@
                     <div class="col-md-6 mb-3">
                         <label asp-for="BovedaId" class="form-label">Bóveda</label>
                         <input asp-for="BovedaId" hidden readonly class="form-control" />
-                        <input asp-for="Boveda.NumeroSecuecial" hidden readonly class="form-control" />
+                        <input asp-for="Boveda.NumeroSecuencial" hidden readonly class="form-control" />
+
+                        <!-- Campos ocultos para renovación -->
+                        <input asp-for="EsRenovacion" type="hidden" />
+                        <input asp-for="ContratoOrigenId" type="hidden" />
+
                         <div class="input-group">
 
                             <input id="boveda_seleccionada"
-                                value="Bóveda #@(Model.Boveda?.NumeroSecuecial ?? Model.BovedaId.ToString())" readonly
+                                value="Bóveda #@(Model.Boveda?.NumeroSecuencial ?? Model.BovedaId.ToString())" readonly
                                 class="form-control" />
                             <button type="button" class="btn btn-outline-secondary" onclick="abrirModalBovedas('')"
                                 @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ?
-                                                                "disabled" : "") >
+                                                                "disabled" : "")>
                                 <i class="bi bi-search"></i> Buscar
                             </button>
                         </div>
@@ -69,6 +91,15 @@
                     <textarea asp-for="Observaciones" rows="3" class="form-control"></textarea>
                     <span asp-validation-for="Observaciones" class="text-danger"></span>
                 </div>
+
+                @if (Model.EsRenovacion && Model.ContratoOrigenId.HasValue)
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Este contrato es una renovación</strong>
+                        <p class="mb-0">La renovación está vinculada al contrato original ID: @Model.ContratoOrigenId</p>
+                    </div>
+                }
             </form>
         </div>
     </div>
@@ -128,12 +159,12 @@
             const row = document.createElement("tr");
 
             row.innerHTML = `
-            <td>${boveda.numeroSecuecial}</td>
+            <td>${boveda.numeroSecuencial}</td>
             <td>${boveda.numero}</td>
             <td>${boveda.estado}</td>
             <td>
                 <button type="button" class="btn btn-success btn-sm"
-                    onclick="seleccionarBoveda(${boveda.id}, '${boveda.numeroSecuecial}')">
+                    onclick="seleccionarBoveda(${boveda.id}, '${boveda.numeroSecuencial}')">
                     Seleccionar
                 </button>
             </td>
@@ -191,14 +222,14 @@
                 data.bovedas.forEach(b => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${b.numeroSecuecial == null ? "S/N" : b.numeroSecuecial}</td>
+                        <td>${b.numeroSecuencial == null ? "S/N" : b.numeroSecuencial}</td>
                         
                         <td>${b.numero}</td>
                         <td>${b.tipo}</td>
                         <td>${b.estado}</td>
                         <td>
                             <button type="button" class="btn btn-success btn-sm"
-                                    onclick="seleccionarBoveda(${b.id}, '${b.numeroSecuecial}')">
+                                    onclick="seleccionarBoveda(${b.id}, '${b.numeroSecuencial}')">
                                 Seleccionar
                             </button>
                         </td>
@@ -249,17 +280,48 @@
         const inputBovedaId = document.getElementById('BovedaId');
         const inputBovedaSeleccionada = document.getElementById('boveda_seleccionada');
         const inputNumeroSecuencial = document.querySelector('input[name="NumeroSecuencial"]')
-        const numeroSecuencialSpan = document.querySelector('input[name="Boveda.NumeroSecuecial"]');
+        const numeroSecuencialSpan = document.querySelector('input[name="Boveda.NumeroSecuencial"]');
+        const inputEsRenovacion = document.getElementById('EsRenovacion');
+        const inputContratoOrigenId = document.getElementById('ContratoOrigenId');
+
         if (inputBovedaId) {
             inputBovedaId.value = id;
             numeroSecuencialSpan.value = numeroSecuencial;
+
+            // Preservar los valores de renovación antes de la solicitud
+            const esRenovacion = inputEsRenovacion.value === 'True' || inputEsRenovacion.value === 'true';
+            const contratoOrigenId = inputContratoOrigenId.value;
+
             fetch('@Url.Action("RecargarContratoByTipo", "Contratos")?idBoveda=' + id)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         // Actualiza el campo del secuencial en el formulario
-                        inputNumeroSecuencial.value = data.numeroSecuencial;
-                        document.getElementById("numero-secuencial-contrato").textContent = data.numeroSecuencial;
+                        inputNumeroSecuencial.value = data.data.numeroSecuencial;
+
+                        // Si hay un elemento para mostrar el número secuencial, actualizarlo también
+                        const numeroSecuencialElement = document.getElementById("numero-secuencial-contrato");
+                        if (numeroSecuencialElement) {
+                            numeroSecuencialElement.textContent = data.data.numeroSecuencial;
+                        }
+
+                        // Restaurar los valores de renovación si es necesario
+                        if (esRenovacion) {
+                            inputEsRenovacion.value = 'true';
+                        }
+
+                        if (contratoOrigenId) {
+                            inputContratoOrigenId.value = contratoOrigenId;
+                        }
+
+                        // Actualizar la información del contrato original si está disponible
+                        if (data.data.contratoOriginalNumero) {
+                            // Intentar actualizar la información en la UI si existe un contenedor para ello
+                            const infoContratoOriginal = document.querySelector('.info-contrato-original');
+                            if (infoContratoOriginal) {
+                                infoContratoOriginal.textContent = data.data.contratoOriginalNumero;
+                            }
+                        }
                     }
                 })
                 .catch(error => {
@@ -284,3 +346,4 @@
         }
     }
 </script>
+

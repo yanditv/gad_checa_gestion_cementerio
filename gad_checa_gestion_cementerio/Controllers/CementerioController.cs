@@ -359,7 +359,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return NotFound();
 
             // Actualiza campos
-            boveda.NumeroSecuecial = model.NumeroSecuecial;
+            boveda.NumeroSecuencial = model.NumeroSecuencial;
             boveda.FechaActualizacion = DateTime.Now;
             boveda.UsuarioActualizador = await _userManager.GetUserAsync(User);
             boveda.PropietarioId = model.PropietarioId;

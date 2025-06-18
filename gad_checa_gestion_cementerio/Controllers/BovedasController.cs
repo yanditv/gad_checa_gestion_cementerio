@@ -47,7 +47,7 @@ namespace WebApp.Controllers
             {
                 query = query.Where(b =>
                     b.Numero.ToString().Contains(filtro) ||
-                    b.NumeroSecuecial.Contains(filtro) ||
+                    b.NumeroSecuencial.Contains(filtro) ||
                     b.Piso.Bloque.Descripcion.Contains(filtro) ||
                     (b.Propietario != null &&
                         (b.Propietario.Nombres + " " + b.Propietario.Apellidos).Contains(filtro) ||
@@ -107,7 +107,7 @@ namespace WebApp.Controllers
                 {
                     Id = b.Id,
                     Numero = b.Numero,
-                    NumeroSecuecial = b.NumeroSecuecial,
+                    NumeroSecuencial = b.NumeroSecuencial,
                     Estado = b.Contratos.Any(c =>
                         c.FechaInicio <= DateTime.Now &&
                         (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
@@ -254,7 +254,7 @@ namespace WebApp.Controllers
                 }
 
                 // Actualizar solo los campos necesarios
-                bovedaOriginal.NumeroSecuecial = boveda.NumeroSecuecial;
+                bovedaOriginal.NumeroSecuencial = boveda.NumeroSecuencial;
                 bovedaOriginal.PropietarioId = boveda.PropietarioId;
                 bovedaOriginal.FechaActualizacion = DateTime.Now;
                 bovedaOriginal.UsuarioActualizador = user;

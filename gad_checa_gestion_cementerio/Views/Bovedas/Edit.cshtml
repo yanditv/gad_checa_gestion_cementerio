@@ -65,12 +65,12 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label asp-for="NumeroSecuecial" class="form-label">Número Secuencial *</label>
+                                    <label asp-for="NumeroSecuencial" class="form-label">Número Secuencial *</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                                        <input asp-for="NumeroSecuecial" class="form-control" required />
+                                        <input asp-for="NumeroSecuencial" class="form-control" required />
                                     </div>
-                                    <span asp-validation-for="NumeroSecuecial" class="text-danger"></span>
+                                    <span asp-validation-for="NumeroSecuencial" class="text-danger"></span>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Precio</label>
@@ -386,20 +386,20 @@
 
                         var option = new Option(
                         `${propietarioNombre} - ${propietarioIdentificacion}`,
-                                        propietarioId,
-                                        true,
-                                        true
-                                    );
-                                    $('#selectPropietario').append(option).trigger('change');
-                                    $('#propietarioId').val(propietarioId);
-                                    $('#propietarioNombre').text(propietarioNombre);
-                                    $('#propietarioIdentificacion').text(propietarioIdentificacion);
-                                    $('#propietarioTelefono').text(propietarioTelefono || 'No especificado');
-                                    $('#propietarioEmail').text(propietarioEmail || 'No especificado');
-                                    $('#propietarioDireccion').text(propietarioDireccion || 'No especificada');
-                                    $('#propietarioInfo').removeClass('d-none');
-                                </text>
-                    }
-                });
+                                                propietarioId,
+                                                true,
+                                                true
+                                            );
+                                            $('#selectPropietario').append(option).trigger('change');
+                                            $('#propietarioId').val(propietarioId);
+                                            $('#propietarioNombre').text(propietarioNombre);
+                                            $('#propietarioIdentificacion').text(propietarioIdentificacion);
+                                            $('#propietarioTelefono').text(propietarioTelefono || 'No especificado');
+                                            $('#propietarioEmail').text(propietarioEmail || 'No especificado');
+                                            $('#propietarioDireccion').text(propietarioDireccion || 'No especificada');
+                                            $('#propietarioInfo').removeClass('d-none');
+                                        </text>
+                        }
+                    });
     </script>
 }
