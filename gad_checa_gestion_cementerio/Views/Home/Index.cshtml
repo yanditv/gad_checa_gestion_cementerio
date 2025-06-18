@@ -117,53 +117,218 @@
         </div>
     </div>
 </div>
+</div>
 
-  <div class="col-md-12 col-xl-8">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0">Ingresos Mensuales</h5>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <div class="tab-content" id="chart-tab-tabContent">
-          <div class="tab-pane show active" id="chart-tab-profile" role="tabpanel"
-            aria-labelledby="chart-tab-profile-tab" tabindex="0">
-            <div id="ingresos-chart"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-    <!-- GRÁFICO DE INGRESOS MENSUALES + HISTORIAL DE TRANSACCIONES -->
-        <!-- HISTORIAL DE TRANSACCIONES -->
-<div class="col-md-12 col-xl-4">
-    <h5 class="mb-3">Historial de Transacciones</h5>
-    <div class="card">
-        <div class="list-group list-group-flush">
-            @foreach (var tx in Model.TransaccionesRecientes)
-            {
-                <a href="#" class="list-group-item list-group-item-action">
-                    <div class="d-flex">
-                        <div class="flex-shrink-0">
-                            <div class="avtar avtar-s rounded-circle text-primary bg-light-primary">
-                                <i class="ti ti-wallet f-18"></i>
+<!-- ACCESOS RÁPIDOS -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="ti ti-layout-dashboard me-2"></i>
+                    Accesos Rápidos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6 col-md-2">
+                        <a href="@Url.Action("Create", "Contratos")" class="card text-center p-3 border-0 bg-light-primary text-decoration-none">
+                            <div class="card-body">
+                                <i class="ti ti-folder-plus text-primary" style="font-size: 2rem;"></i>
+                                <div class="mt-2 small text-primary fw-medium">Nuevo Contrato</div>
                             </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="mb-1">@tx.NombrePersona</h6>
-                            <p class="mb-0 text-muted">@tx.FechaPago.ToString("dd MMM yyyy, hh:mm tt")</p>
-                        </div>
-                        <div class="flex-shrink-0 text-end">
-                            <h6 class="mb-1 text-@(tx.Monto >= 0 ? "success" : "danger")">
-                                @(tx.Monto >= 0 ? "+ $" : "- $")@Math.Abs(tx.Monto).ToString("N2")
-                            </h6>
-                            <p class="mb-0 text-muted">#@tx.NumeroComprobante</p>
-                        </div>
+                        </a>
                     </div>
-                </a>
-            }
+                    <div class="col-6 col-md-2">
+                        <a href="@Url.Action("Index", "Contratos")" class="card text-center p-3 border-0 bg-light-success text-decoration-none">
+                            <div class="card-body">
+                                <i class="ti ti-list-search text-success" style="font-size: 2rem;"></i>
+                                <div class="mt-2 small text-success fw-medium">Ver Contratos</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="@Url.Action("Index", "Bovedas")" class="card text-center p-3 border-0 bg-light-info text-decoration-none">
+                            <div class="card-body">
+                                <i class="ti ti-building text-info" style="font-size: 2rem;"></i>
+                                <div class="mt-2 small text-info fw-medium">Gestionar Espacios</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="@Url.Action("Index", "Difuntos")" class="card text-center p-3 border-0 bg-light-secondary text-decoration-none">
+                            <div class="card-body">
+                                <i class="ti ti-cloud text-secondary" style="font-size: 2rem;"></i>
+                                <div class="mt-2 small text-secondary fw-medium">Registro Difuntos</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="@Url.Action("Index", "Cobros")" class="card text-center p-3 border-0 bg-light-warning text-decoration-none">
+                            <div class="card-body">
+                                <i class="ti ti-coin text-warning" style="font-size: 2rem;"></i>
+                                <div class="mt-2 small text-warning fw-medium">Cobros</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <a href="@Url.Action("CuentasPorCobrar", "Reportes")" class="card text-center p-3 border-0 bg-light-danger text-decoration-none">
+                            <div class="card-body">
+                                <i class="ti ti-chart-dots text-danger" style="font-size: 2rem;"></i>
+                                <div class="mt-2 small text-danger fw-medium">Reportes</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- GRÁFICOS Y CONTENIDO PRINCIPAL -->
+<div class="row">
+    <!-- Gráfico de Ingresos Mensuales -->
+    <div class="col-md-12 col-xl-8">
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="ti ti-chart-line me-2"></i>
+                    Ingresos Mensuales
+                </h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="ti ti-calendar me-1"></i> Este Año
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Este mes</a></li>
+                        <li><a class="dropdown-item" href="#">Últimos 3 meses</a></li>
+                        <li><a class="dropdown-item" href="#">Este año</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="ingresos-chart" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+    <!-- GRÁFICO DE INGRESOS MENSUALES + HISTORIAL DE TRANSACCIONES -->
+    <!-- Historial de Transacciones -->
+    <div class="col-md-12 col-xl-4">
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="ti ti-wallet me-2"></i>
+                    Transacciones Recientes
+                </h5>
+                <a href="@Url.Action("Index", "Pagos")" class="btn btn-sm btn-outline-primary">
+                    Ver todas
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.TransaccionesRecientes != null && Model.TransaccionesRecientes.Any())
+                {
+                    <div class="d-grid gap-3">
+                        @foreach (var tx in Model.TransaccionesRecientes.Take(6))
+                        {
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="avtar bg-light-@(tx.Monto >= 0 ? "success" : "danger") text-@(tx.Monto >= 0 ? "success" : "danger")">
+                                        <i class="ti ti-@(tx.Monto >= 0 ? "arrow-down" : "arrow-up")"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">@tx.NombrePersona</h6>
+                                    <p class="mb-0 text-muted small">
+                                        <i class="ti ti-calendar me-1"></i>
+                                        @tx.FechaPago.ToString("dd MMM yyyy")
+                                    </p>
+                                </div>
+                                <div class="flex-shrink-0 text-end">
+                                    <h6 class="mb-1 text-@(tx.Monto >= 0 ? "success" : "danger")">
+                                        @(tx.Monto >= 0 ? "+" : "-")$@Math.Abs(tx.Monto).ToString("N2")
+                                    </h6>
+                                    <p class="mb-0 text-muted small">#@tx.NumeroComprobante</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="ti ti-receipt h1 mb-3"></i>
+                        <p class="mb-0">No hay transacciones recientes</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ALERTAS Y CONTRATOS -->
+<div class="row">
+    <!-- Alertas Importantes -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="ti ti-bell me-2"></i>
+                    Alertas Importantes
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (Model.BovedasPorCaducar > 0)
+                {
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <i class="ti ti-alert-triangle me-2"></i>
+                        <div>
+                            <strong>@Model.BovedasPorCaducar contratos</strong> próximos a vencer o vencidos.
+                            <div class="mt-1">
+                                <a href="@Url.Action("Index", "Contratos", new { filtro = "vencimiento" })" class="btn btn-sm btn-outline-warning">
+                                    Ver detalles
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @{
+                    int espaciosDisponibles = Model.BovedasDisponibles + Model.NichosDisponibles;
+                    int espaciosTotales = Model.BovedasDisponibles + Model.BovedasOcupadas + Model.NichosDisponibles + Model.NichosOcupados;
+                    double porcentajeDisponible = espaciosTotales > 0 ? ((double)espaciosDisponibles / espaciosTotales) * 100 : 0;
+                }
+
+                @if (porcentajeDisponible < 20)
+                {
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="ti ti-alert-circle me-2"></i>
+                        <div>
+                            <strong>Capacidad limitada:</strong> Solo @porcentajeDisponible.ToString("F0")% de espacios disponibles.
+                        </div>
+                    </div>
+                }
+                else if (porcentajeDisponible < 50)
+                {
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="ti ti-info-circle me-2"></i>
+                        <div>
+                            <strong>Capacidad media:</strong> @porcentajeDisponible.ToString("F0")% de espacios disponibles.
+                        </div>
+                    </div>
+                }
+
+                @if (Model.BovedasPorCaducar == 0 && porcentajeDisponible >= 50)
+                {
+                    <div class="alert alert-success d-flex align-items-center" role="alert">
+                        <i class="ti ti-check-circle me-2"></i>
+                        <div>
+                            <strong>Todo en orden:</strong> No hay alertas importantes en este momento.
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 
 
     <!-- ÚLTIMOS CONTRATOS -->
@@ -190,7 +355,7 @@
                                     <td>@contrato.FechaFin.ToShortDateString()</td>
                                     <td>
                                         <span class="d-flex align-items-center gap-2">
-                                            <i class="fas fa-circle f-10"
+                                            <i class="ti ti-circle-filled f-10"
                                                style="color:@(contrato.EstadoContrato switch {
                                                    "Vencido" => "red",
                                                    "Próximo a vencer" => "orange",
@@ -214,7 +379,7 @@
         <h5 class="mb-3">Ingresos</h5>
         <div class="card">
             <div class="card-body">
-            <h6 class="mb-2 f-w-400 text-muted">Total ingresos</del></h6>
+            <h6 class="mb-2 f-w-400 text-muted">Total ingresos</h6>
             <h3 class="mb-0">$@Model.IngresosMensuales.Sum(s=>s.TotalIngresado)</h3>
             <div id="sales-report-chart1"></div>
             </div>
@@ -223,133 +388,132 @@
 
 </div>
 
+@section Scripts {
+    <!-- [Page Specific JS] start -->
+    <script src="~/js/plugins/apexcharts.min.js"></script>
+    <script src="~/js/pages/dashboard-default.js"></script>
 
-<!-- [Page Specific JS] start -->
-<script src="~/js/plugins/apexcharts.min.js"></script>
-<script src="~/js/pages/dashboard-default.js"></script>
+    <script>
+      const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-<script>
-  const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                 "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      // Inicializar acumuladores por mes
+      const ingresosPorMes = Array(12).fill(0);
+      const deudasPorMes = Array(12).fill(0);
 
-  // Inicializar acumuladores por mes
-  const ingresosPorMes = Array(12).fill(0);
-  const deudasPorMes = Array(12).fill(0);
+      datosIngresos.forEach(d => {
+        const mesIndex = d.mes - 1;
+        ingresosPorMes[mesIndex] += d.totalIngresado;
+        deudasPorMes[mesIndex] += d.totalDeuda;
+      });
 
-  datosIngresos.forEach(d => {
-    const mesIndex = d.mes - 1;
-    ingresosPorMes[mesIndex] += d.totalIngresado;
-    deudasPorMes[mesIndex] += d.totalDeuda;
-  });
+      var options = {
+        chart: {
+          height: 450,
+          type: 'area',
+          toolbar: {
+            show: false
+          }
+        },
+        dataLabels: {
+          enabled: false
+        },
+        colors: ['#1890ff', '#13c2c2'],
+        series: [
+          {
+            name: 'Ingresos',
+            data: ingresosPorMes
+          },
+          {
+            name: 'Deudas',
+            data: deudasPorMes
+          }
+        ],
+        stroke: {
+          curve: 'smooth',
+          width: 2
+        },
+        xaxis: {
+          categories: meses
+        }
+      };
 
-  var options = {
-    chart: {
-      height: 450,
-      type: 'area',
-      toolbar: {
-        show: false
-      }
-    },
-    dataLabels: {
-      enabled: false
-    },
-    colors: ['#1890ff', '#13c2c2'],
-    series: [
-      {
-        name: 'Ingresos',
-        data: ingresosPorMes
-      },
-      {
-        name: 'Deudas',
-        data: deudasPorMes
-      }
-    ],
-    stroke: {
-      curve: 'smooth',
-      width: 2
-    },
-    xaxis: {
-      categories: meses
-    }
-  };
+      var chart = new ApexCharts(document.querySelector('#ingresos-chart'), options);
+      chart.render();
 
-  var chart = new ApexCharts(document.querySelector('#ingresos-chart'), options);
-  chart.render();
-</script>
+      // Convertir número de mes a nombre
+      const nombresMeses = [
+        '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
 
-<script>
-  // Convertir número de mes a nombre
-  const nombresMeses = [
-    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
+      const categorias = datosIngresos.map(d => nombresMeses[d.mes]);
+      const ingresos = datosIngresos.map(d => d.totalIngresado);
+      const deudas = datosIngresos.map(d => d.totalDeuda);
 
-  const categorias = datosIngresos.map(d => nombresMeses[d.mes]);
-  const ingresos = datosIngresos.map(d => d.totalIngresado);
-  const deudas = datosIngresos.map(d => d.totalDeuda);
+      const options1 = {
+        chart: {
+          type: 'bar',
+          height: 430,
+          toolbar: {
+            show: false
+          }
+        },
+        plotOptions: {
+          bar: {
+            columnWidth: '30%',
+            borderRadius: 4
+          }
+        },
+        stroke: {
+          show: true,
+          width: 8,
+          colors: ['transparent']
+        },
+        dataLabels: {
+          enabled: false
+        },
+        legend: {
+          position: 'top',
+          horizontalAlign: 'right',
+          show: true,
+          fontFamily: `'Public Sans', sans-serif`,
+          offsetX: 10,
+          offsetY: 10,
+          labels: {
+            useSeriesColors: false
+          },
+          markers: {
+            width: 10,
+            height: 10,
+            radius: '50%',
+            offsetX: 2,
+            offsetY: 2
+          },
+          itemMargin: {
+            horizontal: 15,
+            vertical: 5
+          }
+        },
+        colors: ['#faad14', '#1890ff'],
+        series: [
+          {
+            name: 'Ingresos',
+            data: ingresos
+          },
+          {
+            name: 'Deudas',
+            data: deudas
+          }
+        ],
+        xaxis: {
+          categories: categorias
+        }
+      };
 
-  const options1 = {
-    chart: {
-      type: 'bar',
-      height: 430,
-      toolbar: {
-        show: false
-      }
-    },
-    plotOptions: {
-      bar: {
-        columnWidth: '30%',
-        borderRadius: 4
-      }
-    },
-    stroke: {
-      show: true,
-      width: 8,
-      colors: ['transparent']
-    },
-    dataLabels: {
-      enabled: false
-    },
-    legend: {
-      position: 'top',
-      horizontalAlign: 'right',
-      show: true,
-      fontFamily: `'Public Sans', sans-serif`,
-      offsetX: 10,
-      offsetY: 10,
-      labels: {
-        useSeriesColors: false
-      },
-      markers: {
-        width: 10,
-        height: 10,
-        radius: '50%',
-        offsetX: 2,
-        offsetY: 2
-      },
-      itemMargin: {
-        horizontal: 15,
-        vertical: 5
-      }
-    },
-    colors: ['#faad14', '#1890ff'],
-    series: [
-      {
-        name: 'Ingresos',
-        data: ingresos
-      },
-      {
-        name: 'Deudas',
-        data: deudas
-      }
-    ],
-    xaxis: {
-      categories: categorias
-    }
-  };
-
-  const chart1 = new ApexCharts(document.querySelector('#sales-report-chart1'), options1);
-  chart1.render();
-</script>
+      const chart1 = new ApexCharts(document.querySelector('#sales-report-chart1'), options1);
+      chart1.render();
+    </script>
+}
 
 

@@ -52,21 +52,44 @@
 }
 
 <div class="table-responsive">
-    <table class="table table-bordered table-hover mb-0">
-        <thead class="table-secondary small">
+    <table class="table table-hover table-borderless mb-0">
+        <thead class="bg-light">
             <tr>
-                <th>Nro. Contrato</th>
-                <th>Tipo</th>
-                <th>Bóveda/Nicho</th>
-                <th>Difunto</th>
-                <th>Fecha Inicio</th>
-                <th>Fecha Fin</th>
-                <th>Monto</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+                <th class="f-w-600">
+                    <i class="ti ti-hash me-1"></i>
+                    Nro. Contrato
+                </th>
+                <th class="f-w-600">
+                    <i class="ti ti-tag me-1"></i>
+                    Tipo
+                </th>
+                <th class="f-w-600">
+                    <i class="ti ti-building me-1"></i>
+                    Bóveda/Nicho
+                </th>
+                <th class="f-w-600">
+                    <i class="ti ti-user me-1"></i>
+                    Difunto
+                </th>
+                <th class="f-w-600">
+                    <i class="ti ti-calendar me-1"></i>
+                    Período
+                </th>
+                <th class="f-w-600">
+                    <i class="ti ti-coin me-1"></i>
+                    Monto
+                </th>
+                <th class="f-w-600">
+                    <i class="ti ti-circle-check me-1"></i>
+                    Estado
+                </th>
+                <th class="f-w-600 text-center">
+                    <i class="ti ti-settings me-1"></i>
+                    Acciones
+                </th>
             </tr>
         </thead>
-        <tbody class="small">
+        <tbody>
             @foreach (var item in Model)
             {
                 // Calcular si este contrato se puede renovar
@@ -139,107 +162,133 @@
                 string tipoContrato = item.EsRenovacion ? "Renovación" : "Original";
                 string claseTipoContrato = item.EsRenovacion ? "text-primary" : "text-success";
                 
-                <tr class="@(item.EsRenovacion ? "table-info" : "")">
+                <tr class="@(item.EsRenovacion ? "bg-light-primary" : "")">
                     <td>
-                        <span class="fw-semibold">@item.NumeroSecuencial</span>
-                        @if (item.ContratoOrigenId.HasValue)
-                        {
-                            <span class="badge bg-info text-white ms-1" title="Este es un contrato renovado">R</span>
-                        }
-                        @if (hijoDirectos > 0)
-                        {
-                            <span class="badge bg-warning text-dark ms-1" title="Este contrato tiene renovaciones">
-                                <i class="fas fa-child"></i> @hijoDirectos
-                            </span>
-                        }
+                        <div class="d-flex align-items-center">
+                            <span class="f-w-600">@item.NumeroSecuencial</span>
+                            @if (item.ContratoOrigenId.HasValue)
+                            {
+                                <span class="badge bg-light-info text-info ms-2" title="Este es un contrato renovado">
+                                    <i class="ti ti-repeat"></i>
+                                </span>
+                            }
+                            @if (hijoDirectos > 0)
+                            {
+                                <span class="badge bg-light-warning text-warning ms-1" title="Este contrato tiene @hijoDirectos renovaciones">
+                                    <i class="ti ti-git-branch"></i> @hijoDirectos
+                                </span>
+                            }
+                        </div>
                     </td>
                     <td>
-                        <span class="@claseTipoContrato">@tipoContrato</span>
+                        <span class="badge bg-light-@(item.EsRenovacion ? "primary" : "success") text-@(item.EsRenovacion ? "primary" : "success")">
+                            <i class="ti ti-@(item.EsRenovacion ? "repeat" : "file-plus") me-1"></i>
+                            @tipoContrato
+                        </span>
                     </td>
                     <td>
-                        @(item.Boveda?.NumeroSecuencial ?? item.BovedaId.ToString())
-                        <small class="text-muted d-block">
-                            @(item.Boveda?.Piso?.Bloque?.Tipo ?? "No especificado")
-                        </small>
+                        <div>
+                            <span class="f-w-600">@(item.Boveda?.NumeroSecuencial ?? item.BovedaId.ToString())</span>
+                            <div class="text-muted small">
+                                <i class="ti ti-tag me-1"></i>
+                                @(item.Boveda?.Piso?.Bloque?.Tipo ?? "No especificado")
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        @(item.Difunto?.NombresCompletos ?? "No registrado")
+                        <div>
+                            <span class="f-w-500">@(item.Difunto?.NombresCompletos ?? "No registrado")</span>
+                        </div>
                     </td>
                     <td>
-                        @item.FechaInicio.ToString("dd/MM/yyyy")
-                    </td>
-                    <td>
-                        @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "No definida")
+                        <div class="text-nowrap">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="ti ti-calendar-event text-success me-1"></i>
+                                <span class="small">@item.FechaInicio.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="ti ti-calendar-x text-danger me-1"></i>
+                                <span class="small">@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "No definida")</span>
+                            </div>
+                        </div>
                     </td>
                     <td class="text-end">
-                        $@item.MontoTotal.ToString("N2")
+                        <span class="f-w-600 text-success">$@item.MontoTotal.ToString("N2")</span>
                     </td>
                     <td>
                         @if (item.Estado)
                         {
-                            <span class="badge bg-success">Activo</span>
+                            <span class="badge bg-light-success text-success">
+                                <i class="ti ti-check-circle me-1"></i>
+                                Activo
+                            </span>
                         }
                         else
                         {
-                            <span class="badge bg-danger">Inactivo</span>
+                            <span class="badge bg-light-danger text-danger">
+                                <i class="ti ti-x-circle me-1"></i>
+                                Inactivo
+                            </span>
                         }
                     </td>
-                    <td class="text-nowrap">
-                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detalles">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
-                        
-                        <!-- Mostrar botón de renovar solo si es renovable -->
-                        @if (esRenovable)
-                        {
-                            <a asp-action="Create" asp-route-idContrato="@item.Id" class="btn btn-primary btn-sm ms-1"
-                                title="Renovar contrato">
-                                <i class="ti ti-repeat"></i> Renovar
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center align-items-center gap-1 flex-wrap">
+                            <!-- Botón de Detalles -->
+                            <a asp-action="Details" asp-route-id="@item.Id" 
+                               class="btn btn-sm btn-outline-info" 
+                               title="Ver detalles del contrato">
+                                <i class="ti ti-eye"></i>
                             </a>
                             
-                            @if (maxRenovacionesPermitidas > 0)
+                            <!-- Botón de Renovar -->
+                            @if (esRenovable)
                             {
-                                <small class="d-block text-muted mt-1">
-                                    Renovaciones: @renovacionesTotales de @maxRenovacionesPermitidas
-                                </small>
+                                <a asp-action="Create" asp-route-idContrato="@item.Id" 
+                                   class="btn btn-sm btn-primary"
+                                   title="Renovar contrato">
+                                    <i class="ti ti-repeat"></i>
+                                </a>
                             }
-                        }
-                        else
-                        {
-                            <small class="text-warning d-block">
-                                @if (!tieneLimitePositivo)
-                                {
-                                    <span>No renovable - Según configuración del cementerio</span>
-                                }
-                                else if (!noAlcanzaLimite)
-                                {
-                                    <span>Límite de renovaciones alcanzado (@renovacionesTotales de @maxRenovacionesPermitidas)</span>
-                                }
-                                else if (!esUltimoContrato)
-                                {
-                                    <span>Debe renovar el contrato más reciente en la cadena</span>
-                                }
-                                else
-                                {
-                                    <span>No renovable</span>
-                                }
-                            </small>
-                        }
+                            else
+                            {
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-secondary" 
+                                        disabled
+                                        title="@(motivoNoRenovable ?? "No renovable")">
+                                    <i class="ti ti-ban"></i>
+                                </button>
+                            }
+                            
+                            <!-- Botón de Documento -->
+                            @if (string.IsNullOrEmpty(item.PathDocumentoFirmado))
+                            {
+                                <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" 
+                                   class="btn btn-sm btn-outline-warning"
+                                   title="Subir documento firmado">
+                                    <i class="ti ti-upload"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" 
+                                   class="btn btn-sm btn-outline-success"
+                                   title="Ver documento firmado">
+                                    <i class="ti ti-file-text"></i>
+                                </a>
+                            }
+                        </div>
                         
-                        <!-- Acciones para documentos -->
-                        @if (string.IsNullOrEmpty(item.PathDocumentoFirmado))
+                        <!-- Información de renovaciones -->
+                        @if (maxRenovacionesPermitidas > 0)
                         {
-                            <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-primary ms-1"
-                                title="Subir Documento">
-                                <i class="ti ti-upload"></i> Subir
-                            </a>
-                        }
-                        else
-                        {
-                            <a asp-action="SubirDocumento" asp-route-idContrato="@item.Id" class="btn btn-sm btn-outline-success ms-1"
-                                title="Ver Documento">
-                                <i class="ti ti-file-text"></i> Ver Doc
-                            </a>
+                            <div class="mt-2">
+                                <small class="text-muted d-block">
+                                    Renovaciones: 
+                                    <span class="@(renovacionesTotales >= maxRenovacionesPermitidas ? "text-danger" : "text-info")">
+                                        @renovacionesTotales de @maxRenovacionesPermitidas
+                                    </span>
+                                </small>
+                            </div>
                         }
                     </td>
                 </tr>
@@ -251,9 +300,21 @@
 <!-- Mensaje si no hay contratos -->
 @if (!Model.Any())
 {
-    <div class="alert alert-info text-center my-4">
-        <i class="fas fa-info-circle fa-2x mb-3"></i>
-        <h5>No se encontraron contratos</h5>
-        <p class="mb-0">No hay contratos que coincidan con los criterios de búsqueda.</p>
+    <div class="text-center py-5">
+        <div class="empty">
+            <div class="empty-img">
+                <i class="ti ti-file-search" style="font-size: 4rem; color: #d1d5db;"></i>
+            </div>
+            <p class="empty-title h3 mt-3">No se encontraron contratos</p>
+            <p class="empty-subtitle text-muted">
+                No hay contratos que coincidan con los criterios de búsqueda.
+            </p>
+            <div class="empty-action mt-4">
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="ti ti-plus me-2"></i>
+                    Crear nuevo contrato
+                </a>
+            </div>
+        </div>
     </div>
 }
