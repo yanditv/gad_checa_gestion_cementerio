@@ -3,29 +3,95 @@
     ViewData["Title"] = "Crear Contrato";
 }
 
-<div class="">
-    <!-- Card -->
-    <div class="d-flex flex-column">
-        <div class="overflow-auto">
-            <div class="d-inline-block w-100 align-middle">
-                <div class="bg-secondary border overflow-hidden rounded-xl shadow-sm">
-                    <!-- Header -->
-                    <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="text-white h4">
-                                Contrato de Servicio de Arrendamiento de Cementerio
-                            </h2>
-                            <p class="text-white small" id="numero-secuencial-contrato">
-                                @Model.contrato.NumeroSecuencial
-                            </p>
-                        </div>
-                        <div>
-                            <div class="d-flex align-items-center">
-                                <!-- Botón "Ver todos" -->
-                                <a class="btn btn-outline-light" asp-action="Index">
-                                    Ver todos
-                                </a>
+<!-- Cabecera moderna -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary shadow-sm border-0">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center py-3 px-4">
+                <div class="d-flex align-items-center mb-2 mb-md-0">
+                    <span class="me-3">
+                        <i class="ti ti-file-plus text-white fs-2"></i>
+                    </span>
+                    <div>
+                        <h2 class="h4 text-white mb-1">
+                            Contrato de Servicio de Arrendamiento de Cementerio
+                        </h2>
+                        <p class="mb-0 text-white-50 small" id="numero-secuencial-contrato">
+                            @Model.contrato.NumeroSecuencial
+                        </p>
+                    </div>
+                </div>
+                <a class="btn btn-outline-light" asp-action="Index">
+                    <i class="ti ti-list me-1"></i> Ver todos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card principal -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="card-body p-4">
+                    <!-- Stepper moderno -->
+                    <div id="stepper" class="mb-4">
+                        <!-- Stepper Nav -->
+                        <div class="d-flex flex-wrap justify-content-between align-items-center position-relative mb-4">
+                            <div class="stepper-step text-center flex-fill position-relative" data-step="1">
+                                <div class="stepper-circle mx-auto mb-2 step completed">1</div>
+                                <div class="stepper-text">Datos del contrato</div>
                             </div>
+                            <div class="stepper-connector d-none d-md-block flex-grow-1"></div>
+                            <div class="stepper-step text-center flex-fill position-relative" data-step="2">
+                                <div class="stepper-circle mx-auto mb-2 step">2</div>
+                                <div class="stepper-text">Datos del Difunto</div>
+                            </div>
+                            <div class="stepper-connector d-none d-md-block flex-grow-1"></div>
+                            <div class="stepper-step text-center flex-fill position-relative" data-step="3">
+                                <div class="stepper-circle mx-auto mb-2 step">3</div>
+                                <div class="stepper-text">Datos de los Responsables</div>
+                            </div>
+                            <div class="stepper-connector d-none d-md-block flex-grow-1"></div>
+                            <div class="stepper-step text-center flex-fill position-relative" data-step="4">
+                                <div class="stepper-circle mx-auto mb-2 step">4</div>
+                                <div class="stepper-text">Pago</div>
+                            </div>
+                            <div class="stepper-connector d-none d-md-block flex-grow-1"></div>
+                            <div class="stepper-step text-center flex-fill position-relative" data-step="5">
+                                <div class="stepper-circle mx-auto mb-2 step">5</div>
+                                <div class="stepper-text">Verificación de Datos</div>
+                            </div>
+                        </div>
+
+                        <!-- Mensajes -->
+                        <div class="alert-container" id="mensajes"></div>
+                    </div>
+                    <!-- Stepper Content -->
+                    <div class="stepper-content">
+                        <!-- Contenido dinámico -->
+                        <div data-content="1" class="step-content">
+                            @await Html.PartialAsync("_CreateContrato", Model.contrato)
+                        </div>
+                        <div data-content="2" class="step-content" style="display: none;"></div>
+                        <div data-content="3" class="step-content" style="display: none;"></div>
+                        <div data-content="4" class="step-content" style="display: none;"></div>
+                        <div data-content="5" class="step-content" style="display: none;"></div>
+
+                        <!-- Botones de navegación -->
+                        <div
+                            class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-outline-secondary px-4 py-2" id="backBtn" disabled>
+                                <i class="ti ti-arrow-left me-2"></i> Atrás
+                            </button>
+                            <button type="button" class="btn btn-primary px-4 py-2" id="nextBtn">
+                                Siguiente <i class="ti ti-arrow-right ms-2"></i>
+                            </button>
+                            <button type="button" class="btn btn-success px-4 py-2" id="finishBtn"
+                                style="display: none;">
+                                <i class="ti ti-check me-2"></i> Finalizar
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -33,79 +99,153 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md pb-2 p-4">
-        <!-- Stepper -->
-        <div id="stepper">
-            <!-- Stepper Nav -->
-            <div class="stepper">
-                <div class="step completed" data-step="1">
-                    <div class="circle">1</div>
-                    <div>Datos del contrato</div>
-                </div>
-                <div class="step" data-step="2">
-                    <div class="circle">2</div>
-                    <div>Datos del Difunto</div>
-                </div>
-                <div class="step" data-step="3">
-                    <div class="circle">3</div>
-                    <div>Datos de los Responsables</div>
-                </div>
-                <div class="step" data-step="4">
-                    <div class="circle">4</div>
-                    <div>Pago</div>
-                </div>
-                <div class="step" data-step="5">
-                    <div class="circle">5</div>
-                    <div>Verificación de Datos</div>
-                </div>
-            </div>
-            <div class="bg-light" id="mensajes"></div>
-            <!-- End Stepper Nav -->
-
-            <!-- Stepper Content -->
-            <div class="mt-4">
-                <!-- Contenido dinámico -->
-                <div data-content="1">
-                    @await Html.PartialAsync("_CreateContrato", Model.contrato)
-                </div>
-                <div data-content="2" style="display: none;"></div>
-                <div data-content="3" style="display: none;"></div>
-                <div data-content="4" style="display: none;"></div>
-                <div data-content="5" style="display: none;"></div>
-
-                <!-- Button Group -->
-                <div class="mt-4 mb-4 d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-secondary" id="backBtn" disabled>
-                        <i class="ti ti-arrow-left me-1"></i> Atrás
-                    </button>
-                    <button type="button" class="btn btn-primary" id="nextBtn">
-                        Siguiente <i class="ti ti-arrow-right me-1"></i>
-                    </button>
-                    <button type="button" class="btn btn-success" id="finishBtn" style="display: none;">
-                        Finalizar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Styles {
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <style>
-        .select2-container--default .select2-selection--single {
-            height: calc(1.5em + 1rem + 2px);
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            line-height: 1.5;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-        }
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <style>
+            /* Stepper moderno */
+            .stepper-step {
+                position: relative;
+                min-width: 120px;
+            }
 
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: calc(1.5em + 1rem + 2px);
-        }
-    </style>
+            .stepper-circle {
+                width: 2.5rem;
+                height: 2.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                font-weight: 600;
+                font-size: 1rem;
+                border: 2px solid #dee2e6;
+                background: #fff;
+                color: #6c757d;
+                transition: all 0.3s ease;
+            }
+
+            .stepper-circle.completed {
+                background: #198754;
+                border-color: #198754;
+                color: #fff;
+            }
+
+            .stepper-circle.active {
+                background: #0d6efd;
+                border-color: #0d6efd;
+                color: #fff;
+            }
+
+            .stepper-text {
+                font-size: 0.875rem;
+                color: #6c757d;
+                font-weight: 500;
+                margin-top: 0.5rem;
+            }
+
+            .stepper-step .completed+.stepper-text,
+            .stepper-step .active+.stepper-text {
+                color: #495057;
+                font-weight: 600;
+            }
+
+            .stepper-connector {
+                height: 2px;
+                background: #dee2e6;
+                margin: 0 1rem;
+                position: relative;
+                top: -1.25rem;
+            }
+
+            .stepper-connector.completed {
+                background: #198754;
+            }
+
+            /* Card y layout */
+            .card {
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+            }
+
+            .card-body {
+                padding: 2rem;
+            }
+
+            .step-content {
+                min-height: 300px;
+                padding: 1rem 0;
+            }
+
+            .alert-container {
+                min-height: 0;
+            }
+
+            /* Botones */
+            .btn {
+                border-radius: 0.5rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+            }
+
+            .btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            /* Select2 styling */
+            .select2-container--default .select2-selection--single {
+                height: calc(1.5em + 1rem + 2px);
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+                line-height: 1.5;
+                border: 1px solid #ced4da;
+                border-radius: 0.375rem;
+            }
+
+            .select2-container--default .select2-selection--single .select2-selection__arrow {
+                height: calc(1.5em + 1rem + 2px);
+            }
+
+            /* Responsivo */
+            @@media (max-width: 768px) {
+                .card-body {
+                    padding: 1rem;
+                }
+
+                .stepper-text {
+                    font-size: 0.75rem;
+                }
+
+                .stepper-step {
+                    min-width: 80px;
+                }
+
+                .stepper-circle {
+                    width: 2rem;
+                    height: 2rem;
+                    font-size: 0.875rem;
+                }
+
+                .d-flex.justify-content-between {
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+
+                .d-flex.justify-content-between .btn {
+                    width: 100%;
+                }
+            }
+
+            @@media (max-width: 576px) {
+                .stepper-step {
+                    min-width: 60px;
+                }
+
+                .stepper-text {
+                    font-size: 0.7rem;
+                    line-height: 1.2;
+                }
+            }
+        </style>
 }
 
 @section Scripts {
@@ -113,206 +253,322 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script>
-        // Configuración global
-        const stepUrls = {
-            1: '@Url.Action("CreateContrato", "Contratos")',
-            2: '@Url.Action("CreateDifunto", "Contratos")',
-            3: '@Url.Action("CreateResponsables", "Contratos")',
-            4: '@Url.Action("CreatePago", "Contratos")',
-            5: '@Url.Action("DocumentoContrato", "Contratos")'
-        };
+        <script>
+            // Configuración global
+            const stepUrls = {
+                1: '@Url.Action("CreateContrato", "Contratos")',
+                2: '@Url.Action("CreateDifunto", "Contratos")',
+                3: '@Url.Action("CreateResponsables", "Contratos")',
+                4: '@Url.Action("CreatePago", "Contratos")',
+                5: '@Url.Action("DocumentoContrato", "Contratos")'
+            };
 
-        // Variables de estado
-        let currentStep = 1;
-        const steps = document.querySelectorAll('.step');
-        const contents = document.querySelectorAll('[data-content]');
-        const mensajesDiv = document.getElementById('mensajes');
-        const nextBtn = document.getElementById('nextBtn');
-        const backBtn = document.getElementById('backBtn');
-        const finishBtn = document.getElementById('finishBtn');
+            // Variables de estado
+            let currentStep = 1;
+            const stepperSteps = document.querySelectorAll('.stepper-step');
+            const stepperCircles = document.querySelectorAll('.stepper-circle');
+            const stepperConnectors = document.querySelectorAll('.stepper-connector');
+            const contents = document.querySelectorAll('[data-content]');
+            const mensajesDiv = document.getElementById('mensajes');
+            const nextBtn = document.getElementById('nextBtn');
+            const backBtn = document.getElementById('backBtn');
+            const finishBtn = document.getElementById('finishBtn');
 
-        // Función para mostrar/ocultar loading
-        function setLoading(loading) {
-            if (loading) {
-                nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cargando...';
-                nextBtn.disabled = true;
-                backBtn.disabled = true;
-                if (finishBtn.style.display !== 'none') {
-                    finishBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
-                    finishBtn.disabled = true;
-                }
-            } else {
-                nextBtn.innerHTML = 'Siguiente <i class="ti ti-arrow-right me-1"></i>';
-                nextBtn.disabled = false;
-                backBtn.disabled = currentStep === 1;
-                if (finishBtn.style.display !== 'none') {
-                    finishBtn.innerHTML = 'Finalizar';
-                    finishBtn.disabled = false;
-                }
-            }
-        }
-
-        // Función para validar y enviar el formulario actual
-        async function validateAndSubmitCurrentStep() {
-            if (currentStep === 3) return { success: true };
-            const form = document.querySelector(`[data-content="${currentStep}"] form`);
-            if (!form) return { success: true };
-
-            // Validación del formulario
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return { success: false, errors: ['Por favor complete todos los campos requeridos'] };
-            }
-
-            try {
-                setLoading(true);
-                const formData = new FormData(form);
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+            // Función para mostrar/ocultar loading
+            function setLoading(loading) {
+                if (loading) {
+                    nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cargando...';
+                    nextBtn.disabled = true;
+                    backBtn.disabled = true;
+                    if (finishBtn.style.display !== 'none') {
+                        finishBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+                        finishBtn.disabled = true;
                     }
-                });
-
-                const data = await response.json();
-
-                if (!data.success) {
-                    showErrors(data.errors || ['Error al guardar los datos']);
-                    return { success: false, errors: data.errors };
-                }
-
-                return { success: true };
-            } catch (error) {
-                console.error('Error:', error);
-                showErrors(['Error al enviar los datos']);
-                return { success: false, errors: ['Error de conexión con el servidor'] };
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        // Función para mostrar errores
-        function showErrors(errors) {
-            mensajesDiv.innerHTML = '';
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger';
-
-            if (Array.isArray(errors)) {
-                const ul = document.createElement('ul');
-                errors.forEach(error => {
-                    const li = document.createElement('li');
-                    li.textContent = error;
-                    ul.appendChild(li);
-                });
-                errorDiv.appendChild(ul);
-            } else {
-                errorDiv.textContent = errors;
-            }
-
-            mensajesDiv.appendChild(errorDiv);
-        }
-        function clearErrors() {
-            // Limpiar mensajes de error generales
-            mensajesDiv.innerHTML = '';
-
-            // Limpiar validación de campos en formularios
-            document.querySelectorAll('.is-invalid').forEach(el => {
-                el.classList.remove('is-invalid');
-            });
-
-            document.querySelectorAll('.field-validation-error').forEach(el => {
-                el.classList.remove('field-validation-error');
-                el.classList.add('field-validation-valid');
-                el.textContent = '';
-            });
-        }
-
-        // Función para cargar contenido del paso
-        async function loadStepContent(step) {
-            clearErrors();
-            const contentDiv = document.querySelector(`[data-content="${step}"]`);
-
-            try {
-                setLoading(true);
-                const response = await fetch(stepUrls[step], {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                contentDiv.innerHTML = await response.text();
-
-                // Inicializar validación solo para formularios principales (no modales)
-                if (contentDiv.querySelector('form') && ![3].includes(step)) {
-                    $.validator.unobtrusive.parse(contentDiv);
-                }
-                // Inicializar componentes específicos
-                if (step === 3) {
-                    initSelect2();
-                }
-
-                return true;
-            } catch (error) {
-                console.error('Error loading step:', error);
-                contentDiv.innerHTML = `
-                                        <div class="alert alert-danger">
-                                            Error al cargar el paso ${step}. Intente nuevamente.<br>
-                                            ${error.message}
-                                        </div>`;
-                return false;
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        // Función para actualizar el stepper
-        function updateStepper() {
-            steps.forEach(step => {
-                const stepNumber = parseInt(step.dataset.step);
-                if (stepNumber === currentStep) {
-                    step.classList.add('active');
-                    step.classList.remove('completed');
-                } else if (stepNumber < currentStep) {
-                    step.classList.add('completed');
-                    step.classList.remove('active');
                 } else {
-                    step.classList.remove('active', 'completed');
+                    nextBtn.innerHTML = 'Siguiente <i class="ti ti-arrow-right me-1"></i>';
+                    nextBtn.disabled = false;
+                    backBtn.disabled = currentStep === 1;
+                    if (finishBtn.style.display !== 'none') {
+                        finishBtn.innerHTML = 'Finalizar';
+                        finishBtn.disabled = false;
+                    }
                 }
-            });
+            }
 
-            contents.forEach(content => {
-                const contentStep = parseInt(content.dataset.content);
-                content.style.display = contentStep === currentStep ? 'block' : 'none';
-            });
+            // Función para validar y enviar el formulario actual
+            async function validateAndSubmitCurrentStep() {
+                if (currentStep === 3) return { success: true };
+                const form = document.querySelector(`[data-content="${currentStep}"] form`);
+                if (!form) return { success: true };
 
-            backBtn.disabled = currentStep === 1;
-            nextBtn.style.display = currentStep === 5 ? 'none' : 'block';
-            finishBtn.style.display = currentStep === 5 ? 'block' : 'none';
-        }
+                // Validación del formulario
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return { success: false, errors: ['Por favor complete todos los campos requeridos'] };
+                }
 
-        // Inicializar Select2
-        function initSelect2() {
-            $('#searchResponsable').select2({
-                placeholder: 'Buscar responsable...',
-                allowClear: true
-            }).on('select2:select', function (e) {
-                const selectedOption = $(this).find('option:selected');
+                try {
+                    setLoading(true);
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        showErrors(data.errors || ['Error al guardar los datos']);
+                        return { success: false, errors: data.errors };
+                    }
+
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error:', error);
+                    showErrors(['Error al enviar los datos']);
+                    return { success: false, errors: ['Error de conexión con el servidor'] };
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            // Función para mostrar errores
+            function showErrors(errors) {
+                mensajesDiv.innerHTML = '';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+
+                if (Array.isArray(errors)) {
+                    const ul = document.createElement('ul');
+                    errors.forEach(error => {
+                        const li = document.createElement('li');
+                        li.textContent = error;
+                        ul.appendChild(li);
+                    });
+                    errorDiv.appendChild(ul);
+                } else {
+                    errorDiv.textContent = errors;
+                }
+
+                mensajesDiv.appendChild(errorDiv);
+            }
+            function clearErrors() {
+                // Limpiar mensajes de error generales
+                mensajesDiv.innerHTML = '';
+
+                // Limpiar validación de campos en formularios
+                document.querySelectorAll('.is-invalid').forEach(el => {
+                    el.classList.remove('is-invalid');
+                });
+
+                document.querySelectorAll('.field-validation-error').forEach(el => {
+                    el.classList.remove('field-validation-error');
+                    el.classList.add('field-validation-valid');
+                    el.textContent = '';
+                });
+            }
+
+            // Función para cargar contenido del paso
+            async function loadStepContent(step) {
+                clearErrors();
+                const contentDiv = document.querySelector(`[data-content="${step}"]`);
+
+                try {
+                    setLoading(true);
+                    const response = await fetch(stepUrls[step], {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    contentDiv.innerHTML = await response.text();
+
+                    // Inicializar validación solo para formularios principales (no modales)
+                    if (contentDiv.querySelector('form') && ![3].includes(step)) {
+                        $.validator.unobtrusive.parse(contentDiv);
+                    }
+                    // Inicializar componentes específicos
+                    if (step === 3) {
+                        initSelect2();
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error loading step:', error);
+                    contentDiv.innerHTML = `
+                                            <div class="alert alert-danger">
+                                                Error al cargar el paso ${step}. Intente nuevamente.<br>
+                                                ${error.message}
+                                            </div>`;
+                    return false;
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            // Función para actualizar el stepper
+            function updateStepper() {
+                stepperCircles.forEach((circle, index) => {
+                    const stepNumber = index + 1;
+                    circle.classList.remove('active', 'completed');
+
+                    if (stepNumber === currentStep) {
+                        circle.classList.add('active');
+                    } else if (stepNumber < currentStep) {
+                        circle.classList.add('completed');
+                    }
+                });
+
+                // Actualizar conectores
+                stepperConnectors.forEach((connector, index) => {
+                    connector.classList.remove('completed');
+                    if (index < currentStep - 1) {
+                        connector.classList.add('completed');
+                    }
+                });
+
+                contents.forEach(content => {
+                    const contentStep = parseInt(content.dataset.content);
+                    content.style.display = contentStep === currentStep ? 'block' : 'none';
+                });
+
+                backBtn.disabled = currentStep === 1;
+                nextBtn.style.display = currentStep === 5 ? 'none' : 'block';
+                finishBtn.style.display = currentStep === 5 ? 'block' : 'none';
+            }
+
+            // Inicializar Select2
+            function initSelect2() {
+                $('#searchResponsable').select2({
+                    placeholder: 'Buscar responsable...',
+                    allowClear: true
+                }).on('select2:select', function (e) {
+                    const selectedOption = $(this).find('option:selected');
+                    const formData = new FormData();
+                    formData.append('Id', selectedOption.val());
+                    formData.append('Nombres', selectedOption.data('nombres'));
+                    formData.append('Apellidos', selectedOption.data('apellidos'));
+                    formData.append('TipoIdentificacion', selectedOption.data('tipo'));
+                    formData.append('NumeroIdentificacion', selectedOption.data('numero'));
+
+                    fetch('@Url.Action("AddResponsable", "Contratos")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const responsableHtml = `
+                                                        <div class="responsable mb-4" data-id="${selectedOption.val()}">
+                                                            <div class="card border-0 shadow-sm">
+                                                                <div class="card-body">
+                                                                    <div class="row">
+                                                                        <div class="col-md-8">
+                                                                            <div class="d-flex align-items-center">
+                                                                                <i class="ti ti-user me-2 fs-4"></i>
+                                                                                <div class="flex-grow-1">
+                                                                                    <h5 class="mb-1">${selectedOption.data('nombres')} ${selectedOption.data('apellidos')}</h5>
+                                                                                    <p class="mb-0 text-muted">
+                                                                                        ${selectedOption.data('tipo')}: ${selectedOption.data('numero')}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-4">
+                                                                            <div class="row">
+                                                                                <div class="col-md-6">
+                                                                                    <div class="mb-3">
+                                                                                        <label class="form-label">Fecha Inicio</label>
+                                                                                        <input type="date" class="form-control fecha-inicio" 
+                                                                                            value="${new Date().toISOString().split('T')[0]}" />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="col-md-6">
+                                                                                    <div class="mb-3">
+                                                                                        <label class="form-label">Fecha Fin</label>
+                                                                                        <input type="date" class="form-control fecha-fin" />
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="text-end mt-2">
+                                                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${selectedOption.val()})">
+                                                                            <i class="ti ti-trash me-1"></i>Quitar
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    `;
+                                document.getElementById('responsablesContainer').innerHTML += responsableHtml;
+                                $('#searchResponsable').val(null).trigger('change');
+                            } else {
+                                console.error('Error:', data.message);
+                                showErrors([data.message || 'Error al agregar responsable']);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showErrors(['Error al agregar responsable']);
+                        });
+                });
+            }
+
+            // Función para eliminar responsable
+            window.removeResponsable = function (id) {
+                if (!confirm('¿Está seguro de quitar este responsable?')) return;
+
                 const formData = new FormData();
-                formData.append('Id', selectedOption.val());
-                formData.append('Nombres', selectedOption.data('nombres'));
-                formData.append('Apellidos', selectedOption.data('apellidos'));
-                formData.append('TipoIdentificacion', selectedOption.data('tipo'));
-                formData.append('NumeroIdentificacion', selectedOption.data('numero'));
+                formData.append('id', id);
 
-                fetch('@Url.Action("AddResponsable", "Contratos")', {
+                fetch('@Url.Action("RemoveResponsable", "Contratos")', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const element = document.querySelector(`.responsable[data-id="${id}"]`);
+                            if (element) element.remove();
+                        } else {
+                            showErrors([data.message || 'Error al quitar responsable']);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showErrors(['Error al quitar responsable']);
+                    });
+            };
+
+            // Función para abrir modal
+            window.abrirModal = function () {
+                new bootstrap.Modal(document.getElementById('crearResponsableModal')).show();
+            };
+
+            // Función para guardar responsable desde modal
+            window.guardarResponsable = function () {
+                const form = document.getElementById('formResponsable');
+                const formData = new FormData(form);
+                const errorContainer = document.getElementById('errorContainer');
+                const errorList = document.getElementById('errorList');
+
+                errorContainer.classList.add('d-none');
+                errorList.innerHTML = '';
+
+                fetch('@Url.Action("GuardarResponsable", "Contratos")', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -322,272 +578,164 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            const responsableHtml = `
-                                                    <div class="responsable mb-4" data-id="${selectedOption.val()}">
-                                                        <div class="card border-0 shadow-sm">
-                                                            <div class="card-body">
-                                                                <div class="row">
-                                                                    <div class="col-md-8">
-                                                                        <div class="d-flex align-items-center">
-                                                                            <i class="ti ti-user me-2 fs-4"></i>
-                                                                            <div class="flex-grow-1">
-                                                                                <h5 class="mb-1">${selectedOption.data('nombres')} ${selectedOption.data('apellidos')}</h5>
-                                                                                <p class="mb-0 text-muted">
-                                                                                    ${selectedOption.data('tipo')}: ${selectedOption.data('numero')}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-4">
-                                                                        <div class="row">
-                                                                            <div class="col-md-6">
-                                                                                <div class="mb-3">
-                                                                                    <label class="form-label">Fecha Inicio</label>
-                                                                                    <input type="date" class="form-control fecha-inicio" 
-                                                                                        value="${new Date().toISOString().split('T')[0]}" />
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="col-md-6">
-                                                                                <div class="mb-3">
-                                                                                    <label class="form-label">Fecha Fin</label>
-                                                                                    <input type="date" class="form-control fecha-fin" />
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-end mt-2">
-                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${selectedOption.val()})">
-                                                                        <i class="ti ti-trash me-1"></i>Quitar
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                `;
-                            document.getElementById('responsablesContainer').innerHTML += responsableHtml;
-                            $('#searchResponsable').val(null).trigger('change');
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('crearResponsableModal'));
+                            modal.hide();
+                            form.reset();
+                            loadResponsables();
                         } else {
-                            console.error('Error:', data.message);
-                            showErrors([data.message || 'Error al agregar responsable']);
+                            errorContainer.classList.remove('d-none');
+                            errorList.innerHTML = '';
+                            data.errors.forEach(error => {
+                                const li = document.createElement('li');
+                                li.textContent = error;
+                                errorList.appendChild(li);
+                            });
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        showErrors(['Error al agregar responsable']);
-                    });
-            });
-        }
-
-        // Función para eliminar responsable
-        window.removeResponsable = function (id) {
-            if (!confirm('¿Está seguro de quitar este responsable?')) return;
-
-            const formData = new FormData();
-            formData.append('id', id);
-
-            fetch('@Url.Action("RemoveResponsable", "Contratos")', {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const element = document.querySelector(`.responsable[data-id="${id}"]`);
-                        if (element) element.remove();
-                    } else {
-                        showErrors([data.message || 'Error al quitar responsable']);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showErrors(['Error al quitar responsable']);
-                });
-        };
-
-        // Función para abrir modal
-        window.abrirModal = function () {
-            new bootstrap.Modal(document.getElementById('crearResponsableModal')).show();
-        };
-
-        // Función para guardar responsable desde modal
-        window.guardarResponsable = function () {
-            const form = document.getElementById('formResponsable');
-            const formData = new FormData(form);
-            const errorContainer = document.getElementById('errorContainer');
-            const errorList = document.getElementById('errorList');
-
-            errorContainer.classList.add('d-none');
-            errorList.innerHTML = '';
-
-            fetch('@Url.Action("GuardarResponsable", "Contratos")', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('crearResponsableModal'));
-                        modal.hide();
-                        form.reset();
-                        loadResponsables();
-                    } else {
                         errorContainer.classList.remove('d-none');
-                        errorList.innerHTML = '';
-                        data.errors.forEach(error => {
-                            const li = document.createElement('li');
-                            li.textContent = error;
-                            errorList.appendChild(li);
-                        });
+                        errorList.innerHTML = '<li>Error al guardar el responsable</li>';
+                    });
+            };
+
+            // Función para cargar responsables
+            function loadResponsables() {
+                const container = document.getElementById('responsablesContainer');
+
+                fetch('@Url.Action("GetResponsables", "Contratos")', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    errorContainer.classList.remove('d-none');
-                    errorList.innerHTML = '<li>Error al guardar el responsable</li>';
-                });
-        };
-
-        // Función para cargar responsables
-        function loadResponsables() {
-            const container = document.getElementById('responsablesContainer');
-
-            fetch('@Url.Action("GetResponsables", "Contratos")', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        container.innerHTML = '';
-                        data.responsables.forEach(responsable => {
-                            const html = `
-                                                    <div class="responsable mb-4" data-id="${responsable.id}">
-                                                        <div class="card border-0 shadow-sm">
-                                                            <div class="card-body">
-                                                                <div class="row">
-                                                                    <div class="col-md-8">
-                                                                        <div class="d-flex align-items-center">
-                                                                            <i class="ti ti-user me-2 fs-4"></i>
-                                                                            <div class="flex-grow-1">
-                                                                                <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
-                                                                                <p class="mb-0 text-muted">
-                                                                                    ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-4">
-                                                                        <div class="row">
-                                                                            <div class="col-md-6">
-                                                                                <div class="mb-3">
-                                                                                    <label class="form-label">Fecha Inicio</label>
-                                                                                    <input type="date" class="form-control fecha-inicio" 
-                                                                                        value="${responsable.fechaInicio}" />
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            container.innerHTML = '';
+                            data.responsables.forEach(responsable => {
+                                const html = `
+                                                        <div class="responsable mb-4" data-id="${responsable.id}">
+                                                            <div class="card border-0 shadow-sm">
+                                                                <div class="card-body">
+                                                                    <div class="row">
+                                                                        <div class="col-md-8">
+                                                                            <div class="d-flex align-items-center">
+                                                                                <i class="ti ti-user me-2 fs-4"></i>
+                                                                                <div class="flex-grow-1">
+                                                                                    <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
+                                                                                    <p class="mb-0 text-muted">
+                                                                                        ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
+                                                                                    </p>
                                                                                 </div>
                                                                             </div>
-                                                                            <div class="col-md-6">
-                                                                                <div class="mb-3">
-                                                                                    <label class="form-label">Fecha Fin</label>
-                                                                                    <input type="date" class="form-control fecha-fin" 
-                                                                                        value="${responsable.fechaFin || ''}" />
+                                                                        </div>
+                                                                        <div class="col-md-4">
+                                                                            <div class="row">
+                                                                                <div class="col-md-6">
+                                                                                    <div class="mb-3">
+                                                                                        <label class="form-label">Fecha Inicio</label>
+                                                                                        <input type="date" class="form-control fecha-inicio" 
+                                                                                            value="${responsable.fechaInicio}" />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="col-md-6">
+                                                                                    <div class="mb-3">
+                                                                                        <label class="form-label">Fecha Fin</label>
+                                                                                        <input type="date" class="form-control fecha-fin" 
+                                                                                            value="${responsable.fechaFin || ''}" />
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                                <div class="text-end mt-2">
-                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${responsable.id})">
-                                                                        <i class="ti ti-trash me-1"></i>Quitar
-                                                                    </button>
+                                                                    <div class="text-end mt-2">
+                                                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${responsable.id})">
+                                                                            <i class="ti ti-trash me-1"></i>Quitar
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                `;
-                            container.innerHTML += html;
-                        });
-                        initSelect2();
-                    } else {
-                        showErrors([data.message || 'Error al cargar responsables']);
+                                                    `;
+                                container.innerHTML += html;
+                            });
+                            initSelect2();
+                        } else {
+                            showErrors([data.message || 'Error al cargar responsables']);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showErrors(['Error al cargar responsables']);
+                    });
+            }
+
+            // Manejar navegación hacia adelante
+            nextBtn.addEventListener('click', async function () {
+                if (currentStep < 5) {
+                    const result = await validateAndSubmitCurrentStep();
+
+                    if (result.success) {
+                        const success = await loadStepContent(currentStep + 1);
+                        if (success) {
+                            currentStep++;
+                            updateStepper();
+                        }
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showErrors(['Error al cargar responsables']);
-                });
-        }
+                }
+            });
 
-        // Manejar navegación hacia adelante
-        nextBtn.addEventListener('click', async function () {
-            if (currentStep < 5) {
-                const result = await validateAndSubmitCurrentStep();
-
-                if (result.success) {
-                    const success = await loadStepContent(currentStep + 1);
+            // Manejar navegación hacia atrás
+            backBtn.addEventListener('click', async function () {
+                if (currentStep > 1) {
+                    const success = await loadStepContent(currentStep - 1);
                     if (success) {
-                        currentStep++;
+                        currentStep--;
                         updateStepper();
                     }
                 }
-            }
-        });
+            });
 
-        // Manejar navegación hacia atrás
-        backBtn.addEventListener('click', async function () {
-            if (currentStep > 1) {
-                const success = await loadStepContent(currentStep - 1);
-                if (success) {
-                    currentStep--;
-                    updateStepper();
-                }
-            }
-        });
+            // Manejar finalización
+            finishBtn.addEventListener('click', async function () {
+                const result = await validateAndSubmitCurrentStep();
 
-        // Manejar finalización
-        finishBtn.addEventListener('click', async function () {
-            const result = await validateAndSubmitCurrentStep();
+                if (result.success) {
+                    try {
+                        setLoading(true);
+                        const response = await fetch('@Url.Action("Save", "Contratos")', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({})
+                        });
 
-            if (result.success) {
-                try {
-                    setLoading(true);
-                    const response = await fetch('@Url.Action("Save", "Contratos")', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({})
-                    });
+                        const data = await response.json();
 
-                    const data = await response.json();
-
-                    if (data.success) {
-                        window.location.href = '@Url.Action("Index", "Contratos")';
-                    } else {
-                        showErrors(data.errors || ['Error al guardar el contrato']);
+                        if (data.success) {
+                            window.location.href = '@Url.Action("Index", "Contratos")';
+                        } else {
+                            showErrors(data.errors || ['Error al guardar el contrato']);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showErrors(['Error al procesar la solicitud']);
+                    } finally {
+                        setLoading(false);
                     }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showErrors(['Error al procesar la solicitud']);
-                } finally {
-                    setLoading(false);
                 }
-            }
-        });
+            });
 
-        // Inicialización
-        (async function init() {
-            await loadStepContent(1);
-            updateStepper();
+            // Inicialización
+            (async function init() {
+                await loadStepContent(1);
+                updateStepper();
 
-            // Configurar tooltips
-            $('[data-bs-toggle="tooltip"]').tooltip();
-        })();
-    </script>
-}
+                // Configurar tooltips
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            })();
+        </script>
+}    
