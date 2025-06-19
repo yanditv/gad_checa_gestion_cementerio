@@ -5,85 +5,104 @@
     ViewData["Title"] = "Asignar Responsables";
 }
 
-<div class="container mt-5">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="h4 mb-0 text-white">Datos de los responsables del Difunto</h2>
-        </div>
-        <div class="card-body">
-            <p class="text-muted mb-4">Asegúrate de completar los campos necesarios</p>
-
-            <div class="mb-4">
-                <label class="form-label">Buscar Responsable</label>
-                <div class="input-group">
-                    <select class="form-select" id="searchResponsable">
-                        <option></option>
-                        @foreach (var persona in ViewBag.Personas ?? new List<ResponsableModel>())
-                        {
-                            <option value="@persona.Id"
-                                    data-nombres="@persona.Nombres"
-                                    data-apellidos="@persona.Apellidos"
-                                    data-tipo="@persona.TipoIdentificacion"
-                                    data-numero="@persona.NumeroIdentificacion">
-                                @($"{persona.Nombres} {persona.Apellidos} - {persona.TipoIdentificacion}: {persona.NumeroIdentificacion}")
-                            </option>
-                        }
-                    </select>
-                    <button type="button" class="btn btn-success" onclick="abrirModal()">
-                        <i class="ti ti-plus"></i>
-                    </button>
-                </div>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light border-0 py-3">
+        <div class="d-flex align-items-center">
+            <span class="me-3">
+                <i class="ti ti-users text-primary fs-4"></i>
+            </span>
+            <div>
+                <h4 class="mb-1 text-dark">Datos de los Responsables</h4>
+                <p class="mb-0 text-muted small">Agregue y gestione los responsables del difunto</p>
             </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="mb-4">
+            <label class="form-label fw-semibold">
+                <i class="ti ti-search text-primary me-1"></i>
+                Buscar Responsable
+            </label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="ti ti-user-search text-muted"></i>
+                </span>
+                <select class="form-select border-start-0" id="searchResponsable">
+                    <option></option>
+                    @foreach (var persona in ViewBag.Personas ?? new List<gad_checa_gestion_cementerio.Models.ResponsableModel>())
+                    {
+                        <option value="@persona.Id"
+                                data-nombres="@persona.Nombres"
+                                data-apellidos="@persona.Apellidos"
+                                data-tipo="@persona.TipoIdentificacion"
+                                data-numero="@persona.NumeroIdentificacion">
+                            @($"{persona.Nombres} {persona.Apellidos} - {persona.TipoIdentificacion}: {persona.NumeroIdentificacion}")
+                        </option>
+                    }
+                </select>
+                <button type="button" class="btn btn-success" onclick="abrirModal()">
+                    <i class="ti ti-plus"></i>
+                </button>
+            </div>
+        </div>
 
-            <div id="responsablesContainer">
-                @for (int i = 0; i < Model.Count; i++)
-                {
-                    <div class="responsable mb-4" data-id="@Model[i].Id">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-user me-2 fs-4"></i>
-                                            <div class="flex-grow-1">
-                                                <h5 class="mb-1">@Model[i].Nombres @Model[i].Apellidos</h5>
-                                                <p class="mb-0 text-muted">
-                                                    @Model[i].TipoIdentificacion: @Model[i].NumeroIdentificacion
-                                                </p>
-                                            </div>
+        <div id="responsablesContainer">
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                <div class="responsable mb-4" data-id="@Model[i].Id">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-info text-white me-3">
+                                            @Model[i].Nombres[0]@Model[i].Apellidos[0]
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Fecha Inicio</label>
-                                                    <input type="date" class="form-control fecha-inicio"
-                                                        value="@Model[i].FechaInicio.ToString("yyyy-MM-dd")" />
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Fecha Fin</label>
-                                                    <input type="date" class="form-control fecha-fin"
-                                                        value="@(Model[i].FechaFin.HasValue ? Model[i].FechaFin.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "")" />
-                                                </div>
-                                            </div>
+                                        <div>
+                                            <h6 class="mb-0">@Model[i].Nombres @Model[i].Apellidos</h6>
+                                            <small class="text-muted">@Model[i].TipoIdentificacion: @Model[i].NumeroIdentificacion</small>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="text-end mt-2">
-                                    <button type="button" class="btn btn-danger btn-sm js-remove-responsable">
-                                        <i class="ti ti-trash me-1"></i>Quitar
-                                    </button>
+                                <div class="col-md-4">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold mb-1">Fecha Inicio</label>
+                                            <input type="date" class="form-control fecha-inicio" value="@Model[i].FechaInicio.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold mb-1">Fecha Fin</label>
+                                            <input type="date" class="form-control fecha-fin" value="@(Model[i].FechaFin.HasValue ? Model[i].FechaFin.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "")" />
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="text-end mt-3">
+                                <button type="button" class="btn btn-danger btn-sm js-remove-responsable">
+                                    <i class="ti ti-trash me-1"></i>Quitar
+                                </button>
                             </div>
                         </div>
                     </div>
-                }
-            </div>
+                </div>
+            }
         </div>
     </div>
 </div>
 
 @await Html.PartialAsync("_AddResponsableModal", new gad_checa_gestion_cementerio.Models.ResponsableModel())
+
+@section Styles {
+    <style>
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+    </style>
+}
