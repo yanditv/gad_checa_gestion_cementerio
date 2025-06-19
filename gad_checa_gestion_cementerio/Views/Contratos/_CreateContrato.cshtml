@@ -5,105 +5,186 @@
 
 @if (Model.EsRenovacion && Model.ContratoOrigenId.HasValue)
 {
-    <div class="alert alert-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-info-circle-fill me-3 fs-5"></i>
-            <div>
-                <h5 class="mb-1">Este es un contrato de renovación</h5>
-                <p class="mb-0">Este contrato renueva el contrato original con ID: @Model.ContratoOrigenId</p>
+    <div class="alert alert-primary border-0 shadow-sm mb-4">
+        <div class="d-flex align-items-start">
+            <span class="badge bg-primary p-2 rounded-circle me-3">
+                <i class="ti ti-refresh text-white"></i>
+            </span>
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-2 text-primary">
+                    <i class="ti ti-info-circle me-1"></i>
+                    Este es un contrato de renovación
+                </h5>
+                <p class="mb-1">Este contrato renueva el contrato original con ID: <strong>@Model.ContratoOrigenId</strong>
+                </p>
                 @if (ViewBag.ContratoOriginalNumero != null)
                 {
-                    <p class="mb-0">Número de contrato original: <strong>@ViewBag.ContratoOriginalNumero</strong></p>
+                    <p class="mb-0 small text-muted">
+                        Número de contrato original: <span
+                            class="badge bg-light text-dark">@ViewBag.ContratoOriginalNumero</span>
+                    </p>
                 }
             </div>
         </div>
     </div>
 }
 
-<div class="container mt-5">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="h4 mb-0 text-white">Datos del Contrato</h2>
-        </div>
-        <div class="card-body">
-            <p class="text-muted mb-4">Asegúrate de completar los campos necesarios</p>
-            <form asp-action="CreateContrato" method="post">
-                <div class="row">
-                    <!-- Campo Número Secuencial -->
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="NumeroSecuencial" class="form-label">Nro. Secuencial</label>
-                        <input asp-for="NumeroSecuencial" readonly class="form-control" />
-                        <span asp-validation-for="NumeroSecuencial" class="text-danger small"></span>
-                    </div>
-
-                    <!-- Campo Bóveda con botón de búsqueda -->
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="BovedaId" class="form-label">Bóveda</label>
-                        <input asp-for="BovedaId" hidden readonly class="form-control" />
-                        <input asp-for="Boveda.NumeroSecuencial" hidden readonly class="form-control" />
-
-                        <!-- Campos ocultos para renovación -->
-                        <input asp-for="EsRenovacion" type="hidden" />
-                        <input asp-for="ContratoOrigenId" type="hidden" />
-
-                        <div class="input-group">
-
-                            <input id="boveda_seleccionada"
-                                value="Bóveda #@(Model.Boveda?.NumeroSecuencial ?? Model.BovedaId.ToString())" readonly
-                                class="form-control" />
-                            <button type="button" class="btn btn-outline-secondary" onclick="abrirModalBovedas('')"
-                                @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ?
-                                                                "disabled" : "")>
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                        </div>
-                        <span asp-validation-for="BovedaId" class="text-danger small"></span>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="FechaInicio" class="form-label">Fecha de Inicio</label>
-                        <input asp-for="FechaInicio" type="date" class="form-control" />
-                        <span asp-validation-for="FechaInicio" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="FechaFin" class="form-label">Fecha de Fin</label>
-                        <input asp-for="FechaFin" type="date" class="form-control" />
-                        <span asp-validation-for="FechaFin" class="text-danger"></span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="NumeroDeMeses" class="form-label">Número de años</label>
-                        <input asp-for="NumeroDeMeses" type="number" class="form-control" />
-                        <span asp-validation-for="NumeroDeMeses" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="MontoTotal" class="form-label">Monto Total</label>
-                        <input asp-for="MontoTotal" type="number" step="0.01" class="form-control" />
-                        <span asp-validation-for="MontoTotal" class="text-danger"></span>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Observaciones" class="form-label">Observaciones</label>
-                    <textarea asp-for="Observaciones" rows="3" class="form-control"></textarea>
-                    <span asp-validation-for="Observaciones" class="text-danger"></span>
-                </div>
-
-                @if (Model.EsRenovacion && Model.ContratoOrigenId.HasValue)
-                {
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        <strong>Este contrato es una renovación</strong>
-                        <p class="mb-0">La renovación está vinculada al contrato original ID: @Model.ContratoOrigenId</p>
-                    </div>
-                }
-            </form>
+<!-- Formulario principal -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light border-0 py-3">
+        <div class="d-flex align-items-center">
+            <span class="me-3">
+                <i class="ti ti-file-text text-primary fs-4"></i>
+            </span>
+            <div>
+                <h4 class="mb-1 text-dark">Datos del Contrato</h4>
+                <p class="mb-0 text-muted small">Complete la información requerida para el contrato</p>
+            </div>
         </div>
     </div>
+
+    <div class="card-body p-4">
+        <form asp-action="CreateContrato" method="post">
+            <div class="row g-3">
+                <!-- Campo Número Secuencial -->
+                <div class="col-md-6">
+                    <label asp-for="NumeroSecuencial" class="form-label fw-semibold">
+                        <i class="ti ti-hash me-1 text-primary"></i>
+                        Número Secuencial
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-hash text-muted"></i>
+                        </span>
+                        <input asp-for="NumeroSecuencial" readonly class="form-control border-start-0 bg-light" />
+                    </div>
+                    <span asp-validation-for="NumeroSecuencial" class="text-danger small"></span>
+                </div>
+
+                <!-- Campo Bóveda con botón de búsqueda -->
+                <div class="col-md-6">
+                    <label asp-for="BovedaId" class="form-label fw-semibold">
+                        <i class="ti ti-building me-1 text-primary"></i>
+                        Bóveda
+                    </label>
+                    <input asp-for="BovedaId" hidden readonly class="form-control" />
+                    <input asp-for="Boveda.NumeroSecuencial" hidden readonly class="form-control" />
+                    <input asp-for="EsRenovacion" type="hidden" />
+                    <input asp-for="ContratoOrigenId" type="hidden" />
+
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-building text-muted"></i>
+                        </span>
+                        <input id="boveda_seleccionada"
+                            value="Bóveda #@(Model.Boveda?.NumeroSecuencial ?? Model.BovedaId.ToString())" readonly
+                            class="form-control border-start-0 border-end-0" />
+                        <button type="button" class="btn btn-outline-primary" onclick="abrirModalBovedas('')"
+                            @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ? "disabled" :
+                                                        "")>
+                            <i class="ti ti-search me-1"></i> Buscar
+                        </button>
+                    </div>
+                    <span asp-validation-for="BovedaId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <!-- Fecha de Inicio -->
+                <div class="col-md-6">
+                    <label asp-for="FechaInicio" class="form-label fw-semibold">
+                        <i class="ti ti-calendar me-1 text-primary"></i>
+                        Fecha de Inicio
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-calendar text-muted"></i>
+                        </span>
+                        <input asp-for="FechaInicio" type="date" class="form-control border-start-0" />
+                    </div>
+                    <span asp-validation-for="FechaInicio" class="text-danger small"></span>
+                </div>
+
+                <!-- Fecha de Fin -->
+                <div class="col-md-6">
+                    <label asp-for="FechaFin" class="form-label fw-semibold">
+                        <i class="ti ti-calendar-event me-1 text-primary"></i>
+                        Fecha de Fin
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-calendar-event text-muted"></i>
+                        </span>
+                        <input asp-for="FechaFin" type="date" class="form-control border-start-0" />
+                    </div>
+                    <span asp-validation-for="FechaFin" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <!-- Número de Años -->
+                <div class="col-md-6">
+                    <label asp-for="NumeroDeMeses" class="form-label fw-semibold">
+                        <i class="ti ti-clock me-1 text-primary"></i>
+                        Número de Años
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-clock text-muted"></i>
+                        </span>
+                        <input asp-for="NumeroDeMeses" type="number" class="form-control border-start-0" />
+                        <span class="input-group-text bg-light">años</span>
+                    </div>
+                    <span asp-validation-for="NumeroDeMeses" class="text-danger small"></span>
+                </div>
+
+                <!-- Monto Total -->
+                <div class="col-md-6">
+                    <label asp-for="MontoTotal" class="form-label fw-semibold">
+                        <i class="ti ti-currency-dollar me-1 text-primary"></i>
+                        Monto Total
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">$</span>
+                        <input asp-for="MontoTotal" type="number" step="0.01" class="form-control border-start-0" />
+                    </div>
+                    <span asp-validation-for="MontoTotal" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="mt-4">
+                <label asp-for="Observaciones" class="form-label fw-semibold">
+                    <i class="ti ti-notes me-1 text-primary"></i>
+                    Observaciones
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 align-items-start pt-2">
+                        <i class="ti ti-notes text-muted"></i>
+                    </span>
+                    <textarea asp-for="Observaciones" rows="3" class="form-control border-start-0"
+                        placeholder="Ingrese observaciones adicionales..."></textarea>
+                </div>
+                <span asp-validation-for="Observaciones" class="text-danger small"></span>
+            </div>
+
+            @if (Model.EsRenovacion && Model.ContratoOrigenId.HasValue)
+            {
+                <div class="alert alert-info border-0 mt-4">
+                    <div class="d-flex align-items-center">
+                        <i class="ti ti-info-circle me-2 fs-5"></i>
+                        <div>
+                            <strong>Información de renovación</strong>
+                            <p class="mb-0 small">Este contrato está vinculado al contrato original ID:
+                                @Model.ContratoOrigenId</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </form>
+    </div>
 </div>
+
 <div id="contenedorModalBovedas"></div>
 @* @await Html.PartialAsync("_SelectBoveda", new List<gad_checa_gestion_cementerio.Models.BovedaModel>()) *@
 
@@ -346,4 +427,5 @@
         }
     }
 </script>
+
 
