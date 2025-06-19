@@ -786,6 +786,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             var contrato = GetContratoFromSession();
             var difunto = contrato.difunto ?? new DifuntoModel();
+            difunto.FechaNacimiento = DateTime.Now.AddYears(-30); // Establecer fecha de nacimiento por defecto
+            difunto.FechaFallecimiento = DateTime.Now; // Establecer fecha de fallecimiento por defecto
             var descuentos = _context.Descuento.ToList();
             ViewData["DescuentoId"] = new SelectList(descuentos, "Id", "Descripcion");
             return PartialView("_CreateDifunto", difunto);

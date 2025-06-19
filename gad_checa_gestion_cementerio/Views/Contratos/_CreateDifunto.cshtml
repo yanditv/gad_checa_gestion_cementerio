@@ -1,69 +1,121 @@
-﻿@model gad_checa_gestion_cementerio.Models.DifuntoModel
+@model gad_checa_gestion_cementerio.Models.DifuntoModel
 @{
     ViewData["Title"] = "Crear Difunto";
 }
 
-<div class="mt-5">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="h4 mb-0 text-white">Datos del Difunto</h2>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light border-0 py-3">
+        <div class="d-flex align-items-center">
+            <span class="me-3">
+                <i class="ti ti-user-heart text-primary fs-4"></i>
+            </span>
+            <div>
+                <h4 class="mb-1 text-dark">Datos del Difunto</h4>
+                <p class="mb-0 text-muted small">Complete la información del difunto para el contrato</p>
+            </div>
         </div>
-        <div class="card-body">
-            <p class="text-muted mb-4">Asegúrate de completar los campos necesarios</p>
-            <form asp-action="CreateDifunto" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="CreateDifunto" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 mb-4"></div>
 
-                <div class="row g-3 mb-3">
-                    <!-- Cédula -->
-                    <div class="col-md-6">
-                        <label asp-for="NumeroIdentificacion" class="form-label">Cédula</label>
-                        <input asp-for="NumeroIdentificacion" class="form-control" />
-                        <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
-                    </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="NumeroIdentificacion" class="form-label fw-semibold">
+                        <i class="ti ti-id me-1 text-primary"></i>
+                        Cédula
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-id text-muted"></i>
+                        </span>
+                        <input asp-for="NumeroIdentificacion" class="form-control border-start-0"
 
-                    <!-- Nombres -->
-                    <div class="col-md-6">
-                        <label asp-for="Nombres" class="form-label">Nombres</label>
-                        <input asp-for="Nombres" class="form-control" />
-                        <span asp-validation-for="Nombres" class="text-danger"></span>
+                            placeholder="Ingrese número de cédula" />
                     </div>
+                    <span asp-validation-for="NumeroIdentificacion" class="text-danger small"></span>
                 </div>
 
-                <div class="row g-3 mb-3">
-                    <!-- Apellidos -->
-                    <div class="col-md-6">
-                        <label asp-for="Apellidos" class="form-label">Apellidos</label>
-                        <input asp-for="Apellidos" class="form-control" />
-                        <span asp-validation-for="Apellidos" class="text-danger"></span>
-                    </div>
+                <div class="col-md-6">
+                    <label asp-for="Nombres" class="form-label fw-semibold">
+                        <i class="ti ti-user me-1 text-primary"></i>
+                        Nombres
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-user text-muted"></i>
+                        </span>
 
-                    <!-- Fecha de Nacimiento -->
-                    <div class="col-md-6">
-                        <label asp-for="FechaNacimiento" class="form-label">Fecha de Nacimiento</label>
-                        <input asp-for="FechaNacimiento" class="form-control" type="date"
-                            value="@DateTime.Now.AddYears(-100).ToString("yyyy-MM-dd")" />
-                        <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+                        <input asp-for="Nombres" class="form-control border-start-0"
+                            placeholder="Ingrese nombres completos" />
                     </div>
+                    <span asp-validation-for="Nombres" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label asp-for="Apellidos" class="form-label fw-semibold">
+                        <i class="ti ti-user-check me-1 text-primary"></i>
+                        Apellidos
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-user-check text-muted"></i>
+
+                        </span>
+                        <input asp-for="Apellidos" class="form-control border-start-0"
+                            placeholder="Ingrese apellidos completos" />
+                    </div>
+                    <span asp-validation-for="Apellidos" class="text-danger small"></span>
                 </div>
 
-                <div class="row g-3 mb-3">
-                    <!-- Fecha de Defunción -->
-                    <div class="col-md-6">
-                        <label asp-for="FechaFallecimiento" class="form-label">Fecha de Defunción</label>
-                        <input asp-for="FechaFallecimiento" class="form-control" type="date"
-                            value="@DateTime.Now.AddYears(-1).ToString("yyyy-MM-dd")" />
-                        <span asp-validation-for="FechaFallecimiento" class="text-danger"></span>
+                <div class="col-md-6">
+                    <label asp-for="FechaNacimiento" class="form-label fw-semibold">
+                        <i class="ti ti-calendar-heart me-1 text-primary"></i>
+                        Fecha de Nacimiento
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-calendar-heart text-muted"></i>
+                        </span>
+                        <input asp-for="FechaNacimiento" class="form-control border-start-0" type="date" />
                     </div>
-
-                    <!-- Descuento -->
-                    <div class="col-md-6">
-                        <label asp-for="DescuentoId" class="form-label">Descuento</label>
-                        <select asp-for="DescuentoId" class="form-select" asp-items="ViewBag.DescuentoId"></select>
-                        <span asp-validation-for="DescuentoId" class="text-danger"></span>
-                    </div>
+                    <span asp-validation-for="FechaNacimiento" class="text-danger small"></span>
                 </div>
-            </form>
+            </div>
 
-        </div>
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label asp-for="FechaFallecimiento" class="form-label fw-semibold">
+                        <i class="ti ti-calendar-x me-1 text-primary"></i>
+                        Fecha de Defunción
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="ti ti-calendar-x text-muted"></i>
+                        </span>
+                        <input asp-for="FechaFallecimiento" class="form-control border-start-0" type="date" />
+                    </div>
+                    <span asp-validation-for="FechaFallecimiento" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="DescuentoId" class="form-label fw-semibold">
+                        <i class="ti ti-discount me-1 text-primary"></i>
+                        Descuento
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"> <i class="ti ti-discount text-muted"></i>
+                        </span>
+                        <select asp-for="DescuentoId" class="form-select border-start-0"
+                            asp-items="ViewBag.DescuentoId">
+                            <option value="1">Seleccione un descuento</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="DescuentoId" class="text-danger small"></span>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
