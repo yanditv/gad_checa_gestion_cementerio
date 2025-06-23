@@ -4,87 +4,72 @@
     ViewData["Title"] = "Bóvedas";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header bg-light">
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-light border-0 py-3">
         <div class="d-flex align-items-center">
-            <i class="fas fa-building me-2"></i>
-            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
-        </div>
-        <p class="mt-2 mb-0">
-            Gestione las bóvedas del cementerio. Puede filtrar por bloque, tipo, estado y propietario.
-        </p>
-    </div>
-
-    <div class="card-body">
-        <!-- Filtros -->
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+            <span class="me-3"><i class="ti ti-building-bank text-primary fs-3"></i></span>
+            <div>
+                <h2 class="h5 mb-0 text-dark">@ViewData["Title"]</h2>
+                <p class="mb-0 text-muted small">Gestione las bóvedas del cementerio. Puede filtrar por bloque, tipo,
+                    estado y propietario.</p>
             </div>
-            <div class="card-body">
-                <form method="get" class="row g-3">
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <!-- Filtros -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light border-0">
+                <h5 class="mb-0"><i class="ti ti-filter text-primary me-2"></i>Filtros</h5>
+            </div>
+            <div class="card-body pb-2">
+                <form method="get" class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Bloque</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-building"></i></span>
-                            <select name="bloqueId" class="form-select form-select-sm" asp-items="ViewBag.Bloques">
-                                <option value="">Todos los bloques</option>
-                            </select>
-                        </div>
+                        <label class="form-label fw-semibold">Bloque</label>
+                        <select name="bloqueId" class="form-select form-select-sm" asp-items="ViewBag.Bloques">
+                            <option value="">Todos los bloques</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Tipo</label>
+                        <select name="tipo" class="form-select form-select-sm" asp-items="ViewBag.Tipos">
+                            <option value="">Todos los tipos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Estado</label>
+                        <select name="estado" class="form-select form-select-sm" asp-items="ViewBag.Estados">
+                            <option value="">Todos los estados</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Propietario</label>
+                        <select name="tienePropietario" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="true">Con propietario</option>
+                            <option value="false">Sin propietario</option>
+                        </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Tipo</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-tag"></i></span>
-                            <select name="tipo" class="form-select form-select-sm" asp-items="ViewBag.Tipos">
-                                <option value="">Todos los tipos</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Estado</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-toggle-on"></i></span>
-                            <select name="estado" class="form-select  form-select-sm" asp-items="ViewBag.Estados">
-                                <option value="">Todos los estados</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Propietario</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            <select name="tienePropietario" class="form-select form-select-sm">
-                                <option value="">Todos</option>
-                                <option value="true">Con propietario</option>
-                                <option value="false">Sin propietario</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Búsqueda</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" name="filtro" class="form-control form-control-sm"
+                        <label class="form-label fw-semibold">Búsqueda</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0"><i
+                                    class="ti ti-search text-muted"></i></span>
+                            <input type="text" name="filtro" class="form-control border-start-0"
                                 placeholder="Buscar por número, propietario..." value="@Model.Filtro">
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Registros por página</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-list-ol"></i></span>
-                            <select name="registrosPorPagina" class="form-select form-select-sm">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Registros</label>
+                        <select name="registrosPorPagina" class="form-select form-select-sm">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary d-block w-100">
-                            <i class="fas fa-search me-2"></i>Filtrar
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="ti ti-search me-1"></i>Filtrar
                         </button>
                     </div>
                 </form>
@@ -92,54 +77,55 @@
         </div>
 
         <!-- Tabla de Bóvedas -->
-        <div class="card">
-            <div class="card-header bg-light">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Bóvedas</h5>
-
+                    <h5 class="mb-0"><i class="ti ti-list-details text-primary me-2"></i>Lista de Bóvedas</h5>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th><i class="fas fa-hashtag me-2"></i>Número</th>
-                                <th><i class="fas fa-sort-numeric-up me-2"></i>Número Secuencial</th>
-                                <th><i class="fas fa-building me-2"></i>Bloque</th>
-                                <th><i class="fas fa-layer-group me-2"></i>Piso</th>
-                                <th><i class="fas fa-toggle-on me-2"></i>Estado</th>
-                                <th><i class="fas fa-user me-2"></i>Propietario</th>
-                                <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                                <th><i class="ti ti-hash text-primary"></i></th>
+                                <th><i class="ti ti-hash text-primary"></i> ID</th>
+                                <th><i class="ti ti-numbers text-primary"></i> Nro. Secuencial</th>
+                                <th><i class="ti ti-building text-primary"></i> Bloque</th>
+                                <th><i class="ti ti-layers text-primary"></i> Piso</th>
+                                <th><i class="ti ti-toggle-left text-primary"></i> Estado</th>
+                                <th><i class="ti ti-user text-primary"></i> Propietario</th>
+                                <th class="text-end"><i class="ti ti-settings text-primary"></i> Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model.Bovedas)
                             {
                                 <tr>
-                                    <td>@item.Numero</td>
+                                    <td class="fw-bold">@item.Numero</td>
+                                    <td>@item.Id</td>
                                     <td>@item.NumeroSecuencial</td>
                                     <td>@item.Piso?.Bloque?.Descripcion</td>
                                     <td>@item.Piso?.NumeroPiso</td>
                                     <td>
                                         @if (!item.TieneContratoActivo)
                                         {
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check-circle me-1"></i>Disponible
-                                            </span>
+                                            <span class="badge bg-success-subtle text-success"><i
+                                                    class="ti ti-check me-1"></i>Disponible</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-times-circle me-1"></i>Ocupada
-                                            </span>
+                                            <span class="badge bg-danger-subtle text-danger"><i
+                                                    class="ti ti-x me-1"></i>Ocupada</span>
                                         }
                                     </td>
                                     <td>
                                         @if (item.Propietario != null)
                                         {
                                             <div class="d-flex align-items-center">
-                                                <i class="fas fa-user me-2"></i>
+                                                <span class="avatar-circle bg-info text-white me-2">
+                                                    @item.Propietario.Nombres[0]@item.Propietario.Apellidos[0]
+                                                </span>
                                                 <div>
                                                     <div class="fw-bold">@item.Propietario.Nombres @item.Propietario.Apellidos
                                                     </div>
@@ -153,19 +139,19 @@
                                             <span class="text-muted">Sin propietario</span>
                                         }
                                     </td>
-                                    <td>
+                                    <td class="text-end">
                                         <div class="btn-group">
-                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary"
-                                                title="Editar">
-                                                <i class="fas fa-edit"></i>
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                                class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <i class="ti ti-edit"></i>
                                             </a>
-                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info"
-                                                title="Detalles">
-                                                <i class="fas fa-eye"></i>
+                                            <a asp-action="Details" asp-route-id="@item.Id"
+                                                class="btn btn-sm btn-outline-info" title="Detalles">
+                                                <i class="ti ti-eye"></i>
                                             </a>
-                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger"
-                                                title="Eliminar">
-                                                <i class="fas fa-trash"></i>
+                                            <a asp-action="Delete" asp-route-id="@item.Id"
+                                                class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="ti ti-trash"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -174,13 +160,37 @@
                         </tbody>
                     </table>
                 </div>
-
                 <!-- Paginación -->
-                <partial name="_Paginacion" model="Model" />
+                @await Html.PartialAsync("_Paginacion", Model)
             </div>
         </div>
     </div>
 </div>
+
+@section Styles {
+    <style>
+        .avatar-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .badge.bg-success-subtle {
+            background: #e9fbe7;
+            color: #198754;
+        }
+
+        .badge.bg-danger-subtle {
+            background: #fbe7e7;
+            color: #dc3545;
+        }
+    </style>
+}
 
 @section Scripts {
     <script>

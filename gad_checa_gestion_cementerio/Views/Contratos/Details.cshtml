@@ -17,9 +17,18 @@
                 <a href="@Url.Action("Print", new { id = Model.Id })" class="btn btn-primary" target="_blank">
                     <i class="fas fa-print me-2"></i>Imprimir Contrato
                 </a>
-                <a href="@Url.Action("PrintRecibo", new { id = Model.Id })" class="btn btn-success" target="_blank">
-                    <i class="fas fa-file-invoice-dollar me-2"></i>Imprimir Recibo
-                </a>
+                @if (string.IsNullOrEmpty(Model.PathDocumentoFirmado))
+                {
+                    <a href="@Url.Action("SubirDocumento", new { idContrato = Model.Id })" class="btn btn-success">
+                        <i class="fas fa-upload me-2"></i>Subir Comprobante Firmado
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("PrintRecibo", new { id = Model.Id })" class="btn btn-success" target="_blank">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Imprimir Recibo
+                    </a>
+                }
             </div>
         </div>
     </div>

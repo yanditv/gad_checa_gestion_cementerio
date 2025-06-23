@@ -303,9 +303,11 @@
                 data.bovedas.forEach(b => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
+
+                        <td>${b.id}</td>
                         <td>${b.numeroSecuencial == null ? "S/N" : b.numeroSecuencial}</td>
-                        
                         <td>${b.numero}</td>
+                        <td>${b.propietario}</td>
                         <td>${b.tipo}</td>
                         <td>${b.estado}</td>
                         <td style="text-align: right;">
@@ -414,8 +416,11 @@
             numeroSecuencialSpan.dispatchEvent(new Event('change'));
 
 
-            inputBovedaSeleccionada.value = `Bóveda #${numeroSecuencialSpan.value == "null" ? inputBovedaId.value : numeroSecuencialSpan.value}`;
+            let mostrar = numeroSecuencialSpan.value && numeroSecuencialSpan.value !== "S/N" && numeroSecuencialSpan.value !== ""
+                ? numeroSecuencialSpan.value
+                : inputBovedaId.value;
 
+            inputBovedaSeleccionada.value = `Bóveda #${mostrar}`;
             inputBovedaSeleccionada.dispatchEvent(new Event('change'))
         }
 

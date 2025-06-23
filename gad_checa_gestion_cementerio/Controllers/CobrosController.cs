@@ -41,7 +41,11 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             int total = contratosQuery.Count();
             var contratos = contratosQuery
-                .OrderBy(c => c.Id)
+                .OrderByDescending(c => c.Cuotas
+                    .SelectMany(q => q.Pagos)
+                    .OrderByDescending(p => p.FechaPago)
+                    .Select(p => p.FechaPago)
+                    .FirstOrDefault())
                 .Skip((pagina - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -74,13 +78,14 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 return NotFound();
             }
+            var responsablePrincipal = contrato.Responsables.FirstOrDefault();
             var pago = new PagoModel
             {
                 FechaPago = DateTime.Now,
                 TipoPago = "Efectivo", // O puedes permitir que el usuario seleccione el tipo de pago
                 NumeroComprobante = "", // Puedes dejarlo vacío o permitir que el usuario lo ingrese
                 Monto = contrato.MontoTotal,
-                PersonaPagoId = 0, // Aquí deberías asignar el ID de la persona que realiza el pago
+                PersonaPagoId = responsablePrincipal != null ? responsablePrincipal.Id : 0, // Asignar responsable principal
                 Cuotas = new List<CuotaModel>()
             };
 
@@ -207,7 +212,12 @@ namespace gad_checa_gestion_cementerio.Controllers
             var pagos = _context.Pago
                 .Include(p => p.Cuotas)
                 .ThenInclude(c => c.Contrato)
+                .ThenInclude(c => c.Responsables)
+                    .Include(p => p.Cuotas)
+                        .ThenInclude(c => c.Contrato)
+                            .ThenInclude(c => c.Difunto)
                 .Where(p => p.Cuotas.Any(c => c.ContratoId == id && c.Pagada))
+                .OrderByDescending(p => p.FechaPago)
                 .ToList();
 
             var contrato = _context.Contrato.FirstOrDefault(c => c.Id == id);

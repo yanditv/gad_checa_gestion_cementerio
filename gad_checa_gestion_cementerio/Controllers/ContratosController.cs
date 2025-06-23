@@ -749,6 +749,79 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             return File(pdfBytes, "application/pdf", "ContratoArrendamiento.pdf");
         }
+
+        [HttpGet]
+        public IActionResult Print(int id)
+        {
+            var cementerio = _context.Cementerio.FirstOrDefault();
+            if (cementerio == null)
+            {
+                TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Cargar el contrato y todas sus relaciones necesarias
+            var contrato = _context.Contrato
+                .Include(c => c.Boveda)
+                    .ThenInclude(b => b.Piso)
+                        .ThenInclude(p => p.Bloque)
+                .Include(c => c.Boveda)
+                    .ThenInclude(b => b.Propietario)
+                .Include(c => c.Difunto)
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(cu => cu.Pagos)
+                .Include(c => c.ContratoOrigen)
+                .FirstOrDefault(c => c.Id == id);
+
+            if (contrato == null)
+            {
+                TempData["Error"] = "No se encontró el contrato para generar el PDF.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var contratoModel = _mapper.Map<ContratoModel>(contrato);
+
+            // Mapear las fechas de pago a las cuotas
+            foreach (var cuota in contratoModel.Cuotas)
+            {
+                var cuotaEntity = contrato.Cuotas.FirstOrDefault(c => c.Id == cuota.Id);
+                if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
+                {
+                    cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
+                }
+            }
+
+            // Asegurar que la bóveda y el propietario estén correctamente mapeados
+            if (contrato.Boveda != null)
+            {
+                contratoModel.Boveda = _mapper.Map<BovedaModel>(contrato.Boveda);
+            }
+
+            // Si es una renovación, cargar los datos del contrato original
+            if (contrato.EsRenovacion && contrato.ContratoOrigenId.HasValue && contrato.ContratoOrigen != null)
+            {
+                contratoModel.ContratoOrigen = _mapper.Map<ContratoModel>(contrato.ContratoOrigen);
+            }
+
+            // Crear el modelo para el PDF
+            var modelo = new CreateContratoModel
+            {
+                contrato = contratoModel,
+                difunto = contratoModel.Difunto ?? new DifuntoModel(),
+                responsables = contratoModel.Responsables ?? new List<ResponsableModel>(),
+                pago = new PagoModel() // Si necesitas pagos, puedes mapearlos aquí
+            };
+
+            var documento = new ContratoPDF(modelo, cementerio);
+            var pdfBytes = documento.GeneratePdf();
+
+            var fileName = $"CONTRATO_{contratoModel.NumeroSecuencial ?? "Arrendamiento"}.pdf";
+            ViewBag.NombreArchivo = fileName;
+            Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
+            return new FileContentResult(pdfBytes, "application/pdf");
+        }
+
         [HttpGet]
         public IActionResult VerContratoPDF()
         {
@@ -1164,9 +1237,13 @@ namespace gad_checa_gestion_cementerio.Controllers
             try
             {
                 int pageSize = 10;
+                var hoy = DateTime.Today;
                 var query = _context.Boveda
                     .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
+                        .ThenInclude(p => p.Bloque)
+                    .Include(b => b.Propietario)
+                    .Include(b => b.Contratos)
+                        .ThenInclude(c => c.Difunto)
                     .Where(b => b.Estado)
                     .AsQueryable();
 
@@ -1180,6 +1257,24 @@ namespace gad_checa_gestion_cementerio.Controllers
                 {
                     query = query.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == tipo);
                 }
+
+                // FILTRO AVANZADO DE DISPONIBILIDAD
+                query = query.Where(b =>
+                    // 1. No tiene contrato vigente (ningún contrato activo)
+                    !b.Contratos.Any(c => c.Estado == true && (c.FechaFin == null || c.FechaFin >= hoy))
+                    && (
+                        // 2. Si tiene propietario y NO tiene contrato vigente, mostrar
+                        (b.Propietario != null && !b.Contratos.Any(c => c.Estado == true && (c.FechaFin == null || c.FechaFin >= hoy)))
+                        // 3. Si no tiene propietario y no tiene contrato vigente, mostrar
+                        || (b.Propietario == null)
+                    )
+                // 4. Si tiene propietario y contrato vigente con difunto, NO mostrar (ya lo cubre el primer filtro)
+                );
+
+                // Adicional: Si tiene propietario y algún contrato vigente con difunto, NO mostrar
+                query = query.Where(b =>
+                    !b.Contratos.Any(c => c.Estado == true && (c.FechaFin == null || c.FechaFin >= hoy) && c.Difunto != null)
+                );
 
                 int total = query.Count();
 
@@ -1200,7 +1295,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                         numeroSecuencial = b.NumeroSecuencial,
                         numero = b.Numero,
                         tipo = b.Piso?.Bloque?.Tipo ?? "No especificado",
-                        estado = b.Estado ? "Activa" : "Inactiva"
+                        estado = b.Estado ? "Activa" : "Inactiva",
+                        propietario = b.Propietario != null ? ($"{b.Propietario.Nombres} {b.Propietario.Apellidos}") : "Sin propietario"
                     }),
                     paginaActual = pagina,
                     totalPaginas = (int)Math.Ceiling(total / (double)pageSize),
@@ -1517,6 +1613,37 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
 
             return contratoActual;
+        }
+
+        [HttpGet]
+        public IActionResult PrintRecibo(int id)
+        {
+            var contrato = _context.Contrato.FirstOrDefault(c => c.Id == id);
+            if (contrato == null)
+            {
+                TempData["Error"] = "No se encontró el contrato para imprimir el recibo.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrEmpty(contrato.PathDocumentoFirmado))
+            {
+                TempData["Error"] = "Aún no se ha subido el comprobante de recibido (documento firmado) para este contrato.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            // El path guardado es relativo a wwwroot, por ejemplo: /documentos/archivo.pdf
+            var rutaRelativa = contrato.PathDocumentoFirmado.TrimStart('/');
+            var rutaCompleta = Path.Combine(_env.WebRootPath, rutaRelativa.Replace('/', Path.DirectorySeparatorChar));
+
+            if (!System.IO.File.Exists(rutaCompleta))
+            {
+                TempData["Error"] = "El archivo del comprobante firmado no se encuentra en el servidor. Por favor, vuelva a subirlo.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var fileName = Path.GetFileName(rutaCompleta);
+            Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
+            return PhysicalFile(rutaCompleta, "application/pdf");
         }
     }
 }

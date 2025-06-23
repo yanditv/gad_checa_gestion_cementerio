@@ -4,11 +4,13 @@
 @if (Model != null && Model.Any())
 {
     <div class="table-responsive">
-        <table class="table table-bordered table-hover mb-0">
-            <thead class="table-secondary">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
                 <tr>
                     <th scope="col" class="text-uppercase small fw-bold">Id</th>
                     <th scope="col" class="text-uppercase small fw-bold">Contrato</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Difunto</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Responsable</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Contrato</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Pagado</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Pendiente</th>
@@ -16,27 +18,47 @@
                     <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
                 </tr>
             </thead>
-            <tbody class="small">
+            <tbody class="">
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td>@item.Id</td>
-                        <td>@item.NumeroSecuencial</td>
-                        <td>@CurrencyHelper.FormatCurrency(item.MontoTotal)</td>
-                        <td class="@(item.MontoPagado == 0 ? "" : "text-success")">
-                            @CurrencyHelper.FormatCurrency(item.MontoPagado)</td>
-                        <td class="@(item.MontoPendiente == 0 ? "" : "text-danger")">
-                            @CurrencyHelper.FormatCurrency(item.MontoPendiente)</td>
+                        <td class="fw-semibold">@item.Id</td>
+                        <td><span class="badge bg-primary-subtle text-primary"><i
+                                    class="ti ti-file-description me-1"></i>@item.NumeroSecuencial</span></td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="ti ti-user me-1"></i>@item.Difunto?.Nombres @item.Difunto?.Apellidos
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info-subtle text-info">
+                                <i class="ti ti-user-star me-1"></i>@(item.Responsables?.FirstOrDefault()?.Nombres)
+                                @(item.Responsables?.FirstOrDefault()?.Apellidos)
+                            </span>
+                        </td>
+                        <td><span class="badge bg-light text-dark">@CurrencyHelper.FormatCurrency(item.MontoTotal)</span></td>
+                        <td>
+                            <span
+                                class="badge @(item.MontoPagado == 0 ? "bg-light text-dark" : "bg-success-subtle text-success")">
+                                <i class="ti ti-currency-dollar me-1"></i>@CurrencyHelper.FormatCurrency(item.MontoPagado)
+                            </span>
+                        </td>
+                        <td>
+                            <span
+                                class="badge @(item.MontoPendiente == 0 ? "bg-light text-dark" : "bg-danger-subtle text-danger")">
+                                <i class="ti ti-currency-dollar me-1"></i>@CurrencyHelper.FormatCurrency(item.MontoPendiente)
+                            </span>
+                        </td>
                         <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
                         <td class="text-end">
                             <div class="btn-group" role="group">
-                                <a class="btn btn-sm btn-outline-info me-2" asp-action="Facturas" asp-route-id="@item.Id">
-                                    <i class="ti ti-file-text"></i> Ver Pagos
+                                <a class="btn btn-outline-info btn-sm me-2" asp-action="Facturas" asp-route-id="@item.Id">
+                                    <i class="ti ti-file-text me-1"></i>Ver Pagos
                                 </a>
                                 @if (item.MontoPendiente > 0)
                                 {
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Cobrar" asp-route-id="@item.Id">
-                                        <i class="ti ti-edit"></i> Cobrar
+                                    <a class="btn btn-outline-primary btn-sm" asp-action="Cobrar" asp-route-id="@item.Id">
+                                        <i class="ti ti-cash-banknote me-1"></i>Cobrar
                                     </a>
                                 }
                             </div>
