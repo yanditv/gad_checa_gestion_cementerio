@@ -127,13 +127,15 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var contratoModel = _mapper.Map<ContratoModel>(contrato);
 
-            // Mapear las fechas de pago a las cuotas
+            // Mapear las fechas de pago a las cuotas y asociar el PagoId si está pagada
             foreach (var cuota in contratoModel.Cuotas)
             {
                 var cuotaEntity = contrato.Cuotas.FirstOrDefault(c => c.Id == cuota.Id);
                 if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
                 {
                     cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
+                    // Asociar el PagoId para la vista
+                    cuota.PagoId = cuotaEntity.Pagos.First().Id;
                 }
             }
 
@@ -782,13 +784,15 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var contratoModel = _mapper.Map<ContratoModel>(contrato);
 
-            // Mapear las fechas de pago a las cuotas
+            // Mapear las fechas de pago a las cuotas y asociar el PagoId si está pagada
             foreach (var cuota in contratoModel.Cuotas)
             {
                 var cuotaEntity = contrato.Cuotas.FirstOrDefault(c => c.Id == cuota.Id);
                 if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
                 {
                     cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
+                    // Asociar el PagoId para la vista
+                    cuota.PagoId = cuotaEntity.Pagos.First().Id;
                 }
             }
 

@@ -19,5 +19,6 @@ namespace gad_checa_gestion_cementerio.Models
         public string Estado => Pagada ? "Pagado" : "Pendiente";
         public DateTime? FechaPago { get; set; }
         public Guid TempId { get; set; } = Guid.NewGuid();
+        public int? PagoId { get; set; }
     }
 }

@@ -346,6 +346,7 @@
                                     <th class="border-0">Monto</th>
                                     <th class="border-0">Estado</th>
                                     <th class="border-0">Fecha de Pago</th>
+                                    <th class="border-0">Comprobante de Pago</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -356,15 +357,25 @@
                                         <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
                                         <td>$@cuota.Monto.ToString("N2")</td>
                                         <td>
-                                            <span
-                                                class="badge @(cuota.Estado == "Pagado" ? "bg-success" : 
-                                                                                                     cuota.Estado == "Pendiente" ? "bg-warning" : "bg-danger")">
-                                            @cuota.Estado
-                                        </span>
-                                    </td>
-                                    <td>@(cuota.FechaPago?.ToString("dd/MM/yyyy") ?? "-")</td>
-                                </tr>
-                                                        }
+                                            <span class="badge @(cuota.Estado == "Pagado" ? "bg-success" : cuota.Estado == "Pendiente" ? "bg-warning" : "bg-danger")">
+                                                @cuota.Estado
+                                            </span>
+                                        </td>
+                                        <td>@(cuota.FechaPago?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                        <td>
+                                            @if (cuota.Estado == "Pagado" && cuota.PagoId != null && cuota.PagoId > 0)
+                                            {
+                                                <a class="btn btn-outline-primary btn-sm" target="_blank" href="@Url.Action("FacturaPdf", "Cobros", new { id = cuota.PagoId })">
+                                                    <i class="ti ti-file-text me-1"></i>Ver PDF
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-muted">-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
                             </tbody>
                         </table>
                     </div>
