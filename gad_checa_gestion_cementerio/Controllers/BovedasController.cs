@@ -112,7 +112,8 @@ namespace WebApp.Controllers
                         c.FechaInicio <= DateTime.Now &&
                         (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
                     Piso = _mapper.Map<PisoModel>(b.Piso),
-                    Propietario = b.Propietario
+                    Propietario = b.Propietario,
+                    Contratos = b.Contratos
                 })
                 .ToListAsync();
 
@@ -146,6 +147,12 @@ namespace WebApp.Controllers
                     .ThenInclude(p => p.Bloque)
                 .Include(b => b.Propietario)
                 .Include(b => b.Contratos)
+                    .ThenInclude(c => c.Difunto)
+                        .ThenInclude(d => d.Descuento)
+                .Include(b => b.Contratos)
+                    .ThenInclude(c => c.Responsables)
+                .Include(b => b.Contratos)
+                    .ThenInclude(c => c.Cuotas)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (boveda == null)
