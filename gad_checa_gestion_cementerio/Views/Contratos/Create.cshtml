@@ -90,7 +90,7 @@
                             </button>
                             <button type="button" class="btn btn-success px-4 py-2" id="finishBtn"
                                 style="display: none;">
-                                <i class="ti ti-check me-2"></i> Finalizar
+                                <i class="ti ti-check me-2"></i> Finalizar y Guardar
                             </button>
                         </div>
                     </div>
@@ -409,10 +409,10 @@
                         } catch (error) {
                             console.error('Error loading step:', error);
                             contentDiv.innerHTML = `
-                                                                                                                                <div class="alert alert-danger">
-                                                                                                                                    Error al cargar el paso ${step}. Intente nuevamente.<br>
-                                                                                                                                    ${error.message}
-                                                                                                                                </div>`;
+                                                                                                                                                        <div class="alert alert-danger">
+                                                                                                                                                            Error al cargar el paso ${step}. Intente nuevamente.<br>
+                                                                                                                                                            ${error.message}
+                                                                                                                                                        </div>`;
                             return false;
                         } finally {
                             setLoading(false);
@@ -475,48 +475,48 @@
                                 .then(data => {
                                     if (data.success) {
                                         const responsableHtml = `
-                                                                                                                                            <div class="responsable mb-4" data-id="${selectedOption.val()}">
-                                                                                                                                                <div class="card border-1 shadow-sm">
-                                                                                                                                                    <div class="card-body">
-                                                                                                                                                        <div class="row">
-                                                                                                                                                            <div class="col-md-8">
-                                                                                                                                                                <div class="d-flex align-items-center">
-                                                                                                                                                                    <i class="ti ti-user me-2 fs-4"></i>
-                                                                                                                                                                    <div class="flex-grow-1">
-                                                                                                                                                                        <h5 class="mb-1">${selectedOption.data('nombres')} ${selectedOption.data('apellidos')}</h5>
-                                                                                                                                                                        <p class="mb-0 text-muted">
-                                                                                                                                                                            ${selectedOption.data('tipo')}: ${selectedOption.data('numero')}
-                                                                                                                                                                        </p>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                            <div class="col-md-4">
-                                                                                                                                                                <div class="row">
-                                                                                                                                                                    <div class="col-md-6">
-                                                                                                                                                                        <div class="mb-3">
-                                                                                                                                                                            <label class="form-label">Fecha Inicio</label>
-                                                                                                                                                                            <input type="date" class="form-control fecha-inicio" 
-                                                                                                                                                                                value="${new Date().toISOString().split('T')[0]}" />
+                                                                                                                                                                    <div class="responsable mb-4" data-id="${selectedOption.val()}">
+                                                                                                                                                                        <div class="card border-1 shadow-sm">
+                                                                                                                                                                            <div class="card-body">
+                                                                                                                                                                                <div class="row">
+                                                                                                                                                                                    <div class="col-md-8">
+                                                                                                                                                                                        <div class="d-flex align-items-center">
+                                                                                                                                                                                            <i class="ti ti-user me-2 fs-4"></i>
+                                                                                                                                                                                            <div class="flex-grow-1">
+                                                                                                                                                                                                <h5 class="mb-1">${selectedOption.data('nombres')} ${selectedOption.data('apellidos')}</h5>
+                                                                                                                                                                                                <p class="mb-0 text-muted">
+                                                                                                                                                                                                    ${selectedOption.data('tipo')}: ${selectedOption.data('numero')}
+                                                                                                                                                                                                </p>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                        </div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                    <div class="col-md-4">
+                                                                                                                                                                                        <div class="row">
+                                                                                                                                                                                            <div class="col-md-6">
+                                                                                                                                                                                                <div class="mb-3">
+                                                                                                                                                                                                    <label class="form-label">Fecha Inicio</label>
+                                                                                                                                                                                                    <input type="date" class="form-control fecha-inicio" 
+                                                                                                                                                                                                        value="${new Date().toISOString().split('T')[0]}" />
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                            <div class="col-md-6">
+                                                                                                                                                                                                <div class="mb-3">
+                                                                                                                                                                                                    <label class="form-label">Fecha Fin</label>
+                                                                                                                                                                                                    <input type="date" class="form-control fecha-fin" />
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                        </div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <div class="text-end mt-2">
+                                                                                                                                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${selectedOption.val()})">
+                                                                                                                                                                                        <i class="ti ti-trash me-1"></i>Quitar
+                                                                                                                                                                                    </button>
+                                                                                                                                                                                </div>
+                                                                                                                                                                            </div>
                                                                                                                                                                         </div>
                                                                                                                                                                     </div>
-                                                                                                                                                                    <div class="col-md-6">
-                                                                                                                                                                        <div class="mb-3">
-                                                                                                                                                                            <label class="form-label">Fecha Fin</label>
-                                                                                                                                                                            <input type="date" class="form-control fecha-fin" />
-                                                                                                                                                                        </div>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                        </div>
-                                                                                                                                                        <div class="text-end mt-2">
-                                                                                                                                                            <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${selectedOption.val()})">
-                                                                                                                                                                <i class="ti ti-trash me-1"></i>Quitar
-                                                                                                                                                            </button>
-                                                                                                                                                        </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                            </div>
-                                                                                                                                        `;
+                                                                                                                                                                `;
                                         document.getElementById('responsablesContainer').innerHTML += responsableHtml;
                                         $('#searchResponsable').val(null).trigger('change');
                                     } else {
@@ -619,49 +619,49 @@
                                     container.innerHTML = '';
                                     data.responsables.forEach(responsable => {
                                         const html = `
-                                                                                                                                            <div class="responsable mb-4" data-id="${responsable.id}">
-                                                                                                                                                <div class="card border-0 shadow-sm">
-                                                                                                                                                    <div class="card-body">
-                                                                                                                                                        <div class="row">
-                                                                                                                                                            <div class="col-md-8">
-                                                                                                                                                                <div class="d-flex align-items-center">
-                                                                                                                                                                    <i class="ti ti-user me-2 fs-4"></i>
-                                                                                                                                                                    <div class="flex-grow-1">
-                                                                                                                                                                        <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
-                                                                                                                                                                        <p class="mb-0 text-muted">
-                                                                                                                                                                            ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
-                                                                                                                                                                        </p>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                            <div class="col-md-4">
-                                                                                                                                                                <div class="row">
-                                                                                                                                                                    <div class="col-md-6">
-                                                                                                                                                                        <div class="mb-3">
-                                                                                                                                                                            <label class="form-label">Fecha Inicio</label>
-                                                                                                                                                                            <input type="date" class="form-control fecha-inicio" 
-                                                                                                                                                                                value="${responsable.fechaInicio}" />
+                                                                                                                                                                    <div class="responsable mb-4" data-id="${responsable.id}">
+                                                                                                                                                                        <div class="card border-0 shadow-sm">
+                                                                                                                                                                            <div class="card-body">
+                                                                                                                                                                                <div class="row">
+                                                                                                                                                                                    <div class="col-md-8">
+                                                                                                                                                                                        <div class="d-flex align-items-center">
+                                                                                                                                                                                            <i class="ti ti-user me-2 fs-4"></i>
+                                                                                                                                                                                            <div class="flex-grow-1">
+                                                                                                                                                                                                <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
+                                                                                                                                                                                                <p class="mb-0 text-muted">
+                                                                                                                                                                                                    ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
+                                                                                                                                                                                                </p>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                        </div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                    <div class="col-md-4">
+                                                                                                                                                                                        <div class="row">
+                                                                                                                                                                                            <div class="col-md-6">
+                                                                                                                                                                                                <div class="mb-3">
+                                                                                                                                                                                                    <label class="form-label">Fecha Inicio</label>
+                                                                                                                                                                                                    <input type="date" class="form-control fecha-inicio" 
+                                                                                                                                                                                                        value="${responsable.fechaInicio}" />
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                            <div class="col-md-6">
+                                                                                                                                                                                                <div class="mb-3">
+                                                                                                                                                                                                    <label class="form-label">Fecha Fin</label>
+                                                                                                                                                                                                    <input type="date" class="form-control fecha-fin" 
+                                                                                                                                                                                                        value="${responsable.fechaFin || ''}" />
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                        </div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                </div>
+                                                                                                                                                                                <div class="text-end mt-2">
+                                                                                                                                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${responsable.id})">
+                                                                                                                                                                                        <i class="ti ti-trash me-1"></i>Quitar
+                                                                                                                                                                                    </button>
+                                                                                                                                                                                </div>
+                                                                                                                                                                            </div>
                                                                                                                                                                         </div>
                                                                                                                                                                     </div>
-                                                                                                                                                                    <div class="col-md-6">
-                                                                                                                                                                        <div class="mb-3">
-                                                                                                                                                                            <label class="form-label">Fecha Fin</label>
-                                                                                                                                                                            <input type="date" class="form-control fecha-fin" 
-                                                                                                                                                                                value="${responsable.fechaFin || ''}" />
-                                                                                                                                                                        </div>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                        </div>
-                                                                                                                                                        <div class="text-end mt-2">
-                                                                                                                                                            <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${responsable.id})">
-                                                                                                                                                                <i class="ti ti-trash me-1"></i>Quitar
-                                                                                                                                                            </button>
-                                                                                                                                                        </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                            </div>
-                                                                                                                                        `;
+                                                                                                                                                                `;
                                         container.innerHTML += html;
                                     });
                                     initSelect2();
@@ -781,6 +781,58 @@
                         initCuotasListeners();
                     });
                 </script>
-
+                <script>
+                    function formatCurrency(amount) {
+                        return amount.toLocaleString('es-EC', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    }
+                    function updateTotalCuotas() {
+                        let total = 0;
+                        let allChecked = true;
+                        let anyChecked = false;
+                        const checkboxes = document.querySelectorAll('.js-cuota-checkbox');
+                        checkboxes.forEach(function (cb) {
+                            if (cb.checked) {
+                                let monto = parseFloat(cb.getAttribute('data-monto'));
+                                if (!isNaN(monto)) total += monto;
+                                anyChecked = true;
+                            } else {
+                                allChecked = false;
+                            }
+                        });
+                        let totalCuotas = document.getElementById('totalCuotas');
+                        if (totalCuotas) totalCuotas.textContent = formatCurrency(total);
+                        let inputMonto = document.getElementById('Monto');
+                        if (inputMonto) inputMonto.value = total >= 0 ? total.toFixed(2) : '0.00';
+                        // Actualizar el checkbox de seleccionar todos
+                        const selectAll = document.getElementById('selectAllCuotas');
+                        if (selectAll) {
+                            selectAll.checked = allChecked && anyChecked;
+                            selectAll.indeterminate = !allChecked && anyChecked;
+                        }
+                    }
+                    function initCuotasListeners() {
+                        const checkboxes = document.querySelectorAll('.js-cuota-checkbox');
+                        if (checkboxes.length > 0) {
+                            checkboxes.forEach(function (cb) {
+                                cb.removeEventListener('change', updateTotalCuotas);
+                                cb.addEventListener('change', updateTotalCuotas);
+                            });
+                            updateTotalCuotas();
+                        }
+                        // Checkbox seleccionar todos
+                        const selectAll = document.getElementById('selectAllCuotas');
+                        if (selectAll) {
+                            selectAll.addEventListener('change', function () {
+                                document.querySelectorAll('.js-cuota-checkbox').forEach(cb => {
+                                    cb.checked = selectAll.checked;
+                                });
+                                updateTotalCuotas();
+                            });
+                        }
+                    }
+                    document.addEventListener('DOMContentLoaded', function () {
+                        initCuotasListeners();
+                    });
+                </script>
 
         }

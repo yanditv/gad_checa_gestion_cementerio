@@ -382,6 +382,14 @@
                         // Actualiza el campo del secuencial en el formulario
                         inputNumeroSecuencial.value = data.data.numeroSecuencial;
 
+                        // Actualizar el monto total si está disponible
+                        if (data.data.montoTotal !== undefined) {
+                            const montoTotalInput = document.getElementById('MontoTotal');
+                            if (montoTotalInput) {
+                                montoTotalInput.value = parseFloat(data.data.montoTotal).toFixed(2);
+                            }
+                        }
+
                         // Si hay un elemento para mostrar el número secuencial, actualizarlo también
                         const numeroSecuencialElement = document.getElementById("numero-secuencial-contrato");
                         if (numeroSecuencialElement) {

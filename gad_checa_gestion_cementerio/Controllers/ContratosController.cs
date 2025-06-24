@@ -75,7 +75,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             int total = await contratosQuery.CountAsync();
             var contratos = await contratosQuery
-            .OrderBy(c => c.Id)
+            .OrderByDescending(c => c.FechaCreacion)
             .Skip((pagina - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -934,10 +934,23 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (ModelState.IsValid)
             {
                 var contrato = GetContratoFromSession();
-                // Lógica para guardar los datos del difunto
-                // ...
                 contrato.difunto = difunto;
                 contrato.contrato.DifuntoId = difunto.Id;
+
+                // Si el difunto tiene descuento, aplicar a las cuotas
+                if (difunto.DescuentoId != 0)
+                {
+                    var descuentoObj = _context.Descuento.FirstOrDefault(d => d.Id == difunto.DescuentoId);
+                    if (descuentoObj != null)
+                    {
+                        decimal porcentaje = descuentoObj.Porcentaje;
+                        foreach (var cuota in contrato.contrato.Cuotas)
+                        {
+                            cuota.Monto = Math.Round(cuota.Monto * (1 - (porcentaje / 100m)), 2);
+                        }
+                        // NO actualizar contrato.contrato.MontoTotal aquí
+                    }
+                }
                 SaveContratoToSession(contrato);
                 return Json(new { success = true });
             }
@@ -1084,10 +1097,10 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
             var contrato = GetContratoFromSession();
-            contrato.pago.Cuotas = contrato.contrato.Cuotas.Where(c => !c.Pagada).ToList();
+            // Mostrar siempre todas las cuotas, no solo las no pagadas
+            contrato.pago.Cuotas = contrato.contrato.Cuotas;
             contrato.pago.FechaPago = DateTime.Now;
 
-            // Verificar si el difunto tiene descuento y aplicarlo
             decimal descuento = 0;
             if (contrato.difunto != null && contrato.difunto.DescuentoId != 0)
             {
@@ -1097,16 +1110,13 @@ namespace gad_checa_gestion_cementerio.Controllers
                     descuento = descuentoObj.Porcentaje;
                 }
             }
+            ViewBag.DescuentoPorcentaje = descuento;
+            ViewBag.MontoOriginal = contrato.contrato.MontoTotal;
 
-            decimal montoSinDescuento = contrato.pago.Cuotas.Sum(c => c.Monto);
+            decimal montoSinDescuento = contrato.contrato.MontoTotal;
             decimal montoDescuento = montoSinDescuento * (descuento / 100m);
             contrato.pago.Monto = montoSinDescuento - montoDescuento;
 
-            foreach (var cuota in contrato.pago.Cuotas)
-            {
-                Console.WriteLine(cuota.FechaVencimiento);
-                cuota.Monto = contrato.pago.Monto / contrato.pago.Cuotas.Count;
-            }
             var firstResponsable = contrato.responsables.FirstOrDefault();
             if (firstResponsable != null)
             {
@@ -1138,6 +1148,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                 pago.Monto = pago.Cuotas.Sum(c => c.Monto);
                 pago.FechaPago = DateTime.Now;
 
+                // Permitir monto 0 si hay descuento del 100%
+                if (pago.Monto < 0)
+                {
+                    return Json(new { success = false, errors = new List<string> { "El monto no puede ser negativo." } });
+                }
+
                 // Marcar las cuotas como pagadas
                 foreach (var cuota in contrato.contrato.Cuotas)
                 {
@@ -1160,7 +1176,31 @@ namespace gad_checa_gestion_cementerio.Controllers
         public IActionResult CreateContrato()
         {
             var contrato_model = GetContratoFromSession();
-            var tarifa = _context.Cementerio.FirstOrDefault()?.tarifa_arriendo ?? 0;
+            decimal tarifa = 0;
+            var cementerio = _context.Cementerio.FirstOrDefault();
+            if (contrato_model.contrato.BovedaId > 0)
+            {
+                var boveda = _context.Boveda
+                    .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
+                    .FirstOrDefault(b => b.Id == contrato_model.contrato.BovedaId);
+                if (boveda?.Piso?.Bloque != null)
+                {
+                    var tipo = boveda.Piso.Bloque.Tipo?.ToLower();
+                    if (tipo == "nichos")
+                    {
+                        tarifa = cementerio?.tarifa_arriendo_nicho ?? 0;
+                    }
+                    else
+                    {
+                        tarifa = cementerio?.tarifa_arriendo ?? 0;
+                    }
+                }
+            }
+            else
+            {
+                tarifa = cementerio?.tarifa_arriendo ?? 0;
+            }
             contrato_model.contrato.NumeroDeMeses = 5;
             contrato_model.contrato.FechaInicio = DateTime.Now;
             contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
@@ -1205,6 +1245,31 @@ namespace gad_checa_gestion_cementerio.Controllers
             // Generar el número secuencial indicando si es renovación
             contrato_model.NumeroSecuencial = _contratoService.getNumeroContrato(idBoveda, isRenovacion);
             responseData["numeroSecuencial"] = contrato_model.NumeroSecuencial;
+
+            // Obtener la tarifa según el tipo de bóveda
+            var boveda = _context.Boveda
+                .Include(b => b.Piso)
+                .ThenInclude(p => p.Bloque)
+                .FirstOrDefault(b => b.Id == idBoveda);
+
+            if (boveda?.Piso?.Bloque != null)
+            {
+                var cementerio = _context.Cementerio.FirstOrDefault();
+                decimal tarifa = 0;
+                var tipo = boveda.Piso.Bloque.Tipo?.ToLower();
+
+                if (tipo == "nichos")
+                {
+                    tarifa = cementerio?.tarifa_arriendo_nicho ?? 0;
+                }
+                else
+                {
+                    tarifa = cementerio?.tarifa_arriendo ?? 0;
+                }
+
+                contrato_model.MontoTotal = tarifa;
+                responseData["montoTotal"] = Math.Round(tarifa, 2);
+            }
 
             // Si es una renovación, incluir información sobre el contrato original
             if (isRenovacion && contrato_model.ContratoOrigenId.HasValue)
