@@ -87,7 +87,7 @@ public class ContratoPDF : IDocument
             .Column(column =>
             {
                 column.Spacing(20);
-                column.Item().AlignCenter().Text("CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA").Bold().FontSize(13);
+                column.Item().AlignCenter().Text($"CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. {contrato.NumeroSecuencial}").Bold().FontSize(13);
                 column.Item().Text(text =>
                 {
                     text.Span("En la Parroquia de Checa, a los ");
@@ -144,7 +144,7 @@ public class ContratoPDF : IDocument
                 {
                     text.Span("CUARTA: PRECIO. -").Bold();
                     text.Span(" El valor por arriendo de la Bóveda es de ");
-                    text.Span(contrato.MontoTotal.ToString("C")).Bold();
+                    text.Span(contrato.Cuotas.Sum(x => x.Monto).ToString("C", new CultureInfo("en-US"))).Bold();
                     text.Span($", valor que fue cancelado con depósito en {abreviatura_banco} del {NombreEntidadFinanciera} cta. # ");
                     text.Span(numero_cuenta).Bold();
                 });
