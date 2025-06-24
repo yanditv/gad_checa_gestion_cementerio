@@ -1,8 +1,8 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Mvc.Localization
 @using gad_checa_gestion_cementerio.Areas.Identity.Data
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser> SignInManager
+@inject UserManager<gad_checa_gestion_cementerio.Areas.Identity.Data.ApplicationUser> UserManager
 <!DOCTYPE html>
 <html lang="es">
 
@@ -38,6 +38,14 @@
     rel="stylesheet" />
 
   @RenderSection("Styles", required: false)
+
+  @if (User?.Identity?.IsAuthenticated == true)
+  {
+    <!-- Prevenir caché para usuarios autenticados -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+  }
 </head>
 
 <body data-pc-preset="preset-1" data-pc-direction="ltr" data-pc-theme="light">
@@ -463,8 +471,109 @@
   <script>font_change("Public-Sans");</script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+  @if (User?.Identity?.IsAuthenticated == true)
+  {
+    <script>
+      // Mejorar manejo de navegación hacia atrás y problemas de caché
+      (function () {
+        // Prevenir carga desde caché
+        window.addEventListener('pageshow', function (event) {
+          if (event.persisted) {
+            // La página fue cargada desde caché, recargar para verificar autenticación
+            window.location.reload(true);
+          }
+        });
+
+        // Prevenir navegación hacia atrás después de logout
+        window.addEventListener('beforeunload', function () {
+          // Limpiar caché del navegador al salir
+          if (window.performance && window.performance.navigation.type === 1) {
+            // Es una recarga, limpiar caché
+            if ('caches' in window) {
+              caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+              });
+            }
+          }
+        });
+
+        // Prevenir navegación con el botón atrás en páginas específicas
+        if (window.location.pathname.includes('/Identity/Account/Manage') ||
+          window.location.pathname.includes('/Admin')) {
+
+          // Reemplazar la entrada actual del historial
+          history.replaceState(null, null, window.location.href);
+
+          // Manejar evento popstate (botón atrás)
+          window.addEventListener('popstate', function (event) {
+            // Si viene de una página de logout, redirigir al home
+            if (document.referrer.includes('/Account/Logout')) {
+              window.location.href = '@Url.Action("Index", "Home")';
+              return;
+            }
+
+            // Para otras navegaciones hacia atrás, verificar autenticación
+            fetch('@Url.Action("Index", "Home")', {
+              method: 'HEAD',
+              cache: 'no-cache'
+            }).then(response => {
+              if (response.redirected) {
+                // Si fue redirigido, probablemente no autenticado
+                window.location.href = response.url;
+              }
+            }).catch(() => {
+              // Error en la verificación, redirigir al home
+              window.location.href = '@Url.Action("Index", "Home")';
+            });
+          });
+        }
+
+        // Interceptar formularios de logout para limpiar caché
+        document.addEventListener('submit', function (event) {
+          const form = event.target;
+          if (form.id === 'formLog' || form.id === 'formLogout') {
+            // Limpiar datos del navegador antes del logout
+            if ('caches' in window) {
+              caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+              });
+            }
+
+            // Limpiar sessionStorage y localStorage
+            if (window.sessionStorage) {
+              sessionStorage.clear();
+            }
+
+            // Nota: No limpiamos localStorage completamente para preservar configuraciones del usuario
+            // localStorage.clear();
+          }
+        });
+      })();
+    </script>
+  }
+
+  <script>
+    // Manejo de caché universal (para usuarios autenticados y no autenticados)
+    (function () {
+      // Para usuarios no autenticados, limpiar caché si vienen de logout
+      if (document.referrer.includes('/Account/Logout') ||
+        window.location.search.includes('logout=true')) {
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+
+        // Limpiar la URL de parámetros de logout
+        if (window.location.search.includes('logout=true')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    })();
+  </script>
+
   @await RenderSectionAsync("Scripts", required: false)
 </body>
 <!-- [Body] end -->
 
-</html>
+</html> 

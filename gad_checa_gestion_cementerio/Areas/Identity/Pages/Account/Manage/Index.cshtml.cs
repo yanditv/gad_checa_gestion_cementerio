@@ -110,49 +110,74 @@ namespace gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnGetAsync()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            try
             {
-                return NotFound($"No se pudo cargar el usuario con ID '{_userManager.GetUserId(User)}'.");
-            }
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    var userId = _userManager.GetUserId(User);
+                    _logger.LogWarning($"No se pudo cargar el usuario con ID '{userId ?? "null"}'.");
 
-            await LoadAsync(user);
-            return Page();
+                    // Si no hay usuario, redirigir al login
+                    return RedirectToPage("/Account/Login");
+                }
+
+                await LoadAsync(user);
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar la página de gestión de cuenta");
+                return RedirectToPage("/Account/Login");
+            }
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            try
             {
-                return NotFound($"No se pudo cargar el usuario con ID '{_userManager.GetUserId(User)}'.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                await LoadAsync(user);
-                return Page();
-            }
-
-            user.Nombres = Input.Nombres;
-            user.Apellidos = Input.Apellidos;
-            user.Cedula = Input.Cedula;
-
-            var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
-            if (Input.PhoneNumber != phoneNumber)
-            {
-                var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-                if (!setPhoneResult.Succeeded)
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
                 {
-                    StatusMessage = "Error inesperado al intentar establecer el número de teléfono.";
-                    return RedirectToPage();
-                }
-            }
+                    var userId = _userManager.GetUserId(User);
+                    _logger.LogWarning($"No se pudo cargar el usuario con ID '{userId ?? "null"}'.");
 
-            await _userManager.UpdateAsync(user);
-            await _signInManager.RefreshSignInAsync(user);
-            StatusMessage = "Tu perfil ha sido actualizado";
-            return RedirectToPage();
+                    // Si no hay usuario, redirigir al login
+                    return RedirectToPage("/Account/Login");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    await LoadAsync(user);
+                    return Page();
+                }
+
+                user.Nombres = Input.Nombres;
+                user.Apellidos = Input.Apellidos;
+                user.Cedula = Input.Cedula;
+
+                var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
+                if (Input.PhoneNumber != phoneNumber)
+                {
+                    var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+                    if (!setPhoneResult.Succeeded)
+                    {
+                        StatusMessage = "Error inesperado al intentar establecer el número de teléfono.";
+                        return RedirectToPage();
+                    }
+                }
+
+                await _userManager.UpdateAsync(user);
+                await _signInManager.RefreshSignInAsync(user);
+                StatusMessage = "Tu perfil ha sido actualizado";
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el perfil del usuario");
+                StatusMessage = "Error inesperado al actualizar el perfil.";
+                return RedirectToPage();
+            }
         }
     }
 }

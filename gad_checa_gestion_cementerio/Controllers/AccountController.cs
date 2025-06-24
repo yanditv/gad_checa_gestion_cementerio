@@ -20,10 +20,52 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout(string? returnUrl = null)
+        {
+            try
+            {
+                if (_signInManager.IsSignedIn(User))
+                {
+                    await _signInManager.SignOutAsync();
+                }
+
+                // Limpiar cualquier información de sesión adicional
+                HttpContext.Session?.Clear();
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception)
+            {
+                // Si hay cualquier error, simplemente redirigir al inicio
+                return RedirectToAction("Index", "Home");
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
-            return RedirectToAction("Index", "Home");
+            try
+            {
+                if (_signInManager.IsSignedIn(User))
+                {
+                    await _signInManager.SignOutAsync();
+                }
+
+                // Limpiar cualquier información de sesión adicional
+                HttpContext.Session?.Clear();
+
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception)
+            {
+                // Si hay cualquier error, simplemente redirigir al inicio
+                return RedirectToAction("Index", "Home");
+            }
         }
     }
 }
