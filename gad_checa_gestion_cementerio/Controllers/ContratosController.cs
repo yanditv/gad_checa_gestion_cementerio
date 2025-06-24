@@ -1508,6 +1508,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     {
                         return Json(new { success = false, errors = new List<string> { "Usuario no encontrado." } });
                     }
+                    Responsable nuevoResponsable;
                     if (personaExistente != null)
                     {
                         // Si existe, verificar si ya es un responsable
@@ -1532,62 +1533,70 @@ namespace gad_checa_gestion_cementerio.Controllers
                         personaExistente.Direccion = responsable.Direccion;
                         personaExistente.UsuarioCreadorId = identityUser1.Id;
 
-                        var nuevoResponsable = _mapper.Map<Responsable>(responsable);
-
+                        nuevoResponsable = _mapper.Map<Responsable>(responsable);
                         _context.Responsable.Add(nuevoResponsable);
                         await _context.SaveChangesAsync();
-
-                        return Json(new
-                        {
-                            success = true,
-                            responsable = new
-                            {
-                                id = nuevoResponsable.Id,
-                                nombres = personaExistente.Nombres,
-                                apellidos = personaExistente.Apellidos,
-                                tipoIdentificacion = personaExistente.TipoIdentificacion,
-                                numeroIdentificacion = personaExistente.NumeroIdentificacion,
-                                telefono = personaExistente.Telefono,
-                                email = personaExistente.Email,
-                                direccion = personaExistente.Direccion,
-                                fechaInicio = nuevoResponsable.FechaInicio.ToString("yyyy-MM-dd"),
-                                fechaFin = nuevoResponsable.FechaFin?.ToString("yyyy-MM-dd")
-                            }
-                        });
                     }
                     else
                     {
-                        var identityUser = await _userManager.GetUserAsync(User);
-                        if (identityUser == null)
+                        // Crear directamente un Responsable (hereda de Persona)
+                        nuevoResponsable = new gad_checa_gestion_cementerio.Data.Responsable
                         {
-                            return Json(new { success = false, errors = new List<string> { "Usuario no encontrado." } });
-                        }
-                        // Si no existe, crear nueva persona y responsable
-                        var nuevoResponsable = _mapper.Map<Responsable>(responsable);
-                        nuevoResponsable.UsuarioCreador = identityUser;
-                        nuevoResponsable.UsuarioCreadorId = identityUser.Id;
-                        nuevoResponsable.FechaCreacion = DateTime.Now;
+                            Nombres = responsable.Nombres,
+                            Apellidos = responsable.Apellidos,
+                            TipoIdentificacion = responsable.TipoIdentificacion,
+                            NumeroIdentificacion = responsable.NumeroIdentificacion,
+                            Telefono = responsable.Telefono,
+                            Email = responsable.Email,
+                            Direccion = responsable.Direccion,
+                            Estado = true,
+                            FechaCreacion = DateTime.Now,
+                            UsuarioCreadorId = identityUser1.Id,
+                            UsuarioCreador = identityUser1,
+                            FechaInicio = DateTime.Now,
+                            FechaFin = responsable.FechaFin
+                        };
                         _context.Responsable.Add(nuevoResponsable);
                         await _context.SaveChangesAsync();
-
-                        return Json(new
-                        {
-                            success = true,
-                            responsable = new
-                            {
-                                id = nuevoResponsable.Id,
-                                nombres = nuevoResponsable.Nombres,
-                                apellidos = nuevoResponsable.Apellidos,
-                                tipoIdentificacion = nuevoResponsable.TipoIdentificacion,
-                                numeroIdentificacion = nuevoResponsable.NumeroIdentificacion,
-                                telefono = nuevoResponsable.Telefono,
-                                email = nuevoResponsable.Email,
-                                direccion = nuevoResponsable.Direccion,
-                                fechaInicio = nuevoResponsable.FechaInicio.ToString("yyyy-MM-dd"),
-                                fechaFin = nuevoResponsable.FechaFin?.ToString("yyyy-MM-dd")
-                            }
-                        });
                     }
+
+                    // Agregar a la sesión del contrato si no está ya
+                    var contrato = GetContratoFromSession();
+                    if (!contrato.responsables.Any(r => r.NumeroIdentificacion == nuevoResponsable.NumeroIdentificacion))
+                    {
+                        contrato.responsables.Add(new ResponsableModel
+                        {
+                            Id = nuevoResponsable.Id,
+                            Nombres = nuevoResponsable.Nombres,
+                            Apellidos = nuevoResponsable.Apellidos,
+                            TipoIdentificacion = nuevoResponsable.TipoIdentificacion,
+                            NumeroIdentificacion = nuevoResponsable.NumeroIdentificacion,
+                            Telefono = nuevoResponsable.Telefono,
+                            Email = nuevoResponsable.Email,
+                            Direccion = nuevoResponsable.Direccion,
+                            FechaInicio = nuevoResponsable.FechaInicio,
+                            FechaFin = nuevoResponsable.FechaFin
+                        });
+                        SaveContratoToSession(contrato);
+                    }
+
+                    return Json(new
+                    {
+                        success = true,
+                        responsable = new
+                        {
+                            id = nuevoResponsable.Id,
+                            nombres = nuevoResponsable.Nombres,
+                            apellidos = nuevoResponsable.Apellidos,
+                            tipoIdentificacion = nuevoResponsable.TipoIdentificacion,
+                            numeroIdentificacion = nuevoResponsable.NumeroIdentificacion,
+                            telefono = nuevoResponsable.Telefono,
+                            email = nuevoResponsable.Email,
+                            direccion = nuevoResponsable.Direccion,
+                            fechaInicio = nuevoResponsable.FechaInicio.ToString("yyyy-MM-dd"),
+                            fechaFin = nuevoResponsable.FechaFin?.ToString("yyyy-MM-dd")
+                        }
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -1713,6 +1722,31 @@ namespace gad_checa_gestion_cementerio.Controllers
             var fileName = Path.GetFileName(rutaCompleta);
             Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
             return PhysicalFile(rutaCompleta, "application/pdf");
+        }
+
+        [HttpGet]
+        public IActionResult GetResponsables()
+        {
+            var contrato = GetContratoFromSession();
+            var responsables = contrato?.responsables ?? new List<ResponsableModel>();
+
+            return Json(new
+            {
+                success = true,
+                responsables = responsables.Select(r => new
+                {
+                    id = r.Id,
+                    nombres = r.Nombres,
+                    apellidos = r.Apellidos,
+                    tipoIdentificacion = r.TipoIdentificacion,
+                    numeroIdentificacion = r.NumeroIdentificacion,
+                    telefono = r.Telefono,
+                    email = r.Email,
+                    direccion = r.Direccion,
+                    fechaInicio = r.FechaInicio.ToString("yyyy-MM-dd"),
+                    fechaFin = r.FechaFin?.ToString("yyyy-MM-dd")
+                })
+            });
         }
     }
 }

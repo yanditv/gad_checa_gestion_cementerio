@@ -84,11 +84,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedEmail = false;
+    options.SignIn.RequireConfirmedPhoneNumber = false;
+    options.Tokens.AuthenticatorTokenProvider = null;
+    options.User.RequireUniqueEmail = true;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
+    options.Lockout.AllowedForNewUsers = false;
+    options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultProvider;
+    // Desactivar 2FA
+    options.Tokens.ChangePhoneNumberTokenProvider = TokenOptions.DefaultProvider;
 })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
