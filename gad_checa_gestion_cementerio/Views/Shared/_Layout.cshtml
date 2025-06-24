@@ -242,11 +242,13 @@
                     <h6 class="mb-1">@UserManager.GetUserName(User)</h6>
                     @{
                       var user = await UserManager.GetUserAsync(User);
-                      var roles = await UserManager.GetRolesAsync(user);
+                      var roles = user != null ? await UserManager.GetRolesAsync(user) : new List<string>();
                     }
                     <span>@roles.FirstOrDefault()</span>
                   </div>
-                  <form id="formLog" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                  <form id="formLog" asp-area="" asp-controller="Account" asp-action="Logout" method="post"
+                    class="d-inline">
+                    @Html.AntiForgeryToken()
                     <button type="submit" class="pc-head-link bg-transparent border-0">
                       <i class="ti ti-power text-danger"></i>
                     </button>
@@ -272,8 +274,9 @@
                     <i class="ti ti-edit-circle"></i>
                     <span>Edit Profile</span>
                   </a>
-                  <form id="formLogout" asp-controller="Account" asp-action="Logout" method="post"
+                  <form id="formLogout" asp-area="" asp-controller="Account" asp-action="Logout" method="post"
                     class="dropdown-item">
+                    @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-link p-0 text-decoration-none">
                       <i class="ti ti-power"></i>
                       <span>Logout</span>
