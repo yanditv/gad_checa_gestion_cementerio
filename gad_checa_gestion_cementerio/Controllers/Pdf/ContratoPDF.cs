@@ -133,11 +133,11 @@ public class ContratoPDF : IDocument
                     text.Span(" con número de cédula ");
                     text.Span(difunto.NumeroIdentificacion).Bold();
                     text.Span(", restos que serán depositados en la bóveda número ");
-                    text.Span(boveda?.NumeroSecuencial ?? "________________").Bold();
+                    text.Span(boveda?.NumeroSecuencial != "S/N" ? boveda?.NumeroSecuencial : boveda?.Numero.ToString() ?? "________________").Bold();
                     text.Span(" en el bloque ");
                     text.Span(boveda?.Piso?.Bloque?.Descripcion ?? "________________").Bold();
                     if (boveda?.Piso?.NumeroPiso != null)
-                        text.Span($", piso {boveda.Piso.NumeroPiso}").Bold();
+                        text.Span($", piso {boveda.Piso.NumeroPiso}.").Bold();
                 });
 
                 column.Item().Text(text =>
@@ -166,6 +166,16 @@ public class ContratoPDF : IDocument
                     text.Span("SEXTA: -").Bold();
                     text.Span(" Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.");
                 });
+
+                // Mostrar observaciones solo si existen
+                if (!string.IsNullOrWhiteSpace(contrato.Observaciones))
+                {
+                    column.Item().Text(text =>
+                    {
+                        text.Span("OBSERVACIONES: -").Bold();
+                        text.Span($" {contrato.Observaciones}");
+                    });
+                }
 
                 column.Item().Height(20);
                 column.Item().AlignCenter().Row(row =>
