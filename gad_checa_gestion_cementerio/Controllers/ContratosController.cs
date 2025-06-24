@@ -1226,6 +1226,12 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpPost]
         public IActionResult CreateContrato(ContratoModel contrato)
         {
+            // Validar que se haya seleccionado una bóveda
+            if (contrato.BovedaId == 0)
+            {
+                return Json(new { success = false, errors = new List<string> { "Debe seleccionar una bóveda." } });
+            }
+
             if (ModelState.IsValid)
             {
                 var sessionContrato = GetContratoFromSession();
