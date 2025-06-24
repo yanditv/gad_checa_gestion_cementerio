@@ -31,9 +31,11 @@ if (builder.Environment.IsDevelopment())
     Directory.CreateDirectory(dataProtectionPath);
 }
 
+// Configurar Data Protection con manejo de errores
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
-    .SetApplicationName("CementerioApp");
+    .SetApplicationName("CementerioApp")
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
 // Configuración de la base de datos
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
