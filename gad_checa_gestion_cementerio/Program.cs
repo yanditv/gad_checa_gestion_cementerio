@@ -232,9 +232,27 @@ async Task InitializeData(WebApplication app)
 
     try
     {
-        // Aplicar migraciones pendientes
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.MigrateAsync();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+
+        // Verificar si la base de datos existe antes de aplicar migraciones
+        if (!await dbContext.Database.CanConnectAsync())
+        {
+            logger.LogInformation("La base de datos no existe. Creando...");
+            await dbContext.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            logger.LogInformation("La base de datos ya existe. Aplicando migraciones pendientes...");
+            try
+            {
+                await dbContext.Database.MigrateAsync();
+            }
+            catch (Exception migrationEx)
+            {
+                logger.LogWarning(migrationEx, "Error al aplicar migraciones. Continuando con la base de datos existente.");
+            }
+        }
 
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
