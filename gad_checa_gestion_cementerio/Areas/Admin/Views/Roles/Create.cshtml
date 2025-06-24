@@ -2,30 +2,146 @@
     ViewData["Title"] = "Crear Rol";
 }
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>Crear Nuevo Rol</h5>
+<!-- Contenido Principal -->
+<div class="row justify-content-center">
+    <div class="col-xxl-8 col-lg-10">
+        <div class="card overflow-hidden">
+            <!-- Header de la Card -->
+            <div class="card-header bg-primary-gradient text-white">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar-lg bg-white bg-opacity-20 rounded">
+                            <span class="avatar-title">
+                                <i class="ti ti-shield-plus fs-24"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-1 text-white">Crear Nuevo Rol</h5>
+                        <p class="mb-0 text-white-50">Define un nuevo rol y sus permisos en el sistema</p>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <form asp-action="Create" method="post">
-                    @Html.AntiForgeryToken()
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-                    <div class="form-group mb-3">
-                        <label for="roleName" class="form-label">Nombre del Rol</label>
-                        <input type="text" class="form-control" id="roleName" name="roleName" required>
-                        <div class="text-danger"></div>
+            <div class="card-body p-4">
+                <!-- Información de ayuda -->
+                <div class="alert alert-info alert-border-left mb-4" role="alert">
+                    <i class="ri-information-line me-3 align-middle fs-16"></i>
+                    <div>
+                        <strong>Información:</strong> Los roles determinan qué acciones pueden realizar los usuarios en
+                        el sistema.
+                        Elige un nombre descriptivo y único para el nuevo rol.
+                    </div>
+                </div>
+
+                <form asp-action="Create" method="post" id="create-role-form">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Contenedor de errores dinámico -->
+                    <div id="validation-errors" style="display: none;"
+                        class="alert alert-danger alert-border-left alert-dismissible fade show mb-4" role="alert">
+                        <i class="ri-error-warning-line me-3 align-middle fs-16"></i>
+                        <div></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
 
-                    <div class="form-group">
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="ti ti-arrow-left"></i> Volver
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="ti ti-plus"></i> Crear Rol
-                        </button>
+                    <!-- Campo del nombre del rol -->
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto">
+                            <div class="mb-4">
+                                <label for="roleName" class="form-label fs-14 fw-medium">
+                                    <i class="ti ti-shield-check me-2 text-primary"></i>Nombre del Rol
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="ti ti-shield text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0 ps-0" id="roleName"
+                                        name="roleName" placeholder="Ej: Editor, Moderador, Supervisor..." required
+                                        autocomplete="off">
+                                </div>
+                                <div class="form-text">
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    El nombre debe ser único y descriptivo (3-50 caracteres)
+                                </div>
+                                <div class="invalid-feedback" id="roleName-error"></div>
+                            </div>
+
+                            <!-- Sugerencias de roles -->
+                            <div class="mb-4">
+                                <label class="form-label fs-14 fw-medium mb-2">
+                                    <i class="ti ti-bulb me-2 text-warning"></i>Sugerencias de Roles Comunes
+                                </label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm role-suggestion"
+                                        data-role="Editor">
+                                        <i class="ti ti-edit me-1"></i>Editor
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success btn-sm role-suggestion"
+                                        data-role="Moderador">
+                                        <i class="ti ti-shield-check me-1"></i>Moderador
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info btn-sm role-suggestion"
+                                        data-role="Supervisor">
+                                        <i class="ti ti-eye me-1"></i>Supervisor
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm role-suggestion"
+                                        data-role="Operador">
+                                        <i class="ti ti-settings me-1"></i>Operador
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm role-suggestion"
+                                        data-role="Invitado">
+                                        <i class="ti ti-user me-1"></i>Invitado
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="ti ti-click me-1"></i>
+                                    Haz clic en cualquier sugerencia para usarla
+                                </div>
+                            </div>
+
+                            <!-- Vista previa del rol -->
+                            <div class="mb-4" id="role-preview" style="display: none;">
+                                <label class="form-label fs-14 fw-medium mb-2">
+                                    <i class="ti ti-eye me-2 text-info"></i>Vista Previa del Rol
+                                </label>
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="avatar-sm bg-primary-subtle rounded">
+                                                <span class="avatar-title">
+                                                    <i class="ti ti-shield text-primary"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-1 fw-semibold" id="preview-role-name">Nombre del Rol</h6>
+                                            <p class="text-muted mb-0 fs-13">Rol personalizado del sistema</p>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <span class="badge bg-success-subtle text-success fs-12">
+                                                <i class="ti ti-circle-filled fs-10 me-1"></i>Nuevo
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto">
+                            <div class="text-end pt-3 border-top">
+                                <a asp-action="Index" class="btn btn-soft-secondary me-2">
+                                    <i class="ti ti-arrow-left me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary" id="submit-btn">
+                                    <i class="ti ti-device-floppy me-1"></i>Crear Rol
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -33,8 +149,292 @@
     </div>
 </div>
 
+@section Styles {
+    <style>
+        /* Estilos personalizados para Mantis */
+        .page-title-box {
+            padding: 1.5rem 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb-item+.breadcrumb-item::before {
+            content: ">";
+        }
+
+        .bg-primary-gradient {
+            background: linear-gradient(135deg, #405189 0%, #5a67d8 100%);
+        }
+
+        .avatar-lg {
+            width: 4rem;
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-sm {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bg-primary-subtle {
+            background-color: rgba(64, 81, 137, 0.1) !important;
+        }
+
+        .bg-success-subtle {
+            background-color: rgba(34, 197, 94, 0.1) !important;
+        }
+
+        .text-primary {
+            color: #405189 !important;
+        }
+
+        .text-success {
+            color: #22c55e !important;
+        }
+
+        .fs-24 {
+            font-size: 1.5rem !important;
+        }
+
+        .fs-16 {
+            font-size: 1rem !important;
+        }
+
+        .fs-14 {
+            font-size: 0.875rem !important;
+        }
+
+        .fs-13 {
+            font-size: 0.8125rem !important;
+        }
+
+        .fs-12 {
+            font-size: 0.75rem !important;
+        }
+
+        .fs-10 {
+            font-size: 0.625rem !important;
+        }
+
+        .fw-medium {
+            font-weight: 500;
+        }
+
+        .fw-semibold {
+            font-weight: 600;
+        }
+
+        .btn-soft-secondary {
+            background-color: rgba(116, 120, 141, 0.1);
+            border-color: rgba(116, 120, 141, 0.1);
+            color: #74788d;
+        }
+
+        .btn-soft-secondary:hover {
+            background-color: rgba(116, 120, 141, 0.2);
+            border-color: rgba(116, 120, 141, 0.2);
+            color: #74788d;
+        }
+
+        .alert-border-left {
+            border-left: 3px solid;
+        }
+
+        .alert-info.alert-border-left {
+            border-left-color: #0ea5e9;
+        }
+
+        .alert-danger.alert-border-left {
+            border-left-color: #ef4444;
+        }
+
+        .input-group .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(64, 81, 137, 0.25);
+            border-color: #405189;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .role-suggestion {
+            transition: all 0.15s ease-in-out;
+        }
+
+        .role-suggestion:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+        }
+
+        #role-preview {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .border-start-0 {
+            border-left: 0 !important;
+        }
+
+        .border-end-0 {
+            border-right: 0 !important;
+        }
+    </style>
+}
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const roleNameInput = document.getElementById('roleName');
+            const rolePreview = document.getElementById('role-preview');
+            const previewRoleName = document.getElementById('preview-role-name');
+            const form = document.getElementById('create-role-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const errorContainer = document.getElementById('validation-errors');
+
+            // Manejar sugerencias de roles
+            const roleSuggestions = document.querySelectorAll('.role-suggestion');
+            roleSuggestions.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const roleName = this.getAttribute('data-role');
+                    roleNameInput.value = roleName;
+                    roleNameInput.focus();
+                    updatePreview();
+
+                    // Animación visual
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+
+            // Actualizar vista previa en tiempo real
+            roleNameInput.addEventListener('input', updatePreview);
+
+            function updatePreview() {
+                const value = roleNameInput.value.trim();
+                if (value.length >= 2) {
+                    previewRoleName.textContent = value;
+                    rolePreview.style.display = 'block';
+                } else {
+                    rolePreview.style.display = 'none';
+                }
+
+                // Limpiar errores previos
+                clearErrors();
+            }
+
+            // Validación del formulario
+            form.addEventListener('submit', function (e) {
+                const roleName = roleNameInput.value.trim();
+                const errors = [];
+
+                // Validaciones
+                if (!roleName) {
+                    errors.push('El nombre del rol es obligatorio');
+                } else if (roleName.length < 3) {
+                    errors.push('El nombre del rol debe tener al menos 3 caracteres');
+                } else if (roleName.length > 50) {
+                    errors.push('El nombre del rol no puede exceder 50 caracteres');
+                } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(roleName)) {
+                    errors.push('El nombre del rol solo puede contener letras y espacios');
+                }
+
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    showErrors(errors);
+                    return false;
+                } else {
+                    // Mostrar loading
+                    submitBtn.innerHTML = '<i class="ti ti-loader-2 me-1 spin"></i>Creando...';
+                    submitBtn.disabled = true;
+                }
+            });
+
+            function showErrors(errors) {
+                const errorDiv = errorContainer.querySelector('div');
+                let errorHtml = '<ul class="mb-0">';
+                errors.forEach(function (error) {
+                    errorHtml += '<li>' + error + '</li>';
+                });
+                errorHtml += '</ul>';
+
+                errorDiv.innerHTML = errorHtml;
+                errorContainer.style.display = 'block';
+
+                // Scroll hacia el error
+                errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Focus en el campo con error
+                roleNameInput.focus();
+                roleNameInput.classList.add('is-invalid');
+            }
+
+            function clearErrors() {
+                errorContainer.style.display = 'none';
+                roleNameInput.classList.remove('is-invalid');
+            }
+
+            // Ocultar errores cuando se interactúe con el campo
+            roleNameInput.addEventListener('focus', clearErrors);
+
+            // Animación CSS para el spinner
+            const style = document.createElement('style');
+            style.textContent = `
+                        .spin {
+                            animation: spin 1s linear infinite;
+                        }
+                        @@keyframes spin {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+                    `;
+            document.head.appendChild(style);
+        });
+    </script>
 }

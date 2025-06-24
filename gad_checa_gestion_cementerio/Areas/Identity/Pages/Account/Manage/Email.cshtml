@@ -5,21 +5,6 @@
     ViewData["ActivePage"] = ManageNavPages.Email;
 }
 
-<!-- Breadcrumb -->
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0">Mi Cuenta</h4>
-            <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">Cuenta</a></li>
-                    <li class="breadcrumb-item active">Correo Electrónico</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="row">
     <div class="col-xxl-3">
         <partial name="_ManageNav" />
@@ -43,14 +28,8 @@
             </div>
             <div class="card-body">
                 <partial name="_StatusMessage" model="Model.StatusMessage" />
-                
+
                 <form id="email-form" method="post">
-                    <div asp-validation-summary="All" class="alert alert-danger alert-border-left alert-dismissible fade show" role="alert">
-                        <i class="ri-error-warning-line me-3 align-middle fs-16"></i>
-                        <div></div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    
                     <!-- Email actual -->
                     <div class="mb-4">
                         <label asp-for="Email" class="form-label">
@@ -84,23 +63,22 @@
                                 Tu dirección de correo electrónico no está verificada
                             </div>
                             <div class="mt-2">
-                                <button id="email-verification" type="submit" asp-page-handler="SendVerificationEmail" 
-                                        class="btn btn-outline-primary btn-sm">
+                                <button id="email-verification" type="submit" asp-page-handler="SendVerificationEmail"
+                                    class="btn btn-outline-primary btn-sm">
                                     <i class="ti ti-mail-forward me-1"></i>
                                     Enviar Email de Verificación
                                 </button>
                             </div>
                         }
                     </div>
-                    
+
                     <!-- Nuevo email -->
                     <div class="mb-4">
                         <label asp-for="Input.NewEmail" class="form-label">
                             <i class="ti ti-mail-plus me-1"></i>Nuevo Correo Electrónico
                         </label>
-                        <input asp-for="Input.NewEmail" class="form-control" 
-                               autocomplete="email" aria-required="true" 
-                               placeholder="Ingrese su nueva dirección de correo" />
+                        <input asp-for="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true"
+                            placeholder="Ingrese su nueva dirección de correo" />
                         <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
                         <div class="form-text">
                             <i class="ti ti-info-circle me-1"></i>
@@ -109,8 +87,8 @@
                     </div>
 
                     <div class="text-end">
-                        <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" 
-                                class="btn btn-primary">
+                        <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail"
+                            class="btn btn-primary">
                             <i class="ti ti-device-floppy me-1"></i>Cambiar Correo Electrónico
                         </button>
                         <button type="reset" class="btn btn-soft-secondary">
@@ -129,7 +107,7 @@
             padding: 1.5rem 0;
         }
 
-        .breadcrumb-item + .breadcrumb-item::before {
+        .breadcrumb-item+.breadcrumb-item::before {
             content: ">";
         }
 
@@ -202,4 +180,48 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Configurar validation summary personalizado
+            const form = document.getElementById('email-form');
+
+            if (form) {
+                // Crear el contenedor para mostrar errores
+                const errorContainer = document.createElement('div');
+                errorContainer.id = 'validation-errors';
+                errorContainer.style.display = 'none';
+                errorContainer.className = 'alert alert-danger alert-border-left alert-dismissible fade show mb-4';
+                errorContainer.setAttribute('role', 'alert');
+
+                // Insertar después del formulario
+                form.insertBefore(errorContainer, form.firstElementChild);
+
+                // Función para mostrar errores
+                window.showValidationErrors = function (errors) {
+                    if (errors && errors.length > 0) {
+                        let errorHtml = '<i class="ri-error-warning-line me-3 align-middle fs-16"></i><div><ul class="mb-0">';
+                        errors.forEach(function (error) {
+                            errorHtml += '<li>' + error + '</li>';
+                        });
+                        errorHtml += '</ul></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+
+                        errorContainer.innerHTML = errorHtml;
+                        errorContainer.style.display = 'block';
+
+                        // Scroll hacia el error
+                        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                };
+
+                // Ocultar errores cuando se interactúe con el formulario
+                const inputs = form.querySelectorAll('input');
+                inputs.forEach(function (input) {
+                    input.addEventListener('focus', function () {
+                        errorContainer.style.display = 'none';
+                    });
+                });
+            }
+        });
+    </script>
 }
