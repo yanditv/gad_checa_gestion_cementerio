@@ -1,69 +1,122 @@
-﻿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Perfil";
+    ViewData["Title"] = "Mi Perfil";
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
+<!-- Breadcrumb -->
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Mi Cuenta</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Cuenta</a></li>
+                    <li class="breadcrumb-item active">Información Personal</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xxl-3">
         <partial name="_ManageNav" />
     </div>
-    <div class="col-md-9">
-        <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <h5 class="mb-0"><i class="fas fa-user me-2"></i>@ViewData["Title"]</h5>
+    <div class="col-xxl-9">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar-sm bg-primary-subtle rounded">
+                            <span class="avatar-title">
+                                <i class="ti ti-user text-primary"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="card-title mb-1">@ViewData["Title"]</h5>
+                        <p class="text-muted mb-0">Actualiza tu información personal</p>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <partial name="_StatusMessage" for="StatusMessage" />
+                
                 <form id="profile-form" method="post">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger alert-border-left alert-dismissible fade show" role="alert">
+                        <i class="ri-error-warning-line me-3 align-middle fs-16"></i>
+                        <div></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input asp-for="Username" class="form-control"
-                                    placeholder="Por favor elija su nombre de usuario." disabled />
-                                <label asp-for="Username" class="form-label">Nombre de usuario</label>
+                    <div class="row">
+                        <!-- Usuario -->
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label">
+                                    <i class="ti ti-at me-1"></i>Nombre de usuario
+                                </label>
+                                <input asp-for="Username" class="form-control" placeholder="Nombre de usuario" disabled />
+                                <div class="form-text">
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    El nombre de usuario no se puede cambiar
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input asp-for="Input.PhoneNumber" class="form-control"
-                                    placeholder="Por favor ingrese su número de teléfono." />
-                                <label asp-for="Input.PhoneNumber" class="form-label">Número de teléfono</label>
+
+                        <!-- Teléfono -->
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label asp-for="Input.PhoneNumber" class="form-label">
+                                    <i class="ti ti-phone me-1"></i>Número de teléfono
+                                </label>
+                                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Ingrese su número de teléfono" />
                                 <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input asp-for="Input.Nombres" class="form-control"
-                                    placeholder="Por favor ingrese sus nombres." />
-                                <label asp-for="Input.Nombres" class="form-label">Nombres</label>
+
+                        <!-- Nombres -->
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label asp-for="Input.Nombres" class="form-label">
+                                    <i class="ti ti-user me-1"></i>Nombres
+                                </label>
+                                <input asp-for="Input.Nombres" class="form-control" placeholder="Ingrese sus nombres" />
                                 <span asp-validation-for="Input.Nombres" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input asp-for="Input.Apellidos" class="form-control"
-                                    placeholder="Por favor ingrese sus apellidos." />
-                                <label asp-for="Input.Apellidos" class="form-label">Apellidos</label>
+
+                        <!-- Apellidos -->
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label asp-for="Input.Apellidos" class="form-label">
+                                    <i class="ti ti-user me-1"></i>Apellidos
+                                </label>
+                                <input asp-for="Input.Apellidos" class="form-control" placeholder="Ingrese sus apellidos" />
                                 <span asp-validation-for="Input.Apellidos" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input asp-for="Input.Cedula" class="form-control"
-                                    placeholder="Por favor ingrese su cédula." />
-                                <label asp-for="Input.Cedula" class="form-label">Cédula</label>
+
+                        <!-- Cédula -->
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label asp-for="Input.Cedula" class="form-label">
+                                    <i class="ti ti-id me-1"></i>Cédula de Identidad
+                                </label>
+                                <input asp-for="Input.Cedula" class="form-control" placeholder="Ingrese su número de cédula" />
                                 <span asp-validation-for="Input.Cedula" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-4">
+                    <div class="text-end">
                         <button id="update-profile-button" type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Guardar cambios
+                            <i class="ti ti-device-floppy me-1"></i>Guardar Cambios
+                        </button>
+                        <button type="reset" class="btn btn-soft-secondary">
+                            <i class="ti ti-refresh me-1"></i>Restablecer
                         </button>
                     </div>
                 </form>
@@ -71,6 +124,73 @@
         </div>
     </div>
 </div>
+
+@section Styles {
+    <style>
+        .page-title-box {
+            padding: 1.5rem 0;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: ">";
+        }
+
+        .alert-border-left {
+            border-left: 3px solid #f17171;
+        }
+
+        .btn-soft-secondary {
+            background-color: rgba(116, 120, 141, 0.1);
+            border-color: rgba(116, 120, 141, 0.1);
+            color: #74788d;
+        }
+
+        .btn-soft-secondary:hover {
+            background-color: rgba(116, 120, 141, 0.2);
+            border-color: rgba(116, 120, 141, 0.2);
+            color: #74788d;
+        }
+
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            opacity: 0.65;
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .avatar-sm {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bg-primary-subtle {
+            background-color: rgba(64, 81, 137, 0.1) !important;
+        }
+
+        .text-primary {
+            color: #405189 !important;
+        }
+    </style>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -1,58 +1,205 @@
 @page
 @model gad_checa_gestion_cementerio.Areas.Identity.Pages.Account.Manage.EmailModel
 @{
-    ViewData["Title"] = "Email";
+    ViewData["Title"] = "Correo Electrónico";
     ViewData["ActivePage"] = ManageNavPages.Email;
 }
 
+<!-- Breadcrumb -->
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Mi Cuenta</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Cuenta</a></li>
+                    <li class="breadcrumb-item active">Correo Electrónico</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xxl-3">
         <partial name="_ManageNav" />
     </div>
-    <div class="col-md-9">
-        <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">
-                    <i class="fas fa-envelope me-2"></i>@ViewData["Title"]
-                </h5>
+    <div class="col-xxl-9">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avatar-sm bg-success-subtle rounded">
+                            <span class="avatar-title">
+                                <i class="ti ti-mail text-success"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="card-title mb-1">@ViewData["Title"]</h5>
+                        <p class="text-muted mb-0">Gestiona tu dirección de correo electrónico</p>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <partial name="_StatusMessage" model="Model.StatusMessage" />
+                
                 <form id="email-form" method="post">
-                    <div asp-validation-summary="All" class="text-danger"></div>
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
+                    <div asp-validation-summary="All" class="alert alert-danger alert-border-left alert-dismissible fade show" role="alert">
+                        <i class="ri-error-warning-line me-3 align-middle fs-16"></i>
+                        <div></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    
+                    <!-- Email actual -->
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label">
+                            <i class="ti ti-mail me-1"></i>Correo Electrónico Actual
+                        </label>
                         @if (Model.IsEmailConfirmed)
                         {
-                                    <div class="input-group">
-                                        <input asp-for="Email" class="form-control" disabled />
-                                        <span class="input-group-text text-success">
-                                            <i class="fas fa-check-circle"></i>
-                                        </span>
-                                    </div>
+                            <div class="input-group">
+                                <input asp-for="Email" class="form-control" disabled />
+                                <span class="input-group-text bg-success text-white border-success">
+                                    <i class="ti ti-circle-check me-1"></i>
+                                    Verificado
+                                </span>
+                            </div>
+                            <div class="form-text text-success">
+                                <i class="ti ti-check me-1"></i>
+                                Tu dirección de correo electrónico está verificada
+                            </div>
                         }
                         else
                         {
-                                    <input asp-for="Email" class="form-control" disabled />
-                                    <button id="email-verification" type="submit" asp-page-handler="SendVerificationEmail" class="btn btn-link mt-2">
-                                        Enviar email de verificación
-                                    </button>
+                            <div class="input-group">
+                                <input asp-for="Email" class="form-control" disabled />
+                                <span class="input-group-text bg-warning text-dark border-warning">
+                                    <i class="ti ti-alert-triangle me-1"></i>
+                                    Sin verificar
+                                </span>
+                            </div>
+                            <div class="form-text text-warning">
+                                <i class="ti ti-info-circle me-1"></i>
+                                Tu dirección de correo electrónico no está verificada
+                            </div>
+                            <div class="mt-2">
+                                <button id="email-verification" type="submit" asp-page-handler="SendVerificationEmail" 
+                                        class="btn btn-outline-primary btn-sm">
+                                    <i class="ti ti-mail-forward me-1"></i>
+                                    Enviar Email de Verificación
+                                </button>
+                            </div>
                         }
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="Input.NewEmail" class="form-label"></label>
-                        <input asp-for="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" />
+                    
+                    <!-- Nuevo email -->
+                    <div class="mb-4">
+                        <label asp-for="Input.NewEmail" class="form-label">
+                            <i class="ti ti-mail-plus me-1"></i>Nuevo Correo Electrónico
+                        </label>
+                        <input asp-for="Input.NewEmail" class="form-control" 
+                               autocomplete="email" aria-required="true" 
+                               placeholder="Ingrese su nueva dirección de correo" />
                         <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="ti ti-info-circle me-1"></i>
+                            Se enviará un correo de confirmación a la nueva dirección
+                        </div>
                     </div>
-                    <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" class="btn btn-primary">
-                        Cambiar email
-                    </button>
+
+                    <div class="text-end">
+                        <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" 
+                                class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i>Cambiar Correo Electrónico
+                        </button>
+                        <button type="reset" class="btn btn-soft-secondary">
+                            <i class="ti ti-refresh me-1"></i>Limpiar
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
+@section Styles {
+    <style>
+        .page-title-box {
+            padding: 1.5rem 0;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: ">";
+        }
+
+        .alert-border-left {
+            border-left: 3px solid #f17171;
+        }
+
+        .btn-soft-secondary {
+            background-color: rgba(116, 120, 141, 0.1);
+            border-color: rgba(116, 120, 141, 0.1);
+            color: #74788d;
+        }
+
+        .btn-soft-secondary:hover {
+            background-color: rgba(116, 120, 141, 0.2);
+            border-color: rgba(116, 120, 141, 0.2);
+            color: #74788d;
+        }
+
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            opacity: 0.65;
+        }
+
+        .input-group-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }
+
+        .avatar-sm {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bg-success-subtle {
+            background-color: rgba(34, 197, 94, 0.1) !important;
+        }
+
+        .text-success {
+            color: #22c55e !important;
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+}
+
 @section Scripts {
-            <partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial" />
 }
