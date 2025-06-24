@@ -4,6 +4,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Globalization;
+using System.IO;
 
 public class ContratoPDF : IDocument
 {
@@ -35,14 +36,39 @@ public class ContratoPDF : IDocument
         var NombreEntidadFinanciera = cementerio.NombreEntidadFinanciera ?? "Banco del Austro"; // Asumimos un nombre de entidad financiera fijo, se puede cambiar según sea necesario
         var numero_cuenta = cementerio.NumeroCuenta ?? "2000324704"; // Asumimos un número de cuenta fijo, se puede cambiar según sea necesario
         var abreviatura_banco = cementerio.EntidadFinanciera == "BANCO" ? "el banco" : "la Cooperativa de Ahorro y Crédito"; // Asumimos una abreviatura de banco fija, se puede cambiar según sea necesario
+
         container.Page(page =>
         {
             page.Size(PageSizes.A4);
             page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
 
-            page.Header().AlignCenter().Image(Image.FromFile("wwwroot/logo_gad.png")).FitWidth();
-            page.Background().AlignCenter().AlignMiddle().Image("wwwroot/images/background.jpg").FitWidth();
+            // Intentar cargar el logo de manera segura
+            try
+            {
+                var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo_gad.png");
+                if (File.Exists(logoPath))
+                {
+                    page.Header().AlignCenter().Image(Image.FromFile(logoPath)).FitWidth();
+                }
+            }
+            catch
+            {
+                // Si no se puede cargar el logo, simplemente continuar sin él
+            }
 
+            // Intentar cargar el fondo de manera segura
+            try
+            {
+                var backgroundPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "background.jpg");
+                if (File.Exists(backgroundPath))
+                {
+                    page.Background().AlignCenter().AlignMiddle().Image(Image.FromFile(backgroundPath)).FitWidth();
+                }
+            }
+            catch
+            {
+                // Si no se puede cargar el fondo, simplemente continuar sin él
+            }
 
             page.Footer().AlignCenter().PaddingBottom(20).Text(text =>
             {
@@ -54,7 +80,7 @@ public class ContratoPDF : IDocument
                 text.Span("Correo: ").SemiBold();
                 text.Span(string.IsNullOrWhiteSpace(email_cementerio) ? "checa@example.gob.ec" : email_cementerio);
             });
-            //page.Header().AlignCenter().Image(Image.FromFile("wwwroot/logo_gad.png")).FitHeight();
+
             page.Content()
             .PaddingHorizontal(60)
             .PaddingVertical(20)

@@ -151,6 +151,32 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+else
+{
+    app.UseDeveloperExceptionPage();
+}
+
+// Middleware personalizado para capturar errores de QuestPDF
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+        // Log específico para errores de QuestPDF
+        if (ex.Message.Contains("QuestPDF") || ex.StackTrace?.Contains("QuestPDF") == true)
+        {
+            logger.LogError(ex, "Error específico de QuestPDF detectado en la ruta: {Path}", context.Request.Path);
+        }
+
+        // Re-throw para que el middleware de manejo de errores lo procese
+        throw;
+    }
+});
 
 app.UseStaticFiles();
 app.UseRouting();

@@ -159,9 +159,9 @@
 
                         @if (Model.TotalResultados > 0)
             {
-                <div class="card-footer bg-transparent">
-                    @await Html.PartialAsync("_Paginacion", Model)
-                </div>
+                    <div class="card-footer bg-transparent">
+                        @await Html.PartialAsync("_Paginacion", Model)
+                    </div>
             }
         </div>
     </div>

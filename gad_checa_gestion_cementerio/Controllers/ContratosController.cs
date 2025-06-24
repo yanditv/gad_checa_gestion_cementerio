@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using gad_checa_gestion_cementerio.services;
 using gad_checa_gestion_cementerio.Models.Listas;
 using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using QuestPDF.Helpers;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -755,107 +757,164 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpGet]
         public IActionResult Print(int id)
         {
-            var cementerio = _context.Cementerio.FirstOrDefault();
-            if (cementerio == null)
+            try
             {
-                TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // Cargar el contrato y todas sus relaciones necesarias
-            var contrato = _context.Contrato
-                .Include(c => c.Boveda)
-                    .ThenInclude(b => b.Piso)
-                        .ThenInclude(p => p.Bloque)
-                .Include(c => c.Boveda)
-                    .ThenInclude(b => b.Propietario)
-                .Include(c => c.Difunto)
-                .Include(c => c.Responsables)
-                .Include(c => c.Cuotas)
-                    .ThenInclude(cu => cu.Pagos)
-                .Include(c => c.ContratoOrigen)
-                .FirstOrDefault(c => c.Id == id);
-
-            if (contrato == null)
-            {
-                TempData["Error"] = "No se encontró el contrato para generar el PDF.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var contratoModel = _mapper.Map<ContratoModel>(contrato);
-
-            // Mapear las fechas de pago a las cuotas y asociar el PagoId si está pagada
-            foreach (var cuota in contratoModel.Cuotas)
-            {
-                var cuotaEntity = contrato.Cuotas.FirstOrDefault(c => c.Id == cuota.Id);
-                if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
+                var cementerio = _context.Cementerio.FirstOrDefault();
+                if (cementerio == null)
                 {
-                    cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
-                    // Asociar el PagoId para la vista
-                    cuota.PagoId = cuotaEntity.Pagos.First().Id;
+                    TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
+                    return RedirectToAction(nameof(Index));
                 }
+
+                // Cargar el contrato y todas sus relaciones necesarias
+                var contrato = _context.Contrato
+                    .Include(c => c.Boveda)
+                        .ThenInclude(b => b.Piso)
+                            .ThenInclude(p => p.Bloque)
+                    .Include(c => c.Boveda)
+                        .ThenInclude(b => b.Propietario)
+                    .Include(c => c.Difunto)
+                    .Include(c => c.Responsables)
+                    .Include(c => c.Cuotas)
+                        .ThenInclude(cu => cu.Pagos)
+                    .Include(c => c.ContratoOrigen)
+                    .FirstOrDefault(c => c.Id == id);
+
+                if (contrato == null)
+                {
+                    TempData["Error"] = "No se encontró el contrato para generar el PDF.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var contratoModel = _mapper.Map<ContratoModel>(contrato);
+
+                // Mapear las fechas de pago a las cuotas y asociar el PagoId si está pagada
+                foreach (var cuota in contratoModel.Cuotas)
+                {
+                    var cuotaEntity = contrato.Cuotas.FirstOrDefault(c => c.Id == cuota.Id);
+                    if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
+                    {
+                        cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
+                        // Asociar el PagoId para la vista
+                        cuota.PagoId = cuotaEntity.Pagos.First().Id;
+                    }
+                }
+
+                // Asegurar que la bóveda y el propietario estén correctamente mapeados
+                if (contrato.Boveda != null)
+                {
+                    contratoModel.Boveda = _mapper.Map<BovedaModel>(contrato.Boveda);
+                }
+
+                // Si es una renovación, cargar los datos del contrato original
+                if (contrato.EsRenovacion && contrato.ContratoOrigenId.HasValue && contrato.ContratoOrigen != null)
+                {
+                    contratoModel.ContratoOrigen = _mapper.Map<ContratoModel>(contrato.ContratoOrigen);
+                }
+
+                // Crear el modelo para el PDF
+                var modelo = new CreateContratoModel
+                {
+                    contrato = contratoModel,
+                    difunto = contratoModel.Difunto ?? new DifuntoModel(),
+                    responsables = contratoModel.Responsables ?? new List<ResponsableModel>(),
+                    pago = new PagoModel() // Si necesitas pagos, puedes mapearlos aquí
+                };
+
+                var documento = new ContratoPDF(modelo, cementerio);
+                var pdfBytes = documento.GeneratePdf();
+
+                var fileName = $"CONTRATO_{contratoModel.NumeroSecuencial ?? "Arrendamiento"}.pdf";
+                ViewBag.NombreArchivo = fileName;
+                Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
+                return new FileContentResult(pdfBytes, "application/pdf");
             }
-
-            // Asegurar que la bóveda y el propietario estén correctamente mapeados
-            if (contrato.Boveda != null)
+            catch (Exception ex)
             {
-                contratoModel.Boveda = _mapper.Map<BovedaModel>(contrato.Boveda);
+                _logger.LogError(ex, "Error al generar PDF del contrato {ContratoId}", id);
+                TempData["Error"] = $"Error al generar el PDF: {ex.Message}";
+                return RedirectToAction(nameof(Details), new { id });
             }
+        }
 
-            // Si es una renovación, cargar los datos del contrato original
-            if (contrato.EsRenovacion && contrato.ContratoOrigenId.HasValue && contrato.ContratoOrigen != null)
+        [HttpGet]
+        public object TestPDF()
+        {
+            try
             {
-                contratoModel.ContratoOrigen = _mapper.Map<ContratoModel>(contrato.ContratoOrigen);
+                // Crear un PDF simple de prueba
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(2, Unit.Centimetre);
+                        page.DefaultTextStyle(x => x.FontSize(12));
+
+                        page.Header().Text("TEST PDF").Bold().FontSize(20);
+                        page.Content().Column(column =>
+                        {
+                            column.Item().Text($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+                            column.Item().PaddingTop(20).Text("Este es un PDF de prueba para verificar que QuestPDF funciona correctamente en el entorno Docker.");
+                            column.Item().PaddingTop(10).Text("Si puedes ver este PDF, significa que QuestPDF está funcionando correctamente.");
+                        });
+                        page.Footer().Row(row =>
+                        {
+                            row.RelativeItem().Text("Página");
+                            row.RelativeItem().AlignRight().Text("1");
+                        });
+                    });
+                });
+
+                var pdfBytes = document.GeneratePdf();
+                return File(pdfBytes, "application/pdf", "test.pdf");
             }
-
-            // Crear el modelo para el PDF
-            var modelo = new CreateContratoModel
+            catch (Exception ex)
             {
-                contrato = contratoModel,
-                difunto = contratoModel.Difunto ?? new DifuntoModel(),
-                responsables = contratoModel.Responsables ?? new List<ResponsableModel>(),
-                pago = new PagoModel() // Si necesitas pagos, puedes mapearlos aquí
-            };
-
-            var documento = new ContratoPDF(modelo, cementerio);
-            var pdfBytes = documento.GeneratePdf();
-
-            var fileName = $"CONTRATO_{contratoModel.NumeroSecuencial ?? "Arrendamiento"}.pdf";
-            ViewBag.NombreArchivo = fileName;
-            Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
-            return new FileContentResult(pdfBytes, "application/pdf");
+                _logger.LogError(ex, "Error al generar PDF de prueba");
+                return Content($"Error al generar PDF: {ex.Message}", "text/plain");
+            }
         }
 
         [HttpGet]
         public IActionResult VerContratoPDF()
         {
-            var cementerio = _context.Cementerio.FirstOrDefault();
-            if (cementerio == null)
+            try
             {
-                TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
+                var cementerio = _context.Cementerio.FirstOrDefault();
+                if (cementerio == null)
+                {
+                    TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var modelo = GetContratoFromSession(); // o pásalo por parámetro
+                if (modelo?.contrato == null || modelo.contrato.BovedaId <= 0)
+                {
+                    TempData["Error"] = "No hay información de contrato para visualizar.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var boveda = _context.Boveda.Include(b => b.Piso).ThenInclude(p => p.Bloque)
+                    .FirstOrDefault(b => b.Id == modelo.contrato.BovedaId);
+                if (boveda != null)
+                {
+                    modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
+                }
+                var documento = new ContratoPDF(modelo, cementerio);
+                var pdfBytes = documento.GeneratePdf();
+
+                var fileName = $"CONTRATO_{modelo.contrato.NumeroSecuencial ?? "Arrendamiento"}.pdf";
+                ViewBag.NombreArchivo = fileName;
+                Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
+                return new FileContentResult(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al generar PDF de vista previa del contrato");
+                TempData["Error"] = $"Error al generar el PDF: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
-
-            var modelo = GetContratoFromSession(); // o pásalo por parámetro
-            if (modelo?.contrato == null || modelo.contrato.BovedaId <= 0)
-            {
-                TempData["Error"] = "No hay información de contrato para visualizar.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var boveda = _context.Boveda.Include(b => b.Piso).ThenInclude(p => p.Bloque)
-                .FirstOrDefault(b => b.Id == modelo.contrato.BovedaId);
-            if (boveda != null)
-            {
-                modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
-            }
-            var documento = new ContratoPDF(modelo, cementerio);
-            var pdfBytes = documento.GeneratePdf();
-
-            var fileName = $"CONTRATO_{modelo.contrato.NumeroSecuencial ?? "Arrendamiento"}.pdf";
-            ViewBag.NombreArchivo = fileName;
-            Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
-            return new FileContentResult(pdfBytes, "application/pdf");
         }
         // CREAR DIFUNTO
         [HttpGet]

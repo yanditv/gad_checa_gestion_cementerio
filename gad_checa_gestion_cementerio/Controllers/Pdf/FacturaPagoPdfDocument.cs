@@ -33,7 +33,18 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
                 // Encabezado con logo y título
                 page.Header().Column(column =>
                 {
-                    column.Item().Width(200).Height(120).Image(logoPath).FitArea();
+                    // Intentar cargar el logo de manera segura
+                    try
+                    {
+                        if (File.Exists(logoPath))
+                        {
+                            column.Item().Width(200).Height(120).Image(logoPath).FitArea();
+                        }
+                    }
+                    catch
+                    {
+                        // Si no se puede cargar el logo, simplemente continuar sin él
+                    }
                     column.Item().AlignCenter().Text("FACTURA DE PAGO").FontSize(20).Bold();
                 });
 
