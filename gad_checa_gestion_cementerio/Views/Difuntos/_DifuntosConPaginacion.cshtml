@@ -1,0 +1,9 @@
+@model gad_checa_gestion_cementerio.Models.Listas.DifuntoPaginadaViewModel
+
+<!-- Lista de Difuntos -->
+@await Html.PartialAsync("_ListaDifuntos", Model)
+
+<!-- Paginación -->
+<div class="mt-4">
+    @await Html.PartialAsync("_Paginacion", Model)
+</div>

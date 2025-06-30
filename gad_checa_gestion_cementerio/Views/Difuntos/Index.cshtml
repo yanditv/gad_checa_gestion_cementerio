@@ -41,12 +41,7 @@
 
         <!-- Lista de Difuntos -->
         <div id="resultsContainer" class="table-responsive">
-            @await Html.PartialAsync("_ListaDifuntos", Model)
-        </div>
-
-        <!-- Paginación -->
-        <div id="paginationContainer" class="mt-4">
-            @await Html.PartialAsync("_Paginacion", Model)
+            @await Html.PartialAsync("_DifuntosConPaginacion", Model)
         </div>
     </div>
 </div>
@@ -58,22 +53,26 @@
             const searchForm = document.getElementById('searchForm');
             const searchSpinner = document.getElementById('searchSpinner');
             const resultsContainer = document.getElementById('resultsContainer');
-            const paginationContainer = document.getElementById('paginationContainer');
 
             let searchTimeout = null;
             let isSearching = false;
 
             // Función para realizar la búsqueda
-            async function performSearch() {
+            async function performSearch(url = null) {
                 if (isSearching) return;
 
                 isSearching = true;
                 searchSpinner.classList.remove('d-none');
 
                 try {
-                    const formData = new FormData(searchForm);
-                    const queryString = new URLSearchParams(formData).toString();
-                    const response = await fetch(`${searchForm.action}?${queryString}`, {
+                    let requestUrl = url;
+                    if (!requestUrl) {
+                        const formData = new FormData(searchForm);
+                        const queryString = new URLSearchParams(formData).toString();
+                        requestUrl = `${searchForm.action}?${queryString}`;
+                    }
+
+                    const response = await fetch(requestUrl, {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'
                         }
@@ -82,25 +81,43 @@
                     if (!response.ok) throw new Error('Error en la búsqueda');
 
                     const html = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
 
-                    // Actualizar solo las partes necesarias
-                    resultsContainer.innerHTML = doc.getElementById('resultsContainer').innerHTML;
-                    paginationContainer.innerHTML = doc.getElementById('paginationContainer').innerHTML;
+                    // Actualizar el contenedor de resultados con la vista parcial devuelta
+                    resultsContainer.innerHTML = html;
+
+                    // Agregar event listeners a los nuevos enlaces de paginación
+                    attachPaginationHandlers();
 
                     // Actualizar la URL sin recargar la página
-                    const newUrl = new URL(window.location.href);
-                    newUrl.searchParams.set('filtro', searchInput.value);
+                    const newUrl = new URL(requestUrl);
                     window.history.pushState({}, '', newUrl);
 
                 } catch (error) {
                     console.error('Error:', error);
-                    // Opcional: Mostrar mensaje de error al usuario
+                    // Mostrar mensaje de error al usuario
+                    resultsContainer.innerHTML = `
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Error al realizar la búsqueda. Por favor, intente nuevamente.
+                            </div>
+                        `;
                 } finally {
                     isSearching = false;
                     searchSpinner.classList.add('d-none');
                 }
+            }
+
+            // Función para agregar event listeners a los enlaces de paginación
+            function attachPaginationHandlers() {
+                const paginationLinks = resultsContainer.querySelectorAll('.pagination-link');
+                paginationLinks.forEach(link => {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (!this.classList.contains('disabled')) {
+                            performSearch(this.href);
+                        }
+                    });
+                });
             }
 
             // Evento de entrada en el campo de búsqueda
@@ -114,6 +131,9 @@
                 e.preventDefault();
                 performSearch();
             });
+
+            // Inicializar los event handlers de paginación
+            attachPaginationHandlers();
 
             // Manejar la navegación del historial
             window.addEventListener('popstate', function () {

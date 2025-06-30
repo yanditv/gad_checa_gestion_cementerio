@@ -8,13 +8,13 @@
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item ">
-                    <a class="btn btn-sm btn-light me-2 @(Model.TienePaginaAnterior ? "" : "disabled")"
+                    <a class="btn btn-sm btn-light me-2 pagination-link @(Model.TienePaginaAnterior ? "" : "disabled")"
                         href="?pagina=@(Model.PaginaActual - 1)&filtro=@Model.Filtro" tabindex="-1">
                         &larr; Prev
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="btn btn-sm btn-light me-2  @(Model.TienePaginaSiguiente ? "" : "disabled")"
+                    <a class="btn btn-sm btn-light me-2 pagination-link @(Model.TienePaginaSiguiente ? "" : "disabled")"
                         href="?pagina=@(Model.PaginaActual + 1)&filtro=@Model.Filtro">
                         Next &rarr;
                     </a>

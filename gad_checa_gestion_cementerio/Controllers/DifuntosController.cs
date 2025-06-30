@@ -21,27 +21,45 @@ namespace gad_checa_gestion_cementerio.Controllers
         public async Task<IActionResult> Index(string filtro, int pagina = 1, int registrosPorPagina = 10)
         {
             var query = _context.Difunto
-                .Include(d => d.Contrato.Boveda)
-                    .ThenInclude(b => b.Piso)
-                        .ThenInclude(p => p.Bloque)
                 .Include(d => d.Contrato)
+                    .ThenInclude(c => c!.Boveda)
+                        .ThenInclude(b => b!.Piso)
+                            .ThenInclude(p => p!.Bloque)
                 .Where(d => d.FechaEliminacion == null)
                 .AsQueryable();
 
             // Aplicar filtros
             if (!string.IsNullOrEmpty(filtro))
             {
+                // Limpiar el filtro removiendo espacios al inicio y final
+                filtro = filtro.Trim();
+                Console.WriteLine($"[DEBUG] Buscando con filtro: '{filtro}'");
+
+                // Debug: verificar si existen contratos con este número
+                var contratosConNumero = await _context.Contrato
+                    .Where(c => c.NumeroSecuencial != null && c.NumeroSecuencial.Contains(filtro))
+                    .Select(c => new { c.Id, c.NumeroSecuencial })
+                    .ToListAsync();
+
+                Console.WriteLine($"[DEBUG] Contratos encontrados con número secuencial que contiene '{filtro}': {contratosConNumero.Count}");
+                foreach (var contrato in contratosConNumero)
+                {
+                    Console.WriteLine($"[DEBUG] - Contrato ID: {contrato.Id}, NumeroSecuencial: {contrato.NumeroSecuencial}");
+                }
+
                 query = query.Where(d =>
                     d.Nombres.Contains(filtro) ||
                     d.Apellidos.Contains(filtro) ||
                     d.NumeroIdentificacion.Contains(filtro) ||
-                    d.Contrato.Boveda.Piso.Bloque.Descripcion.Contains(filtro) ||
-                    d.Contrato.NumeroSecuencial.Contains(filtro)
+                    (d.Contrato != null && d.Contrato.NumeroSecuencial != null && d.Contrato.NumeroSecuencial.Contains(filtro)) ||
+                    (d.Contrato != null && d.Contrato.Boveda != null && d.Contrato.Boveda.Piso != null &&
+                     d.Contrato.Boveda.Piso.Bloque != null && d.Contrato.Boveda.Piso.Bloque.Descripcion.Contains(filtro))
                 );
             }
 
             // Obtener el total de resultados después de aplicar los filtros
             var totalResultados = await query.CountAsync();
+            Console.WriteLine($"[DEBUG] Total resultados encontrados: {totalResultados}");
 
             // Aplicar paginación
             var difuntos = await query
@@ -54,27 +72,27 @@ namespace gad_checa_gestion_cementerio.Controllers
                     Nombres = d.Nombres,
                     Apellidos = d.Apellidos,
                     FechaFallecimiento = d.FechaFallecimiento,
-                    Boveda = new BovedaModel
+                    Boveda = d.Contrato != null && d.Contrato.Boveda != null ? new BovedaModel
                     {
                         Id = d.Contrato.Boveda.Id,
                         Numero = d.Contrato.Boveda.Numero,
-                        Piso = new PisoModel
+                        Piso = d.Contrato.Boveda.Piso != null ? new PisoModel
                         {
                             Id = d.Contrato.Boveda.Piso.Id,
                             NumeroPiso = d.Contrato.Boveda.Piso.NumeroPiso,
-                            Bloque = new BloqueModel
+                            Bloque = d.Contrato.Boveda.Piso.Bloque != null ? new BloqueModel
                             {
                                 Id = d.Contrato.Boveda.Piso.Bloque.Id,
                                 Descripcion = d.Contrato.Boveda.Piso.Bloque.Descripcion
-                            }
-                        }
-                    },
-                    Contrato = new ContratoModel
+                            } : null
+                        } : null
+                    } : null,
+                    Contrato = d.Contrato != null ? new ContratoModel
                     {
                         Id = d.Contrato.Id,
                         NumeroSecuencial = d.Contrato.NumeroSecuencial,
                         FechaFin = d.Contrato.FechaFin
-                    }
+                    } : null
                 })
                 .ToListAsync();
 
@@ -89,7 +107,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return PartialView("_ListaDifuntos", viewModel);
+                return PartialView("_DifuntosConPaginacion", viewModel);
             }
 
             return View(viewModel);
