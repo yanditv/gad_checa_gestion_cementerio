@@ -270,9 +270,9 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
                             table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
                                 .AlignCenter().Text(cuota.FechaVencimiento.ToString("dd/MM/yyyy")).FontSize(8).FontColor(textColor);
                             table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
-                                .AlignRight().Text(cuota.Monto.ToString("C")).FontSize(8).FontColor(textColor);
+                                .AlignRight().Text($"${cuota.Monto:N2}").FontSize(8).FontColor(textColor);
                             table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
-                                .AlignRight().Text(cuota.Monto.ToString("C")).FontSize(8).Bold().FontColor(Colors.Black);
+                                .AlignRight().Text($"${cuota.Monto:N2}").FontSize(8).Bold().FontColor(Colors.Black);
 
                             isEvenRow = !isEvenRow;
                         }
@@ -291,19 +291,19 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
                         c.Item().Row(r =>
                         {
                             r.RelativeItem().Text("Subtotal:").Bold().FontColor(Colors.Black).FontSize(9);
-                            r.ConstantItem(80).AlignRight().Text(subtotal.ToString("C")).FontSize(9).FontColor(Colors.Grey.Darken2);
+                            r.ConstantItem(80).AlignRight().Text($"${subtotal:N2}").FontSize(9).FontColor(Colors.Grey.Darken2);
                         });
 
                         c.Item().PaddingTop(2).Row(r =>
                         {
                             r.RelativeItem().Text("Descuentos:").Bold().FontColor(Colors.Black).FontSize(9);
-                            r.ConstantItem(80).AlignRight().Text(descuentos.ToString("C")).FontColor(Colors.Grey.Darken1).FontSize(9);
+                            r.ConstantItem(80).AlignRight().Text($"${descuentos:N2}").FontColor(Colors.Grey.Darken1).FontSize(9);
                         });
 
                         c.Item().PaddingTop(4).Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten2).Padding(4).Row(r =>
                         {
                             r.RelativeItem().Text("TOTAL:").FontSize(11).Bold().FontColor(Colors.Black);
-                            r.ConstantItem(80).AlignRight().Text(total.ToString("C")).FontSize(12).Bold().FontColor(Colors.Black);
+                            r.ConstantItem(80).AlignRight().Text($"${total:N2}").FontSize(12).Bold().FontColor(Colors.Black);
                         });
                     });
 
@@ -316,7 +316,7 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
                         obsCol.Item().PaddingTop(4).Text("• Este comprobante es un documento válido de pago.").FontSize(8).FontColor(Colors.Grey.Darken2);
                         obsCol.Item().PaddingTop(2).Text("• Conserve este documento para futuras referencias.").FontSize(8).FontColor(Colors.Grey.Darken2);
                         obsCol.Item().PaddingTop(2).Text("• Para consultas, acérquese a nuestras oficinas.").FontSize(8).FontColor(Colors.Grey.Darken2);
-                        obsCol.Item().PaddingTop(2).Text("• Documento válido para efectos tributarios.").FontSize(8).FontColor(Colors.Grey.Darken2);
+                        // obsCol.Item().PaddingTop(2).Text("• Documento válido para efectos tributarios.").FontSize(8).FontColor(Colors.Grey.Darken2);
                     });
                 });
             });
