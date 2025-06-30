@@ -56,10 +56,6 @@ USER root
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Copiar script de verificación
-COPY verify-permissions.sh /app/verify-permissions.sh
-RUN chmod +x /app/verify-permissions.sh
-
 # Asegurar que los directorios críticos existan y tengan permisos correctos en la imagen final
 RUN mkdir -p /app/wwwroot/documentos && \
     mkdir -p /app/wwwroot/images && \
