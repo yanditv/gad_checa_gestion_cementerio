@@ -162,38 +162,44 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .ThenInclude(ct => ct.Responsables)
                 .ToList();
 
-            return cuotasPendientes.Select(c =>
-            {
-                var contrato = c.Contrato;
-                var difunto = contrato.Difunto;
-                var boveda = contrato.Boveda;
-                var piso = boveda.Piso;
-                var bloque = piso.Bloque;
-                var cementerio = bloque.Cementerio;
-                var responsable = contrato.Responsables.FirstOrDefault();
-
-                return new ReporteCuentasPorCobrarViewModel
+            var agrupadoPorContrato = cuotasPendientes
+                .GroupBy(c => c.ContratoId)
+                .Select(g =>
                 {
-                    CuotaId = c.Id,
-                    FechaVencimiento = c.FechaVencimiento,
-                    Monto = c.Monto,
-                    Pagada = c.Pagada,
-                    NumeroSecuencialContrato = contrato.NumeroSecuencial,
-                    FechaInicioContrato = contrato.FechaInicio,
-                    FechaFinContrato = contrato.FechaFin,
-                    NombreResponsable = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "Sin Responsable",
-                    CedulaResponsable = responsable?.NumeroIdentificacion ?? "N/A",
-                    TelefonoResponsable = responsable?.Telefono ?? "N/A",
-                    NombreDifunto = $"{difunto.Nombres} {difunto.Apellidos}",
-                    CedulaDifunto = difunto.NumeroIdentificacion,
-                    FechaFallecimiento = difunto.FechaFallecimiento,
-                    Bloque = bloque.Descripcion,
-                    Piso = piso.NumeroPiso,
-                    NumeroBoveda = boveda.Numero,
-                    FechaCreacionCuota = contrato.FechaCreacion,
-                    MontoTotalPendiente = c.Monto
-                };
-            }).ToList();
+                    var primeraCuota = g.First();
+                    var contrato = primeraCuota.Contrato;
+                    var difunto = contrato.Difunto;
+                    var boveda = contrato.Boveda;
+                    var piso = boveda.Piso;
+                    var bloque = piso.Bloque;
+                    var cementerio = bloque.Cementerio;
+                    var responsable = contrato.Responsables.FirstOrDefault();
+
+                    return new ReporteCuentasPorCobrarViewModel
+                    {
+                        CuotaId = primeraCuota.Id,
+                        FechaVencimiento = g.Min(c => c.FechaVencimiento),
+                        Monto = g.Sum(c => c.Monto),
+                        Pagada = false,
+                        NumeroSecuencialContrato = contrato.NumeroSecuencial,
+                        FechaInicioContrato = contrato.FechaInicio,
+                        FechaFinContrato = contrato.FechaFin,
+                        NombreResponsable = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "Sin Responsable",
+                        CedulaResponsable = responsable?.NumeroIdentificacion ?? "N/A",
+                        TelefonoResponsable = responsable?.Telefono ?? "N/A",
+                        NombreDifunto = $"{difunto.Nombres} {difunto.Apellidos}",
+                        CedulaDifunto = difunto.NumeroIdentificacion,
+                        FechaFallecimiento = difunto.FechaFallecimiento,
+                        Bloque = bloque.Descripcion,
+                        Piso = piso.NumeroPiso,
+                        NumeroBoveda = boveda.Numero,
+                        FechaCreacionCuota = contrato.FechaCreacion,
+                        MontoTotalPendiente = g.Sum(c => c.Monto)
+                    };
+                })
+                .ToList();
+
+            return agrupadoPorContrato;
         }
 
         private async Task<List<ReporteBovedasViewModel>> ObtenerBovedasViewModel()
