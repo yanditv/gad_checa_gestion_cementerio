@@ -21,17 +21,18 @@ RUN apt-get update && \
 # Crear directorios necesarios y establecer permisos
 RUN mkdir -p /app/keys && \
     mkdir -p /app/wwwroot/Rotativa && \
-    chown -R $APP_UID:$APP_UID /app/keys && \
-    chown -R $APP_UID:$APP_UID /app/wwwroot/Rotativa && \
+    mkdir -p /app/wwwroot/documentos && \
+    mkdir -p /app/wwwroot/images && \
+    mkdir -p /app/data-protection-keys && \
     chmod -R 755 /app/keys && \
-    chmod -R 755 /app/wwwroot/Rotativa
+    chmod -R 755 /app/wwwroot && \
+    chmod -R 777 /app/wwwroot/documentos && \
+    chmod -R 755 /app/wwwroot/images && \
+    chmod -R 755 /app/data-protection-keys
 
 # Copiar wkhtmltopdf a la carpeta Rotativa
 RUN cp $(which wkhtmltopdf) /app/wwwroot/Rotativa/ && \
-    chown $APP_UID:$APP_UID /app/wwwroot/Rotativa/wkhtmltopdf && \
     chmod +x /app/wwwroot/Rotativa/wkhtmltopdf
-
-USER $APP_UID
 
 # Esta fase se usa para compilar el proyecto de servicio
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -51,7 +52,36 @@ RUN dotnet publish "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATI
 
 # Esta fase se usa en producción o cuando se ejecuta desde VS en modo normal (valor predeterminado cuando no se usa la configuración de depuración)
 FROM base AS final
+USER root
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Copiar script de verificación
+COPY verify-permissions.sh /app/verify-permissions.sh
+RUN chmod +x /app/verify-permissions.sh
+
+# Asegurar que los directorios críticos existan y tengan permisos correctos en la imagen final
+RUN mkdir -p /app/wwwroot/documentos && \
+    mkdir -p /app/wwwroot/images && \
+    mkdir -p /app/keys && \
+    mkdir -p /app/data-protection-keys && \
+    chmod -R 755 /app && \
+    chmod -R 777 /app/wwwroot/documentos && \
+    chmod -R 755 /app/keys && \
+    chmod -R 755 /app/data-protection-keys
+
+# Crear un usuario de aplicación con permisos específicos
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app && \
+    chown -R appuser:appuser /app/wwwroot/documentos && \
+    echo "Permisos configurados para usuario appuser"
+
+# Verificar configuración antes de cambiar usuario
+RUN echo "=== Verificación final de permisos ===" && \
+    ls -la /app/wwwroot/ && \
+    ls -la /app/wwwroot/documentos/ && \
+    echo "=== Fin verificación ==="
+
+USER appuser
 
 ENTRYPOINT ["dotnet", "gad_checa_gestion_cementerio.dll"]

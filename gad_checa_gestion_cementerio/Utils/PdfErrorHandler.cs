@@ -160,7 +160,7 @@ namespace gad_checa_gestion_cementerio.Utils
         }
 
         /// <summary>
-        /// Ejecuta la generación de un PDF con manejo de errores específico
+        /// Ejecuta la generación de un PDF con manejo de errores específico y fallback
         /// </summary>
         /// <param name="pdfGenerator">Función que genera el PDF</param>
         /// <param name="documentName">Nombre del documento para logging</param>
@@ -172,10 +172,83 @@ namespace gad_checa_gestion_cementerio.Utils
             {
                 return pdfGenerator();
             }
+            catch (QuestPDF.Drawing.Exceptions.DocumentLayoutException ex)
+            {
+                // Si hay error de layout, generar PDF simplificado
+                return GenerateSimplifiedErrorPdf(ex, documentName);
+            }
             catch (Exception ex)
             {
-                throw new PdfGenerationException($"Error al generar {documentName}: {ex.Message}", ex);
+                // Para cualquier otro error, intentar generar PDF simplificado
+                try
+                {
+                    return GenerateSimplifiedErrorPdf(ex, documentName);
+                }
+                catch
+                {
+                    // Si incluso el PDF simplificado falla, lanzar la excepción original
+                    throw new PdfGenerationException($"Error al generar {documentName}: {ex.Message}", ex);
+                }
             }
+        }
+
+        /// <summary>
+        /// Genera un PDF simplificado cuando el PDF principal falla
+        /// </summary>
+        /// <param name="originalException">Excepción original que causó el fallo</param>
+        /// <param name="operationName">Nombre de la operación</param>
+        /// <returns>Array de bytes del PDF simplificado</returns>
+        private static byte[] GenerateSimplifiedErrorPdf(Exception originalException, string operationName)
+        {
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(3, Unit.Centimetre);
+                    page.DefaultTextStyle(x => x.FontSize(12).FontFamily("Arial"));
+
+                    page.Header().Text("GAD PARROQUIAL DE CHECA").Bold().FontSize(16).AlignCenter();
+
+                    page.Content().Column(column =>
+                    {
+                        column.Spacing(20);
+
+                        column.Item().Text("ERROR EN GENERACIÓN DE DOCUMENTO").Bold().FontSize(14).AlignCenter();
+
+                        column.Item().Text($"Operación: {operationName}").FontSize(12);
+                        column.Item().Text($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(12);
+
+                        column.Item().PaddingTop(20).Text("Información del Error:").Bold().FontSize(12);
+
+                        var errorMessage = originalException switch
+                        {
+                            QuestPDF.Drawing.Exceptions.DocumentLayoutException =>
+                                "Error de diseño del documento. El contenido excede los límites de la página.",
+                            _ => "Error técnico en la generación del documento."
+                        };
+
+                        column.Item().Text(errorMessage).FontSize(11);
+
+                        column.Item().PaddingTop(20).Text("Instrucciones:").Bold().FontSize(12);
+                        column.Item().Text("• Contacte al administrador del sistema").FontSize(11);
+                        column.Item().Text("• Proporcione la fecha y hora de este error").FontSize(11);
+                        column.Item().Text("• Intente generar el documento más tarde").FontSize(11);
+
+                        if (originalException is QuestPDF.Drawing.Exceptions.DocumentLayoutException)
+                        {
+                            column.Item().PaddingTop(15).Text("Sugerencias específicas:").Bold().FontSize(12);
+                            column.Item().Text("• Verifique que los nombres no sean excesivamente largos").FontSize(11);
+                            column.Item().Text("• Revise que las observaciones sean concisas").FontSize(11);
+                            column.Item().Text("• Compruebe que todos los datos estén completos").FontSize(11);
+                        }
+                    });
+
+                    page.Footer().AlignCenter().Text("Documento generado automáticamente - Sistema de Cementerio").FontSize(9);
+                });
+            });
+
+            return document.GeneratePdf();
         }
 
         /// <summary>

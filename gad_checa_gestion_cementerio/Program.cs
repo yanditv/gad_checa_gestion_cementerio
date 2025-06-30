@@ -46,8 +46,11 @@ try
 {
     QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
+    // Habilitar debugging para facilitar la identificación de problemas de layout
+    QuestPDF.Settings.EnableDebugging = true;
+
     var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
-    logger.LogInformation("QuestPDF license configured successfully");
+    logger.LogInformation("QuestPDF license configured successfully with debugging enabled");
 }
 catch (Exception ex)
 {

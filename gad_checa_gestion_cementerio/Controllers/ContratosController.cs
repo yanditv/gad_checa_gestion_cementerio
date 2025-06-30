@@ -803,17 +803,81 @@ namespace gad_checa_gestion_cementerio.Controllers
                     contratoModel.ContratoOrigen = _mapper.Map<ContratoModel>(contrato.ContratoOrigen);
                 }
 
-                // Crear el modelo para el PDF
+                // Crear el modelo para el PDF con validaciones adicionales
                 var modelo = new CreateContratoModel
                 {
                     contrato = contratoModel,
-                    difunto = contratoModel.Difunto ?? new DifuntoModel(),
+                    difunto = contratoModel.Difunto ?? new DifuntoModel
+                    {
+                        Nombres = "No especificado",
+                        Apellidos = "No especificado",
+                        NumeroIdentificacion = "No especificado"
+                    },
                     responsables = contratoModel.Responsables ?? new List<ResponsableModel>(),
                     pago = new PagoModel()
                 };
 
-                var documento = new ContratoPDF(modelo, cementerio);
-                var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato PDF");
+                // Validaciones adicionales para evitar problemas en el PDF
+                if (string.IsNullOrEmpty(modelo.difunto.Nombres))
+                {
+                    modelo.difunto.Nombres = "No especificado";
+                }
+                if (string.IsNullOrEmpty(modelo.difunto.Apellidos))
+                {
+                    modelo.difunto.Apellidos = "No especificado";
+                }
+                if (string.IsNullOrEmpty(modelo.difunto.NumeroIdentificacion))
+                {
+                    modelo.difunto.NumeroIdentificacion = "No especificado";
+                }
+
+                // Intentar generar el PDF con manejo robusto de errores
+                byte[] pdfBytes;
+                try
+                {
+                    var documento = new ContratoPDF(modelo, cementerio);
+                    pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato PDF");
+                }
+                catch (Exception pdfEx)
+                {
+                    _logger.LogError(pdfEx, "Error específico al generar PDF del contrato {ContratoId}", id);
+
+                    // Como fallback, generar un PDF simple con información básica
+                    var documentoSimple = Document.Create(container =>
+                    {
+                        container.Page(page =>
+                        {
+                            page.Size(PageSizes.A4);
+                            page.Margin(2, Unit.Centimetre);
+                            page.DefaultTextStyle(x => x.FontSize(12));
+
+                            page.Header().Text($"CONTRATO DE ARRENDAMIENTO N° {contratoModel.NumeroSecuencial}").Bold().FontSize(16);
+
+                            page.Content().Column(column =>
+                            {
+                                column.Item().PaddingBottom(20).Text("INFORMACIÓN DEL CONTRATO").Bold().FontSize(14);
+                                column.Item().Text($"Número: {contratoModel.NumeroSecuencial}");
+                                column.Item().Text($"Fecha de inicio: {contratoModel.FechaInicio:dd/MM/yyyy}");
+                                column.Item().Text($"Fecha de fin: {contratoModel.FechaFin?.ToString("dd/MM/yyyy") ?? "No especificada"}");
+                                column.Item().Text($"Monto total: ${contratoModel.MontoTotal:N2}");
+
+                                if (modelo.difunto != null)
+                                {
+                                    column.Item().PaddingTop(20).Text("INFORMACIÓN DEL DIFUNTO").Bold().FontSize(14);
+                                    column.Item().Text($"Nombre: {modelo.difunto.NombresCompletos}");
+                                    column.Item().Text($"Identificación: {modelo.difunto.NumeroIdentificacion}");
+                                }
+
+                                column.Item().PaddingTop(20).Text("NOTA: Este es un documento simplificado generado debido a problemas técnicos. Para el contrato completo, contacte al administrador.")
+                                    .FontSize(10).Italic();
+                            });
+
+                            page.Footer().AlignCenter().Text("Gobierno Parroquial de Checa");
+                        });
+                    });
+
+                    pdfBytes = documentoSimple.GeneratePdf();
+                }
 
                 var fileName = $"CONTRATO_{contratoModel.NumeroSecuencial ?? "Arrendamiento"}.pdf";
                 ViewBag.NombreArchivo = fileName;
@@ -1539,15 +1603,94 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return RedirectToAction("SubirDocumento", new { idContrato });
             }
             var carpetaDestino = Path.Combine(_env.WebRootPath, "documentos");
-            if (!Directory.Exists(carpetaDestino))
-                Directory.CreateDirectory(carpetaDestino);
+
+            try
+            {
+                if (!Directory.Exists(carpetaDestino))
+                {
+                    _logger.LogInformation("Creando directorio de documentos: {Directorio}", carpetaDestino);
+                    Directory.CreateDirectory(carpetaDestino);
+
+                    // En sistemas Unix/Linux, intentar establecer permisos más permisivos
+                    if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        try
+                        {
+                            var info = new DirectoryInfo(carpetaDestino);
+                            // Establecer permisos rwxrwxr-x (775)
+                            info.UnixFileMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                                               UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute |
+                                               UnixFileMode.OtherRead | UnixFileMode.OtherExecute;
+                            _logger.LogInformation("Permisos Unix establecidos exitosamente para: {Directorio}", carpetaDestino);
+                        }
+                        catch (Exception permissionEx)
+                        {
+                            _logger.LogWarning("No se pudieron establecer permisos Unix en el directorio {Directorio}: {Error}",
+                                carpetaDestino, permissionEx.Message);
+                            // Continuar sin permisos personalizados
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogDebug("El directorio de documentos ya existe: {Directorio}", carpetaDestino);
+                }
+
+                // Verificar que tenemos permisos de escritura en el directorio
+                var testFile = Path.Combine(carpetaDestino, ".write_test");
+                try
+                {
+                    System.IO.File.WriteAllText(testFile, "test");
+                    System.IO.File.Delete(testFile);
+                    _logger.LogDebug("Verificación de permisos de escritura exitosa en: {Directorio}", carpetaDestino);
+                }
+                catch (Exception writeTestEx)
+                {
+                    _logger.LogError(writeTestEx, "No hay permisos de escritura en el directorio: {Directorio}", carpetaDestino);
+                    throw new UnauthorizedAccessException($"Sin permisos de escritura en {carpetaDestino}", writeTestEx);
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Error de permisos al crear/acceder directorio de documentos: {Directorio}", carpetaDestino);
+                TempData["Error"] = $"Error de permisos al acceder al directorio de documentos. " +
+                    $"El administrador debe verificar que el proceso tenga permisos de escritura en {carpetaDestino}";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                _logger.LogError(ex, "No se pudo encontrar el directorio padre: {DirectorioRaiz}", _env.WebRootPath);
+                TempData["Error"] = "El directorio raíz de la aplicación no es accesible. Contacte al administrador.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inesperado al crear directorio de documentos: {Directorio}", carpetaDestino);
+                TempData["Error"] = "Error al preparar el directorio de documentos. Contacte al administrador.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
 
             var nombreArchivo = Guid.NewGuid() + Path.GetExtension(modelo.Archivo.FileName);
             var rutaCompleta = Path.Combine(carpetaDestino, nombreArchivo);
 
-            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            try
             {
-                await modelo.Archivo.CopyToAsync(stream);
+                using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+                {
+                    await modelo.Archivo.CopyToAsync(stream);
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Error de permisos al guardar archivo");
+                TempData["Error"] = "Error de permisos al guardar el archivo. Contacte al administrador.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar archivo");
+                TempData["Error"] = "Error al guardar el archivo. Intentelo nuevamente.";
+                return RedirectToAction("SubirDocumento", new { idContrato });
             }
 
             var rutaRelativa = $"/documentos/{nombreArchivo}";

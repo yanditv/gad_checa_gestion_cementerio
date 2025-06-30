@@ -21,22 +21,26 @@ public class ContratoPDF : IDocument
 
     public void Compose(IDocumentContainer container)
     {
-        //
         var contrato = model.contrato;
         var boveda = model.contrato.Boveda;
         var difunto = model.difunto;
         var responsables = model.responsables;
         var responsable = model.responsables.FirstOrDefault();
         var pago = model.pago;
-        var presidente = cementerio.Presidente ?? "Presidente del GAD Parroquial de Checa"; // Asumimos un presidente fijo, se puede cambiar según sea necesario
-        var telefono_cementerio = cementerio.Telefono; // Asumimos un número de teléfono fijo para el cementerio, se puede cambiar según sea necesario
-        var email_cementerio = cementerio.Email; // Asumimos un correo electrónico fijo para el cementerio, se puede cambiar según sea necesario
-        var direccion_cementerio = cementerio.Direccion; // Asumimos una dirección fija para el cementerio, se puede cambiar según sea necesario
-        var entidad_financiera = cementerio.EntidadFinanciera ?? "Banco"; // Asumimos una entidad financiera fija, se puede cambiar según sea necesario
-        var NombreEntidadFinanciera = cementerio.NombreEntidadFinanciera ?? "Banco del Austro"; // Asumimos un nombre de entidad financiera fijo, se puede cambiar según sea necesario
-        var numero_cuenta = cementerio.NumeroCuenta ?? "2000324704"; // Asumimos un número de cuenta fijo, se puede cambiar según sea necesario
-        var abreviatura_banco = cementerio.EntidadFinanciera == "BANCO" ? "el banco" : "la Cooperativa de Ahorro y Crédito"; // Asumimos una abreviatura de banco fija, se puede cambiar según sea necesario
+        var presidente = TruncateText(cementerio.Presidente ?? "Presidente del GAD Parroquial de Checa", 60);
+        var telefono_cementerio = TruncateText(cementerio.Telefono ?? "02-XXXXXXX", 15);
+        var email_cementerio = TruncateText(cementerio.Email ?? "checa@example.gob.ec", 40);
+        var direccion_cementerio = TruncateText(cementerio.Direccion ?? "Checa, Ecuador", 60);
+        var entidad_financiera = cementerio.EntidadFinanciera ?? "Banco";
+        var NombreEntidadFinanciera = TruncateText(cementerio.NombreEntidadFinanciera ?? "Banco del Austro", 40);
+        var numero_cuenta = TruncateText(cementerio.NumeroCuenta ?? "2000324704", 20);
+        var abreviatura_banco = cementerio.EntidadFinanciera == "BANCO" ? "el banco" : "la Cooperativa de Ahorro y Crédito";
 
+        // Validar y truncar observaciones para evitar texto excesivamente largo
+        if (!string.IsNullOrWhiteSpace(contrato.Observaciones) && contrato.Observaciones.Length > 300)
+        {
+            contrato.Observaciones = contrato.Observaciones.Substring(0, 297) + "...";
+        }
         container.Page(page =>
         {
             page.Size(PageSizes.A4);
@@ -46,7 +50,7 @@ public class ContratoPDF : IDocument
             try
             {
                 var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo_gad.png");
-                if (File.Exists(logoPath))
+                if (System.IO.File.Exists(logoPath))
                 {
                     page.Header().AlignCenter().Image(Image.FromFile(logoPath)).FitWidth();
                 }
@@ -60,7 +64,7 @@ public class ContratoPDF : IDocument
             try
             {
                 var backgroundPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "background.jpg");
-                if (File.Exists(backgroundPath))
+                if (System.IO.File.Exists(backgroundPath))
                 {
                     page.Background().AlignCenter().AlignMiddle().Image(Image.FromFile(backgroundPath)).FitWidth();
                 }
@@ -78,7 +82,7 @@ public class ContratoPDF : IDocument
                 text.Span("Teléfono: ").SemiBold();
                 text.Span(telefono_cementerio + "  |  ");
                 text.Span("Correo: ").SemiBold();
-                text.Span(string.IsNullOrWhiteSpace(email_cementerio) ? "checa@example.gob.ec" : email_cementerio);
+                text.Span(email_cementerio);
             });
 
             page.Content()
@@ -87,7 +91,9 @@ public class ContratoPDF : IDocument
             .Column(column =>
             {
                 column.Spacing(20);
-                column.Item().AlignCenter().Text($"CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. {contrato.NumeroSecuencial}").Bold().FontSize(13);
+
+                column.Item().AlignCenter().Text(TruncateText($"CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. {contrato.NumeroSecuencial ?? "S/N"}", 100)).Bold().FontSize(13);
+
                 column.Item().Text(text =>
                 {
                     text.Span("En la Parroquia de Checa, a los ");
@@ -99,13 +105,13 @@ public class ContratoPDF : IDocument
                     text.Span(", comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ");
                     text.Span(presidente).Bold();
                     text.Span("; por otro lado, el/la Sr/Sra. ");
-                    text.Span(responsable?.NombresCompletos ?? "________________").Bold();
+                    text.Span(TruncateText(responsable?.NombresCompletos ?? "________________", 50)).Bold();
                     text.Span(" con número de identidad ");
-                    text.Span(responsable?.NumeroIdentificacion ?? "__________").Bold();
+                    text.Span(TruncateText(responsable?.NumeroIdentificacion ?? "__________", 20)).Bold();
                     text.Span(", número de teléfono ");
-                    text.Span(responsable?.Telefono ?? "__________").Bold();
+                    text.Span(TruncateText(responsable?.Telefono ?? "__________", 15)).Bold();
                     text.Span(", correo electrónico ");
-                    text.Span(responsable?.Email ?? "________________").Bold();
+                    text.Span(TruncateText(responsable?.Email ?? "________________", 30)).Bold();
                     text.Span(", los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:");
                 });
 
@@ -115,7 +121,7 @@ public class ContratoPDF : IDocument
                     text.Span(" Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ");
                     text.Span(presidente).Bold();
                     text.Span("; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ");
-                    text.Span(responsables.FirstOrDefault()?.NombresCompletos ?? "________________").Bold();
+                    text.Span(TruncateText(responsables.FirstOrDefault()?.NombresCompletos ?? "________________", 50)).Bold();
                     text.Span(" a quien en lo posterior se le llamará Arrendatario.");
                 });
 
@@ -129,13 +135,13 @@ public class ContratoPDF : IDocument
                 {
                     text.Span("TERCER OBJETO. -").Bold();
                     text.Span(" El Gobierno Parroquial de Checa, en su calidad de Administrador del Cementerio General de la Parroquia, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: ");
-                    text.Span(difunto.NombresCompletos).Bold();
+                    text.Span(TruncateText(difunto.NombresCompletos, 50)).Bold();
                     text.Span(" con número de cédula ");
-                    text.Span(difunto.NumeroIdentificacion).Bold();
+                    text.Span(TruncateText(difunto.NumeroIdentificacion, 20)).Bold();
                     text.Span(", restos que serán depositados en la bóveda número ");
-                    text.Span(boveda?.NumeroSecuencial != "S/N" ? boveda?.NumeroSecuencial : boveda?.Numero.ToString() ?? "________________").Bold();
+                    text.Span(TruncateText(boveda?.NumeroSecuencial != "S/N" ? boveda?.NumeroSecuencial : boveda?.Numero.ToString() ?? "________________", 20)).Bold();
                     text.Span(" en el bloque ");
-                    text.Span(boveda?.Piso?.Bloque?.Descripcion ?? "________________").Bold();
+                    text.Span(TruncateText(boveda?.Piso?.Bloque?.Descripcion ?? "________________", 30)).Bold();
                     if (boveda?.Piso?.NumeroPiso != null)
                         text.Span($", piso {boveda.Piso.NumeroPiso}.").Bold();
                 });
@@ -194,13 +200,25 @@ public class ContratoPDF : IDocument
                     {
                         var responsable = responsables.FirstOrDefault();
                         col.Item().AlignCenter().Text("____________________________").Bold();
-                        col.Item().AlignCenter().Text($"Sr/Sra. {responsable?.NombresCompletos ?? "________________"}").Bold();
-                        col.Item().AlignCenter().Text($"CI. {responsable?.NumeroIdentificacion ?? "____________"}");
+                        col.Item().AlignCenter().Text(TruncateText($"Sr/Sra. {responsable?.NombresCompletos ?? "________________"}", 40)).Bold();
+                        col.Item().AlignCenter().Text(TruncateText($"CI. {responsable?.NumeroIdentificacion ?? "____________"}", 25));
                         col.Item().AlignCenter().Text("ARRENDATARIO");
                     });
                 });
 
             });
         });
+    }
+
+    // Método auxiliar para truncar texto y evitar problemas de layout
+    private static string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return text ?? "";
+
+        if (text.Length <= maxLength)
+            return text;
+
+        return text.Substring(0, maxLength - 3) + "...";
     }
 }
