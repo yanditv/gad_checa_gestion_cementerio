@@ -17,26 +17,17 @@
 </form>
 @if (!Model.esNuevo && !string.IsNullOrEmpty(Model.RutaGuardada))
 {
-    <div class="alert alert-info">
-        Documento firmado y cargado para este contrato. <br />
-        @* Ruta: <code>@Model.RutaGuardada</code> <br /> *@
-        <a href="@Model.RutaGuardada" target="_blank">Ver documento actual</a>
-    </div>
-}
-
-
-@if (Model.esNuevo && TempData["Mensaje"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["Mensaje"] <br />
-        @* Ruta: <code>@TempData["RutaGuardada"]</code> <br /> *@
-        <a href="@TempData["RutaGuardada"]" target="_blank">Ver archivo</a>
-    </div>
-}
-@if (Model.esNuevo && TempData["Error"] != null)
-{
-    <div class="alert alert-danger">
-        @TempData["Error"]
+    <div class="alert alert-primary border-primary static-alert" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-file-check me-2 fs-5"></i>
+            <div>
+                <strong>Documento cargado</strong><br />
+                Documento firmado y cargado para este contrato.
+                <a href="@Model.RutaGuardada" target="_blank" class="text-decoration-underline ms-2">
+                    <i class="ti ti-external-link me-1"></i>Ver documento actual
+                </a>
+            </div>
+        </div>
     </div>
 }
 

@@ -16,24 +16,6 @@
     </div>
 
     <div class="card-body">
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                @TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                @TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
             <input type="hidden" asp-for="Id" />
@@ -207,30 +189,30 @@
                     const usarTarifaBase = $(`input[name="PreciosPorPiso[${i - 1}].UsarTarifaBase"]`).is(':checked');
 
                     tbody.append(`
-                                <tr>
-                                    <td class="align-middle">Piso ${i}</td>
-                                    <td class="align-middle">
-                                        <div class="form-check form-switch">
-                                            <input type="checkbox" class="form-check-input usar-tarifa-base" 
-                                                name="PreciosPorPiso[${i - 1}].UsarTarifaBase" 
-                                                value="true" 
-                                                ${usarTarifaBase ? 'checked' : ''} />
-                                            <input type="hidden" name="PreciosPorPiso[${i - 1}].UsarTarifaBase" value="false" />
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                            <input type="number" class="form-control precio-personalizado" 
-                                                name="PreciosPorPiso[${i - 1}].PrecioPersonalizado" 
-                                                value="${precioPersonalizado}" 
-                                                step="0.01" 
-                                                ${usarTarifaBase ? 'disabled' : ''} />
-                                            <input type="hidden" name="PreciosPorPiso[${i - 1}].NumeroPiso" value="${i}" />
-                                        </div>
-                                    </td>
-                                </tr>
-                            `);
+                                    <tr>
+                                        <td class="align-middle">Piso ${i}</td>
+                                        <td class="align-middle">
+                                            <div class="form-check form-switch">
+                                                <input type="checkbox" class="form-check-input usar-tarifa-base" 
+                                                    name="PreciosPorPiso[${i - 1}].UsarTarifaBase" 
+                                                    value="true" 
+                                                    ${usarTarifaBase ? 'checked' : ''} />
+                                                <input type="hidden" name="PreciosPorPiso[${i - 1}].UsarTarifaBase" value="false" />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                <input type="number" class="form-control precio-personalizado" 
+                                                    name="PreciosPorPiso[${i - 1}].PrecioPersonalizado" 
+                                                    value="${precioPersonalizado}" 
+                                                    step="0.01" 
+                                                    ${usarTarifaBase ? 'disabled' : ''} />
+                                                <input type="hidden" name="PreciosPorPiso[${i - 1}].NumeroPiso" value="${i}" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `);
                 }
             }
 

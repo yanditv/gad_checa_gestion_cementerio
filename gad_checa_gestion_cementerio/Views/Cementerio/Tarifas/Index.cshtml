@@ -17,20 +17,6 @@
         </button>
     </div>
 
-    @if (ViewBag.MensajeExito != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @ViewBag.MensajeExito
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-        <script>
-            // Deshabilitar el formulario después de guardar exitosamente
-            document.addEventListener('DOMContentLoaded', function () {
-                deshabilitarEdicion();
-            });
-        </script>
-    }
-
     <form asp-action="Tarifas" method="post" id="formTarifas">
         @Html.AntiForgeryToken()
 

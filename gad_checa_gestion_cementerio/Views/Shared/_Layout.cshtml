@@ -340,6 +340,9 @@
         </div>
       </div>
       @* <!-- [ Main Content ] start --> *@
+      @* <!-- Sistema centralizado de mensajes --> *@
+      @await Html.PartialAsync("_Messages")
+
       @RenderBody()
 
       @* <!-- [ Main Content ] end --> *@

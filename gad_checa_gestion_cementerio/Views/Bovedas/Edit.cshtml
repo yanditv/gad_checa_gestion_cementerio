@@ -16,22 +16,6 @@
         </div>
     </div>
     <div class="card-body">
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-                <i class="ti ti-alert-triangle text-danger fs-4 me-2"></i>
-                <div>@TempData["Error"]</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
-                <i class="ti ti-check text-success fs-4 me-2"></i>
-                <div>@TempData["Success"]</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
         <form asp-action="Edit" method="post">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
             <input type="hidden" asp-for="Id" />
@@ -363,20 +347,20 @@
                         var propietarioDireccion = '@Html.Raw(Model.Propietario?.Direccion)';
                         var option = new Option(
                         `${propietarioNombre} - ${propietarioIdentificacion}`,
-                                                                        propietarioId,
-                                                                        true,
-                                                                        true
-                                                                    );
-                                                                    $('#selectPropietario').append(option).trigger('change');
-                                                                    $('#propietarioId').val(propietarioId);
-                                                                    $('#propietarioNombre').text(propietarioNombre);
-                                                                    $('#propietarioIdentificacion').text(propietarioIdentificacion);
-                                                                    $('#propietarioTelefono').text(propietarioTelefono || 'No especificado');
-                                                                    $('#propietarioEmail').text(propietarioEmail || 'No especificado');
-                                                                    $('#propietarioDireccion').text(propietarioDireccion || 'No especificada');
-                                                                    $('#propietarioInfo').removeClass('d-none');
-                                                                </text>
-                                    }
-                                });
+                                                                                propietarioId,
+                                                                                true,
+                                                                                true
+                                                                            );
+                                                                            $('#selectPropietario').append(option).trigger('change');
+                                                                            $('#propietarioId').val(propietarioId);
+                                                                            $('#propietarioNombre').text(propietarioNombre);
+                                                                            $('#propietarioIdentificacion').text(propietarioIdentificacion);
+                                                                            $('#propietarioTelefono').text(propietarioTelefono || 'No especificado');
+                                                                            $('#propietarioEmail').text(propietarioEmail || 'No especificado');
+                                                                            $('#propietarioDireccion').text(propietarioDireccion || 'No especificada');
+                                                                            $('#propietarioInfo').removeClass('d-none');
+                                                                        </text>
+                                        }
+                                    });
     </script>
 }

@@ -1,0 +1,99 @@
+@* Sistema centralizado de mensajes usando TempData *@
+
+@{
+    // Soporte para múltiples variantes de nombres de TempData
+    var successMessage = TempData["Success"]?.ToString() ?? TempData["SuccessMessage"]?.ToString();
+    var errorMessage = TempData["Error"]?.ToString() ?? TempData["ErrorMessage"]?.ToString();
+    var warningMessage = TempData["Warning"]?.ToString() ?? TempData["WarningMessage"]?.ToString();
+    var infoMessage = TempData["Info"]?.ToString() ?? TempData["InfoMessage"]?.ToString();
+
+    // Consumir TempData para evitar persistencia entre vistas
+    // El uso de Keep() era el problema - usamos directamente los valores
+}
+
+@if (successMessage != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4 auto-hide-message" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-circle-check me-2 fs-5"></i>
+            <div>
+                <strong>¡Éxito!</strong>
+                @successMessage
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-alert-triangle me-2 fs-5"></i>
+            <div>
+                <strong>Error</strong>
+                @errorMessage
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (warningMessage != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-alert-circle me-2 fs-5"></i>
+            <div>
+                <strong>Advertencia</strong>
+                @warningMessage
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (infoMessage != null)
+{
+    <div class="alert alert-info alert-dismissible fade show shadow-sm border-0 mb-4 auto-hide-message" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-info-circle me-2 fs-5"></i>
+            <div>
+                <strong>Información</strong>
+                @infoMessage
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@* Script para auto-ocultar mensajes después de 5 segundos *@
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Auto-ocultar solo los mensajes del sistema central (con clase auto-hide-message)
+        // Estos son únicamente los mensajes generados por TempData
+        const autoHideAlerts = document.querySelectorAll('.alert.auto-hide-message:not(.static-alert)');
+        autoHideAlerts.forEach(function (alert) {
+            setTimeout(function () {
+                if (alert && alert.parentNode && alert.classList.contains('auto-hide-message')) {
+                    // Verificar que Bootstrap está disponible antes de usar Alert
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    } else {
+                        // Fallback si Bootstrap no está disponible
+                        alert.style.transition = 'opacity 0.15s linear';
+                        alert.style.opacity = '0';
+                        setTimeout(() => {
+                                     alert.parentNode.removeChild(alert);
+                            }
+                        }, 150);
+                    }
+                }
+            }, 5000); // 5 segundos
+        });
+
+        // Los mensajes de error, advertencia y alertas estáticas se mantienen hasta que el usuario los cierre manualmente
+    });
+</script>
+    

@@ -2,6 +2,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using QuestPDF.Helpers;
 using gad_checa_gestion_cementerio.Data;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -22,34 +23,91 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
 
         public void Compose(IDocumentContainer container)
         {
-            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", "logo.jpeg");
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo.png");
 
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(30);
-                page.DefaultTextStyle(x => x.FontSize(11));
+                page.Margin(20);
+                page.DefaultTextStyle(x => x.FontSize(9).FontColor(Colors.Black).FontFamily("Arial"));
 
-                // Encabezado con logo y título
-                page.Header().Column(column =>
+                // Encabezado limpio sin bordes
+                page.Header().Container().Padding(12).Background(Colors.White).Column(column =>
                 {
-                    // Intentar cargar el logo de manera segura
-                    try
+                    column.Item().Row(row =>
                     {
-                        if (File.Exists(logoPath))
+                        // Logo a la izquierda
+                        row.ConstantItem(100).Column(logoCol =>
                         {
-                            column.Item().Width(200).Height(120).Image(logoPath).FitArea();
-                        }
-                    }
-                    catch
-                    {
-                        // Si no se puede cargar el logo, simplemente continuar sin él
-                    }
-                    column.Item().AlignCenter().Text("FACTURA DE PAGO").FontSize(20).Bold();
+                            try
+                            {
+                                if (File.Exists(logoPath))
+                                {
+                                    // Logo sin bordes, integrado naturalmente
+                                    logoCol.Item().Width(80).Height(60)
+                                        .Padding(2).Image(logoPath).FitArea();
+                                }
+                                else
+                                {
+                                    logoCol.Item().Width(80).Height(60).Background(Colors.Grey.Lighten4)
+                                        .AlignCenter().AlignMiddle().Text("GAD")
+                                        .FontSize(14).Bold().FontColor(Colors.Black);
+                                }
+                            }
+                            catch
+                            {
+                                logoCol.Item().Width(80).Height(60).Background(Colors.Grey.Lighten4)
+                                    .AlignCenter().AlignMiddle().Text("GAD")
+                                    .FontSize(14).Bold().FontColor(Colors.Black);
+                            }
+                        });
+
+                        // Información del emisor al centro
+                        row.RelativeItem().Padding(8).Column(infoCol =>
+                        {
+                            infoCol.Item().AlignCenter().Text("GOBIERNO AUTÓNOMO DESCENTRALIZADO").FontSize(14).Bold().FontColor(Colors.Black);
+                            infoCol.Item().AlignCenter().Text("PARROQUIAL DE CHECA").FontSize(12).Bold().FontColor(Colors.Grey.Darken2);
+                            infoCol.Item().AlignCenter().PaddingTop(2).Text("ADMINISTRACIÓN DE CEMENTERIOS").FontSize(10).FontColor(Colors.Grey.Darken1);
+
+                        });
+
+                        // Número de comprobante a la derecha con diseño más sutil
+                        row.ConstantItem(130).Column(numCol =>
+                        {
+                            numCol.Item().Border(1).BorderColor(Colors.Grey.Darken1).Background(Colors.White)
+                                .Padding(8).Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("COMPROBANTE").FontSize(9).Bold().FontColor(Colors.Black);
+                                c.Item().AlignCenter().Text("N° " + _pago.Id.ToString("D8")).FontSize(14).Bold().FontColor(Colors.Black);
+                                c.Item().AlignCenter().PaddingTop(3).Text(_pago.FechaPago.ToString("dd/MM/yyyy")).FontSize(8).FontColor(Colors.Grey.Darken2);
+                                c.Item().AlignCenter().Text(_pago.FechaPago.ToString("HH:mm")).FontSize(7).FontColor(Colors.Grey.Darken1);
+                            });
+                        });
+                    });
+
+                    // Línea separadora sutil
+                    column.Item().PaddingTop(8).Border(0.5f).BorderColor(Colors.Grey.Lighten1);
                 });
 
                 // Contenido
                 page.Content().Element(ComposeContent);
+
+                // Pie de página mejorado
+                page.Footer().Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4)
+                    .Padding(6).Row(row =>
+                {
+                    row.RelativeItem().Column(left =>
+                    {
+                        left.Item().Text("Documento válido según normativa vigente").FontSize(7).FontColor(Colors.Grey.Darken2);
+                        // left.Item().Text("Para consultas: administracion@gadcheca.gob.ec").FontSize(7).FontColor(Colors.Grey.Darken2);
+                    });
+
+                    row.RelativeItem().AlignRight().Column(right =>
+                    {
+                        right.Item().AlignRight().Text($"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(7).FontColor(Colors.Grey.Darken1);
+                        right.Item().AlignRight().Text($"Usuario: {_responsable.Nombres} {_responsable.Apellidos}").FontSize(7).FontColor(Colors.Grey.Darken1);
+                    });
+                });
             });
         }
 
@@ -60,92 +118,176 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
             var boveda = contrato?.Boveda;
             var cementerio = boveda?.Piso?.Bloque?.Cementerio;
 
+            // Variables para el resumen financiero
+            var subtotal = _pago.Cuotas.Sum(cuota => cuota.Monto);
+            var descuentos = 0m; // Por ahora no hay descuentos
+            var total = subtotal - descuentos;
+
             container.Column(col =>
             {
-                // Información del Cementerio
-                col.Item().Text($"Cementerio: {cementerio?.Nombre ?? "N/A"}").Bold();
-                col.Item().Text($"Dirección: {cementerio?.Direccion ?? "N/A"}");
-                col.Item().PaddingVertical(10);
+                col.Item().PaddingVertical(8);
 
-                // Información del cliente y contrato
-                col.Item().Row(row =>
+                // Sección: Información del Cementerio
+                col.Item().Background(Colors.Grey.Lighten3).Border(1).BorderColor(Colors.Grey.Darken1)
+                    .Padding(8).Column(cemCol =>
                 {
-                    row.RelativeColumn().Column(c =>
+                    cemCol.Item().Text("📍 INFORMACIÓN DEL CEMENTERIO").FontSize(11).Bold().FontColor(Colors.Black);
+                    cemCol.Item().PaddingTop(4).Row(row =>
                     {
-                        c.Item().Text($"Razón social / Nombres y Apellidos: {_responsable.Nombres} {_responsable.Apellidos}").Bold();
-                        c.Item().Text($"Fecha de Emisión: {_pago.FechaPago:dd/MM/yyyy}");
-                        c.Item().Text($"Dirección: {_responsable.Direccion}");
+                        row.RelativeItem().Text("Cementerio: ").Bold().FontColor(Colors.Black);
+                        row.RelativeItem(2).Text(cementerio?.Nombre ?? "N/A").FontColor(Colors.Grey.Darken2);
                     });
-
-                    row.ConstantColumn(250).Column(c =>
+                    cemCol.Item().PaddingTop(2).Row(row =>
                     {
-                        c.Item().Text($"Identificación: {_responsable.NumeroIdentificacion}");
-                        c.Item().Text($"Fecha de Vencimiento: {primeraCuota?.FechaVencimiento:dd/MM/yyyy}");
-                        c.Item().Text($"Origen: {contrato?.NumeroSecuencial ?? "N/A"}");
+                        row.RelativeItem().Text("Dirección: ").Bold().FontColor(Colors.Black);
+                        row.RelativeItem(2).Text(cementerio?.Direccion ?? "N/A").FontColor(Colors.Grey.Darken2);
                     });
                 });
 
-                col.Item().PaddingVertical(10);
+                col.Item().PaddingVertical(6);
 
-                // Tabla de cuotas pagadas con bordes
-                col.Item().Table(table =>
+                // Sección: Datos del Cliente y Contrato
+                col.Item().Border(1).BorderColor(Colors.Grey.Darken1).Background(Colors.Grey.Lighten4)
+                    .Padding(8).Column(clientCol =>
                 {
-                    table.ColumnsDefinition(columns =>
-                    {
-                        columns.RelativeColumn(2);   // Código
-                        columns.RelativeColumn(4);   // Descripción
-                        columns.ConstantColumn(80);  // Precio Unitario
-                        columns.ConstantColumn(60);  // Descuento
-                        columns.ConstantColumn(80);  // Total
-                    });
+                    clientCol.Item().Text("👤 DATOS DEL CLIENTE Y CONTRATO").FontSize(11).Bold().FontColor(Colors.Black);
+                    clientCol.Item().PaddingTop(6);
 
-                    table.Header(header =>
+                    clientCol.Item().Row(row =>
                     {
-                        header.Cell().BorderBottom(1).Padding(2).Text("Código Principal").Bold();
-                        header.Cell().BorderBottom(1).Padding(2).Text("Descripción").Bold();
-                        header.Cell().BorderBottom(1).Padding(2).AlignRight().Text("Precio Unitario").Bold();
-                        header.Cell().BorderBottom(1).Padding(2).AlignRight().Text("Descuento").Bold();
-                        header.Cell().BorderBottom(1).Padding(2).AlignRight().Text("Precio Total").Bold();
-                    });
-
-                    foreach (var cuota in _pago.Cuotas)
-                    {
-                        table.Cell().BorderBottom(0.5f).Padding(2).Text("CUOTA-" + cuota.Id);
-                        table.Cell().BorderBottom(0.5f).Padding(2).Text($"Pago cuota con vencimiento {cuota.FechaVencimiento:dd/MM/yyyy}");
-                        table.Cell().BorderBottom(0.5f).Padding(2).AlignRight().Text(cuota.Monto.ToString("C"));
-                        table.Cell().BorderBottom(0.5f).Padding(2).AlignRight().Text("$ 0.00");
-                        table.Cell().BorderBottom(0.5f).Padding(2).AlignRight().Text(cuota.Monto.ToString("C"));
-                    }
-                });
-
-                col.Item().PaddingVertical(10);
-
-                // Total (sin IVA)
-                var total = _pago.Cuotas.Sum(cuota => cuota.Monto);
-                col.Item().Row(row =>
-                {
-                    row.RelativeColumn();
-                    row.ConstantColumn(250).Column(c =>
-                    {
-                        c.Item().Row(r =>
+                        // Columna izquierda
+                        row.RelativeItem().Column(left =>
                         {
-                            r.RelativeColumn().Text("Total:");
-                            r.ConstantColumn(100).AlignRight().Text(total.ToString("C")).Bold();
+                            left.Item().Row(r =>
+                            {
+                                r.ConstantItem(90).Text("Cliente:").Bold().FontColor(Colors.Black);
+                                r.RelativeItem().Text($"{_responsable.Nombres} {_responsable.Apellidos}").FontColor(Colors.Grey.Darken2);
+                            });
+                            left.Item().PaddingTop(2).Row(r =>
+                            {
+                                r.ConstantItem(90).Text("Identificación:").Bold().FontColor(Colors.Black);
+                                r.RelativeItem().Text(_responsable.NumeroIdentificacion).FontColor(Colors.Grey.Darken2);
+                            });
+                            left.Item().PaddingTop(2).Row(r =>
+                            {
+                                r.ConstantItem(90).Text("Dirección:").Bold().FontColor(Colors.Black);
+                                r.RelativeItem().Text(_responsable.Direccion ?? "N/A").FontColor(Colors.Grey.Darken2);
+                            });
+                        });
+
+                        // Columna derecha
+                        row.RelativeItem().Column(right =>
+                        {
+                            right.Item().Row(r =>
+                            {
+                                r.ConstantItem(90).Text("Contrato N°:").Bold().FontColor(Colors.Black);
+                                r.RelativeItem().Text(contrato?.NumeroSecuencial ?? "N/A").FontColor(Colors.Grey.Darken2);
+                            });
+                            right.Item().PaddingTop(2).Row(r =>
+                            {
+                                r.ConstantItem(90).Text("Bóveda:").Bold().FontColor(Colors.Black);
+                                r.RelativeItem().Text($"{boveda?.Piso?.Bloque?.Descripcion ?? "N/A"} - Piso {boveda?.Piso?.NumeroPiso.ToString() ?? "0"} - Bóveda {(boveda?.Numero.ToString() ?? "N/A")}").FontColor(Colors.Grey.Darken2);
+                            });
+                            right.Item().PaddingTop(2).Row(r =>
+                            {
+                                r.ConstantItem(90).Text("Fecha de Pago:").Bold().FontColor(Colors.Black);
+                                r.RelativeItem().Text(_pago.FechaPago.ToString("dd/MM/yyyy")).FontColor(Colors.Grey.Darken2);
+                            });
                         });
                     });
                 });
 
-                col.Item().PaddingTop(15);
+                col.Item().PaddingVertical(8);
 
-                // Información adicional y forma de pago
-                col.Item().Text("Información Adicional").Bold();
-                col.Item().Text($"Email: {_responsable.Email ?? "N/A"}");
-
-                col.Item().PaddingTop(10);
-                col.Item().AlignRight().Row(row =>
+                // Sección: Detalle de Cuotas Pagadas
+                col.Item().Column(detailCol =>
                 {
-                    row.ConstantColumn(120).Text("Forma de Pago:").Bold();
-                    row.ConstantColumn(120).AlignRight().Text(_pago.TipoPago);
+                    detailCol.Item().Text("💰 DETALLE DE CUOTAS PAGADAS").FontSize(11).Bold().FontColor(Colors.Black);
+                    detailCol.Item().PaddingTop(6);
+
+                    detailCol.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(60);   // N° Cuota
+                            columns.RelativeColumn(3);    // Descripción
+                            columns.ConstantColumn(75);   // Fecha Vencimiento
+                            columns.ConstantColumn(70);   // Monto
+                            columns.ConstantColumn(70);   // Total
+                        });
+
+                        // Encabezado de la tabla
+                        table.Header(header =>
+                        {
+                            header.Cell().Background(Colors.Grey.Darken2).Padding(6).Text("N°").Bold().FontColor(Colors.White).FontSize(9);
+                            header.Cell().Background(Colors.Grey.Darken2).Padding(6).Text("Descripción").Bold().FontColor(Colors.White).FontSize(9);
+                            header.Cell().Background(Colors.Grey.Darken2).Padding(6).AlignCenter().Text("Vencimiento").Bold().FontColor(Colors.White).FontSize(9);
+                            header.Cell().Background(Colors.Grey.Darken2).Padding(6).AlignRight().Text("Monto").Bold().FontColor(Colors.White).FontSize(9);
+                            header.Cell().Background(Colors.Grey.Darken2).Padding(6).AlignRight().Text("Total").Bold().FontColor(Colors.White).FontSize(9);
+                        });
+
+                        // Filas de datos con mejor diseño
+                        var isEvenRow = false;
+                        foreach (var cuota in _pago.Cuotas)
+                        {
+                            var backgroundColor = isEvenRow ? Colors.Grey.Lighten4 : Colors.White;
+                            var textColor = Colors.Black;
+
+                            table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
+                                .Text($"#{cuota.Id}").FontSize(8).FontColor(textColor).Bold();
+                            table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
+                                .Text($"Cuota venc. {cuota.FechaVencimiento:dd/MM/yyyy}").FontSize(8).FontColor(textColor);
+                            table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
+                                .AlignCenter().Text(cuota.FechaVencimiento.ToString("dd/MM/yyyy")).FontSize(8).FontColor(textColor);
+                            table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
+                                .AlignRight().Text(cuota.Monto.ToString("C")).FontSize(8).FontColor(textColor);
+                            table.Cell().Background(backgroundColor).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6)
+                                .AlignRight().Text(cuota.Monto.ToString("C")).FontSize(8).Bold().FontColor(Colors.Black);
+
+                            isEvenRow = !isEvenRow;
+                        }
+                    });
+                });
+
+                col.Item().PaddingVertical(6);                // Sección: Resumen Financiero y Observaciones en una fila
+                col.Item().Row(row =>
+                {
+                    // Resumen Financiero a la izquierda
+                    row.ConstantItem(200).Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(8).Column(c =>
+                    {
+                        c.Item().Text("💳 RESUMEN").FontSize(10).Bold().FontColor(Colors.Black);
+                        c.Item().PaddingTop(4);
+
+                        c.Item().Row(r =>
+                        {
+                            r.RelativeItem().Text("Subtotal:").Bold().FontColor(Colors.Black).FontSize(9);
+                            r.ConstantItem(80).AlignRight().Text(subtotal.ToString("C")).FontSize(9).FontColor(Colors.Grey.Darken2);
+                        });
+
+                        c.Item().PaddingTop(2).Row(r =>
+                        {
+                            r.RelativeItem().Text("Descuentos:").Bold().FontColor(Colors.Black).FontSize(9);
+                            r.ConstantItem(80).AlignRight().Text(descuentos.ToString("C")).FontColor(Colors.Grey.Darken1).FontSize(9);
+                        });
+
+                        c.Item().PaddingTop(4).Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten2).Padding(4).Row(r =>
+                        {
+                            r.RelativeItem().Text("TOTAL:").FontSize(11).Bold().FontColor(Colors.Black);
+                            r.ConstantItem(80).AlignRight().Text(total.ToString("C")).FontSize(12).Bold().FontColor(Colors.Black);
+                        });
+                    });
+
+                    row.ConstantItem(10); // Espacio
+
+                    // Observaciones a la derecha
+                    row.RelativeItem().Background(Colors.Grey.Lighten4).Border(1).BorderColor(Colors.Grey.Darken1).Padding(8).Column(obsCol =>
+                    {
+                        obsCol.Item().Text("⚠️ OBSERVACIONES").FontSize(10).Bold().FontColor(Colors.Black);
+                        obsCol.Item().PaddingTop(4).Text("• Este comprobante es un documento válido de pago.").FontSize(8).FontColor(Colors.Grey.Darken2);
+                        obsCol.Item().PaddingTop(2).Text("• Conserve este documento para futuras referencias.").FontSize(8).FontColor(Colors.Grey.Darken2);
+                        obsCol.Item().PaddingTop(2).Text("• Para consultas, acérquese a nuestras oficinas.").FontSize(8).FontColor(Colors.Grey.Darken2);
+                        obsCol.Item().PaddingTop(2).Text("• Documento válido para efectos tributarios.").FontSize(8).FontColor(Colors.Grey.Darken2);
+                    });
                 });
             });
         }

@@ -56,7 +56,7 @@ public class DocumentosController : Controller
         // Aquí puedes guardar en la BD si deseas
 
         TempData["RutaGuardada"] = rutaRelativa;
-        TempData["Mensaje"] = "Archivo subido exitosamente.";
+        TempData["Success"] = "Archivo subido exitosamente.";
 
         // 🔁 Redirige a GET para evitar el reenvío en recarga
         return RedirectToAction("Subir");
