@@ -21,7 +21,7 @@
                     <option value="">-- Tipo de Bóveda --</option>
                     @foreach (var tipo in Model.TiposDisponibles)
                     {
-                        <option value="@tipo" selected="@(Model.TipoBloque == tipo ? "selected" : null)">@tipo</option>
+                        <option value="@tipo" @(Model.TipoBloque == tipo ? "selected" : "")>@tipo</option>
                     }
                 </select>
 
@@ -30,7 +30,7 @@
                     <option value="">-- Bloque --</option>
                     @foreach (var bloque in Model.BloquesDisponibles)
                     {
-                        <option value="@bloque" selected="@(Model.NombreBloque == bloque ? "selected" : null)">
+                        <option value="@bloque" @(Model.NombreBloque == bloque ? "selected" : "")>
                             @bloque
                         </option>
                     }
@@ -44,18 +44,82 @@
 
             <!-- Botón PDF -->
             <form method="get" asp-action="BovedasPdf">
-                <input type="hidden" name="tipoBloque" value="@Model.TipoBloque" />
-                <input type="hidden" name="nombreBloque" value="@Model.NombreBloque" />
+                <input type="hidden" name="tipoBloque" value="@Model.TipoBloque ?? "" " />
+                <input type="hidden" name="nombreBloque" value="@Model.NombreBloque ?? "" " />
                 <button type="submit" class="btn btn-primary btn-sm ">
-                    <i class="ti ti-download"></i> <span class="no-wrap">Generar PDF</span><span class="no-wrap">
-                    </span>
+                    <i class="ti ti-download"></i> <span class="no-wrap">Generar PDF</span>
                 </button>
             </form>
         </div>
     </div>
 
-
     <div class="min-h-screen bg-white p-6 flex flex-col items-center">
+
+        <!-- Estadísticas Resumen -->
+        <div class="row mb-4 w-100">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            @{
+                                Func<string, bool> esBoveda = (tipo) => {
+                                    var tipoUpper = tipo?.ToUpper() ?? "";
+                                    return tipoUpper.Contains("BOVEDA") || tipoUpper.Contains("BÓVEDA");
+                                };
+
+                                Func<string, bool> esNicho = (tipo) => {
+                                    var tipoUpper = tipo?.ToUpper() ?? "";
+                                    return tipoUpper.Contains("NICHO");
+                                };
+
+                                var totalBovedas = Model.Bovedas.Where(b => esBoveda(b.TipoBloque)).Count();
+                                var totalNichos = Model.Bovedas.Where(b => esNicho(b.TipoBloque)).Count();
+                                var totalOcupadas = Model.Bovedas.Count(b => b.TieneContratoActivo());
+                                var totalPorCaducar = Model.Bovedas.Count(b => b.TieneContratoPorCaducar());
+                                var totalLibres = Model.Bovedas.Count(b => !b.TieneContratoActivo() && !b.TieneContratoPorCaducar());
+                                var totalGeneral = Model.Bovedas.Count();
+                            }
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold text-primary fs-4">@totalGeneral</div>
+                                    <small class="text-muted">Total General</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold text-info fs-4">@totalBovedas</div>
+                                    <small class="text-muted">Bóvedas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold text-info fs-4">@totalNichos</div>
+                                    <small class="text-muted">Nichos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold text-success fs-4">@totalOcupadas</div>
+                                    <small class="text-muted">Ocupadas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold text-warning fs-4">@totalPorCaducar</div>
+                                    <small class="text-muted">Por Caducar</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center">
+                                    <div class="fw-bold text-secondary fs-4">@totalLibres</div>
+                                    <small class="text-muted">Libres</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Tabla -->
         <div class="table-responsive">
@@ -69,6 +133,7 @@
                         <th scope="col">Tipo</th>
                         <th scope="col">Contrato</th>
                         <th scope="col">Duración</th>
+                        <th scope="col">Propietario</th>
                         <th scope="col">Difunto</th>
                     </tr>
                 </thead>
@@ -78,33 +143,73 @@
                         <tr>
                             <td>@item.NumeroBoveda</td>
                             <td>@item.NumeroPiso</td>
-                            <td>@item.EstadoBoveda</td>
+                            <td>
+                                <span class="@item.GetCssClassEstado()">
+                                    @item.GetEstadoCalculado()
+                                    @if (!string.IsNullOrEmpty(item.GetInfoAdicionalEstado()))
+                                    {
+                                        <br />
+                                        <small class="text-muted">@item.GetInfoAdicionalEstado()</small>
+                                    }
+                                </span>
+                            </td>
                             <td>@item.NombreBloque</td>
                             <td>@item.TipoBloque</td>
                             <td>
-                                @if (item.NumeroSecuencialContrato != null)
+                                @if (!string.IsNullOrEmpty(item.NumeroSecuencialContrato))
                                 {
-                                    <div>@item.NumeroSecuencialContrato<br />
-                                        <small>@item.FechaInicioContrato?.ToShortDateString() -
-                                            @item.FechaFinContrato?.ToShortDateString()</small>
+                                    <div>
+                                        <strong>@item.NumeroSecuencialContrato</strong><br />
+                                        <small class="text-muted">
+                                            @(item.FechaInicioContrato?.ToString("dd/MM/yyyy") ?? "-") -
+                                            @(item.FechaFinContrato?.ToString("dd/MM/yyyy") ?? "-")
+                                        </small>
                                     </div>
                                 }
                                 else
                                 {
-                                    <span class="text-gray-400 italic">Sin contrato</span>
+                                    <span class="text-muted fst-italic">Sin contrato</span>
                                 }
                             </td>
-                            <td>@item.NumeroDeMeses años</td>
                             <td>
-                                @if (item.NombresDifunto != null)
+                                @if (!string.IsNullOrEmpty(item.GetDuracionFormateada()))
                                 {
-                                    <div>@item.NombresDifunto
-                                        @item.ApellidosDifunto<br /><small>@item.FechaFallecimiento?.ToShortDateString()</small>
+                                    @item.GetDuracionFormateada()
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.NombrePropietario))
+                                {
+                                    <div>
+                                        <strong>@item.NombrePropietario</strong><br />
+                                        <small class="text-muted">CI: @item.CedulaPropietario</small>
                                     </div>
                                 }
                                 else
                                 {
-                                    <span class="text-gray-400 italic">Libre</span>
+                                    <span class="text-muted fst-italic">Sin propietario</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.NombresDifunto))
+                                {
+                                    <div>
+                                        <strong>@item.NombresDifunto @item.ApellidosDifunto</strong><br />
+                                        <small class="text-muted">
+                                            @if (item.FechaFallecimiento != null)
+                                            {
+                                                @("Fallecido: " + item.FechaFallecimiento.Value.ToString("dd/MM/yyyy"))
+                                            }
+                                        </small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Sin difunto</span>
                                 }
                             </td>
                         </tr>

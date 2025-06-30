@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
+using Microsoft.IdentityModel.Tokens;
 
 namespace gad_checa_gestion_cementerio.Controllers
 {
@@ -46,6 +47,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         public async Task<IActionResult> Bovedas(string? tipoBloque, string? nombreBloque)
         {
             var bovedas = await _context.Boveda
+                .Include(b => b.Propietario)
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
                         .ThenInclude(b => b.Cementerio)
@@ -69,14 +71,14 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.NumeroSecuencial,
-                    EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
+                    NumeroBoveda = !string.IsNullOrEmpty(b.NumeroSecuencial) && b.NumeroSecuencial != "S/N" ? b.NumeroSecuencial : b.Numero.ToString(),
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
                     NombreBloque = bloque.Descripcion,
                     TipoBloque = bloque.Tipo,
                     NombreCementerio = cementerio?.Nombre,
-
+                    NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
+                    CedulaPropietario = b.Propietario?.NumeroIdentificacion,
                     NumeroSecuencialContrato = contrato?.NumeroSecuencial,
                     FechaInicioContrato = contrato?.FechaInicio,
                     FechaFinContrato = contrato?.FechaFin,
@@ -298,6 +300,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             // Traer bóvedas y su ubicación
             var bovedas = _context.Boveda
+                .Include(b => b.Propietario)
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
                         .ThenInclude(bq => bq.Cementerio)
@@ -330,13 +333,15 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
-                    NumeroBoveda = b.NumeroSecuencial,
+                    NumeroBoveda = string.IsNullOrEmpty(b.NumeroSecuencial) ? b.Id.ToString() : b.NumeroSecuencial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
                     NumeroPiso = piso.NumeroPiso,
                     NombreBloque = bloque.Descripcion,
                     TipoBloque = bloque.Tipo,
                     NombreCementerio = cementerio?.Nombre,
+                    NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
+                    CedulaPropietario = b.Propietario?.NumeroIdentificacion,
 
                     NumeroSecuencialContrato = contrato?.NumeroSecuencial,
                     FechaInicioContrato = contrato?.FechaInicio,
@@ -361,7 +366,6 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             Response.Headers["Content-Disposition"] = "inline; filename=ReporteBovedas.pdf";
             return File(pdf, "application/pdf");
-            return File(pdf, "application/pdf", "ReporteBovedas.pdf");
         }
 
 
