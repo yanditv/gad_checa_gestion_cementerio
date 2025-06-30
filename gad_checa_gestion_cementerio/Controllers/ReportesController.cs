@@ -49,8 +49,8 @@ namespace gad_checa_gestion_cementerio.Controllers
             var bovedas = await _context.Boveda
                 .Include(b => b.Propietario)
                 .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                        .ThenInclude(b => b.Cementerio)
+                    .ThenInclude(p => p!.Bloque)
+                        .ThenInclude(b => b!.Cementerio)
                 .ToListAsync();
 
             var contratos = await _context.Contrato
@@ -59,11 +59,15 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Where(c => c.Estado)
                 .ToListAsync();
 
+            // Debug: Verificar cuántos datos tenemos
+            Console.WriteLine($"[DEBUG] Total bóvedas encontradas: {bovedas.Count}");
+            Console.WriteLine($"[DEBUG] Total contratos activos: {contratos.Count}");
+
             var resultado = bovedas.Select(b =>
             {
                 var piso = b.Piso;
-                var bloque = piso.Bloque;
-                var cementerio = bloque.Cementerio;
+                var bloque = piso?.Bloque;
+                var cementerio = bloque?.Cementerio;
                 var contrato = contratos.FirstOrDefault(c => c.BovedaId == b.Id);
                 var responsable = contrato?.Responsables.FirstOrDefault();
                 var difunto = contrato?.Difunto;
@@ -73,9 +77,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                     BovedaId = b.Id,
                     NumeroBoveda = !string.IsNullOrEmpty(b.NumeroSecuencial) && b.NumeroSecuencial != "S/N" ? b.NumeroSecuencial : b.Numero.ToString(),
                     FechaCreacionBoveda = b.FechaCreacion,
-                    NumeroPiso = piso.NumeroPiso,
-                    NombreBloque = bloque.Descripcion,
-                    TipoBloque = bloque.Tipo,
+                    NumeroPiso = piso?.NumeroPiso ?? 0,
+                    NombreBloque = bloque?.Descripcion ?? "Sin Bloque",
+                    TipoBloque = bloque?.Tipo ?? "Sin Tipo",
                     NombreCementerio = cementerio?.Nombre,
                     NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
                     CedulaPropietario = b.Propietario?.NumeroIdentificacion,
@@ -96,6 +100,11 @@ namespace gad_checa_gestion_cementerio.Controllers
                     TelefonoResponsable = responsable?.Telefono
                 };
             }).ToList();
+
+            // Debug: Verificar la transformación de datos
+            Console.WriteLine($"[DEBUG] Total registros transformados: {resultado.Count}");
+            var tiposEncontrados = resultado.Select(r => r.TipoBloque).Distinct().ToList();
+            Console.WriteLine($"[DEBUG] Tipos encontrados: {string.Join(", ", tiposEncontrados)}");
 
             // Carga tipos disponibles
             var tipos = resultado.Select(r => r.TipoBloque).Distinct().OrderBy(x => x).ToList();
@@ -154,28 +163,28 @@ namespace gad_checa_gestion_cementerio.Controllers
             var cuotasPendientes = _context.Cuota
                 .Where(c => !c.Pagada)
                 .Include(c => c.Contrato)
-                    .ThenInclude(ct => ct.Difunto)
+                    .ThenInclude(ct => ct!.Difunto)
                 .Include(c => c.Contrato)
-                    .ThenInclude(ct => ct.Boveda)
-                        .ThenInclude(b => b.Piso)
-                            .ThenInclude(p => p.Bloque)
-                                .ThenInclude(bq => bq.Cementerio)
+                    .ThenInclude(ct => ct!.Boveda)
+                        .ThenInclude(b => b!.Piso)
+                            .ThenInclude(p => p!.Bloque)
+                                .ThenInclude(bq => bq!.Cementerio)
                 .Include(c => c.Contrato)
-                    .ThenInclude(ct => ct.Responsables)
+                    .ThenInclude(ct => ct!.Responsables)
                 .ToList();
 
-            var agrupadoPorContrato = cuotasPendientes
+            var agruladoPorContrato = cuotasPendientes
                 .GroupBy(c => c.ContratoId)
                 .Select(g =>
                 {
                     var primeraCuota = g.First();
                     var contrato = primeraCuota.Contrato;
-                    var difunto = contrato.Difunto;
-                    var boveda = contrato.Boveda;
-                    var piso = boveda.Piso;
-                    var bloque = piso.Bloque;
-                    var cementerio = bloque.Cementerio;
-                    var responsable = contrato.Responsables.FirstOrDefault();
+                    var difunto = contrato?.Difunto;
+                    var boveda = contrato?.Boveda;
+                    var piso = boveda?.Piso;
+                    var bloque = piso?.Bloque;
+                    var cementerio = bloque?.Cementerio;
+                    var responsable = contrato?.Responsables.FirstOrDefault();
 
                     return new ReporteCuentasPorCobrarViewModel
                     {
@@ -183,43 +192,43 @@ namespace gad_checa_gestion_cementerio.Controllers
                         FechaVencimiento = g.Min(c => c.FechaVencimiento),
                         Monto = g.Sum(c => c.Monto),
                         Pagada = false,
-                        NumeroSecuencialContrato = contrato.NumeroSecuencial,
-                        FechaInicioContrato = contrato.FechaInicio,
-                        FechaFinContrato = contrato.FechaFin,
+                        NumeroSecuencialContrato = contrato?.NumeroSecuencial ?? "N/A",
+                        FechaInicioContrato = contrato?.FechaInicio ?? DateTime.MinValue,
+                        FechaFinContrato = contrato?.FechaFin ?? DateTime.MinValue,
                         NombreResponsable = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "Sin Responsable",
                         CedulaResponsable = responsable?.NumeroIdentificacion ?? "N/A",
                         TelefonoResponsable = responsable?.Telefono ?? "N/A",
-                        NombreDifunto = $"{difunto.Nombres} {difunto.Apellidos}",
-                        CedulaDifunto = difunto.NumeroIdentificacion,
-                        FechaFallecimiento = difunto.FechaFallecimiento,
-                        Bloque = bloque.Descripcion,
-                        Piso = piso.NumeroPiso,
-                        NumeroBoveda = boveda.Numero,
-                        FechaCreacionCuota = contrato.FechaCreacion,
+                        NombreDifunto = difunto != null ? $"{difunto.Nombres} {difunto.Apellidos}" : "N/A",
+                        CedulaDifunto = difunto?.NumeroIdentificacion ?? "N/A",
+                        FechaFallecimiento = difunto?.FechaFallecimiento ?? DateTime.MinValue,
+                        Bloque = bloque?.Descripcion ?? "N/A",
+                        Piso = piso?.NumeroPiso ?? 0,
+                        NumeroBoveda = boveda?.Numero ?? 0,
+                        FechaCreacionCuota = contrato?.FechaCreacion ?? DateTime.MinValue,
                         MontoTotalPendiente = g.Sum(c => c.Monto)
                     };
                 })
                 .ToList();
 
-            return agrupadoPorContrato;
+            return agruladoPorContrato;
         }
 
         private async Task<List<ReporteBovedasViewModel>> ObtenerBovedasViewModel()
         {
             var bovedas = await _context.Boveda
                 .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
+                    .ThenInclude(p => p!.Bloque)
                 .ToListAsync();
 
             return bovedas.Select(b => new ReporteBovedasViewModel
             {
                 BovedaId = b.Id,
-                NumeroBoveda = b.NumeroSecuencial,
-                NumeroPiso = b.Piso.NumeroPiso,
+                NumeroBoveda = b.NumeroSecuencial ?? "N/A",
+                NumeroPiso = b.Piso?.NumeroPiso ?? 0,
                 EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                 FechaCreacionBoveda = b.FechaCreacion,
-                NombreBloque = b.Piso.Bloque.Descripcion,
-                TipoBloque = b.Piso.Bloque.Tipo
+                NombreBloque = b.Piso?.Bloque?.Descripcion ?? "N/A",
+                TipoBloque = b.Piso?.Bloque?.Tipo ?? "N/A"
             }).ToList();
         }
 
@@ -229,16 +238,16 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             var pagos = await _context.Pago
                 .Include(p => p.Cuotas)
-                    .ThenInclude(c => c.Contrato)
-                        .ThenInclude(c => c.Boveda)
-                            .ThenInclude(b => b.Piso)
-                                .ThenInclude(p => p.Bloque)
+                    .ThenInclude(c => c!.Contrato)
+                        .ThenInclude(c => c!.Boveda)
+                            .ThenInclude(b => b!.Piso)
+                                .ThenInclude(p => p!.Bloque)
                 .Include(p => p.Cuotas)
-                    .ThenInclude(c => c.Contrato)
-                        .ThenInclude(c => c.Responsables)
+                    .ThenInclude(c => c!.Contrato)
+                        .ThenInclude(c => c!.Responsables)
                 .Include(p => p.Cuotas)
-                    .ThenInclude(c => c.Contrato)
-                        .ThenInclude(c => c.Difunto)
+                    .ThenInclude(c => c!.Contrato)
+                        .ThenInclude(c => c!.Difunto)
                 .Where(p => p.FechaPago >= desde && p.FechaPago <= hasta)
                 .ToListAsync();
 
@@ -302,8 +311,8 @@ namespace gad_checa_gestion_cementerio.Controllers
             var bovedas = _context.Boveda
                 .Include(b => b.Propietario)
                 .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                        .ThenInclude(bq => bq.Cementerio)
+                    .ThenInclude(p => p!.Bloque)
+                        .ThenInclude(bq => bq!.Cementerio)
                 .ToList();
 
             // Traer contratos activos relacionados con bóvedas
@@ -315,10 +324,10 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             // Filtros
             if (!string.IsNullOrEmpty(tipoBloque))
-                bovedas = bovedas.Where(b => b.Piso.Bloque.Tipo == tipoBloque).ToList();
+                bovedas = bovedas.Where(b => b.Piso?.Bloque?.Tipo == tipoBloque).ToList();
 
             if (!string.IsNullOrEmpty(nombreBloque))
-                bovedas = bovedas.Where(b => b.Piso.Bloque.Descripcion == nombreBloque).ToList();
+                bovedas = bovedas.Where(b => b.Piso?.Bloque?.Descripcion == nombreBloque).ToList();
 
             // Transformar a ViewModel
             var viewModels = bovedas.Select(b =>
@@ -327,8 +336,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                 var responsable = contrato?.Responsables.FirstOrDefault();
                 var difunto = contrato?.Difunto;
                 var piso = b.Piso;
-                var bloque = piso.Bloque;
-                var cementerio = bloque.Cementerio;
+                var bloque = piso?.Bloque;
+                var cementerio = bloque?.Cementerio;
 
                 return new ReporteBovedasViewModel
                 {
@@ -336,9 +345,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                     NumeroBoveda = string.IsNullOrEmpty(b.NumeroSecuencial) ? b.Id.ToString() : b.NumeroSecuencial,
                     EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
                     FechaCreacionBoveda = b.FechaCreacion,
-                    NumeroPiso = piso.NumeroPiso,
-                    NombreBloque = bloque.Descripcion,
-                    TipoBloque = bloque.Tipo,
+                    NumeroPiso = piso?.NumeroPiso ?? 0,
+                    NombreBloque = bloque?.Descripcion ?? "N/A",
+                    TipoBloque = bloque?.Tipo ?? "N/A",
                     NombreCementerio = cementerio?.Nombre,
                     NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
                     CedulaPropietario = b.Propietario?.NumeroIdentificacion,

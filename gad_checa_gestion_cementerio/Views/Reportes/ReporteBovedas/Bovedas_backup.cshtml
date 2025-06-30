@@ -74,6 +74,27 @@
             <div class="col-12">
                 <div class="card bg-light">
                     <div class="card-body">
+                        <h6 class="card-title text-primary mb-3">📊 Estadísticas Generales</h6>
+                        
+                        <!-- Debug Info Temporal -->
+                        @{
+                            var tiposUnicos = Model.Bovedas.Select(b => b.TipoBloque).Distinct().ToList();
+                        }
+                        @if (tiposUnicos.Any())
+                        {
+                            <div class="alert alert-info mb-3">
+                                <strong>Debug - Tipos encontrados:</strong> @string.Join(", ", tiposUnicos) 
+                                <br />
+                                <strong>Total registros:</strong> @Model.Bovedas.Count()
+                                <br />
+                                <strong>Detalle por tipo:</strong>
+                                @foreach (var tipo in tiposUnicos)
+                                {
+                                    var count = Model.Bovedas.Count(b => b.TipoBloque == tipo);
+                                    <span class="badge bg-secondary me-1">@tipo: @count</span>
+                                }
+                            </div>
+                        }
                         
                         <div class="row">
                             @{
