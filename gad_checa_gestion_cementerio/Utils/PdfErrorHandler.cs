@@ -58,7 +58,24 @@ namespace gad_checa_gestion_cementerio.Utils
             catch (PdfGenerationException ex)
             {
                 logger.LogError(ex, "PDF generation failed during {OperationName}: {Message}", operationName, ex.Message);
-                SetErrorMessage(controller, "Error al generar el documento PDF. Por favor, contacte al administrador si el problema persiste.");
+
+                // Si el error es de QuestPDF layout, dar un mensaje más específico
+                if (ex.Message.Contains("conflicting size constraints") || ex.InnerException?.Message.Contains("DocumentLayoutException") == true)
+                {
+                    SetErrorMessage(controller, "Error de diseño en el PDF: El contenido es demasiado extenso para el formato. Se generó un documento simplificado. Contacte al administrador para revisar los datos.");
+                }
+                else
+                {
+                    SetErrorMessage(controller, "Error al generar el documento PDF. Por favor, contacte al administrador si el problema persiste.");
+                }
+                return controller.RedirectToAction(fallbackAction, routeValues);
+            }
+            catch (Exception ex) when (ex.Message.Contains("conflicting size constraints") ||
+                                       ex.Message.Contains("DocumentLayoutException") ||
+                                       ex.Message.Contains("QuestPDF"))
+            {
+                logger.LogError(ex, "QuestPDF specific error during {OperationName}: {Message}", operationName, ex.Message);
+                SetErrorMessage(controller, "Error de diseño en el PDF: El contenido supera los límites del formato. Por favor, revise que los datos no sean excesivamente largos.");
                 return controller.RedirectToAction(fallbackAction, routeValues);
             }
             catch (Exception ex)
@@ -107,7 +124,24 @@ namespace gad_checa_gestion_cementerio.Utils
             catch (PdfGenerationException ex)
             {
                 logger.LogError(ex, "PDF generation failed during async {OperationName}: {Message}", operationName, ex.Message);
-                SetErrorMessage(controller, "Error al generar el documento PDF. Por favor, contacte al administrador si el problema persiste.");
+
+                // Si el error es de QuestPDF layout, dar un mensaje más específico
+                if (ex.Message.Contains("conflicting size constraints") || ex.InnerException?.Message.Contains("DocumentLayoutException") == true)
+                {
+                    SetErrorMessage(controller, "Error de diseño en el PDF: El contenido es demasiado extenso para el formato. Se generó un documento simplificado. Contacte al administrador para revisar los datos.");
+                }
+                else
+                {
+                    SetErrorMessage(controller, "Error al generar el documento PDF. Por favor, contacte al administrador si el problema persiste.");
+                }
+                return controller.RedirectToAction(fallbackAction, routeValues);
+            }
+            catch (Exception ex) when (ex.Message.Contains("conflicting size constraints") ||
+                                       ex.Message.Contains("DocumentLayoutException") ||
+                                       ex.Message.Contains("QuestPDF"))
+            {
+                logger.LogError(ex, "QuestPDF specific error during async {OperationName}: {Message}", operationName, ex.Message);
+                SetErrorMessage(controller, "Error de diseño en el PDF: El contenido supera los límites del formato. Por favor, revise que los datos no sean excesivamente largos.");
                 return controller.RedirectToAction(fallbackAction, routeValues);
             }
             catch (Exception ex)
@@ -115,6 +149,31 @@ namespace gad_checa_gestion_cementerio.Utils
                 logger.LogError(ex, "Unexpected error during async {OperationName}: {Message}", operationName, ex.Message);
                 SetErrorMessage(controller, "Ha ocurrido un error inesperado. Por favor, contacte al administrador.");
                 return controller.RedirectToAction(fallbackAction, routeValues);
+            }
+        }
+
+        /// <summary>
+        /// Versión simplificada para casos comunes donde solo necesitamos manejar errores básicos
+        /// </summary>
+        public static IActionResult ExecutePdfOperation(
+            Func<IActionResult> operation)
+        {
+            try
+            {
+                return operation();
+            }
+            catch (Exception ex) when (ex.Message.Contains("conflicting size constraints") ||
+                                       ex.Message.Contains("DocumentLayoutException") ||
+                                       ex.Message.Contains("QuestPDF"))
+            {
+                // Para errores de QuestPDF, mostrar el mensaje específico
+                Console.WriteLine($"QuestPDF error: {ex.Message}");
+                throw new PdfGenerationException($"Error de diseño en el PDF: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"General PDF error: {ex.Message}");
+                throw new PdfGenerationException($"Error al generar PDF: {ex.Message}", ex);
             }
         }
 
@@ -174,19 +233,30 @@ namespace gad_checa_gestion_cementerio.Utils
             }
             catch (QuestPDF.Drawing.Exceptions.DocumentLayoutException ex)
             {
-                // Si hay error de layout, generar PDF simplificado
+                // Error específico de layout de QuestPDF
+                Console.WriteLine($"DocumentLayoutException caught: {ex.Message}");
+                return GenerateSimplifiedErrorPdf(ex, documentName);
+            }
+            catch (Exception ex) when (ex.Message.Contains("conflicting size constraints") ||
+                                       ex.Message.Contains("DocumentLayoutException") ||
+                                       ex.Message.Contains("QuestPDF"))
+            {
+                // Capturar errores de QuestPDF por el mensaje si el tipo específico no funciona
+                Console.WriteLine($"QuestPDF error caught by message: {ex.Message}");
                 return GenerateSimplifiedErrorPdf(ex, documentName);
             }
             catch (Exception ex)
             {
                 // Para cualquier otro error, intentar generar PDF simplificado
+                Console.WriteLine($"General exception caught: {ex.Message}");
                 try
                 {
                     return GenerateSimplifiedErrorPdf(ex, documentName);
                 }
-                catch
+                catch (Exception simplifiedEx)
                 {
                     // Si incluso el PDF simplificado falla, lanzar la excepción original
+                    Console.WriteLine($"Simplified PDF generation also failed: {simplifiedEx.Message}");
                     throw new PdfGenerationException($"Error al generar {documentName}: {ex.Message}", ex);
                 }
             }

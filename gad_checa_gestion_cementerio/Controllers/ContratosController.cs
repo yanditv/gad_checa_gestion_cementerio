@@ -741,23 +741,31 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         public IActionResult GenerarContratoPDF(CreateContratoModel model)
         {
-            return PdfErrorHandler.ExecutePdfOperation(() =>
+            try
             {
                 var cementerio = _context.Cementerio.FirstOrDefault();
                 PdfErrorHandler.ValidateRequiredData(cementerio, "Información del cementerio");
                 PdfErrorHandler.ValidateRequiredData(model, "Datos del contrato");
 
                 var documento = new ContratoPDF(model, cementerio);
+
+                // Usar GeneratePdfSafely que debería manejar errores de layout automáticamente
                 var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato de Arrendamiento");
 
                 return File(pdfBytes, "application/pdf", "ContratoArrendamiento.pdf");
-            }, _logger, this, "Index", "Generación de contrato PDF");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en GenerarContratoPDF: {Message}", ex.Message);
+                TempData["Error"] = $"Error al generar el PDF: {ex.Message}. Se generó un documento simplificado.";
+                return RedirectToAction("Index");
+            }
         }
 
         [HttpGet]
         public IActionResult Print(int id)
         {
-            return PdfErrorHandler.ExecutePdfOperation(() =>
+            try
             {
                 var cementerio = _context.Cementerio.FirstOrDefault();
                 PdfErrorHandler.ValidateRequiredData(cementerio, "Información del cementerio");
@@ -832,58 +840,17 @@ namespace gad_checa_gestion_cementerio.Controllers
                 }
 
                 // Intentar generar el PDF con manejo robusto de errores
-                byte[] pdfBytes;
-                try
-                {
-                    var documento = new ContratoPDF(modelo, cementerio);
-                    pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato PDF");
-                }
-                catch (Exception pdfEx)
-                {
-                    _logger.LogError(pdfEx, "Error específico al generar PDF del contrato {ContratoId}", id);
+                var documento = new ContratoPDF(modelo, cementerio);
+                var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato PDF");
 
-                    // Como fallback, generar un PDF simple con información básica
-                    var documentoSimple = Document.Create(container =>
-                    {
-                        container.Page(page =>
-                        {
-                            page.Size(PageSizes.A4);
-                            page.Margin(2, Unit.Centimetre);
-                            page.DefaultTextStyle(x => x.FontSize(12));
-
-                            page.Header().Text($"CONTRATO DE ARRENDAMIENTO N° {contratoModel.NumeroSecuencial}").Bold().FontSize(16);
-
-                            page.Content().Column(column =>
-                            {
-                                column.Item().PaddingBottom(20).Text("INFORMACIÓN DEL CONTRATO").Bold().FontSize(14);
-                                column.Item().Text($"Número: {contratoModel.NumeroSecuencial}");
-                                column.Item().Text($"Fecha de inicio: {contratoModel.FechaInicio:dd/MM/yyyy}");
-                                column.Item().Text($"Fecha de fin: {contratoModel.FechaFin?.ToString("dd/MM/yyyy") ?? "No especificada"}");
-                                column.Item().Text($"Monto total: ${contratoModel.MontoTotal:N2}");
-
-                                if (modelo.difunto != null)
-                                {
-                                    column.Item().PaddingTop(20).Text("INFORMACIÓN DEL DIFUNTO").Bold().FontSize(14);
-                                    column.Item().Text($"Nombre: {modelo.difunto.NombresCompletos}");
-                                    column.Item().Text($"Identificación: {modelo.difunto.NumeroIdentificacion}");
-                                }
-
-                                column.Item().PaddingTop(20).Text("NOTA: Este es un documento simplificado generado debido a problemas técnicos. Para el contrato completo, contacte al administrador.")
-                                    .FontSize(10).Italic();
-                            });
-
-                            page.Footer().AlignCenter().Text("Gobierno Parroquial de Checa");
-                        });
-                    });
-
-                    pdfBytes = documentoSimple.GeneratePdf();
-                }
-
-                var fileName = $"CONTRATO_{contratoModel.NumeroSecuencial ?? "Arrendamiento"}.pdf";
-                ViewBag.NombreArchivo = fileName;
-                Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
-                return new FileContentResult(pdfBytes, "application/pdf");
-            }, _logger, this, nameof(Details), "Impresión de contrato", new { id });
+                return File(pdfBytes, "application/pdf", $"Contrato_{contrato.NumeroSecuencial}.pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en Print para contrato {Id}: {Message}", id, ex.Message);
+                TempData["Error"] = $"Error al generar el PDF del contrato: {ex.Message}";
+                return RedirectToAction("Index");
+            }
         }
 
         [HttpGet]

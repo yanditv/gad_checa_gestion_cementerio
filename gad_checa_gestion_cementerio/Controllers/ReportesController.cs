@@ -27,14 +27,33 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> Index(DateTime? desde, DateTime? hasta)
         {
-            var vm = new ReportesIndexViewModel
+            try
             {
-                CuentasPorCobrar = await Task.Run(() => ObtenerCuentasPorCobrarViewModel()),
-                Bovedas = await ObtenerBovedasViewModel(),
-                Ingresos = await ObtenerIngresosPorFechaViewModel(desde, hasta)
-            };
+                _logger.LogInformation("ReportesController Index called with desde: {Desde}, hasta: {Hasta}", desde, hasta);
 
-            return View(vm);
+                var vm = new ReportesIndexViewModel
+                {
+                    CuentasPorCobrar = await Task.Run(() => ObtenerCuentasPorCobrarViewModel()),
+                    Bovedas = await ObtenerBovedasViewModel(),
+                    Ingresos = await ObtenerIngresosPorFechaViewModel(desde, hasta)
+                };
+
+                _logger.LogInformation("ReportesIndexViewModel creado - CuentasPorCobrar: {CuentasPorCobrar}, Bovedas: {Bovedas}, Ingresos: {Ingresos}",
+                    vm.CuentasPorCobrar?.Count ?? 0, vm.Bovedas?.Count ?? 0, vm.Ingresos?.Count ?? 0);
+
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ReportesController Index: {Message}", ex.Message);
+                var emptyVm = new ReportesIndexViewModel
+                {
+                    CuentasPorCobrar = new List<ReporteCuentasPorCobrarViewModel>(),
+                    Bovedas = new List<ReporteBovedasViewModel>(),
+                    Ingresos = new List<ReporteIngresoPorFechaViewModel>()
+                };
+                return View(emptyVm);
+            }
         }
 
         public IActionResult CuentasPorCobrar()
@@ -140,20 +159,36 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public async Task<IActionResult> IngresosPorFecha(DateTime? fechaInicio, DateTime? fechaFin)
         {
-            if (fechaInicio == null || fechaFin == null)
+            try
             {
-                //primer día del mes actual y último día del mes actual
-                fechaInicio = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                fechaFin = DateTime.Now;
+                _logger.LogInformation("IngresosPorFecha called with fechaInicio: {FechaInicio}, fechaFin: {FechaFin}", fechaInicio, fechaFin);
+
+                if (fechaInicio == null || fechaFin == null)
+                {
+                    //primer día del mes actual y último día del mes actual
+                    fechaInicio = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                    fechaFin = DateTime.Now;
+                    _logger.LogInformation("Fechas ajustadas a valores por defecto: fechaInicio: {FechaInicio}, fechaFin: {FechaFin}", fechaInicio, fechaFin);
+                }
+
+                var desde = Commons.getFechaInicial(fechaInicio);
+                var hasta = Commons.getFechaFinal(fechaFin);
+
+                _logger.LogInformation("Fechas procesadas: desde: {Desde}, hasta: {Hasta}", desde, hasta);
+
+                ViewBag.Desde = desde.ToString("yyyy-MM-dd");
+                ViewBag.Hasta = hasta.ToString("yyyy-MM-dd");
+
+                var viewModel = await ObtenerIngresosPorFechaViewModel(desde, hasta);
+                _logger.LogInformation("ViewModel obtenido con {Count} registros", viewModel?.Count ?? 0);
+
+                return PartialView("~/Views/Reportes/ReporteIngresos/IngresosPorFecha.cshtml", viewModel);
             }
-            var desde = Commons.getFechaInicial(fechaInicio);
-            var hasta = Commons.getFechaFinal(fechaFin);
-
-            ViewBag.Desde = desde.ToString("yyyy-MM-dd");
-            ViewBag.Hasta = hasta.ToString("yyyy-MM-dd");
-
-            var viewModel = await ObtenerIngresosPorFechaViewModel(desde, hasta);
-            return PartialView("~/Views/Reportes/ReporteIngresos/IngresosPorFecha.cshtml", viewModel);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en IngresosPorFecha: {Message}", ex.Message);
+                return PartialView("~/Views/Reportes/ReporteIngresos/IngresosPorFecha.cshtml", new List<ReporteIngresoPorFechaViewModel>());
+            }
         }
 
 
@@ -235,57 +270,115 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         private async Task<List<ReporteIngresoPorFechaViewModel>> ObtenerIngresosPorFechaViewModel(DateTime? desde, DateTime? hasta)
         {
-
-            var pagos = await _context.Pago
-                .Include(p => p.Cuotas)
-                    .ThenInclude(c => c!.Contrato)
-                        .ThenInclude(c => c!.Boveda)
-                            .ThenInclude(b => b!.Piso)
-                                .ThenInclude(p => p!.Bloque)
-                .Include(p => p.Cuotas)
-                    .ThenInclude(c => c!.Contrato)
-                        .ThenInclude(c => c!.Responsables)
-                .Include(p => p.Cuotas)
-                    .ThenInclude(c => c!.Contrato)
-                        .ThenInclude(c => c!.Difunto)
-                .Where(p => p.FechaPago >= desde && p.FechaPago <= hasta)
-                .ToListAsync();
-
-            var ingresos = new List<ReporteIngresoPorFechaViewModel>();
-
-            foreach (var pago in pagos)
+            try
             {
-                // Usar la primera cuota para acceder a datos del contrato
-                var primeraCuota = pago.Cuotas.FirstOrDefault();
-                if (primeraCuota == null) continue;
+                _logger.LogInformation("ObtenerIngresosPorFechaViewModel called with desde: {Desde}, hasta: {Hasta}", desde, hasta);
 
-                var contrato = primeraCuota.Contrato;
-                if (contrato == null) continue;
+                // Optimizar la consulta usando AsSplitQuery() para evitar el warning de múltiples includes
+                var pagos = await _context.Pago
+                    .Include(p => p.Cuotas)
+                        .ThenInclude(c => c.Contrato)
+                            .ThenInclude(c => c.Boveda)
+                                .ThenInclude(b => b.Piso)
+                                    .ThenInclude(p => p.Bloque)
+                    .Include(p => p.Cuotas)
+                        .ThenInclude(c => c.Contrato)
+                            .ThenInclude(c => c.Responsables)
+                    .Include(p => p.Cuotas)
+                        .ThenInclude(c => c.Contrato)
+                            .ThenInclude(c => c.Difunto)
+                    .Where(p => p.FechaPago >= desde && p.FechaPago <= hasta)
+                    .AsSplitQuery() // Esto divide la consulta en múltiples queries más simples para mejorar rendimiento
+                    .ToListAsync();
 
-                var boveda = contrato.Boveda;
-                var piso = boveda?.Piso;
-                var bloque = piso?.Bloque;
-                var responsable = contrato.Responsables.FirstOrDefault();
+                _logger.LogInformation("Encontrados {Count} pagos en el rango de fechas", pagos.Count);
 
-                ingresos.Add(new ReporteIngresoPorFechaViewModel
+                var ingresos = new List<ReporteIngresoPorFechaViewModel>();
+
+                foreach (var pago in pagos)
                 {
-                    FechaPago = pago.FechaPago,
-                    TipoPago = pago.TipoPago,
-                    NumeroComprobante = pago.NumeroComprobante,
-                    Monto = pago.Cuotas.Sum(c => c.Monto),
-                    PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
-                    IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
-                    NumeroContrato = contrato.NumeroSecuencial,
-                    TipoIngreso = contrato.EsRenovacion ? "Renovación" : "Inicial",
-                    Boveda = $"#{boveda?.Numero}",
-                    Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
-                    Bloque = bloque?.Descripcion ?? "N/A",
-                    FechaInicio = Commons.getFechaInicial(desde ?? DateTime.MinValue),
-                    FechaFin = Commons.getFechaFinal(hasta ?? DateTime.MaxValue)
-                });
-            }
+                    // Usar la primera cuota para acceder a datos del contrato
+                    var primeraCuota = pago.Cuotas.FirstOrDefault();
+                    if (primeraCuota == null)
+                    {
+                        _logger.LogWarning("Pago con ID {PagoId} no tiene cuotas asociadas", pago.Id);
 
-            return ingresos.OrderBy(i => i.FechaPago).ToList();
+                        // Crear un registro básico sin detalles del contrato
+                        ingresos.Add(new ReporteIngresoPorFechaViewModel
+                        {
+                            FechaPago = pago.FechaPago,
+                            TipoPago = pago.TipoPago ?? "N/A",
+                            NumeroComprobante = pago.NumeroComprobante ?? "N/A",
+                            Monto = pago.Monto,
+                            PagadoPor = "Sin Responsable",
+                            IdentificacionPagador = "N/A",
+                            NumeroContrato = "Sin Contrato",
+                            TipoIngreso = "N/A",
+                            Boveda = "N/A",
+                            Piso = "N/A",
+                            Bloque = "N/A",
+                            FechaInicio = Commons.getFechaInicial(desde ?? DateTime.MinValue),
+                            FechaFin = Commons.getFechaFinal(hasta ?? DateTime.MaxValue)
+                        });
+                        continue;
+                    }
+
+                    var contrato = primeraCuota.Contrato;
+                    if (contrato == null)
+                    {
+                        _logger.LogWarning("Cuota con ID {CuotaId} no tiene contrato asociado", primeraCuota.Id);
+
+                        // Crear un registro básico sin detalles del contrato
+                        ingresos.Add(new ReporteIngresoPorFechaViewModel
+                        {
+                            FechaPago = pago.FechaPago,
+                            TipoPago = pago.TipoPago ?? "N/A",
+                            NumeroComprobante = pago.NumeroComprobante ?? "N/A",
+                            Monto = pago.Monto,
+                            PagadoPor = "Sin Responsable",
+                            IdentificacionPagador = "N/A",
+                            NumeroContrato = "Sin Contrato",
+                            TipoIngreso = "N/A",
+                            Boveda = "N/A",
+                            Piso = "N/A",
+                            Bloque = "N/A",
+                            FechaInicio = Commons.getFechaInicial(desde ?? DateTime.MinValue),
+                            FechaFin = Commons.getFechaFinal(hasta ?? DateTime.MaxValue)
+                        });
+                        continue;
+                    }
+
+                    var boveda = contrato.Boveda;
+                    var piso = boveda?.Piso;
+                    var bloque = piso?.Bloque;
+                    var responsable = contrato.Responsables.FirstOrDefault();
+
+                    ingresos.Add(new ReporteIngresoPorFechaViewModel
+                    {
+                        FechaPago = pago.FechaPago,
+                        TipoPago = pago.TipoPago ?? "N/A",
+                        NumeroComprobante = pago.NumeroComprobante ?? "N/A",
+                        Monto = pago.Cuotas.Sum(c => c.Monto),
+                        PagadoPor = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "N/A",
+                        IdentificacionPagador = responsable?.NumeroIdentificacion ?? "N/A",
+                        NumeroContrato = contrato.NumeroSecuencial ?? "N/A",
+                        TipoIngreso = contrato.EsRenovacion ? "Renovación" : "Inicial",
+                        Boveda = boveda != null ? $"#{boveda.Numero}" : "N/A",
+                        Piso = piso != null ? piso.NumeroPiso.ToString() : "N/A",
+                        Bloque = bloque?.Descripcion ?? "N/A",
+                        FechaInicio = Commons.getFechaInicial(desde ?? DateTime.MinValue),
+                        FechaFin = Commons.getFechaFinal(hasta ?? DateTime.MaxValue)
+                    });
+                }
+
+                _logger.LogInformation("Procesados {Count} ingresos exitosamente", ingresos.Count);
+                return ingresos.OrderBy(i => i.FechaPago).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ObtenerIngresosPorFechaViewModel: {Message}", ex.Message);
+                return new List<ReporteIngresoPorFechaViewModel>();
+            }
         }
 
 
@@ -390,7 +483,11 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             return await PdfErrorHandler.ExecutePdfOperationAsync(async () =>
             {
-                var viewModel = await ObtenerIngresosPorFechaViewModel(fechaInicio, fechaFin);
+                // Usar las fechas procesadas para consistencia
+                var desde = Commons.getFechaInicial(fechaInicio);
+                var hasta = Commons.getFechaFinal(fechaFin);
+
+                var viewModel = await ObtenerIngresosPorFechaViewModel(desde, hasta);
                 PdfErrorHandler.ValidateRequiredData(viewModel, "Datos de ingresos por fecha");
 
                 var document = new IngresosPorFechaPdfDocument(viewModel);

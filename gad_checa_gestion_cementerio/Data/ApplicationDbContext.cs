@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.Reflection.Emit;
 using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
@@ -12,6 +13,12 @@ namespace gad_checa_gestion_cementerio.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
+        }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+
+            // Query splitting se maneja individualmente en consultas específicas usando AsSplitQuery()
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
