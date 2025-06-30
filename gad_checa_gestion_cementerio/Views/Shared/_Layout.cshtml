@@ -175,12 +175,12 @@
     </div>
   </nav>
 
-  <!-- [ Sidebar Menu ] end --> <!-- [ Header Topbar ] start -->
+  @* <!-- [ Sidebar Menu ] end --> <!-- [ Header Topbar ] start --> *@
   <header class="pc-header">
-    <div class="header-wrapper"> <!-- [Mobile Media Block] start -->
+    <div class="header-wrapper">
+      @* <!-- [Mobile Media Block] start --> *@
       <div class="me-auto pc-mob-drp">
         <ul class="list-unstyled">
-          <!-- ======= Menu collapse Icon ===== -->
           <li class="pc-h-item pc-sidebar-collapse">
             <a href="#" class="pc-head-link ms-0" id="sidebar-hide">
               <i class="ti ti-menu-2"></i>
@@ -191,29 +191,9 @@
               <i class="ti ti-menu-2"></i>
             </a>
           </li>
-          @* <li class="dropdown pc-h-item d-inline-flex d-md-none">
-          <a class="pc-head-link dropdown-toggle arrow-none m-0" data-bs-toggle="dropdown" href="#" role="button"
-            aria-haspopup="false" aria-expanded="false">
-            <i class="ti ti-search"></i>
-          </a>
-          <div class="dropdown-menu pc-h-dropdown drp-search">
-            <form class="px-3">
-              <div class="form-group mb-0 d-flex align-items-center">
-                <i data-feather="search"></i>
-                <input type="search" class="form-control border-0 shadow-none" placeholder="Search here. . .">
-              </div>
-            </form>
-          </div>
-        </li>
-        <li class="pc-h-item d-none d-md-inline-flex">
-          <form class="header-search">
-            <i data-feather="search" class="icon-search"></i>
-            <input type="search" class="form-control" placeholder="Search here. . .">
-          </form>
-        </li> *@
         </ul>
       </div>
-      <!-- [Mobile Media Block end] -->
+      @* <!-- [Mobile Media Block end] --> *@
       <div class="ms-auto">
         <ul class="list-unstyled">
           <li class="dropdown pc-h-item">
@@ -311,17 +291,14 @@
       </div>
     </div>
   </header>
-  <!-- [ Main Content ] start -->
+  @* <!-- [ Main Content ] start --> *@
   <div class="pc-container">
     <div class="pc-content">
-      <!-- [ breadcrumb ] start -->
+      @* <!-- [ breadcrumb ] start --> *@
       <div class="page-header">
         <div class="page-block">
           <div class="row align-items-center">
             <div class="col-md-12">
-              @* <div class="page-header-title">
-              <h5 class="m-b-10">@ViewData["Title"]</h5>
-            </div> *@
               <ul class="breadcrumb small">
                 @if (ViewContext.RouteData.Values["area"] != null)
                 {
@@ -362,105 +339,104 @@
           </div>
         </div>
       </div>
-      <!-- [ breadcrumb ] end -->
-      <!-- [ Main Content ] start -->
+      @* <!-- [ Main Content ] start --> *@
       @RenderBody()
+
+      @* <!-- [ Main Content ] end --> *@
+      <footer class="pc-footer">
+        <div class="footer-wrapper container-fluid">
+          <div class="row align-items-center justify-content-between">
+            <div class="col-lg-4 col-md-6 mb-2 mb-md-0">
+              <div class="d-flex align-items-center">
+                <div>
+                  <h6 class="mb-0 text-primary fw-semibold">GAD Parroquial de Checa</h6>
+                  <small class="text-muted">Sistema de Gestión de Cementerio</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-2 mb-md-0">
+              <div class="d-flex justify-content-center">
+                <div class="d-flex align-items-center me-3">
+                  <div class="avatar avatar-xs bg-success-subtle rounded-circle me-2">
+                    <i class="ti ti-check text-success"></i>
+                  </div>
+                  <small class="text-muted">Sistema Activo</small>
+                </div>
+                <div class="d-flex align-items-center me-3">
+                  <div class="avatar avatar-xs bg-info-subtle rounded-circle me-2">
+                    <i class="ti ti-database text-info"></i>
+                  </div>
+                  <small class="text-muted">Base de Datos</small>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div class="avatar avatar-xs bg-warning-subtle rounded-circle me-2">
+                    <i class="ti ti-shield-check text-warning"></i>
+                  </div>
+                  <small class="text-muted">Seguro</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+              <div class="d-flex justify-content-end align-items-center">
+                <div class="me-3">
+                  <small class="text-muted">Desarrollado por</small>
+                  <a href="https://teobu.com" target="_blank"
+                    class="badge bg-primary-subtle text-primary text-decoration-none ms-1">
+                    Teobu <i class="ti ti-external-link ms-1"></i>
+                  </a>
+                </div>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-light-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="ti ti-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Home")">
+                        <i class="ti ti-home me-2"></i>Inicio
+                      </a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Cementerio")">
+                        <i class="ti ti-settings me-2"></i>Configuración
+                      </a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Reportes")">
+                        <i class="ti ti-chart-bar me-2"></i>Reportes
+                      </a></li>
+                    <li>
+                      <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" href="https://teobu.com" target="_blank">
+                        <i class="ti ti-headset me-2"></i>Soporte Técnico
+                      </a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <span class="badge bg-success-subtle text-success me-2">
+                    <i class="ti ti-circle-check me-1"></i>Conectado
+                  </span>
+                  <small class="text-muted">Sistema operativo</small>
+                </div>
+                <div class="d-flex align-items-center">
+                  <span class="badge bg-light-secondary text-secondary me-2">v1.0.0</span>
+                  <small class="text-muted">© 2024 GAD Checa</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   </div>
 
-  <!-- [ Main Content ] end -->
-  <footer class="pc-footer">
-    <div class="footer-wrapper container-fluid">
-      <div class="row align-items-center justify-content-between">
-        <div class="col-lg-4 col-md-6 mb-2 mb-md-0">
-          <div class="d-flex align-items-center">
-            <div>
-              <h6 class="mb-0 text-primary fw-semibold">GAD Parroquial de Checa</h6>
-              <small class="text-muted">Sistema de Gestión de Cementerio</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6 mb-2 mb-md-0">
-          <div class="d-flex justify-content-center">
-            <div class="d-flex align-items-center me-3">
-              <div class="avatar avatar-xs bg-success-subtle rounded-circle me-2">
-                <i class="ti ti-check text-success"></i>
-              </div>
-              <small class="text-muted">Sistema Activo</small>
-            </div>
-            <div class="d-flex align-items-center me-3">
-              <div class="avatar avatar-xs bg-info-subtle rounded-circle me-2">
-                <i class="ti ti-database text-info"></i>
-              </div>
-              <small class="text-muted">Base de Datos</small>
-            </div>
-            <div class="d-flex align-items-center">
-              <div class="avatar avatar-xs bg-warning-subtle rounded-circle me-2">
-                <i class="ti ti-shield-check text-warning"></i>
-              </div>
-              <small class="text-muted">Seguro</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-4 col-md-12">
-          <div class="d-flex justify-content-end align-items-center">
-            <div class="me-3">
-              <small class="text-muted">Desarrollado por</small>
-              <a href="https://teobu.com" target="_blank"
-                class="badge bg-primary-subtle text-primary text-decoration-none ms-1">
-                Teobu <i class="ti ti-external-link ms-1"></i>
-              </a>
-            </div>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-light-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                aria-expanded="false">
-                <i class="ti ti-dots-vertical"></i>
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Home")">
-                    <i class="ti ti-home me-2"></i>Inicio
-                  </a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Cementerio")">
-                    <i class="ti ti-settings me-2"></i>Configuración
-                  </a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Reportes")">
-                    <i class="ti ti-chart-bar me-2"></i>Reportes
-                  </a></li>
-                <li>
-                  <hr class="dropdown-divider">
-                </li>
-                <li><a class="dropdown-item" href="https://teobu.com" target="_blank">
-                    <i class="ti ti-headset me-2"></i>Soporte Técnico
-                  </a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mt-3">
-        <div class="col-12">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-              <span class="badge bg-success-subtle text-success me-2">
-                <i class="ti ti-circle-check me-1"></i>Conectado
-              </span>
-              <small class="text-muted">Sistema operativo</small>
-            </div>
-            <div class="d-flex align-items-center">
-              <span class="badge bg-light-secondary text-secondary me-2">v1.0.0</span>
-              <small class="text-muted">© 2024 GAD Checa</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- [Page Specific JS] end -->
-  <!-- Required Js -->
+  @* <!-- [Page Specific JS] end -->
+  <!-- Required Js --> *@
   <script src="~/js/plugins/popper.min.js"></script>
   <script src="~/js/plugins/simplebar.min.js"></script>
   <script src="~/js/plugins/bootstrap.min.js"></script>
