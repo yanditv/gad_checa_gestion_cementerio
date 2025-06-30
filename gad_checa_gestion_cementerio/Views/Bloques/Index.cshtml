@@ -4,181 +4,317 @@
     ViewData["Title"] = "Bloques";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header bg-light">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-building me-2"></i>
-            <h4 class="card-title mb-0">@ViewData["Title"]</h4>
-        </div>
-        <p class="mt-2 mb-0">
-            Visualice y gestione los bloques del cementerio. Utilice los filtros para encontrar información específica.
-        </p>
-    </div>
-
-    <div class="card-body">
-        <!-- Barra de Herramientas -->
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
-            <!-- Filtros -->
-            <form id="searchForm" asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-grow-1">
-                <div class="input-group position-relative">
-                    <span class="input-group-text bg-light">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" id="searchInput" name="Filtro" value="@ViewBag.Filtro"
-                        placeholder="Buscar por descripción, tipo o ubicación..." class="form-control form-control-sm"
-                        autocomplete="off" />
-                    <div id="searchSpinner" class="position-absolute end-0 top-50 translate-middle-y me-3 d-none">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                            <span class="visually-hidden">Buscando...</span>
-                        </div>
-                    </div>
+<div class="my-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-0 d-flex flex-wrap justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center">
+                <span class="me-3"><i class="ti ti-building text-primary fs-3"></i></span>
+                <div>
+                    <h4 class="mb-1 text-dark">Lista de Bloques</h4>
+                    <p class="mb-0 text-muted small">Gestione los bloques del cementerio: puede listar, crear,
+                        modificar, buscar y eliminar.</p>
                 </div>
-                <button type="submit" class="btn btn-primary btn-md d-flex align-items-center">
-                    <i class="fas fa-filter me-2"></i>Filtrar
+            </div>
+            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
+                <div class="position-relative">
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="Filtro" id="hs-table-search" class="form-control"
+                            placeholder="Buscar por descripción, tipo, ubicación..." aria-label="Search"
+                            value="@ViewBag.Filtro" />
+                        <span class="input-group-text bg-white" id="search-icon">
+                            <i class="ti ti-search"></i>
+                        </span>
+                    </div>
+                    <small class="text-muted position-absolute" id="search-hint"
+                        style="font-size: 0.75rem; top: 100%; left: 0; display: none;">
+                        <i class="ti ti-clock me-1"></i>Buscando en 2s...
+                    </small>
+                    <small class="text-primary position-absolute" id="search-tip"
+                        style="font-size: 0.75rem; top: 100%; left: 0; white-space: nowrap;">
+                        💡 Presiona Enter para buscar inmediatamente
+                    </small>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-clear-search">
+                    <i class="ti ti-list-search me-1"></i>Ver todos
                 </button>
-            </form>
-
-            <a asp-action="Create" class="btn btn-success btn-md d-flex align-items-center">
-                <i class="fas fa-plus me-2"></i>Nuevo Bloque
-            </a>
+                <a asp-action="Create" class="btn btn-primary btn-sm">
+                    <i class="ti ti-plus me-1"></i>Nuevo Bloque
+                </a>
+            </div>
         </div>
 
-        <!-- Lista de Bloques -->
-        <div id="resultsContainer" class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>@Html.DisplayNameFor(model => model.Bloque.First().Descripcion)</th>
-                        <th>@Html.DisplayNameFor(model => model.Bloque.First().Tipo)</th>
-                        <th>Ubicación</th>
-                        <th>Pisos</th>
-                        <th>Bovedas/Piso</th>
-                        <th>@Html.DisplayNameFor(model => model.Bloque.First().TarifaBase)</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Bloque)
-                    {
-                        <tr>
-                            <td>@Html.DisplayFor(modelItem => item.Descripcion)</td>
-                            <td>
-                                <span class="badge bg-info">@Html.DisplayFor(modelItem => item.Tipo)</span>
-                            </td>
-                            <td>
-                                <small class="text-muted">
-                                    <i class="fas fa-map-marker-alt me-1"></i>
-                                    @Html.DisplayFor(modelItem => item.CalleA) -
-                                    @Html.DisplayFor(modelItem => item.CalleB)
-                                </small>
-                            </td>
-                            <td>
-                                <span class="badge bg-primary">@Html.DisplayFor(modelItem => item.NumeroDePisos)</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-success">@Html.DisplayFor(modelItem => item.BovedasPorPiso)</span>
-                            </td>
-                            <td class="text-success fw-bold">
-                                $@Html.DisplayFor(modelItem => item.TarifaBase)
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm"
-                                        title="Detalles">
-                                        <i class="fas fa-info-circle"></i>
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary btn-sm"
-                                        title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm"
-                                        title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Paginación -->
-        <div id="paginationContainer" class="mt-4">
-            @await Html.PartialAsync("_Paginacion", Model)
+        <div id="content-container">
+            @await Html.PartialAsync("_ListaBloques", Model)
+            @* @await Html.PartialAsync("_Paginacion", Model) *@
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.getElementById('searchInput');
-            const searchForm = document.getElementById('searchForm');
-            const searchSpinner = document.getElementById('searchSpinner');
-            const resultsContainer = document.getElementById('resultsContainer');
-            const paginationContainer = document.getElementById('paginationContainer');
-
-            let searchTimeout = null;
+        $(document).ready(function () {
+            // Configurar búsqueda con AJAX y debounce optimizado
+            let searchTimeout;
+            let countdownInterval;
+            const searchInput = $('#hs-table-search');
+            const searchHint = $('#search-hint');
+            const searchTip = $('#search-tip');
+            const searchIcon = $('#search-icon i');
+            const contentContainer = $('#content-container');
+            const btnClearSearch = $('#btn-clear-search');
+            let lastSearchTerm = '';
+            let remainingTime = 0;
+            let isTyping = false;
             let isSearching = false;
 
-            // Función para realizar la búsqueda
-            async function performSearch() {
-                if (isSearching) return;
-
-                isSearching = true;
-                searchSpinner.classList.remove('d-none');
-
-                try {
-                    const formData = new FormData(searchForm);
-                    const queryString = new URLSearchParams(formData).toString();
-                    const response = await fetch(`${searchForm.action}?${queryString}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    if (!response.ok) throw new Error('Error en la búsqueda');
-
-                    const html = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-
-                    // Actualizar solo las partes necesarias
-                    resultsContainer.innerHTML = doc.getElementById('resultsContainer').innerHTML;
-                    paginationContainer.innerHTML = doc.getElementById('paginationContainer').innerHTML;
-
-                    // Actualizar la URL sin recargar la página
-                    const newUrl = new URL(window.location.href);
-                    newUrl.searchParams.set('Filtro', searchInput.value);
-                    window.history.pushState({}, '', newUrl);
-
-                } catch (error) {
-                    console.error('Error:', error);
-                } finally {
-                    isSearching = false;
-                    searchSpinner.classList.add('d-none');
+            // Función para actualizar el contador visual
+            function updateCountdown() {
+                if (remainingTime > 0) {
+                    searchHint.html(`<i class="ti ti-clock me-1"></i>Buscando en ${(remainingTime / 100).toFixed(1)}s...`);
+                    remainingTime -= 10;
+                } else {
+                    clearInterval(countdownInterval);
+                    searchHint.hide();
+                    performSearch();
                 }
             }
 
-            // Evento de entrada en el campo de búsqueda
-            searchInput.addEventListener('input', function () {
+            // Función para mostrar indicador de búsqueda
+            function showSearchIndicator() {
+                remainingTime = 200; // 2 segundos en centésimas
+                searchHint.show();
+                searchTip.hide();
+                clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateCountdown, 100);
+            }
+
+            // Función para ocultar indicador de búsqueda
+            function hideSearchIndicator() {
+                clearInterval(countdownInterval);
+                searchHint.hide();
+                if (!isTyping && !isSearching) {
+                    searchTip.show();
+                }
+                remainingTime = 0;
+            }
+
+            // Función para realizar la búsqueda con AJAX
+            function performSearch(forceSearch = false) {
+                const filtro = searchInput.val().trim();
+                console.log('performSearch llamada con filtro:', filtro);
+                console.log('lastSearchTerm:', lastSearchTerm);
+                console.log('isSearching:', isSearching);
+                console.log('forceSearch:', forceSearch);
+
+                // Solo buscar si el término ha cambiado o si se fuerza la búsqueda
+                if (!forceSearch && (filtro === lastSearchTerm || isSearching)) {
+                    console.log('Búsqueda cancelada: término no cambió o ya está buscando');
+                    hideSearchIndicator();
+                    return;
+                }
+
+                lastSearchTerm = filtro;
+                isSearching = true;
+                console.log('Realizando búsqueda AJAX con filtro:', filtro);
+
+                // Mostrar icono de carga
+                searchIcon.removeClass('ti-search').addClass('ti-loader-2');
+                hideSearchIndicator();
+
+                // Preparar datos para AJAX
+                const url = '@Url.Action("Index", "Bloques")';
+                const data = {
+                    filtro: filtro,
+                    pagina: 1 // Resetear a la primera página
+                };
+
+                console.log('Enviando petición AJAX:', { url, data });
+
+                // Realizar llamada AJAX
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    data: data,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (response) {
+                        console.log('Búsqueda exitosa');
+                        // Actualizar el contenido sin recargar la página
+                        contentContainer.html(response);
+
+                        // Actualizar la URL sin recargar la página
+                        const newUrl = new URL(window.location.href);
+                        if (filtro) {
+                            newUrl.searchParams.set('filtro', filtro);
+                        } else {
+                            newUrl.searchParams.delete('filtro');
+                        }
+                        newUrl.searchParams.set('pagina', '1');
+                        window.history.pushState({}, '', newUrl.toString());
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error en la búsqueda:', error);
+                        // Mostrar mensaje de error al usuario (opcional)
+                        searchTip.removeClass('text-primary').addClass('text-danger')
+                            .html('❌ Error en la búsqueda. Intente nuevamente.');
+                        setTimeout(function () {
+                            searchTip.removeClass('text-danger').addClass('text-primary')
+                                .html('💡 Presiona Enter para buscar inmediatamente');
+                        }, 3000);
+                    },
+                    complete: function () {
+                        console.log('Búsqueda completada');
+                        // Restaurar icono de búsqueda
+                        searchIcon.removeClass('ti-loader-2').addClass('ti-search');
+                        isSearching = false;
+                        if (!isTyping) {
+                            searchTip.show();
+                        }
+                    }
+                });
+            }
+
+            // Evento de tecla presionada con debounce
+            searchInput.on('input', function () {
                 clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(performSearch, 500);
+                clearInterval(countdownInterval);
+                isTyping = true;
+
+                const currentValue = $(this).val().trim();
+
+                // Ocultar mensajes mientras escribe
+                searchTip.hide();
+                searchHint.hide();
+
+                if (currentValue !== lastSearchTerm) {
+                    // Esperar 2 segundos de inactividad antes de buscar
+                    searchTimeout = setTimeout(function () {
+                        isTyping = false;
+                        showSearchIndicator();
+                    }, 2000);
+                } else {
+                    isTyping = false;
+                    if (!isSearching) {
+                        searchTip.show();
+                    }
+                }
             });
 
-            // Prevenir el envío del formulario tradicional
-            searchForm.addEventListener('submit', function (e) {
+            // Evento de Enter para búsqueda inmediata
+            searchInput.on('keypress', function (e) {
+                if (e.which === 13 || e.keyCode === 13) { // Enter key
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearTimeout(searchTimeout);
+                    clearInterval(countdownInterval);
+                    hideSearchIndicator();
+                    isTyping = false;
+
+                    console.log('Enter presionado, ejecutando búsqueda inmediata');
+                    performSearch();
+                }
+            });
+
+            // Evento cuando el campo pierde el foco
+            searchInput.on('blur', function () {
+                clearTimeout(searchTimeout);
+                hideSearchIndicator();
+                isTyping = false;
+                // Pequeño delay para permitir clicks en otros elementos
+                setTimeout(function () {
+                    if (!$(':focus').is(searchInput) && !isSearching) {
+                        const currentValue = searchInput.val().trim();
+                        if (currentValue !== lastSearchTerm) {
+                            performSearch();
+                        }
+                    }
+                }, 150);
+            });
+
+            // Evento al enfocar el campo
+            searchInput.on('focus', function () {
+                if (searchTimeout) {
+                    hideSearchIndicator();
+                }
+                if (!isSearching) {
+                    searchTip.hide();
+                }
+                isTyping = false;
+            });
+
+            // Limpiar búsqueda al hacer clic en "Ver todos"
+            btnClearSearch.on('click', function (e) {
+                console.log('Botón "Ver todos" clickeado');
+                clearTimeout(searchTimeout);
+                hideSearchIndicator();
+                isTyping = false;
+                searchInput.val('');
+                lastSearchTerm = ''; // Actualizar antes de la búsqueda
+
+                console.log('Ejecutando búsqueda vacía con forceSearch=true...');
+                // Realizar búsqueda vacía forzada
+                performSearch(true);
+            });
+
+            // Manejar clics en enlaces de paginación
+            $(document).on('click', '.pagination a', function (e) {
                 e.preventDefault();
-                performSearch();
+
+                const url = $(this).attr('href');
+                const urlParams = new URLSearchParams(url.split('?')[1]);
+                const pagina = urlParams.get('pagina') || 1;
+                const filtro = searchInput.val().trim();
+
+                $.ajax({
+                    url: '@Url.Action("Index", "Bloques")',
+                    type: 'GET',
+                    data: {
+                        filtro: filtro,
+                        pagina: pagina
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (response) {
+                        contentContainer.html(response);
+
+                        // Actualizar URL
+                        const newUrl = new URL(window.location.href);
+                        if (filtro) {
+                            newUrl.searchParams.set('filtro', filtro);
+                        }
+                        newUrl.searchParams.set('pagina', pagina);
+                        window.history.pushState({}, '', newUrl.toString());
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error en la paginación:', error);
+                    }
+                });
             });
 
-            // Manejar la navegación del historial
-            window.addEventListener('popstate', function () {
-                const urlParams = new URLSearchParams(window.location.search);
-                searchInput.value = urlParams.get('Filtro') || '';
-                performSearch();
-            });
+            // Inicializar el estado
+            lastSearchTerm = searchInput.val().trim();
+
+            // Mostrar tip inicial solo si no hay valor en el campo
+            if (lastSearchTerm === '') {
+                searchTip.show();
+            } else {
+                searchTip.hide();
+            }
+
+            // Opcional: enfocar el campo de búsqueda al cargar la página si está vacío
+            if (lastSearchTerm === '' && !window.location.search.includes('filtro=')) {
+                setTimeout(function () {
+                    searchInput.focus();
+                }, 500);
+            }
+
+            // Verificar que el botón "Ver todos" se encuentre correctamente
+            console.log('Botón "Ver todos" encontrado:', btnClearSearch.length > 0);
+            if (btnClearSearch.length === 0) {
+                console.error('ERROR: No se encontró el botón "Ver todos" con ID #btn-clear-search');
+            }
         });
     </script>
 }

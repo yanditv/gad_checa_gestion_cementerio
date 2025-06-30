@@ -46,15 +46,41 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (!string.IsNullOrWhiteSpace(filtro))
             {
+                filtro = filtro.Trim();
+                _logger.LogInformation("Aplicando filtro de búsqueda: {Filtro}", filtro);
+
                 query = query.Where(b =>
+                    // Búsqueda en descripción
                     b.Descripcion.Contains(filtro) ||
+
+                    // Búsqueda en tipo
                     b.Tipo.Contains(filtro) ||
+
+                    // Búsqueda en CalleA
                     b.CalleA.Contains(filtro) ||
-                    b.CalleB.Contains(filtro));
+
+                    // Búsqueda en CalleB
+                    b.CalleB.Contains(filtro) ||
+
+                    // Búsqueda en ubicación completa (CalleA - CalleB)
+                    (b.CalleA + " - " + b.CalleB).Contains(filtro) ||
+
+                    // Búsqueda en ubicación inversa (CalleB - CalleA)
+                    (b.CalleB + " - " + b.CalleA).Contains(filtro) ||
+
+                    // Búsqueda en número de pisos
+                    b.NumeroDePisos.ToString().Contains(filtro) ||
+
+                    // Búsqueda en bóvedas por piso
+                    b.BovedasPorPiso.ToString().Contains(filtro) ||
+
+                    // Búsqueda en tarifa base
+                    b.TarifaBase.ToString().Contains(filtro));
             }
 
             var total = await query.CountAsync();
             var bloques = await query
+                .OrderBy(b => b.Descripcion)
                 .Skip((pagina - 1) * registrosPorPagina)
                 .Take(registrosPorPagina)
                 .Select(b => new BloqueModel
@@ -78,6 +104,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Filtro = filtro,
                 TotalResultados = total
             };
+
+            ViewBag.Filtro = filtro;
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {

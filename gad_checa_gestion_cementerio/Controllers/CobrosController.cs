@@ -33,10 +33,18 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (!string.IsNullOrEmpty(filtro))
             {
+                filtro = filtro.Trim();
+                Console.WriteLine($"Cobros filter after trim: '{filtro}'");
+
                 contratosQuery = contratosQuery.Where(c =>
                     c.NumeroSecuencial.Contains(filtro) ||
                     c.Difunto.Nombres.Contains(filtro) ||
-                    c.Difunto.Apellidos.Contains(filtro));
+                    c.Difunto.Apellidos.Contains(filtro) ||
+                    (c.Difunto.Nombres + " " + c.Difunto.Apellidos).Contains(filtro) ||
+                    c.Difunto.NumeroIdentificacion.Contains(filtro) ||
+                    c.Responsables.Any(r => r.Nombres.Contains(filtro) || r.Apellidos.Contains(filtro) ||
+                                          (r.Nombres + " " + r.Apellidos).Contains(filtro) ||
+                                          r.NumeroIdentificacion.Contains(filtro)));
             }
 
             int total = contratosQuery.Count();
