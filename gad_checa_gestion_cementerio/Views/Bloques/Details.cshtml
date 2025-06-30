@@ -268,7 +268,7 @@
                                             <div class="d-flex align-items-center">
                                                 <span class="badge bg-light text-dark">
                                                     <i class="fas fa-calendar me-1"></i>
-                                                    @difunto.FechaFallecimiento.ToString("dd/MM/yyyy")
+                                                    @(difunto.FechaFallecimiento?.ToString("dd/MM/yyyy") ?? "No registrada")
                                                 </span>
                                             </div>
                                         </td>
@@ -353,7 +353,7 @@
                                         <div class="d-flex flex-wrap gap-2">
                                             @for (int boveda = 1; boveda <= Model.BovedasPorPiso; boveda++)
                                             {
-                                                var bovedaInfo = Model.Bovedas?.FirstOrDefault(b => b.NumeroPiso == i && b.Numero == boveda);
+                                                var bovedaInfo = Model.Bovedas?.Where(b => b.NumeroPiso == i && b.Numero == boveda)?.FirstOrDefault();
                                                 <div class="border border-secondary bg-white position-relative rounded-lg shadow-sm p-3 d-flex flex-column align-items-center justify-content-center"
                                                     style="width: 100px; height: 100px;"
                                                     data-bs-toggle="tooltip" 

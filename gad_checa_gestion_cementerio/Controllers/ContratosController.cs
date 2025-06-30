@@ -588,10 +588,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                             NumeroIdentificacion = viewModel.difunto.NumeroIdentificacion,
                             Nombres = viewModel.difunto.Nombres,
                             Apellidos = viewModel.difunto.Apellidos,
-                            FechaFallecimiento = viewModel.difunto.FechaFallecimiento,
+                            FechaNacimiento = viewModel.difunto.FechaNacimiento ?? DateTime.Now.AddYears(-70), // Usar fecha por defecto si es null
+                            FechaFallecimiento = viewModel.difunto.FechaFallecimiento ?? DateTime.Now.AddDays(-30), // Usar fecha por defecto si es null
                             UsuarioCreadorId = userId,
                             FechaCreacion = now,
-                            DescuentoId = viewModel.difunto.DescuentoId
+                            DescuentoId = viewModel.difunto.DescuentoId,
+                            Estado = true
 
                         };
                         contrato.Difunto = difunto;
@@ -892,8 +894,18 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             var contrato = GetContratoFromSession();
             var difunto = contrato.difunto ?? new DifuntoModel();
-            difunto.FechaNacimiento = DateTime.Now.AddYears(-30); // Establecer fecha de nacimiento por defecto
-            difunto.FechaFallecimiento = DateTime.Now; // Establecer fecha de fallecimiento por defecto
+
+            // Solo establecer fechas por defecto si no existen datos previos
+            if (contrato.difunto == null)
+            {
+                difunto.FechaNacimiento = DateTime.Now.AddYears(-70); // Fecha de nacimiento más realista (70 años atrás)
+                difunto.FechaFallecimiento = DateTime.Now.AddDays(-30); // Fallecimiento hace 30 días (más realista)
+
+                // Actualizar el contrato con el difunto y guardarlo en sesión
+                contrato.difunto = difunto;
+                SaveContratoToSession(contrato);
+            }
+
             var descuentos = _context.Descuento.ToList();
             ViewData["DescuentoId"] = new SelectList(descuentos, "Id", "Descripcion");
             return PartialView("_CreateDifunto", difunto);
@@ -901,6 +913,62 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpPost]
         public IActionResult CreateDifunto(DifuntoModel difunto)
         {
+            // Validaciones adicionales para las fechas
+            var erroresCustom = new List<string>();
+
+            // Validar que la fecha de nacimiento no sea futura
+            if (difunto.FechaNacimiento.HasValue && difunto.FechaNacimiento.Value > DateTime.Now)
+            {
+                erroresCustom.Add("La fecha de nacimiento no puede ser una fecha futura.");
+            }
+
+            // Validar que la fecha de fallecimiento no sea futura
+            if (difunto.FechaFallecimiento.HasValue && difunto.FechaFallecimiento.Value > DateTime.Now)
+            {
+                erroresCustom.Add("La fecha de fallecimiento no puede ser una fecha futura.");
+            }
+
+            // Validar que la fecha de fallecimiento sea posterior a la fecha de nacimiento
+            if (difunto.FechaNacimiento.HasValue && difunto.FechaFallecimiento.HasValue &&
+                difunto.FechaFallecimiento.Value <= difunto.FechaNacimiento.Value)
+            {
+                erroresCustom.Add("La fecha de fallecimiento debe ser posterior a la fecha de nacimiento.");
+            }
+
+            // Validar edad mínima realista (por ejemplo, no menor a 0 años)
+            if (difunto.FechaNacimiento.HasValue && difunto.FechaFallecimiento.HasValue)
+            {
+                var edad = difunto.FechaFallecimiento.Value.Year - difunto.FechaNacimiento.Value.Year;
+                if (difunto.FechaFallecimiento.Value < difunto.FechaNacimiento.Value.AddYears(edad))
+                    edad--;
+
+                if (edad < 0)
+                {
+                    erroresCustom.Add("Las fechas no son coherentes. Verifique las fechas de nacimiento y fallecimiento.");
+                }
+
+                // Validar edad máxima realista (por ejemplo, no mayor a 150 años)
+                if (edad > 150)
+                {
+                    erroresCustom.Add("La edad calculada parece poco realista. Verifique las fechas.");
+                }
+            }
+
+            // Validar que la fecha de fallecimiento no sea muy antigua (por ejemplo, máximo 100 años atrás)
+            if (difunto.FechaFallecimiento.HasValue && difunto.FechaFallecimiento.Value < DateTime.Now.AddYears(-100))
+            {
+                erroresCustom.Add("La fecha de fallecimiento no puede ser anterior a 100 años.");
+            }
+
+            // Si hay errores personalizados, agregarlos al ModelState
+            if (erroresCustom.Any())
+            {
+                foreach (var error in erroresCustom)
+                {
+                    ModelState.AddModelError("", error);
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 var contrato = GetContratoFromSession();
@@ -1067,6 +1135,17 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
             var contrato = GetContratoFromSession();
+
+            // Validar que haya al menos un responsable asignado
+            if (contrato.responsables == null || !contrato.responsables.Any())
+            {
+                return Json(new
+                {
+                    success = false,
+                    errors = new List<string> { "Debe asignar al menos un responsable antes de proceder con el pago." }
+                });
+            }
+
             // Mostrar siempre todas las cuotas, no solo las no pagadas
             contrato.pago.Cuotas = contrato.contrato.Cuotas;
             contrato.pago.FechaPago = DateTime.Now;
@@ -1174,7 +1253,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             contrato_model.contrato.NumeroDeMeses = 5;
             contrato_model.contrato.FechaInicio = DateTime.Now;
             contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
-            contrato_model.contrato.Difunto = new DifuntoModel();
+            //contrato_model.contrato.Difunto = new DifuntoModel();
             contrato_model.contrato.MontoTotal = tarifa;
 
             // Asegurarse de que la propiedad EsRenovacion se mantenga

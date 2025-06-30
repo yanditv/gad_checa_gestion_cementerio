@@ -21,10 +21,8 @@ namespace gad_checa_gestion_cementerio.Data
         [StringLength(20)]
         public string NumeroIdentificacion { get; set; }
 
-        [Required]
-        public DateTime FechaNacimiento { get; set; }
-        [Required]
-        public DateTime FechaFallecimiento { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
+        public DateTime? FechaFallecimiento { get; set; }
 
         [Required]
         public bool Estado { get; set; }

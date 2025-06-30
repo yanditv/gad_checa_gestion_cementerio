@@ -77,11 +77,11 @@
                             <i class="ti ti-building text-muted"></i>
                         </span>
                         <input id="boveda_seleccionada"
-                            value="Bóveda #@(Model.Boveda?.NumeroSecuencial ?? Model.BovedaId.ToString())" readonly
-                            class="form-control border-start-0 border-end-0" />
+                            value="@(Model.Boveda?.NumeroSecuencial != null && Model.Boveda.NumeroSecuencial != "S/N" ? $"Bóveda #{Model.Boveda.NumeroSecuencial}" : (Model.BovedaId > 0 ? $"Bóveda #{Model.BovedaId}" : "Seleccionar bóveda"))"
+                            readonly class="form-control border-start-0 border-end-0" />
                         <button type="button" class="btn btn-outline-primary" onclick="abrirModalBovedas('')"
                             @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ? "disabled" :
-                                                        "") >
+                                                        "")>
                             <i class="ti ti-search me-1"></i> Buscar
                         </button>
                     </div>
@@ -132,7 +132,7 @@
                         <span class="input-group-text bg-light border-end-0">
                             <i class="ti ti-clock text-muted"></i>
                         </span>
-                        <input asp-for="NumeroDeMeses" type="number" class="form-control border-start-0" />
+                        <input asp-for="NumeroDeMeses" type="number" class="form-control border-start-0" readonly />
                         <span class="input-group-text bg-light">años</span>
                     </div>
                     <span asp-validation-for="NumeroDeMeses" class="text-danger small"></span>

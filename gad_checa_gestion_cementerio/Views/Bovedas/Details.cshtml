@@ -20,7 +20,8 @@
             <div class="col-md-6">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-light border-0 py-2">
-                        <h6 class="mb-0"><i class="ti ti-info-circle me-2 text-primary"></i>Información de la Bóveda</h6>
+                        <h6 class="mb-0"><i class="ti ti-info-circle me-2 text-primary"></i>Información de la Bóveda
+                        </h6>
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
@@ -49,11 +50,13 @@
                                         <small class="text-muted d-block">Estado</small>
                                         @if (!Model.TieneContratoActivo)
                                         {
-                                            <span class="badge bg-success-subtle text-success"><i class="ti ti-check me-1"></i>Disponible</span>
+                                            <span class="badge bg-success-subtle text-success"><i
+                                                    class="ti ti-check me-1"></i>Disponible</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-danger-subtle text-danger"><i class="ti ti-x me-1"></i>Ocupada</span>
+                                            <span class="badge bg-danger-subtle text-danger"><i
+                                                    class="ti ti-x me-1"></i>Ocupada</span>
                                         }
                                     </div>
                                 </div>
@@ -141,7 +144,8 @@
                                         <i class="ti ti-id text-primary me-2"></i>
                                         <div>
                                             <small class="text-muted d-block">Identificación</small>
-                                            <span class="fw-bold">@Model.Propietario.TipoIdentificacion: @Model.Propietario.NumeroIdentificacion</span>
+                                            <span class="fw-bold">@Model.Propietario.TipoIdentificacion:
+                                                @Model.Propietario.NumeroIdentificacion</span>
                                         </div>
                                     </div>
                                 </div>
@@ -199,8 +203,8 @@
                 (c.FechaFin == null || c.FechaFin >= DateTime.Now)) != null)
         {
             var contratoActivo = Model.Contratos.FirstOrDefault(c =>
-                c.FechaInicio <= DateTime.Now &&
-                (c.FechaFin == null || c.FechaFin >= DateTime.Now));
+            c.FechaInicio <= DateTime.Now &&
+            (c.FechaFin == null || c.FechaFin >= DateTime.Now));
             <div class="card border-0 shadow-sm mt-4">
                 <div class="card-header bg-primary text-white border-0 py-2 d-flex align-items-center">
                     <i class="ti ti-file-description me-2 fs-5"></i>
@@ -220,31 +224,33 @@
                             </div>
                             <div class="mb-3">
                                 <span class="text-muted small">Fecha de Vencimiento</span><br />
-                                <span class="fw-bold">@(contratoActivo.FechaFin == null ? "Indefinido" : ((DateTime)contratoActivo.FechaFin).ToString("dd/MM/yyyy"))</span>
-                            </div>
-                            <div class="mb-3">
-                                <span class="text-muted small">Valor del Contrato</span><br />
-                                <span class="fw-bold text-primary fs-5">$@contratoActivo.MontoTotal.ToString("N2")</span>
-                            </div>
+                                <span class="fw-bold">@(contratoActivo.FechaFin == null ? "Indefinido" :
+                                                                    ((DateTime)contratoActivo.FechaFin).ToString("dd/MM/yyyy"))</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <span class="text-muted small">¿Es Renovación?</span><br />
-                                <span class="fw-bold">@(contratoActivo.EsRenovacion ? "Sí" : "No")</span>
-                            </div>
-                            <div class="mb-3">
-                                <span class="text-muted small">Veces Renovado</span><br />
-                                <span class="fw-bold">@contratoActivo.VecesRenovado</span>
-                            </div>
-                            <div class="mb-3">
-                                <span class="text-muted small">Observaciones</span><br />
-                                <span class="fw-bold">@contratoActivo.Observaciones</span>
-                            </div>
-                            @if (!string.IsNullOrEmpty(contratoActivo.PathDocumentoFirmado))
+                        <div class="mb-3">
+                            <span class="text-muted small">Valor del Contrato</span><br />
+                            <span class="fw-bold text-primary fs-5">$@contratoActivo.MontoTotal.ToString("N2")</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <span class="text-muted small">¿Es Renovación?</span><br />
+                            <span class="fw-bold">@(contratoActivo.EsRenovacion ? "Sí" : "No")</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-muted small">Veces Renovado</span><br />
+                            <span class="fw-bold">@contratoActivo.VecesRenovado</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-muted small">Observaciones</span><br />
+                            <span class="fw-bold">@contratoActivo.Observaciones</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(contratoActivo.PathDocumentoFirmado))
                             {
                                 <div class="mb-3">
                                     <span class="text-muted small">Documento Firmado</span><br />
-                                    <a href="@Url.Content(contratoActivo.PathDocumentoFirmado)" target="_blank" class="fw-bold text-decoration-underline text-info">
+                                    <a href="@Url.Content(contratoActivo.PathDocumentoFirmado)" target="_blank"
+                                        class="fw-bold text-decoration-underline text-info">
                                         <i class="ti ti-link"></i> Ver documento
                                     </a>
                                 </div>
@@ -263,15 +269,25 @@
                                         <span>Difunto Asociado</span>
                                     </div>
                                     <div class="card-body">
-                                        <div class="mb-2"><span class="text-muted small">Nombres</span><br /><span class="fw-bold">@contratoActivo.Difunto.Nombres @contratoActivo.Difunto.Apellidos</span></div>
-                                        <div class="mb-2"><span class="text-muted small">Identificación</span><br /><span class="fw-bold">@contratoActivo.Difunto.NumeroIdentificacion</span></div>
-                                        <div class="mb-2"><span class="text-muted small">Fecha de Nacimiento</span><br /><span class="fw-bold">@contratoActivo.Difunto.FechaNacimiento.ToString("dd/MM/yyyy")</span></div>
-                                        <div class="mb-2"><span class="text-muted small">Fecha de Fallecimiento</span><br /><span class="fw-bold">@contratoActivo.Difunto.FechaFallecimiento.ToString("dd/MM/yyyy")</span></div>
-                                        <div class="mb-2"><span class="text-muted small">Descuento</span><br /><span class="fw-bold badge bg-warning text-dark">@contratoActivo.Difunto.Descuento?.Descripcion (@contratoActivo.Difunto.Descuento?.Porcentaje ?? 0)%</span></div>
-                                    </div>
-                                </div>
+                                        <div class="mb-2"><span class="text-muted small">Nombres</span><br /><span
+                                                class="fw-bold">@contratoActivo.Difunto.Nombres
+                                                @contratoActivo.Difunto.Apellidos</span></div>
+                                        <div class="mb-2"><span class="text-muted small">Identificación</span><br /><span
+                                                class="fw-bold">@contratoActivo.Difunto.NumeroIdentificacion</span></div>
+                                        <div class="mb-2"><span class="text-muted small">Fecha de Nacimiento</span><br /><span
+                                                class="fw-bold">@(contratoActivo.Difunto.FechaNacimiento?.ToString("dd/MM/yyyy")
+                                                                                        ?? "No registrada")</span></div>
+                                <div class="mb-2"><span class="text-muted small">Fecha de
+                                        Fallecimiento</span><br /><span
+                                        class="fw-bold">@(contratoActivo.Difunto.FechaFallecimiento?.ToString("dd/MM/yyyy")
+                                                                                ?? "No registrada")</span></div>
+                                <div class="mb-2"><span class="text-muted small">Descuento</span><br /><span
+                                        class="fw-bold badge bg-warning text-dark">@contratoActivo.Difunto.Descuento?.Descripcion
+                                        (@contratoActivo.Difunto.Descuento?.Porcentaje ?? 0)%</span></div>
                             </div>
-                        }
+                        </div>
+                    </div>
+                                        }
                         <!-- Responsables -->
                         @if (contratoActivo.Responsables != null && contratoActivo.Responsables.Any())
                         {
@@ -286,7 +302,8 @@
                                         {
                                             <div class="mb-2 border-bottom pb-2">
                                                 <div class="fw-bold">@resp.Nombres @resp.Apellidos</div>
-                                                <div class="small text-muted">@resp.TipoIdentificacion: @resp.NumeroIdentificacion</div>
+                                                <div class="small text-muted">@resp.TipoIdentificacion: @resp.NumeroIdentificacion
+                                                </div>
                                                 <div class="small"><i class="ti ti-phone"></i> @resp.Telefono</div>
                                                 <div class="small"><i class="ti ti-mail"></i> @resp.Email</div>
                                             </div>

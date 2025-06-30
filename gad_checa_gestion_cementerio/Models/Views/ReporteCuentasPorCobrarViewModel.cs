@@ -24,7 +24,7 @@ namespace gad_checa_gestion_cementerio.Models.Views
         // Difunto
         public string NombreDifunto { get; set; }
         public string CedulaDifunto { get; set; }
-        public DateTime FechaFallecimiento { get; set; }
+        public DateTime? FechaFallecimiento { get; set; }
 
         // Ubicación
         public string Bloque { get; set; }

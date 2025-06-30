@@ -255,7 +255,7 @@
                                 <i class="fas fa-calendar-times text-primary me-2"></i>
                                 <div>
                                     <small class="text-muted d-block">Fecha de Fallecimiento</small>
-                                    <span class="fw-bold">@Model.Difunto.FechaFallecimiento.ToString("dd/MM/yyyy")</span>
+                                    <span class="fw-bold">@(Model.Difunto.FechaFallecimiento?.ToString("dd/MM/yyyy") ?? "No registrada")</span>
                                 </div>
                             </div>
                         </div>

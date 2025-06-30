@@ -24,9 +24,16 @@ namespace gad_checa_gestion_cementerio.Models
         public string NumeroIdentificacion { get; set; }
 
         [Required(ErrorMessage = "El campo {0} es requerido")]
-        public DateTime FechaNacimiento { get; set; }
+        [Display(Name = "Fecha de Nacimiento")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        public DateTime? FechaNacimiento { get; set; }
+
         [Required(ErrorMessage = "El campo {0} es requerido")]
-        public DateTime FechaFallecimiento { get; set; }
+        [Display(Name = "Fecha de Fallecimiento")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        public DateTime? FechaFallecimiento { get; set; }
 
         [Required(ErrorMessage = "El campo {0} es requerido")]
         [ForeignKey("Descuento")]

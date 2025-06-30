@@ -78,7 +78,8 @@
                         <span class="input-group-text bg-light border-end-0">
                             <i class="ti ti-calendar-heart text-muted"></i>
                         </span>
-                        <input asp-for="FechaNacimiento" class="form-control border-start-0" type="date" />
+                        <input asp-for="FechaNacimiento" class="form-control border-start-0" type="date"
+                            value="@(Model.FechaNacimiento?.ToString("yyyy-MM-dd") ?? "")" />
                     </div>
                     <span asp-validation-for="FechaNacimiento" class="text-danger small"></span>
                 </div>
@@ -94,7 +95,8 @@
                         <span class="input-group-text bg-light border-end-0">
                             <i class="ti ti-calendar-x text-muted"></i>
                         </span>
-                        <input asp-for="FechaFallecimiento" class="form-control border-start-0" type="date" />
+                        <input asp-for="FechaFallecimiento" class="form-control border-start-0" type="date"
+                            value="@(Model.FechaFallecimiento?.ToString("yyyy-MM-dd") ?? "")" />
                     </div>
                     <span asp-validation-for="FechaFallecimiento" class="text-danger small"></span>
                 </div>

@@ -87,7 +87,7 @@ namespace gad_checa_gestion_cementerio.Models.Views
         public int Id { get; set; }
         public string Nombres { get; set; }
         public string Apellidos { get; set; }
-        public DateTime FechaFallecimiento { get; set; }
+        public DateTime? FechaFallecimiento { get; set; }
         public string NumeroBoveda { get; set; }
         public int NumeroPiso { get; set; }
         public string Propietario { get; set; }

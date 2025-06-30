@@ -35,7 +35,7 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <i class="fas fa-calendar-alt text-primary me-2"></i>
-                            <span>@item.FechaFallecimiento.ToString("dd/MM/yyyy")</span>
+                            <span>@(item.FechaFallecimiento?.ToString("dd/MM/yyyy") ?? "No registrada")</span>
                         </div>
                     </td>
                     <td>

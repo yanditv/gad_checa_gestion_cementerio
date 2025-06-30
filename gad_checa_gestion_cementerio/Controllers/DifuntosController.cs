@@ -159,7 +159,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             difunto.NumeroIdentificacion = model.NumeroIdentificacion;
             difunto.Nombres = model.Nombres;
             difunto.Apellidos = model.Apellidos;
-            difunto.FechaNacimiento = model.FechaNacimiento;
+            difunto.FechaNacimiento = model.FechaNacimiento ?? DateTime.Now.AddYears(-70); // Usar fecha por defecto si es null
             difunto.FechaFallecimiento = model.FechaFallecimiento;
             difunto.DescuentoId = model.DescuentoId;
             difunto.FechaActualizacion = DateTime.Now;
