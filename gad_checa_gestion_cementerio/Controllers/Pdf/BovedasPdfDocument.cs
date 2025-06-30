@@ -541,7 +541,7 @@ public class BovedasPdfDocument : IDocument
     // Método para verificar y obtener la ruta del logo
     private string? GetLogoPath()
     {
-        var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo_gad.png");
+        var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo.png");
         return File.Exists(logoPath) ? logoPath : null;
     }
 
