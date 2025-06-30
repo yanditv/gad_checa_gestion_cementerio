@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using gad_checa_gestion_cementerio.Data;
 using Microsoft.AspNetCore.Identity;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
 
 namespace gad_checa_gestion_cementerio.Controllers
@@ -12,12 +13,14 @@ namespace gad_checa_gestion_cementerio.Controllers
         protected readonly ApplicationDbContext _context;
         protected readonly UserManager<ApplicationUser> _userManager;
         protected readonly IMapper _mapper;
+        protected readonly ILogger _logger;
 
-        public BaseController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper)
+        public BaseController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper, ILogger logger)
         {
             _context = context;
             _userManager = userManager;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>

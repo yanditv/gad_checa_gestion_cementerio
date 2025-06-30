@@ -18,14 +18,11 @@ namespace gad_checa_gestion_cementerio.Controllers
     public class ContratosController : BaseController
     {
         private readonly ContratoService _contratoService;
-        private readonly ILogger<ContratosController> _logger;
         private readonly IWebHostEnvironment _env;
-        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper)
+        public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper, logger)
         {
-            _logger = logger;
             _contratoService = contratoService;
             _env = env;
-
         }
         private CreateContratoModel GetContratoFromSession()
         {
@@ -742,29 +739,26 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         public IActionResult GenerarContratoPDF(CreateContratoModel model)
         {
-            var cementerio = _context.Cementerio.FirstOrDefault();
-            if (cementerio == null)
+            return PdfErrorHandler.ExecutePdfOperation(() =>
             {
-                TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
-                return RedirectToAction(nameof(Index));
-            }
-            var documento = new ContratoPDF(model, cementerio);
-            var pdfBytes = documento.GeneratePdf();
+                var cementerio = _context.Cementerio.FirstOrDefault();
+                PdfErrorHandler.ValidateRequiredData(cementerio, "Información del cementerio");
+                PdfErrorHandler.ValidateRequiredData(model, "Datos del contrato");
 
-            return File(pdfBytes, "application/pdf", "ContratoArrendamiento.pdf");
+                var documento = new ContratoPDF(model, cementerio);
+                var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato de Arrendamiento");
+
+                return File(pdfBytes, "application/pdf", "ContratoArrendamiento.pdf");
+            }, _logger, this, "Index", "Generación de contrato PDF");
         }
 
         [HttpGet]
         public IActionResult Print(int id)
         {
-            try
+            return PdfErrorHandler.ExecutePdfOperation(() =>
             {
                 var cementerio = _context.Cementerio.FirstOrDefault();
-                if (cementerio == null)
-                {
-                    TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
-                    return RedirectToAction(nameof(Index));
-                }
+                PdfErrorHandler.ValidateRequiredData(cementerio, "Información del cementerio");
 
                 // Cargar el contrato y todas sus relaciones necesarias
                 var contrato = _context.Contrato
@@ -780,11 +774,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .Include(c => c.ContratoOrigen)
                     .FirstOrDefault(c => c.Id == id);
 
-                if (contrato == null)
-                {
-                    TempData["Error"] = "No se encontró el contrato para generar el PDF.";
-                    return RedirectToAction(nameof(Index));
-                }
+                PdfErrorHandler.ValidateRequiredData(contrato, "Contrato");
 
                 var contratoModel = _mapper.Map<ContratoModel>(contrato);
 
@@ -795,7 +785,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                     if (cuotaEntity?.Pagos != null && cuotaEntity.Pagos.Any())
                     {
                         cuota.FechaPago = cuotaEntity.Pagos.First().FechaPago;
-                        // Asociar el PagoId para la vista
                         cuota.PagoId = cuotaEntity.Pagos.First().Id;
                     }
                 }
@@ -818,29 +807,23 @@ namespace gad_checa_gestion_cementerio.Controllers
                     contrato = contratoModel,
                     difunto = contratoModel.Difunto ?? new DifuntoModel(),
                     responsables = contratoModel.Responsables ?? new List<ResponsableModel>(),
-                    pago = new PagoModel() // Si necesitas pagos, puedes mapearlos aquí
+                    pago = new PagoModel()
                 };
 
                 var documento = new ContratoPDF(modelo, cementerio);
-                var pdfBytes = documento.GeneratePdf();
+                var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato PDF");
 
                 var fileName = $"CONTRATO_{contratoModel.NumeroSecuencial ?? "Arrendamiento"}.pdf";
                 ViewBag.NombreArchivo = fileName;
                 Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
                 return new FileContentResult(pdfBytes, "application/pdf");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al generar PDF del contrato {ContratoId}", id);
-                TempData["Error"] = $"Error al generar el PDF: {ex.Message}";
-                return RedirectToAction(nameof(Details), new { id });
-            }
+            }, _logger, this, nameof(Details), "Impresión de contrato", new { id });
         }
 
         [HttpGet]
-        public object TestPDF()
+        public IActionResult TestPDF()
         {
-            try
+            return PdfErrorHandler.ExecutePdfOperation(() =>
             {
                 // Crear un PDF simple de prueba
                 var document = Document.Create(container =>
@@ -866,33 +849,25 @@ namespace gad_checa_gestion_cementerio.Controllers
                     });
                 });
 
-                var pdfBytes = document.GeneratePdf();
+                var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => document.GeneratePdf(), "PDF de prueba");
                 return File(pdfBytes, "application/pdf", "test.pdf");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al generar PDF de prueba");
-                return Content($"Error al generar PDF: {ex.Message}", "text/plain");
-            }
+            }, _logger, this, "Index", "Generación de PDF de prueba");
         }
 
         [HttpGet]
         public IActionResult VerContratoPDF()
         {
-            try
+            return PdfErrorHandler.ExecutePdfOperation(() =>
             {
                 var cementerio = _context.Cementerio.FirstOrDefault();
-                if (cementerio == null)
-                {
-                    TempData["Error"] = "No se encontró información del cementerio para generar el contrato.";
-                    return RedirectToAction(nameof(Index));
-                }
+                PdfErrorHandler.ValidateRequiredData(cementerio, "Información del cementerio");
 
-                var modelo = GetContratoFromSession(); // o pásalo por parámetro
-                if (modelo?.contrato == null || modelo.contrato.BovedaId <= 0)
+                var modelo = GetContratoFromSession();
+                PdfErrorHandler.ValidateRequiredData(modelo?.contrato, "Información de contrato");
+
+                if (modelo.contrato.BovedaId <= 0)
                 {
-                    TempData["Error"] = "No hay información de contrato para visualizar.";
-                    return RedirectToAction(nameof(Index));
+                    throw new PdfDataException("No hay información válida de bóveda para el contrato");
                 }
 
                 var boveda = _context.Boveda.Include(b => b.Piso).ThenInclude(p => p.Bloque)
@@ -901,20 +876,15 @@ namespace gad_checa_gestion_cementerio.Controllers
                 {
                     modelo.contrato.Boveda = _mapper.Map<BovedaModel>(boveda);
                 }
+
                 var documento = new ContratoPDF(modelo, cementerio);
-                var pdfBytes = documento.GeneratePdf();
+                var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Vista previa de contrato");
 
                 var fileName = $"CONTRATO_{modelo.contrato.NumeroSecuencial ?? "Arrendamiento"}.pdf";
                 ViewBag.NombreArchivo = fileName;
                 Response.Headers["Content-Disposition"] = $"inline; filename={fileName}";
                 return new FileContentResult(pdfBytes, "application/pdf");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al generar PDF de vista previa del contrato");
-                TempData["Error"] = $"Error al generar el PDF: {ex.Message}";
-                return RedirectToAction(nameof(Index));
-            }
+            }, _logger, this, "Index", "Generación de vista previa de contrato");
         }
         // CREAR DIFUNTO
         [HttpGet]

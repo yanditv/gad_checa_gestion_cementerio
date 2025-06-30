@@ -11,7 +11,7 @@ namespace gad_checa_gestion_cementerio.Controllers;
 
 public class PropietarioController : BaseController
 {
-    public PropietarioController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
+    public PropietarioController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<PropietarioController> logger) : base(context, userManager, mapper, logger)
     {
     }
     public IActionResult CrearDesdeModal()

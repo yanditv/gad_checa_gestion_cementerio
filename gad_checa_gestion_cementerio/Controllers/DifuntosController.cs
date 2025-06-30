@@ -13,7 +13,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class DifuntosController : BaseController
     {
-        public DifuntosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
+        public DifuntosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<DifuntosController> logger) : base(context, userManager, mapper, logger)
         {
         }
 

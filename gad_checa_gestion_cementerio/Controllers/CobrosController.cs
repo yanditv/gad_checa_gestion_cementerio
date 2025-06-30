@@ -3,6 +3,7 @@ using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Models;
 using gad_checa_gestion_cementerio.Utils;
 using gad_checa_gestion_cementerio.Controllers.Pdf;
+using gad_checa_gestion_cementerio.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -17,8 +18,11 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class CobrosController : BaseController
     {
-        public CobrosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
+        private readonly IPdfService _pdfService;
+
+        public CobrosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, IPdfService pdfService, ILogger<CobrosController> logger) : base(context, userManager, mapper, logger)
         {
+            _pdfService = pdfService;
         }
         // GET: CobrosController
         public ActionResult Index(string filtro = "", int pagina = 1)
@@ -186,34 +190,32 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
 
-        public IActionResult FacturaPdf(int id)
+        public async Task<IActionResult> FacturaPdf(int id)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
+            return await PdfErrorHandler.ExecutePdfOperationAsync(async () =>
+            {
+                var pago = _context.Pago
+                    .Include(p => p.Cuotas)
+                        .ThenInclude(c => c.Contrato)
+                            .ThenInclude(c => c.Boveda)
+                                .ThenInclude(b => b.Piso)
+                                    .ThenInclude(p => p.Bloque)
+                                        .ThenInclude(b => b.Cementerio)
+                    .Include(p => p.Cuotas)
+                        .ThenInclude(c => c.Contrato)
+                            .ThenInclude(c => c.Responsables)
+                    .FirstOrDefault(p => p.Id == id);
 
-            var pago = _context.Pago
-                .Include(p => p.Cuotas)
-                    .ThenInclude(c => c.Contrato)
-                        .ThenInclude(c => c.Boveda)
-                            .ThenInclude(b => b.Piso)
-                                .ThenInclude(p => p.Bloque)
-                                    .ThenInclude(b => b.Cementerio)
-                .Include(p => p.Cuotas)
-                    .ThenInclude(c => c.Contrato)
-                        .ThenInclude(c => c.Responsables)
-                .FirstOrDefault(p => p.Id == id);
+                PdfErrorHandler.ValidateRequiredData(pago, "Pago");
 
-            if (pago == null)
-                return NotFound();
+                var persona = _context.Persona.FirstOrDefault(p => p.Id == pago.PersonaPagoId);
+                PdfErrorHandler.ValidateRequiredData(persona, "Persona que realizó el pago");
 
-            var persona = _context.Persona.FirstOrDefault(p => p.Id == pago.PersonaPagoId);
-            if (persona == null)
-                return NotFound("Persona que realizó el pago no encontrada.");
+                var pdf = await _pdfService.GenerateFacturaPagoAsync(pago, persona);
 
-            var document = new FacturaPagoPdfDocument(pago, persona);
-            var pdf = document.GeneratePdf();
-
-            Response.Headers["Content-Disposition"] = "inline; filename=FacturaPago.pdf";
-            return File(pdf, "application/pdf");
+                Response.Headers["Content-Disposition"] = "inline; filename=FacturaPago.pdf";
+                return File(pdf, "application/pdf");
+            }, _logger, this, "Index", "Generación de factura de pago");
         }
         public IActionResult Facturas(int id)
         {

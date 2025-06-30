@@ -1,25 +1,88 @@
 ﻿@model ErrorViewModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Error - Sistema de Gestión de Cementerios";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error del Sistema
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-circle text-danger" style="font-size: 4rem;"></i>
+                    </div>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+                    <h5 class="card-title text-danger mb-3">
+                        Ha ocurrido un error mientras se procesaba su solicitud
+                    </h5>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+                    <p class="card-text text-muted mb-4">
+                        Lamentamos los inconvenientes. Nuestro equipo técnico ha sido notificado automáticamente sobre
+                        este problema.
+                    </p>
+
+                    @if (Model.ShowRequestId)
+                    {
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>ID de Solicitud:</strong> <code>@Model.RequestId</code>
+                                <br>
+                                <em>Proporcione este ID al equipo de soporte técnico si necesita ayuda.</em>
+                            </small>
+                        </div>
+                    }
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-center">
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                            <i class="fas fa-home me-1"></i>Volver al Inicio
+                        </a>
+                        <button onclick="window.history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Página Anterior
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Error registrado: @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")
+                    </small>
+                </div>
+            </div>
+
+            <!-- Información adicional para desarrollo -->
+            @if (ViewContext.HttpContext.RequestServices.GetService<IWebHostEnvironment>().IsDevelopment())
+            {
+                <div class="card mt-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tools me-2"></i>Información de Desarrollo
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-2">
+                            <strong>Modo de Desarrollo Activo:</strong> Esta información solo es visible en desarrollo.
+                        </p>
+                        <p class="text-muted mb-0">
+                            Para obtener más detalles sobre el error, revise los logs del servidor o configure el entorno de
+                            desarrollo apropiadamente.
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Script para auto-refrescar después de un tiempo si es necesario -->
+<script>
+    // Opcional: Recargar la página después de 30 segundos
+    // setTimeout(function() { location.reload(); }, 30000);
+</script>
+
+               

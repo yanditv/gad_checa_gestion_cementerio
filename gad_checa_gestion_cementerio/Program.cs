@@ -41,8 +41,29 @@ builder.Services.AddDataProtection()
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
     ?? throw new InvalidOperationException("Connection string 'DB_CONNECTION_STRING' not found.");
 
-// Configuración de QuestPDF
-QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+// Configuración de QuestPDF con manejo de errores
+try
+{
+    QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+    var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
+    logger.LogInformation("QuestPDF license configured successfully");
+}
+catch (Exception ex)
+{
+    var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
+    logger.LogError(ex, "Error configuring QuestPDF: {Message}", ex.Message);
+
+    // En producción, podríamos continuar sin PDF o lanzar la excepción
+    if (args.Contains("--environment=Production"))
+    {
+        logger.LogWarning("Continuing without QuestPDF in production mode");
+    }
+    else
+    {
+        throw;
+    }
+}
 
 // Configuración de sesión
 builder.Services.AddSession(options =>
@@ -58,6 +79,7 @@ builder.Services.AddSession(options =>
 // Configuración de servicios
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<ContratoService>();
+builder.Services.AddScoped<gad_checa_gestion_cementerio.Services.IPdfService, gad_checa_gestion_cementerio.Services.PdfService>();
 
 // Configuración de MVC con áreas
 builder.Services.AddControllersWithViews()
@@ -166,7 +188,7 @@ else
     app.UseDeveloperExceptionPage();
 }
 
-// Middleware personalizado para capturar errores de QuestPDF
+// Middleware personalizado para capturar errores de QuestPDF y otros
 app.Use(async (context, next) =>
 {
     try
@@ -177,10 +199,25 @@ app.Use(async (context, next) =>
     {
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
 
+        // Log detallado de cualquier error
+        logger.LogError(ex, "Error en la ruta: {Path}. Método: {Method}. Mensaje: {Message}",
+            context.Request.Path, context.Request.Method, ex.Message);
+
         // Log específico para errores de QuestPDF
         if (ex.Message.Contains("QuestPDF") || ex.StackTrace?.Contains("QuestPDF") == true)
         {
-            logger.LogError(ex, "Error específico de QuestPDF detectado en la ruta: {Path}", context.Request.Path);
+            logger.LogError(ex, "Error específico de QuestPDF detectado en la ruta: {Path}. " +
+                "Verifique que la licencia esté configurada correctamente y que QuestPDF esté disponible.",
+                context.Request.Path);
+        }
+
+        // Log específico para errores de archivos
+        if (ex is FileNotFoundException || ex is DirectoryNotFoundException ||
+            ex.Message.Contains("logo") || ex.Message.Contains("file"))
+        {
+            logger.LogError(ex, "Error relacionado con archivos en la ruta: {Path}. " +
+                "Verifique que todos los archivos necesarios estén disponibles.",
+                context.Request.Path);
         }
 
         // Re-throw para que el middleware de manejo de errores lo procese

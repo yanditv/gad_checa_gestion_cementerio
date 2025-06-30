@@ -23,7 +23,35 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
 
         public void Compose(IDocumentContainer container)
         {
-            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo.png");
+            // Manejo robusto de la ruta del logo para producción
+            string logoPath = "";
+            bool logoExists = false;
+
+            try
+            {
+                // Intentar múltiples ubicaciones para el logo
+                var possiblePaths = new[]
+                {
+                    Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logo.png"),
+                    Path.Combine(AppContext.BaseDirectory, "wwwroot", "logo.png"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "logo.png")
+                };
+
+                foreach (var path in possiblePaths)
+                {
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    {
+                        logoPath = path;
+                        logoExists = true;
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log del error si es necesario, pero continuar sin logo
+                System.Diagnostics.Debug.WriteLine($"Error al buscar logo: {ex.Message}");
+            }
 
             container.Page(page =>
             {
@@ -39,23 +67,25 @@ namespace gad_checa_gestion_cementerio.Controllers.Pdf
                         // Logo a la izquierda
                         row.ConstantItem(100).Column(logoCol =>
                         {
-                            try
+                            if (logoExists)
                             {
-                                if (File.Exists(logoPath))
+                                try
                                 {
                                     // Logo sin bordes, integrado naturalmente
                                     logoCol.Item().Width(80).Height(60)
                                         .Padding(2).Image(logoPath).FitArea();
                                 }
-                                else
+                                catch
                                 {
+                                    // Fallback si falla la carga de imagen
                                     logoCol.Item().Width(80).Height(60).Background(Colors.Grey.Lighten4)
                                         .AlignCenter().AlignMiddle().Text("GAD")
                                         .FontSize(14).Bold().FontColor(Colors.Black);
                                 }
                             }
-                            catch
+                            else
                             {
+                                // Logo placeholder cuando no existe el archivo
                                 logoCol.Item().Width(80).Height(60).Background(Colors.Grey.Lighten4)
                                     .AlignCenter().AlignMiddle().Text("GAD")
                                     .FontSize(14).Bold().FontColor(Colors.Black);

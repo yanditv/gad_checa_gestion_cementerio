@@ -19,7 +19,7 @@ namespace gad_checa_gestion_cementerio.Controllers
     [Authorize]
     public class PersonasController : BaseController
     {
-        public PersonasController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
+        public PersonasController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<PersonasController> logger) : base(context, userManager, mapper, logger)
         {
         }
 

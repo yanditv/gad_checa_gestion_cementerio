@@ -20,8 +20,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ReportesController : BaseController
     {
-        public ReportesController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager)
-            : base(context, userManager, mapper)
+        public ReportesController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<ReportesController> logger)
+            : base(context, userManager, mapper, logger)
         {
         }
 
@@ -292,102 +292,114 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpGet]
         public IActionResult CuentasPorCobrarPdf()
         {
-            QuestPDF.Settings.License = LicenseType.Community;
-            var viewModel = ObtenerCuentasPorCobrarViewModel();
-            var document = new CuentasPorCobrarPdfDocument(viewModel);
-            var pdf = document.GeneratePdf();
+            return PdfErrorHandler.ExecutePdfOperation(() =>
+            {
+                var viewModel = ObtenerCuentasPorCobrarViewModel();
+                PdfErrorHandler.ValidateRequiredData(viewModel, "Datos de cuentas por cobrar");
 
-            Response.Headers["Content-Disposition"] = "inline; filename=ReporteCuentasPorCobrar.pdf";
-            return File(pdf, "application/pdf");
+                var document = new CuentasPorCobrarPdfDocument(viewModel);
+                var pdf = PdfErrorHandler.GeneratePdfSafely(() => document.GeneratePdf(), "Reporte de Cuentas por Cobrar");
+
+                Response.Headers["Content-Disposition"] = "inline; filename=ReporteCuentasPorCobrar.pdf";
+                return File(pdf, "application/pdf");
+            }, _logger, this, "Index", "Generación de reporte de cuentas por cobrar");
         }
 
 
         [HttpGet]
         public IActionResult BovedasPdf(string tipoBloque, string nombreBloque)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
-
-            // Traer bóvedas y su ubicación
-            var bovedas = _context.Boveda
-                .Include(b => b.Propietario)
-                .Include(b => b.Piso)
-                    .ThenInclude(p => p!.Bloque)
-                        .ThenInclude(bq => bq!.Cementerio)
-                .ToList();
-
-            // Traer contratos activos relacionados con bóvedas
-            var contratos = _context.Contrato
-                .Include(c => c.Responsables)
-                .Include(c => c.Difunto)
-                .Where(c => c.Estado)
-                .ToList();
-
-            // Filtros
-            if (!string.IsNullOrEmpty(tipoBloque))
-                bovedas = bovedas.Where(b => b.Piso?.Bloque?.Tipo == tipoBloque).ToList();
-
-            if (!string.IsNullOrEmpty(nombreBloque))
-                bovedas = bovedas.Where(b => b.Piso?.Bloque?.Descripcion == nombreBloque).ToList();
-
-            // Transformar a ViewModel
-            var viewModels = bovedas.Select(b =>
+            return PdfErrorHandler.ExecutePdfOperation(() =>
             {
-                var contrato = contratos.FirstOrDefault(c => c.BovedaId == b.Id);
-                var responsable = contrato?.Responsables.FirstOrDefault();
-                var difunto = contrato?.Difunto;
-                var piso = b.Piso;
-                var bloque = piso?.Bloque;
-                var cementerio = bloque?.Cementerio;
+                // Traer bóvedas y su ubicación
+                var bovedas = _context.Boveda
+                    .Include(b => b.Propietario)
+                    .Include(b => b.Piso)
+                        .ThenInclude(p => p!.Bloque)
+                            .ThenInclude(bq => bq!.Cementerio)
+                    .ToList();
 
-                return new ReporteBovedasViewModel
+                // Traer contratos activos relacionados con bóvedas
+                var contratos = _context.Contrato
+                    .Include(c => c.Responsables)
+                    .Include(c => c.Difunto)
+                    .Where(c => c.Estado)
+                    .ToList();
+
+                // Filtros
+                if (!string.IsNullOrEmpty(tipoBloque))
+                    bovedas = bovedas.Where(b => b.Piso?.Bloque?.Tipo == tipoBloque).ToList();
+
+                if (!string.IsNullOrEmpty(nombreBloque))
+                    bovedas = bovedas.Where(b => b.Piso?.Bloque?.Descripcion == nombreBloque).ToList();
+
+                // Transformar a ViewModel
+                var viewModels = bovedas.Select(b =>
                 {
-                    BovedaId = b.Id,
-                    NumeroBoveda = string.IsNullOrEmpty(b.NumeroSecuencial) ? b.Id.ToString() : b.NumeroSecuencial,
-                    EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
-                    FechaCreacionBoveda = b.FechaCreacion,
-                    NumeroPiso = piso?.NumeroPiso ?? 0,
-                    NombreBloque = bloque?.Descripcion ?? "N/A",
-                    TipoBloque = bloque?.Tipo ?? "N/A",
-                    NombreCementerio = cementerio?.Nombre,
-                    NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
-                    CedulaPropietario = b.Propietario?.NumeroIdentificacion,
+                    var contrato = contratos.FirstOrDefault(c => c.BovedaId == b.Id);
+                    var responsable = contrato?.Responsables.FirstOrDefault();
+                    var difunto = contrato?.Difunto;
+                    var piso = b.Piso;
+                    var bloque = piso?.Bloque;
+                    var cementerio = bloque?.Cementerio;
 
-                    NumeroSecuencialContrato = contrato?.NumeroSecuencial,
-                    FechaInicioContrato = contrato?.FechaInicio,
-                    FechaFinContrato = contrato?.FechaFin,
-                    NumeroDeMeses = contrato?.NumeroDeMeses,
-                    MontoTotalContrato = contrato?.MontoTotal,
-                    ContratoActivo = contrato?.Estado,
+                    return new ReporteBovedasViewModel
+                    {
+                        BovedaId = b.Id,
+                        NumeroBoveda = string.IsNullOrEmpty(b.NumeroSecuencial) ? b.Id.ToString() : b.NumeroSecuencial,
+                        EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
+                        FechaCreacionBoveda = b.FechaCreacion,
+                        NumeroPiso = piso?.NumeroPiso ?? 0,
+                        NombreBloque = bloque?.Descripcion ?? "N/A",
+                        TipoBloque = bloque?.Tipo ?? "N/A",
+                        NombreCementerio = cementerio?.Nombre,
+                        NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
+                        CedulaPropietario = b.Propietario?.NumeroIdentificacion,
 
-                    NombresDifunto = difunto?.Nombres,
-                    ApellidosDifunto = difunto?.Apellidos,
-                    FechaFallecimiento = difunto?.FechaFallecimiento,
-                    NumeroIdentificacionDifunto = difunto?.NumeroIdentificacion,
+                        NumeroSecuencialContrato = contrato?.NumeroSecuencial,
+                        FechaInicioContrato = contrato?.FechaInicio,
+                        FechaFinContrato = contrato?.FechaFin,
+                        NumeroDeMeses = contrato?.NumeroDeMeses,
+                        MontoTotalContrato = contrato?.MontoTotal,
+                        ContratoActivo = contrato?.Estado,
 
-                    NombreResponsable = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "Sin Responsable",
-                    CedulaResponsable = responsable?.NumeroIdentificacion,
-                    TelefonoResponsable = responsable?.Telefono
-                };
-            }).ToList();
+                        NombresDifunto = difunto?.Nombres,
+                        ApellidosDifunto = difunto?.Apellidos,
+                        FechaFallecimiento = difunto?.FechaFallecimiento,
+                        NumeroIdentificacionDifunto = difunto?.NumeroIdentificacion,
 
-            var document = new BovedasPdfDocument(viewModels);
-            var pdf = document.GeneratePdf();
+                        NombreResponsable = responsable != null ? $"{responsable.Nombres} {responsable.Apellidos}" : "Sin Responsable",
+                        CedulaResponsable = responsable?.NumeroIdentificacion,
+                        TelefonoResponsable = responsable?.Telefono
+                    };
+                }).ToList();
 
-            Response.Headers["Content-Disposition"] = "inline; filename=ReporteBovedas.pdf";
-            return File(pdf, "application/pdf");
+                PdfErrorHandler.ValidateRequiredData(viewModels, "Datos de bóvedas");
+
+                var document = new BovedasPdfDocument(viewModels);
+                var pdf = PdfErrorHandler.GeneratePdfSafely(() => document.GeneratePdf(), "Reporte de Bóvedas");
+
+                Response.Headers["Content-Disposition"] = "inline; filename=ReporteBovedas.pdf";
+                return File(pdf, "application/pdf");
+            }, _logger, this, "Index", "Generación de reporte de bóvedas");
         }
 
 
         [HttpGet]
         public async Task<IActionResult> IngresosPorFechaPdf(DateTime? fechaInicio, DateTime? fechaFin)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
-            var viewModel = await ObtenerIngresosPorFechaViewModel(fechaInicio, fechaFin);
-            var document = new IngresosPorFechaPdfDocument(viewModel);
-            var pdf = document.GeneratePdf();
+            return await PdfErrorHandler.ExecutePdfOperationAsync(async () =>
+            {
+                var viewModel = await ObtenerIngresosPorFechaViewModel(fechaInicio, fechaFin);
+                PdfErrorHandler.ValidateRequiredData(viewModel, "Datos de ingresos por fecha");
 
-            Response.Headers["Content-Disposition"] = "inline; filename=IngresosPorFecha.pdf";
-            return File(pdf, "application/pdf");
+                var document = new IngresosPorFechaPdfDocument(viewModel);
+                var pdf = await Task.Run(() =>
+                    PdfErrorHandler.GeneratePdfSafely(() => document.GeneratePdf(), "Reporte de Ingresos por Fecha"));
+
+                Response.Headers["Content-Disposition"] = "inline; filename=IngresosPorFecha.pdf";
+                return File(pdf, "application/pdf");
+            }, _logger, this, "Index", "Generación de reporte de ingresos por fecha");
         }
 
     }

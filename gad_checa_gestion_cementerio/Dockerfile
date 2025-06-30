@@ -7,9 +7,11 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Instalar wkhtmltopdf
+# Instalar dependencias necesarias para QuestPDF y wkhtmltopdf
 RUN apt-get update && \
-    apt-get install -y wget fontconfig libfreetype6 libx11-6 libxext6 libxrender1 && \
+    apt-get install -y wget fontconfig libfreetype6 libx11-6 libxext6 libxrender1 \
+    libfontconfig1 libxss1 libgconf-2-4 libnss3 libxrandr2 libasound2 libpangocairo-1.0-0 \
+    libatk1.0-0 libcairo-gobject2 libgtk-3-0 libgdk-pixbuf2.0-0 && \
     apt-get install -y wkhtmltopdf && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \

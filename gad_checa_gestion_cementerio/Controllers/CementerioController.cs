@@ -13,7 +13,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class CementerioController : BaseController
     {
-        public CementerioController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
+        public CementerioController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<CementerioController> logger) : base(context, userManager, mapper, logger)
         {
         }
 

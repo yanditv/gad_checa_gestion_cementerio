@@ -11,8 +11,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 {
     public class NotifyController : BaseController
     {
-        public NotifyController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper)
-            : base(context, userManager, mapper)
+        public NotifyController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMapper mapper, ILogger<NotifyController> logger)
+            : base(context, userManager, mapper, logger)
         {
         }
 

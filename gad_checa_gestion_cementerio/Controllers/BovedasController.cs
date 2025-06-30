@@ -19,7 +19,7 @@ namespace WebApp.Controllers
     [Authorize]
     public class BovedasController : BaseController
     {
-        public BovedasController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager) : base(context, userManager, mapper)
+        public BovedasController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<BovedasController> logger) : base(context, userManager, mapper, logger)
         {
         }
 
