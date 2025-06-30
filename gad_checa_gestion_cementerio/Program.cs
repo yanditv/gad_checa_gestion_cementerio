@@ -277,29 +277,34 @@ async Task InitializeData(WebApplication app)
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
         var logger = services.GetRequiredService<ILogger<Program>>();
 
-        // Verificar si la base de datos existe antes de aplicar migraciones
-        if (!await dbContext.Database.CanConnectAsync())
+        // Verificar si la base de datos existe y aplicar migraciones
+        logger.LogInformation("Verificando conexión a la base de datos...");
+
+        try
         {
-            logger.LogInformation("La base de datos no existe. Creando...");
-            await dbContext.Database.EnsureCreatedAsync();
-        }
-        else
-        {
-            logger.LogInformation("La base de datos ya existe. Aplicando migraciones pendientes...");
-            try
+            if (!await dbContext.Database.CanConnectAsync())
             {
+                logger.LogInformation("La base de datos no existe. Creando y aplicando migraciones...");
                 await dbContext.Database.MigrateAsync();
             }
-            catch (Exception migrationEx)
+            else
             {
-                logger.LogWarning(migrationEx, "Error al aplicar migraciones. Continuando con la base de datos existente.");
+                logger.LogInformation("La base de datos ya existe. Aplicando migraciones pendientes...");
+                await dbContext.Database.MigrateAsync();
             }
+
+            logger.LogInformation("Migraciones aplicadas exitosamente.");
+        }
+        catch (Exception migrationEx)
+        {
+            logger.LogError(migrationEx, "Error crítico al aplicar migraciones. La aplicación no puede continuar sin las tablas de base de datos.");
+            throw;
         }
 
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // Crear roles
+        // Crear roles después de que las migraciones se hayan aplicado exitosamente
         await CreateRoles(services);
 
         // Crear usuario admin
@@ -320,86 +325,103 @@ static async Task CreateRoles(IServiceProvider serviceProvider)
 {
     var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+    var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
-    // Crear rol Admin si no existe
-    if (!await roleManager.RoleExistsAsync("Admin"))
+    try
     {
-        await roleManager.CreateAsync(new IdentityRole("Admin"));
-        logger.LogInformation("Rol Admin creado exitosamente");
+        // Verificar que las tablas de Identity existan
+        logger.LogInformation("Verificando que las tablas de Identity existan...");
+
+        // Intentar hacer una consulta simple para verificar que la tabla Roles existe
+        var rolesCount = await dbContext.Database.ExecuteSqlRawAsync("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AspNetRoles'");
+
+        logger.LogInformation("Tablas de Identity verificadas correctamente.");
+
+        // Crear rol Admin si no existe
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+            logger.LogInformation("Rol Admin creado exitosamente");
+        }
+
+        // Crear rol Usuario si no existe
+        if (!await roleManager.RoleExistsAsync("Usuario"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Usuario"));
+            logger.LogInformation("Rol Usuario creado exitosamente");
+        }
+
+        // Crear rol Administrador si no existe
+        if (!await roleManager.RoleExistsAsync("Administrador"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Administrador"));
+            logger.LogInformation("Rol Administrador creado exitosamente");
+        }
     }
-
-    // Crear rol Usuario si no existe
-    if (!await roleManager.RoleExistsAsync("Usuario"))
+    catch (Exception ex)
     {
-        await roleManager.CreateAsync(new IdentityRole("Usuario"));
-        logger.LogInformation("Rol Usuario creado exitosamente");
-    }
-
-    // Crear rol Administrador si no existe (solo se crea una vez)
-    if (!await roleManager.RoleExistsAsync("Administrador"))
-    {
-        await roleManager.CreateAsync(new IdentityRole("Administrador"));
-        logger.LogInformation("Rol Administrador creado exitosamente");
+        logger.LogError(ex, "Error al crear roles. Esto puede indicar que las migraciones de Identity no se aplicaron correctamente.");
+        throw;
     }
 }
 
 static async Task CreateAdminUser(IServiceProvider serviceProvider)
 {
     var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
-    // Verificar si el rol Administrador existe
-    if (!await roleManager.RoleExistsAsync("Administrador"))
+    try
     {
-        await roleManager.CreateAsync(new IdentityRole("Administrador"));
-        logger.LogInformation("Rol Administrador creado exitosamente");
+        // Buscar el usuario administrador
+        var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
+
+        if (adminUser == null)
+        {
+            // Crear el usuario administrador
+            adminUser = new ApplicationUser
+            {
+                UserName = "admin@teobu.com",
+                Email = "admin@teobu.com",
+                EmailConfirmed = true,
+                Nombres = "Administrador",
+                Apellidos = "Sistema",
+                PhoneNumber = string.Empty,
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0
+            };
+
+            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (result.Succeeded)
+            {
+                logger.LogInformation("Usuario administrador creado exitosamente");
+            }
+            else
+            {
+                logger.LogError("Error al crear el usuario administrador: {0}", string.Join(", ", result.Errors.Select(e => e.Description)));
+                return;
+            }
+        }
+
+        // Asignar el rol Administrador al usuario
+        if (!await userManager.IsInRoleAsync(adminUser, "Administrador"))
+        {
+            var result = await userManager.AddToRoleAsync(adminUser, "Administrador");
+            if (result.Succeeded)
+            {
+                logger.LogInformation("Rol Administrador asignado al usuario administrador exitosamente");
+            }
+            else
+            {
+                logger.LogError("Error al asignar el rol Administrador: {0}", string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+        }
     }
-
-    // Buscar el usuario administrador
-    var adminUser = await userManager.FindByEmailAsync("admin@teobu.com");
-
-    if (adminUser == null)
+    catch (Exception ex)
     {
-        // Crear el usuario administrador
-        adminUser = new ApplicationUser
-        {
-            UserName = "admin@teobu.com",
-            Email = "admin@teobu.com",
-            EmailConfirmed = true,
-            Nombres = "Administrador",
-            Apellidos = "Sistema",
-            PhoneNumber = string.Empty,
-            PhoneNumberConfirmed = false,
-            TwoFactorEnabled = false,
-            LockoutEnabled = true,
-            AccessFailedCount = 0
-        };
-
-        var result = await userManager.CreateAsync(adminUser, "Admin123!");
-        if (result.Succeeded)
-        {
-            logger.LogInformation("Usuario administrador creado exitosamente");
-        }
-        else
-        {
-            logger.LogError("Error al crear el usuario administrador: {0}", string.Join(", ", result.Errors.Select(e => e.Description)));
-            return;
-        }
-    }
-
-    // Asignar el rol Administrador al usuario
-    if (!await userManager.IsInRoleAsync(adminUser, "Administrador"))
-    {
-        var result = await userManager.AddToRoleAsync(adminUser, "Administrador");
-        if (result.Succeeded)
-        {
-            logger.LogInformation("Rol Administrador asignado al usuario administrador exitosamente");
-        }
-        else
-        {
-            logger.LogError("Error al asignar el rol Administrador: {0}", string.Join(", ", result.Errors.Select(e => e.Description)));
-        }
+        logger.LogError(ex, "Error al crear el usuario administrador.");
+        throw;
     }
 }
 
