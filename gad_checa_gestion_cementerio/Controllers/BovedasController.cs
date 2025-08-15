@@ -29,7 +29,7 @@ namespace WebApp.Controllers
             ViewBag.Bloques = new SelectList(await _context.Bloque
                 .Select(b => new { b.Id, b.Descripcion })
                 .ToListAsync(), "Id", "Descripcion");
-            ViewBag.Tipos = new SelectList(new[] { "Bovedas", "Nichos" });
+            ViewBag.Tipos = new SelectList(new[] { "Bovedas", "Nichos", "Tumulos", "Logicos" });
             ViewBag.Estados = new SelectList(new[] {
                 new { Value = "true", Text = "Disponible" },
                 new { Value = "false", Text = "Ocupada" }
@@ -366,6 +366,33 @@ namespace WebApp.Controllers
         private bool BovedaExists(int id)
         {
             return _context.Boveda.Any(e => e.Id == id);
+        }
+
+        // Método para obtener bóvedas para el modal de relacionar contratos
+        [HttpGet]
+        public IActionResult GetBovedas()
+        {
+            var bovedas = _context.Boveda
+                .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
+                .Where(b => b.Estado == true)
+                .Select(b => new
+                {
+                    id = b.Id,
+                    numero = b.Numero,
+                    bloque = b.Piso.Bloque.Descripcion,
+                    piso = b.Piso.NumeroPiso
+                })
+                .OrderBy(b => b.bloque)
+                .ThenBy(b => b.piso)
+                .ThenBy(b => b.numero)
+                .ToList();
+
+            return Json(new
+            {
+                success = true,
+                bovedas = bovedas
+            });
         }
     }
 }

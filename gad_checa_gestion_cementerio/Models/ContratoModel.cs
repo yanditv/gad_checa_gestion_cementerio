@@ -68,6 +68,12 @@ public class ContratoModel
     // Referencia al contrato original (para mostrar información)
     public ContratoModel? ContratoOrigen { get; set; }
 
+    // ID del contrato relacionado (para difuntos que comparten la misma bóveda)
+    public int? ContratoRelacionadoId { get; set; }
+    
+    // Referencia al contrato relacionado (para mostrar información)
+    public ContratoModel? ContratoRelacionado { get; set; }
+
     public string? PathDocumentoFirmado { get; set; }
     //Datos para reportes
 

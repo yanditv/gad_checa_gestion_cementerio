@@ -1,0 +1,260 @@
+<!-- Modal para Relacionar Contratos -->
+<div class="modal fade" id="relacionarContratoModal" tabindex="-1" aria-labelledby="relacionarContratoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="relacionarContratoModalLabel">
+                    <i class="fas fa-link me-2"></i>Relacionar con Otro Contrato
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Seleccione un contrato existente para relacionarlo con este contrato. Ambos contratos compartirán la misma bóveda física.
+                </div>
+
+                <!-- Filtros de búsqueda -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="filtroNumero" class="form-label">Número de Contrato</label>
+                        <input type="text" class="form-control" id="filtroNumero" placeholder="Ej: 2024-001">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="filtroDifunto" class="form-label">Nombre del Difunto</label>
+                        <input type="text" class="form-control" id="filtroDifunto" placeholder="Nombres o apellidos">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="filtroBovedaId" class="form-label">Bóveda</label>
+                        <select class="form-select" id="filtroBovedaId">
+                            <option value="">Todas las bóvedas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary" onclick="buscarContratos()">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        <button type="button" class="btn btn-secondary ms-2" onclick="limpiarFiltros()">
+                            <i class="fas fa-eraser me-2"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de contratos -->
+                <div id="listaContratos" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>Use los filtros para buscar contratos disponibles</p>
+                    </div>
+                </div>
+
+                <!-- Contrato seleccionado -->
+                <div id="contratoSeleccionado" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle me-2"></i>Contrato Seleccionado:</h6>
+                        <div id="infoContratoSeleccionado"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarRelacion" onclick="confirmarRelacion()" disabled>
+                    <i class="fas fa-link me-2"></i>Relacionar Contratos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let contratoActualId = 0;
+let contratoSeleccionadoId = 0;
+
+function abrirModalRelacionar(contratoId) {
+    contratoActualId = contratoId;
+    contratoSeleccionadoId = 0;
+    document.getElementById('btnConfirmarRelacion').disabled = true;
+    document.getElementById('contratoSeleccionado').style.display = 'none';
+    
+    // Cargar bóvedas en el filtro
+    cargarBovedas();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('relacionarContratoModal'));
+    modal.show();
+}
+
+function cargarBovedas() {
+    fetch('/Bovedas/GetBovedas')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('filtroBovedaId');
+            select.innerHTML = '<option value="">Todas las bóvedas</option>';
+            
+            if (data.success) {
+                data.bovedas.forEach(boveda => {
+                    const option = document.createElement('option');
+                    option.value = boveda.id;
+                    option.textContent = `${boveda.bloque} - Piso ${boveda.piso} - Bóveda ${boveda.numero}`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error al cargar bóvedas:', error));
+}
+
+function buscarContratos() {
+    const filtros = {
+        numero: document.getElementById('filtroNumero').value,
+        difunto: document.getElementById('filtroDifunto').value,
+        bovedaId: document.getElementById('filtroBovedaId').value,
+        contratoActualId: contratoActualId
+    };
+
+    fetch('/Contratos/BuscarContratosParaRelacionar?' + new URLSearchParams(filtros))
+        .then(response => response.json())
+        .then(data => {
+            mostrarResultados(data.contratos);
+        })
+        .catch(error => {
+            console.error('Error al buscar contratos:', error);
+            mostrarError('Error al buscar contratos');
+        });
+}
+
+function mostrarResultados(contratos) {
+    const container = document.getElementById('listaContratos');
+    
+    if (!contratos || contratos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-search fa-2x mb-2"></i>
+                <p>No se encontraron contratos disponibles</p>
+            </div>`;
+        return;
+    }
+
+    let html = '';
+    contratos.forEach(contrato => {
+        html += `
+            <div class="card mb-2 contrato-item" onclick="seleccionarContrato(${contrato.id}, '${contrato.numeroSecuencial}', '${contrato.difunto.nombres}', '${contrato.difunto.apellidos}', '${contrato.boveda}')">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <strong>${contrato.numeroSecuencial}</strong>
+                        </div>
+                        <div class="col-md-4">
+                            ${contrato.difunto.nombres} ${contrato.difunto.apellidos}
+                        </div>
+                        <div class="col-md-3">
+                            ${contrato.boveda}
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <small class="text-muted">${contrato.fechaFin}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function seleccionarContrato(id, numero, nombres, apellidos, boveda) {
+    // Remover selección anterior
+    document.querySelectorAll('.contrato-item').forEach(item => {
+        item.classList.remove('border-primary', 'bg-light');
+    });
+
+    // Marcar nuevo seleccionado
+    event.currentTarget.classList.add('border-primary', 'bg-light');
+
+    contratoSeleccionadoId = id;
+    
+    // Mostrar información del contrato seleccionado
+    document.getElementById('infoContratoSeleccionado').innerHTML = `
+        <strong>Contrato:</strong> ${numero}<br>
+        <strong>Difunto:</strong> ${nombres} ${apellidos}<br>
+        <strong>Bóveda:</strong> ${boveda}
+    `;
+    
+    document.getElementById('contratoSeleccionado').style.display = 'block';
+    document.getElementById('btnConfirmarRelacion').disabled = false;
+}
+
+function confirmarRelacion() {
+    if (contratoSeleccionadoId === 0) return;
+
+    const data = {
+        contratoId: contratoActualId,
+        contratoRelacionadoId: contratoSeleccionadoId
+    };
+
+    fetch('/Contratos/RelacionarContratos', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('relacionarContratoModal')).hide();
+            
+            // Mostrar mensaje de éxito
+            showNotification('Contratos relacionados exitosamente', 'success');
+            
+            // Recargar la página para mostrar la relación
+            location.reload();
+        } else {
+            showNotification(data.message || 'Error al relacionar contratos', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al relacionar contratos', 'error');
+    });
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtroNumero').value = '';
+    document.getElementById('filtroDifunto').value = '';
+    document.getElementById('filtroBovedaId').value = '';
+    document.getElementById('listaContratos').innerHTML = `
+        <div class="text-center text-muted">
+            <i class="fas fa-search fa-2x mb-2"></i>
+            <p>Use los filtros para buscar contratos disponibles</p>
+        </div>`;
+}
+
+function mostrarError(mensaje) {
+    document.getElementById('listaContratos').innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>${mensaje}
+        </div>`;
+}
+
+function showNotification(message, type) {
+    // Función para mostrar notificaciones (implementar según tu sistema de notificaciones)
+    alert(message);
+}
+</script>
+
+<style>
+.contrato-item {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.contrato-item:hover {
+    border-color: #007bff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>

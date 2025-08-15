@@ -60,7 +60,11 @@
                                     <div class="d-flex align-items-center">
                                         <div class="avatar avatar-sm me-2">
                                             <span class="avatar-initial rounded-circle bg-primary">
-                                                @userRole.User.Nombres[0]@userRole.User.Apellidos[0]
+                                                @{
+                                                    var userInicial1 = !string.IsNullOrEmpty(userRole.User.Nombres) ? userRole.User.Nombres[0].ToString().ToUpper() : "?";
+                                                    var userInicial2 = !string.IsNullOrEmpty(userRole.User.Apellidos) ? userRole.User.Apellidos[0].ToString().ToUpper() : "?";
+                                                }
+                                                @userInicial1@userInicial2
                                             </span>
                                         </div>
                                         <div>

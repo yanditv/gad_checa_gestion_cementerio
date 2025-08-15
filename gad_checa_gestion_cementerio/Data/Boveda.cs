@@ -22,6 +22,7 @@ namespace gad_checa_gestion_cementerio.Data
         [Required]
         public bool Estado { get; set; }
 
+
         // Auditoría
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }

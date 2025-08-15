@@ -83,6 +83,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<ContratoService>();
 builder.Services.AddScoped<gad_checa_gestion_cementerio.Services.IPdfService, gad_checa_gestion_cementerio.Services.PdfService>();
+builder.Services.AddScoped<CatastroMigrationService>();
 
 // Configuración de MVC con áreas
 builder.Services.AddControllersWithViews()
@@ -312,6 +313,9 @@ async Task InitializeData(WebApplication app)
 
         // Crear datos iniciales
         await CreateInitialData(dbContext, userManager);
+
+        // Ejecutar migración del catastro si el archivo existe
+        await MigrarCatastroSiExiste(services);
     }
     catch (Exception ex)
     {
@@ -496,4 +500,85 @@ async Task CreateInitialData(ApplicationDbContext dbContext, UserManager<Applica
     }
 
     await dbContext.SaveChangesAsync();
+}
+
+// Método para migrar el catastro si el archivo existe
+async Task MigrarCatastroSiExiste(IServiceProvider services)
+{
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    var migrationService = services.GetRequiredService<CatastroMigrationService>();
+    var env = services.GetRequiredService<IWebHostEnvironment>();
+
+    try
+    {
+        // Buscar el archivo de catastro
+        var rutaArchivo = Path.Combine(env.ContentRootPath, "CATASTRO_FINAL.xlsx");
+        
+        if (!File.Exists(rutaArchivo))
+        {
+            logger.LogInformation("Archivo CATASTRO_FINAL.xlsx no encontrado. Saltando migración del catastro.");
+            return;
+        }
+
+        // FORZAR MIGRACIÓN - Comentar las verificaciones para testing
+        logger.LogInformation("🔄 FORZANDO EJECUCIÓN DE MIGRACIÓN DEL CATASTRO...");
+        
+        // Limpiar datos existentes SIEMPRE
+        logger.LogInformation("⚠️  Eliminando datos existentes para permitir migración...");
+        
+        try
+        {
+            // Eliminar en orden correcto para evitar conflictos FK
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Cuota]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Pago]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [ContratoResponsable]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Contrato]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Difunto]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Persona] WHERE TipoPersona IN ('Persona', 'Responsable', 'Propietario')");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Boveda]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Piso]");
+            await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Bloque]");
+            
+            logger.LogInformation("✅ Datos eliminados exitosamente.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning($"Advertencia al limpiar datos: {ex.Message}");
+        }
+
+        logger.LogInformation("Archivo de catastro encontrado. Iniciando migración automática...");
+
+        var resultado = await migrationService.MigrarCatastroDesdeExcel(rutaArchivo);
+
+        if (resultado.EsExitoso)
+        {
+            logger.LogInformation("✅ Migración del catastro completada exitosamente:");
+            logger.LogInformation($"   - Bloques creados: {resultado.BloquesCreados}");
+            logger.LogInformation($"   - Pisos creados: {resultado.PisosCreados}");
+            logger.LogInformation($"   - Bóvedas creadas: {resultado.BovedasCreadas}");
+            logger.LogInformation($"   - Personas creadas: {resultado.PersonasCreadas}");
+            logger.LogInformation($"   - Difuntos creados: {resultado.DifuntosCreados}");
+            logger.LogInformation($"   - Contratos creados: {resultado.ContratosCreados}");
+            logger.LogInformation($"   - Registros procesados: {resultado.RegistrosProcesados}");
+
+            // Renombrar el archivo para evitar re-ejecuciones
+            var archivoRenombrado = Path.Combine(env.ContentRootPath, $"CATASTRO_FINAL_MIGRADO_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+            File.Move(rutaArchivo, archivoRenombrado);
+            logger.LogInformation($"Archivo renombrado a: {Path.GetFileName(archivoRenombrado)}");
+        }
+        else
+        {
+            logger.LogError("❌ Error durante la migración del catastro:");
+            foreach (var error in resultado.Errores)
+            {
+                logger.LogError($"   - {error}");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error crítico durante la migración automática del catastro");
+        // No lanzar la excepción para no interrumpir el inicio de la aplicación
+    }
 }

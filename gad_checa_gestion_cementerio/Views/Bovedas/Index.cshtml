@@ -124,7 +124,11 @@
                                         {
                                             <div class="d-flex align-items-center">
                                                 <span class="avatar-circle bg-info text-white me-2">
-                                                    @item.Propietario.Nombres[0]@item.Propietario.Apellidos[0]
+                                                    @{
+                                                        var inicial1 = !string.IsNullOrEmpty(item.Propietario.Nombres) ? item.Propietario.Nombres[0].ToString().ToUpper() : "?";
+                                                        var inicial2 = !string.IsNullOrEmpty(item.Propietario.Apellidos) ? item.Propietario.Apellidos[0].ToString().ToUpper() : "?";
+                                                    }
+                                                    @inicial1@inicial2
                                                 </span>
                                                 <div>
                                                     <div class="fw-bold">@item.Propietario.Nombres @item.Propietario.Apellidos

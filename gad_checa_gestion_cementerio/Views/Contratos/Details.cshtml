@@ -29,6 +29,20 @@
                         <i class="fas fa-file-invoice-dollar me-2"></i>Imprimir Recibo
                     </a>
                 }
+                
+                @* Botón para relacionar contratos *@
+                @if (Model.ContratoRelacionadoId == null)
+                {
+                    <button type="button" class="btn btn-info" onclick="abrirModalRelacionar(@Model.Id)">
+                        <i class="fas fa-link me-2"></i>Relacionar Contrato
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-warning" onclick="removerRelacion(@Model.Id)">
+                        <i class="fas fa-unlink me-2"></i>Remover Relación
+                    </button>
+                }
             </div>
         </div>
     </div>
@@ -221,6 +235,56 @@
             </div>
         </div>
 
+        <!-- Información del Contrato Relacionado -->
+        @if (Model.ContratoRelacionado != null)
+        {
+            <div class="card border-0 shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-link me-2"></i>Contrato Relacionado (Comparte la misma bóveda)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-contract text-success me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Número de Contrato</small>
+                                    <span class="fw-bold">@Model.ContratoRelacionado.NumeroSecuencial</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user text-success me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Difunto</small>
+                                    <span class="fw-bold">@Model.ContratoRelacionado.Difunto?.Nombres @Model.ContratoRelacionado.Difunto?.Apellidos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar text-success me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Vigencia</small>
+                                    <span class="fw-bold">@Model.ContratoRelacionado.FechaInicio.ToString("dd/MM/yyyy") - @Model.ContratoRelacionado.FechaFin?.ToString("dd/MM/yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <a href="@Url.Action("Details", new { id = Model.ContratoRelacionado.Id })" class="btn btn-outline-success">
+                                    <i class="fas fa-eye me-2"></i>Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- Información del Difunto -->
         @if (Model.Difunto != null)
         {
@@ -233,7 +297,11 @@
                         <div class="col-md-6">
                             <div class="d-flex align-items-center">
                                 <div class="avatar-circle bg-primary text-white me-3">
-                                    @Model.Difunto.Nombres[0]@Model.Difunto.Apellidos[0]
+                                    @{
+                                        var difuntoInicial1 = !string.IsNullOrEmpty(Model.Difunto?.Nombres) ? Model.Difunto.Nombres[0].ToString().ToUpper() : "?";
+                                        var difuntoInicial2 = !string.IsNullOrEmpty(Model.Difunto?.Apellidos) ? Model.Difunto.Apellidos[0].ToString().ToUpper() : "?";
+                                    }
+                                    @difuntoInicial1@difuntoInicial2
                                 </div>
                                 <div>
                                     <h6 class="mb-0">@Model.Difunto.Nombres @Model.Difunto.Apellidos</h6>
@@ -309,7 +377,11 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-circle bg-info text-white me-3">
-                                                    @responsable.Nombres[0]@responsable.Apellidos[0]
+                                                    @{
+                                                        var respInicial1 = !string.IsNullOrEmpty(responsable.Nombres) ? responsable.Nombres[0].ToString().ToUpper() : "?";
+                                                        var respInicial2 = !string.IsNullOrEmpty(responsable.Apellidos) ? responsable.Apellidos[0].ToString().ToUpper() : "?";
+                                                    }
+                                                    @respInicial1@respInicial2
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0">@responsable.Nombres @responsable.Apellidos</h6>
@@ -419,3 +491,36 @@
         }
     </style>
 }
+
+@* Incluir el modal para relacionar contratos *@
+@await Html.PartialAsync("_RelacionarContratoModal")
+
+<script>
+function removerRelacion(contratoId) {
+    if (confirm('¿Está seguro de que desea remover la relación entre estos contratos?')) {
+        console.log('Removiendo relación para contrato ID:', contratoId);
+        
+        // Usar la ruta GET más simple
+        fetch(`/Contratos/RemoverRelacion?id=${contratoId}`, {
+            method: 'GET'
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                alert('Relación removida exitosamente');
+                location.reload();
+            } else {
+                alert(data.message || 'Error al remover la relación');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al remover la relación: ' + error.message);
+        });
+    }
+}
+</script>

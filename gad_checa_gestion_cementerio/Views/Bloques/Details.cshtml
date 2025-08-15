@@ -256,7 +256,11 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-circle bg-primary text-white me-3">
-                                                    @difunto.Nombres[0]@difunto.Apellidos[0]
+                                                    @{
+                                                        var inicial1 = !string.IsNullOrEmpty(difunto.Nombres) ? difunto.Nombres[0].ToString().ToUpper() : "?";
+                                                        var inicial2 = !string.IsNullOrEmpty(difunto.Apellidos) ? difunto.Apellidos[0].ToString().ToUpper() : "?";
+                                                    }
+                                                    @inicial1@inicial2
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0">@difunto.Nombres @difunto.Apellidos</h6>

@@ -441,7 +441,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Cementerio = bloque.Cementerio,
                 BovedasOcupadas = bloque.Pisos
                     .SelectMany(p => p.Bovedas)
-                    .Count(b => b.Contratos.Any(c => c.FechaEliminacion == null)),
+                    .Count(b => b.Contratos.Any(c => 
+                        c.FechaEliminacion == null &&
+                        c.Estado) || 
+                        b.Propietario != null),
                 PreciosPorPiso = bloque.Pisos.Select(p => new PisoPrecioViewModel
                 {
                     NumeroPiso = p.NumeroPiso,
@@ -455,12 +458,13 @@ namespace gad_checa_gestion_cementerio.Controllers
                         NumeroSecuencial = b.NumeroSecuencial,
                         NumeroPiso = p.NumeroPiso,
                         TieneContratoActivo = b.Contratos.Any(c =>
-                            c.FechaInicio <= DateTime.Now &&
-                            (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
+                            c.FechaEliminacion == null &&
+                            c.Estado),
                         TienePropietario = b.Propietario != null,
                         FechaFinContrato = b.Contratos
-                            .Where(c => c.FechaInicio <= DateTime.Now &&
-                                      (c.FechaFin == null || c.FechaFin >= DateTime.Now))
+                            .Where(c => c.FechaEliminacion == null &&
+                                      c.Estado)
+                            .OrderByDescending(c => c.FechaFin)
                             .Select(c => c.FechaFin)
                             .FirstOrDefault()
                     })).ToList(),

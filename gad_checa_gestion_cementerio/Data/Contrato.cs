@@ -88,6 +88,12 @@ namespace gad_checa_gestion_cementerio.Data
         [ForeignKey("ContratoOrigenId")]
         public Contrato? ContratoOrigen { get; set; }
 
+        // Referencia a otro contrato que comparte la misma bóveda física
+        public int? ContratoRelacionadoId { get; set; }
+        
+        [ForeignKey("ContratoRelacionadoId")]
+        public Contrato? ContratoRelacionado { get; set; }
+
         public string? PathDocumentoFirmado { get; set; } // Nuevo campo para el tipo de contrato
     }
 }

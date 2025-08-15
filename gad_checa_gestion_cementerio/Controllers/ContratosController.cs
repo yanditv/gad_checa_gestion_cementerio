@@ -60,6 +60,8 @@ namespace gad_checa_gestion_cementerio.Controllers
             .Include(c => c.Boveda)
                 .ThenInclude(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
+            .Include(c => c.ContratoRelacionado)
+                .ThenInclude(cr => cr.Difunto)
             .AsQueryable();
 
             if (!string.IsNullOrEmpty(filtro))
@@ -117,6 +119,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(c => c.Cuotas)
                     .ThenInclude(c => c.Pagos)
                 .Include(c => c.ContratoOrigen) // Incluir el contrato original si existe
+                .Include(c => c.ContratoRelacionado) // Incluir el contrato relacionado si existe
+                    .ThenInclude(cr => cr.Difunto) // Incluir el difunto del contrato relacionado
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (contrato == null)
@@ -149,7 +153,15 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 contratoModel.ContratoOrigen = _mapper.Map<ContratoModel>(contrato.ContratoOrigen);
                 ViewBag.ContratoOrigen = contratoModel.ContratoOrigen;
-            }            // Buscar contratos que son renovaciones de este (contratos hijos)
+            }
+
+            // Si tiene un contrato relacionado, cargar sus datos
+            if (contrato.ContratoRelacionadoId.HasValue && contrato.ContratoRelacionado != null)
+            {
+                contratoModel.ContratoRelacionado = _mapper.Map<ContratoModel>(contrato.ContratoRelacionado);
+            }
+
+            // Buscar contratos que son renovaciones de este (contratos hijos)
             var contratosHijos = _context.Contrato
                 .Where(c => c.ContratoOrigenId == id)
                 .OrderBy(c => c.FechaInicio)
@@ -201,6 +213,61 @@ namespace gad_checa_gestion_cementerio.Controllers
             ViewBag.MaxRenovacionesPermitidas = maxRenovaciones;
 
             return View(contratoModel);
+        }
+
+        // GET: Contratos/CreateRelacionado - Para crear un segundo contrato en la misma bóveda
+        public IActionResult CreateRelacionado(int contratoExistenteId)
+        {
+            // Limpiar la sesión anterior si existe
+            HttpContext.Session.Remove("NuevoContrato");
+
+            var contratoExistente = _context.Contrato
+                .Include(c => c.Boveda)
+                    .ThenInclude(b => b.Piso)
+                        .ThenInclude(p => p.Bloque)
+                .Include(c => c.Difunto)
+                .FirstOrDefault(c => c.Id == contratoExistenteId);
+
+            if (contratoExistente == null)
+            {
+                TempData["Error"] = "No se encontró el contrato especificado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Verificar que la bóveda no esté completamente ocupada (máximo 2 difuntos)
+            var contratosEnBoveda = _context.Contrato
+                .Where(c => c.BovedaId == contratoExistente.BovedaId && 
+                           c.Estado == true && 
+                           c.FechaFin >= DateTime.Today)
+                .Count();
+
+            if (contratosEnBoveda >= 2)
+            {
+                TempData["Error"] = "Esta bóveda ya tiene el máximo de contratos permitidos (2).";
+                return RedirectToAction(nameof(Details), new { id = contratoExistenteId });
+            }
+
+            // Preparar el modelo con información del contrato existente
+            var model = new CreateContratoModel
+            {
+                ContratoExistenteId = contratoExistenteId,
+                ContratoExistente = _mapper.Map<ContratoModel>(contratoExistente),
+                contrato = new ContratoModel
+                {
+                    BovedaId = contratoExistente.BovedaId,
+                    ContratoRelacionadoId = contratoExistenteId,
+                    FechaInicio = DateTime.Now,
+                    Estado = true,
+                    EsRenovacion = false
+                }
+            };
+
+            SaveContratoToSession(model);
+
+            ViewBag.EsContratoRelacionado = true;
+            ViewBag.ContratoExistente = contratoExistente;
+            
+            return View("Create", model);
         }
 
         // GET: Contratos/Create
@@ -579,7 +646,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                             FechaActualizacion = now,
                             Estado = true,
                             EsRenovacion = viewModel.contrato.EsRenovacion, // Incluir información sobre si es renovación
-                            ContratoOrigenId = viewModel.contrato.ContratoOrigenId // Establecer referencia al contrato original
+                            ContratoOrigenId = viewModel.contrato.ContratoOrigenId, // Establecer referencia al contrato original
+                            ContratoRelacionadoId = viewModel.contrato.ContratoRelacionadoId // Establecer referencia al contrato relacionado
                         };
 
                         // Crear el difunto
@@ -601,6 +669,17 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                         _context.Contrato.Add(contrato);
                         _context.SaveChanges();
+
+                        // Si es un contrato relacionado, actualizar la relación bidireccional
+                        if (contrato.ContratoRelacionadoId.HasValue)
+                        {
+                            var contratoExistente = _context.Contrato.Find(contrato.ContratoRelacionadoId.Value);
+                            if (contratoExistente != null && contratoExistente.ContratoRelacionadoId == null)
+                            {
+                                contratoExistente.ContratoRelacionadoId = contrato.Id;
+                                _context.SaveChanges();
+                            }
+                        }
 
                         // Crear las cuotas después de que el contrato tenga ID
                         contrato.Cuotas = _mapper.Map<List<Cuota>>(viewModel.contrato.Cuotas);
@@ -1971,6 +2050,205 @@ namespace gad_checa_gestion_cementerio.Controllers
                     fechaFin = r.FechaFin?.ToString("yyyy-MM-dd")
                 })
             });
+        }
+
+        // Método para obtener contratos existentes en una bóveda
+        [HttpGet]
+        public IActionResult GetContratosEnBoveda(int bovedaId)
+        {
+            var contratos = _context.Contrato
+                .Include(c => c.Difunto)
+                .Where(c => c.BovedaId == bovedaId && c.Estado == true && c.FechaFin >= DateTime.Today)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    numeroSecuencial = c.NumeroSecuencial,
+                    difunto = new
+                    {
+                        nombres = c.Difunto.Nombres,
+                        apellidos = c.Difunto.Apellidos
+                    },
+                    fechaFin = c.FechaFin.ToString("yyyy-MM-dd"),
+                    tieneContratoRelacionado = c.ContratoRelacionadoId != null
+                })
+                .ToList();
+
+            return Json(new
+            {
+                success = true,
+                contratos = contratos,
+                puedeAgregarOtro = contratos.Count < 2
+            });
+        }
+
+        // Método para verificar si una bóveda está disponible para un segundo contrato
+        [HttpGet]
+        public IActionResult VerificarDisponibilidadBoveda(int bovedaId)
+        {
+            var contratosActivos = _context.Contrato
+                .Where(c => c.BovedaId == bovedaId && c.Estado == true && c.FechaFin >= DateTime.Today)
+                .Count();
+
+            return Json(new
+            {
+                success = true,
+                disponible = contratosActivos < 2,
+                contratosActivos = contratosActivos,
+                espaciosDisponibles = 2 - contratosActivos
+            });
+        }
+
+        // Método para buscar contratos disponibles para relacionar
+        [HttpGet]
+        public IActionResult BuscarContratosParaRelacionar(string numero = "", string difunto = "", int? bovedaId = null, int contratoActualId = 0)
+        {
+            var query = _context.Contrato
+                .Include(c => c.Difunto)
+                .Include(c => c.Boveda)
+                    .ThenInclude(b => b.Piso)
+                        .ThenInclude(p => p.Bloque)
+                .Where(c => c.Estado == true && 
+                           c.Id != contratoActualId && // Excluir el contrato actual
+                           c.ContratoRelacionadoId == null); // Solo contratos sin relación
+
+            // Aplicar filtros
+            if (!string.IsNullOrEmpty(numero))
+            {
+                query = query.Where(c => c.NumeroSecuencial.Contains(numero));
+            }
+
+            if (!string.IsNullOrEmpty(difunto))
+            {
+                query = query.Where(c => c.Difunto.Nombres.Contains(difunto) || 
+                                        c.Difunto.Apellidos.Contains(difunto));
+            }
+
+            if (bovedaId.HasValue)
+            {
+                query = query.Where(c => c.BovedaId == bovedaId.Value);
+            }
+
+            var contratos = query
+                .OrderByDescending(c => c.FechaCreacion)
+                .Take(50) // Limitar resultados
+                .Select(c => new
+                {
+                    id = c.Id,
+                    numeroSecuencial = c.NumeroSecuencial,
+                    difunto = new
+                    {
+                        nombres = c.Difunto.Nombres,
+                        apellidos = c.Difunto.Apellidos
+                    },
+                    boveda = $"{c.Boveda.Piso.Bloque.Descripcion} - Piso {c.Boveda.Piso.NumeroPiso} - Bóveda {c.Boveda.Numero}",
+                    fechaFin = c.FechaFin.ToString("dd/MM/yyyy")
+                })
+                .ToList();
+
+            return Json(new
+            {
+                success = true,
+                contratos = contratos
+            });
+        }
+
+        // Método para relacionar dos contratos existentes
+        [HttpPost]
+        public async Task<IActionResult> RelacionarContratos([FromBody] RelacionarContratosRequest request)
+        {
+            try
+            {
+                var contrato1 = await _context.Contrato.FindAsync(request.ContratoId);
+                var contrato2 = await _context.Contrato.FindAsync(request.ContratoRelacionadoId);
+
+                if (contrato1 == null || contrato2 == null)
+                {
+                    return Json(new { success = false, message = "Uno o ambos contratos no fueron encontrados." });
+                }
+
+                // Verificar que ninguno ya tenga una relación
+                if (contrato1.ContratoRelacionadoId != null || contrato2.ContratoRelacionadoId != null)
+                {
+                    return Json(new { success = false, message = "Uno de los contratos ya tiene una relación establecida." });
+                }
+
+                // Verificar que ambos contratos estén activos
+                if (!contrato1.Estado || !contrato2.Estado)
+                {
+                    return Json(new { success = false, message = "Ambos contratos deben estar activos para poder relacionarlos." });
+                }
+
+                // Establecer la relación bidireccional
+                contrato1.ContratoRelacionadoId = contrato2.Id;
+                contrato2.ContratoRelacionadoId = contrato1.Id;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { 
+                    success = true, 
+                    message = $"Contratos {contrato1.NumeroSecuencial} y {contrato2.NumeroSecuencial} relacionados exitosamente." 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al relacionar contratos");
+                return Json(new { success = false, message = "Error interno del servidor." });
+            }
+        }
+
+        // Método para remover la relación entre contratos (POST con form data)
+        [HttpPost]
+        public async Task<IActionResult> RemoverRelacionContratos(int contratoId)
+        {
+            try
+            {
+                _logger.LogInformation($"Intentando remover relación para contrato ID: {contratoId}");
+                
+                var contrato = await _context.Contrato.FindAsync(contratoId);
+                if (contrato == null)
+                {
+                    _logger.LogWarning($"Contrato con ID {contratoId} no encontrado");
+                    return Json(new { success = false, message = $"Contrato con ID {contratoId} no encontrado." });
+                }
+
+                _logger.LogInformation($"Contrato encontrado: {contrato.NumeroSecuencial}, ContratoRelacionadoId: {contrato.ContratoRelacionadoId}");
+
+                if (contrato.ContratoRelacionadoId.HasValue)
+                {
+                    // Encontrar el contrato relacionado y remover la relación bidireccional
+                    var contratoRelacionado = await _context.Contrato.FindAsync(contrato.ContratoRelacionadoId.Value);
+                    if (contratoRelacionado != null)
+                    {
+                        contratoRelacionado.ContratoRelacionadoId = null;
+                    }
+
+                    contrato.ContratoRelacionadoId = null;
+                    await _context.SaveChangesAsync();
+
+                    return Json(new { success = true, message = "Relación removida exitosamente." });
+                }
+
+                return Json(new { success = false, message = "Este contrato no tiene ninguna relación establecida." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al remover relación entre contratos");
+                return Json(new { success = false, message = "Error interno del servidor." });
+            }
+        }
+
+        // Método alternativo para remover relación usando query parameters
+        [HttpGet]
+        public async Task<IActionResult> RemoverRelacion(int id)
+        {
+            return await RemoverRelacionContratos(id);
+        }
+
+        // Clase para el request de relacionar contratos
+        public class RelacionarContratosRequest
+        {
+            public int ContratoId { get; set; }
+            public int ContratoRelacionadoId { get; set; }
         }
     }
 }

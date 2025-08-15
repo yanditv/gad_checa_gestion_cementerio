@@ -91,6 +91,13 @@ namespace gad_checa_gestion_cementerio.Data
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
+            // Configurar auto-referencia para contratos relacionados
+            builder.Entity<Contrato>()
+                .HasOne(c => c.ContratoRelacionado)
+                .WithMany()
+                .HasForeignKey(c => c.ContratoRelacionadoId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Difunto>()
                 .HasOne<ApplicationUser>(d => d.UsuarioCreador)
                 .WithMany()

@@ -15,5 +15,9 @@ public class CreateContratoModel
     public DifuntoModel difunto { get; set; }
     public List<ResponsableModel> responsables { get; set; }
     public PagoModel pago { get; set; }
+    
+    // Para manejar contratos relacionados (segundo difunto en la misma bóveda)
+    public int? ContratoExistenteId { get; set; }
+    public ContratoModel? ContratoExistente { get; set; }
 
 }
