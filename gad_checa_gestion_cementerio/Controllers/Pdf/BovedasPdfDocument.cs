@@ -472,15 +472,9 @@ public class BovedasPdfDocument : IDocument
     {
         if (item.NumeroDeMeses != null && item.NumeroDeMeses > 0)
         {
-            var años = item.NumeroDeMeses / 12.0;
-            if (años >= 1)
-            {
-                return años % 1 == 0 ? $"{años:F0} años" : $"{años:F1} años";
-            }
-            else
-            {
-                return $"{item.NumeroDeMeses} años";
-            }
+            // Ahora NumeroDeMeses almacena años directamente
+            var años = item.NumeroDeMeses.Value;
+            return años == 1 ? "1 año" : $"{años} años";
         }
         return "-";
     }

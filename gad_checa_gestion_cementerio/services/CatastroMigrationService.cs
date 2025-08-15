@@ -4,6 +4,7 @@ using gad_checa_gestion_cementerio.Data;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
 using System.Globalization;
 using Microsoft.AspNetCore.Identity;
+using gad_checa_gestion_cementerio.services;
 
 namespace gad_checa_gestion_cementerio.Services
 {
@@ -12,15 +13,18 @@ namespace gad_checa_gestion_cementerio.Services
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CatastroMigrationService> _logger;
+        private readonly ContratoService _contratoService;
 
         public CatastroMigrationService(
             ApplicationDbContext context, 
             UserManager<ApplicationUser> userManager,
-            ILogger<CatastroMigrationService> logger)
+            ILogger<CatastroMigrationService> logger,
+            ContratoService contratoService)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _contratoService = contratoService;
         }
 
         public async Task<CatastroMigrationResult> MigrarCatastroDesdeExcel(string rutaArchivo)
@@ -91,7 +95,7 @@ namespace gad_checa_gestion_cementerio.Services
                     Tipo = "Nichos",
                     NumeroDePisos = 1,
                     BovedasPorPiso = 100,
-                    TarifaBase = 30.00m,
+                    TarifaBase = cementerio.tarifa_arriendo_nicho ?? 30.00m,
                     Estado = true,
                     FechaCreacion = DateTime.Now,
                     FechaActualizacion = DateTime.Now,
@@ -117,7 +121,7 @@ namespace gad_checa_gestion_cementerio.Services
                     Tipo = "Bovedas",
                     NumeroDePisos = 1,
                     BovedasPorPiso = 100,
-                    TarifaBase = 50.00m,
+                    TarifaBase = cementerio.tarifa_arriendo ?? 50.00m,
                     Estado = true,
                     FechaCreacion = DateTime.Now,
                     FechaActualizacion = DateTime.Now,
@@ -139,7 +143,7 @@ namespace gad_checa_gestion_cementerio.Services
                 {
                     NumeroPiso = 1,
                     BloqueId = bloqueLogicoNichos.Id,
-                    Precio = 30.00m
+                    Precio = cementerio.tarifa_arriendo_nicho ?? 30.00m
                 };
 
                 _context.Piso.Add(pisoLogicoNichos);
@@ -153,7 +157,7 @@ namespace gad_checa_gestion_cementerio.Services
                 {
                     NumeroPiso = 1,
                     BloqueId = bloqueLogicoBovedas.Id,
-                    Precio = 50.00m
+                    Precio = cementerio.tarifa_arriendo ?? 50.00m
                 };
 
                 _context.Piso.Add(pisoLogicoBovedas);
@@ -195,7 +199,7 @@ namespace gad_checa_gestion_cementerio.Services
                     Tipo = "Tumulos",
                     NumeroDePisos = 1,
                     BovedasPorPiso = 100,
-                    TarifaBase = 50.00m,
+                    TarifaBase = cementerio.tarifa_arriendo ?? 50.00m,
                     Estado = true,
                     FechaCreacion = DateTime.Now,
                     FechaActualizacion = DateTime.Now,
@@ -223,7 +227,7 @@ namespace gad_checa_gestion_cementerio.Services
                 {
                     NumeroPiso = 1,
                     BloqueId = bloque.Id,
-                    Precio = 50.00m
+                    Precio = cementerio.tarifa_arriendo ?? 50.00m
                 };
 
                 _context.Piso.Add(piso);
@@ -407,7 +411,7 @@ namespace gad_checa_gestion_cementerio.Services
                         Tipo = seccion.TipoBloque,
                         NumeroDePisos = 1,
                         BovedasPorPiso = 100,
-                        TarifaBase = seccion.TipoBloque == "Nichos" ? 30.00m : 50.00m,
+                        TarifaBase = seccion.TipoBloque == "Nichos" ? cementerio.tarifa_arriendo_nicho ?? 30.00m : cementerio.tarifa_arriendo ?? 50.00m,
                         Estado = true,
                         FechaCreacion = DateTime.Now,
                         FechaActualizacion = DateTime.Now,
@@ -437,7 +441,7 @@ namespace gad_checa_gestion_cementerio.Services
                     {
                         NumeroPiso = 1,
                         BloqueId = bloque.Id,
-                        Precio = seccion.TipoBloque == "Nichos" ? 30.00m : 50.00m
+                        Precio = seccion.TipoBloque == "Nichos" ? cementerio.tarifa_arriendo_nicho ?? 30.00m : cementerio.tarifa_arriendo ?? 50.00m
                     };
 
                     _context.Piso.Add(piso);
@@ -593,6 +597,14 @@ namespace gad_checa_gestion_cementerio.Services
                 nombreDifunto = worksheet.Cells[fila, 2].Value?.ToString()?.Trim();
             }
 
+            var representante = worksheet.Cells[fila, 8].Value?.ToString()?.Trim();
+            
+            // Log para debugging específico de responsables faltantes
+            if (!string.IsNullOrEmpty(representante))
+            {
+                _logger.LogInformation($"📋 Extraído representante de fila {fila}, columna 8: '{representante}'");
+            }
+
             return new RegistroCatastro
             {
                 Numero = numero,
@@ -602,7 +614,7 @@ namespace gad_checa_gestion_cementerio.Services
                 EsPropio = EsColumnaTrue(worksheet.Cells[fila, 5].Value?.ToString()),
                 EsArrendado = EsColumnaTrue(worksheet.Cells[fila, 6].Value?.ToString()),
                 ReutilizacionArriendo = worksheet.Cells[fila, 7].Value?.ToString()?.Trim(),
-                Representante = worksheet.Cells[fila, 8].Value?.ToString()?.Trim(),
+                Representante = representante,
                 Contacto = worksheet.Cells[fila, 9].Value?.ToString()?.Trim(),
                 CorreoElectronico = worksheet.Cells[fila, 10].Value?.ToString()?.Trim(),
                 Observaciones = worksheet.Cells[fila, 11].Value?.ToString()?.Trim()
@@ -620,6 +632,14 @@ namespace gad_checa_gestion_cementerio.Services
                 nombreDifunto = worksheet.Cells[fila, 1].Value?.ToString()?.Trim();
             }
 
+            var representante = worksheet.Cells[fila, 5].Value?.ToString()?.Trim(); // Columna "Representante"
+            
+            // Log para debugging específico de responsables faltantes (TÚMULOS)
+            if (!string.IsNullOrEmpty(representante))
+            {
+                _logger.LogInformation($"📋 Extraído representante TÚMULOS de fila {fila}, columna 5: '{representante}'");
+            }
+
             return new RegistroCatastro
             {
                 Numero = numeroSecuencial, // Usar número secuencial
@@ -629,7 +649,7 @@ namespace gad_checa_gestion_cementerio.Services
                 EsPropio = EsColumnaTrue(worksheet.Cells[fila, 4].Value?.ToString()), // Columna "Propio"
                 EsArrendado = !EsColumnaTrue(worksheet.Cells[fila, 4].Value?.ToString()), 
                 ReutilizacionArriendo = worksheet.Cells[fila, 7].Value?.ToString()?.Trim(),
-                Representante = worksheet.Cells[fila, 5].Value?.ToString()?.Trim(), // Columna "Representante"
+                Representante = representante,
                 Contacto = worksheet.Cells[fila, 6].Value?.ToString()?.Trim(), // Columna "Contacto"
                 CorreoElectronico = worksheet.Cells[fila, 7].Value?.ToString()?.Trim(), // Columna "Correo Electrónico"
                 Observaciones = worksheet.Cells[fila, 8].Value?.ToString()?.Trim() // Columna "Observaciones"
@@ -652,7 +672,12 @@ namespace gad_checa_gestion_cementerio.Services
             Persona? responsable = null;
             if (!string.IsNullOrEmpty(registro.Representante))
             {
+                _logger.LogInformation($"🧑‍💼 Procesando responsable (TÚMULOS): {registro.Representante}");
                 responsable = await CrearOObtenerPersona(registro, usuario);
+            }
+            else
+            {
+                _logger.LogInformation($"⚠️ No hay responsable para túmulo #{boveda?.Numero} - Representante: '{registro.Representante}'");
             }
 
             // 4. Si está marcado como "propia", crear propietario y asignarlo a la bóveda
@@ -670,7 +695,12 @@ namespace gad_checa_gestion_cementerio.Services
             // 5. Crear contrato si hay difunto
             if (difunto != null && boveda != null)
             {
+                _logger.LogInformation($"📝 Creando contrato (TÚMULOS) para bóveda #{boveda.Numero} - Difunto: {registro.NombreDifunto} - Con responsable: {responsable != null}");
                 await CrearContrato(registro, boveda, difunto, responsable, usuario, resultado);
+            }
+            else
+            {
+                _logger.LogInformation($"❌ No se crea contrato (TÚMULOS) - Bóveda #{boveda?.Numero} - Difunto: {registro.NombreDifunto} (difunto null: {difunto == null}, boveda null: {boveda == null})");
             }
 
             resultado.RegistrosProcesados++;
@@ -730,7 +760,20 @@ namespace gad_checa_gestion_cementerio.Services
             Persona? responsable = null;
             if (!string.IsNullOrEmpty(registro.Representante))
             {
+                _logger.LogInformation($"🧑‍💼 Procesando responsable: '{registro.Representante}' para bóveda #{boveda?.Numero}");
                 responsable = await CrearOObtenerPersona(registro, usuario);
+                if (responsable != null)
+                {
+                    _logger.LogInformation($"✅ Responsable creado/encontrado: ID={responsable.Id}, Nombre='{responsable.Nombres} {responsable.Apellidos}'");
+                }
+                else
+                {
+                    _logger.LogWarning($"❌ No se pudo crear/encontrar responsable para: '{registro.Representante}'");
+                }
+            }
+            else
+            {
+                _logger.LogInformation($"⚠️ No hay responsable para bóveda #{boveda?.Numero} - Representante: '{registro.Representante}'");
             }
 
             // 4. Si está marcado como "propia", crear propietario y asignarlo a la bóveda
@@ -748,7 +791,7 @@ namespace gad_checa_gestion_cementerio.Services
             // 5. Crear contrato si hay difunto
             if (difunto != null && boveda != null)
             {
-                _logger.LogInformation($"📝 Creando contrato para bóveda #{boveda.Numero} - Difunto: {registro.NombreDifunto}");
+                _logger.LogInformation($"📝 Creando contrato para bóveda #{boveda.Numero} - Difunto: {registro.NombreDifunto} - Con responsable: {responsable != null}");
                 await CrearContratoConRelaciones(registro, boveda, difunto, responsable, usuario, resultado, seccion);
             }
             else
@@ -889,19 +932,24 @@ namespace gad_checa_gestion_cementerio.Services
 
         private async Task CrearContratoConRelaciones(RegistroCatastro registro, Boveda boveda, Difunto difunto, Persona? responsable, ApplicationUser usuario, CatastroMigrationResult resultado, SeccionCatastro seccion)
         {
-            var contratoExistente = await _context.Contrato
-                .FirstOrDefaultAsync(c => c.BovedaId == boveda.Id && c.DifuntoId == difunto.Id);
-
-            if (contratoExistente == null)
+            try
             {
-                var contrato = new Contrato
+                _logger.LogInformation($"🔄 Iniciando CrearContratoConRelaciones para bóveda #{boveda.Numero}");
+                
+                var contratoExistente = await _context.Contrato
+                    .FirstOrDefaultAsync(c => c.BovedaId == boveda.Id && c.DifuntoId == difunto.Id);
+
+                if (contratoExistente == null)
                 {
-                    NumeroSecuencial = GenerarNumeroSecuencial(boveda.Id),
+                    _logger.LogInformation($"📄 Creando nuevo contrato para bóveda #{boveda.Numero}");
+                    var contrato = new Contrato
+                {
+                    NumeroSecuencial = _contratoService.getNumeroContrato(boveda.Id, isRenovacion: false),
                     BovedaId = boveda.Id,
                     DifuntoId = difunto.Id,
                     FechaInicio = registro.FechaContrato ?? DateTime.Now.AddYears(-1),
                     FechaFin = registro.FechaVencimiento ?? DateTime.Now.AddYears(4),
-                    NumeroDeMeses = CalcularMeses(registro.FechaContrato, registro.FechaVencimiento),
+                    NumeroDeMeses = CalcularAnios(registro.FechaContrato, registro.FechaVencimiento),
                     MontoTotal = registro.EsArrendado ? 250.00m : 0m,
                     Observaciones = registro.Observaciones ?? "",
                     Estado = true,
@@ -914,47 +962,87 @@ namespace gad_checa_gestion_cementerio.Services
 
                 _context.Contrato.Add(contrato);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation($"✅ Contrato creado y guardado. ID: {contrato.Id}, Número: {contrato.NumeroSecuencial}");
 
                 // Buscar contrato relacionado (mismo número de bóveda en bloque físico)
+                _logger.LogInformation($"🔗 Estableciendo relaciones de contrato para bóveda #{boveda.Numero}");
                 await EstablecerRelacionContrato(contrato, registro.Numero ?? 1, seccion, boveda);
 
                 // Agregar responsable si existe
                 if (responsable != null)
                 {
-                    var responsableContrato = new Responsable
+                    _logger.LogInformation($"📝 Intentando asignar responsable al contrato. Contrato ID: {contrato.Id}, Responsable: '{responsable.Nombres} {responsable.Apellidos}'");
+                    
+                    var responsableContrato = await ObtenerOCrearResponsable(responsable, contrato, usuario);
+
+                    // Recargar el contrato con sus responsables desde la BD para evitar problemas de contexto
+                    var contratoConResponsables = await _context.Contrato
+                        .Include(c => c.Responsables)
+                        .FirstOrDefaultAsync(c => c.Id == contrato.Id);
+
+                    if (contratoConResponsables != null)
                     {
-                        Nombres = TruncateString(responsable.Nombres, 95),
-                        Apellidos = TruncateString(responsable.Apellidos, 95),
-                        TipoIdentificacion = responsable.TipoIdentificacion,
-                        NumeroIdentificacion = responsable.NumeroIdentificacion,
-                        Telefono = TruncateString(responsable.Telefono, 20),
-                        Email = TruncateString(responsable.Email, 100),
-                        Direccion = TruncateString(responsable.Direccion, 200),
-                        FechaInicio = contrato.FechaInicio,
-                        FechaFin = contrato.FechaFin,
-                        Estado = true,
-                        FechaCreacion = DateTime.Now,
-                        UsuarioCreador = usuario,
-                        UsuarioCreadorId = usuario.Id
-                    };
-
-                    _context.Responsable.Add(responsableContrato);
-                    await _context.SaveChangesAsync();
-
-                    // Relacionar con el contrato
-                    contrato.Responsables = new List<Responsable> { responsableContrato };
-                    await _context.SaveChangesAsync();
+                        // Verificar si la relación ya existe
+                        var relacionExistente = contratoConResponsables.Responsables.Any(r => r.Id == responsableContrato.Id);
+                        
+                        if (!relacionExistente)
+                        {
+                            contratoConResponsables.Responsables.Add(responsableContrato);
+                            await _context.SaveChangesAsync();
+                            _logger.LogInformation($"🔗 Agregado responsable {responsableContrato.Id} al contrato {contrato.Id}");
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"🔄 Relación ya existe entre contrato {contrato.Id} y responsable {responsableContrato.Id}");
+                        }
+                    }
+                    
+                    // Verificar que la relación se guardó correctamente
+                    var verificacion = await _context.Contrato
+                        .Include(c => c.Responsables)
+                        .FirstOrDefaultAsync(c => c.Id == contrato.Id);
+                    
+                    if (verificacion?.Responsables?.Any() == true)
+                    {
+                        _logger.LogInformation($"✅ Relación contrato-responsable VERIFICADA: Contrato {contrato.Id} tiene {verificacion.Responsables.Count} responsables");
+                        foreach (var resp in verificacion.Responsables)
+                        {
+                            _logger.LogInformation($"   → Responsable ID: {resp.Id}, Nombre: {resp.Nombres} {resp.Apellidos}");
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError($"❌ ERROR: Relación contrato-responsable NO se guardó correctamente para Contrato {contrato.Id}");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"⚠️ No se asigna responsable al contrato {contrato.Id} - responsable es null");
                 }
 
                 resultado.ContratosCreados++;
+                _logger.LogInformation($"✅ ContratosCreados incrementado. Total: {resultado.ContratosCreados}");
+            }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ ERROR en CrearContratoConRelaciones para bóveda #{boveda?.Numero}: {ex.Message}");
+                resultado.Errores.Add($"Error creando contrato para bóveda #{boveda?.Numero}: {ex.Message}");
+                throw;
             }
         }
 
         private async Task EstablecerRelacionContrato(Contrato contratoActual, int numeroBoveda, SeccionCatastro seccion, Boveda bovedaActual)
         {
-            // Buscar contrato en bóveda física con el mismo número Y del mismo bloque físico
-            var tipoBloque = DeterminarTipoBloque(seccion.Nombre);
-            var tipoComplementario = tipoBloque == "Nichos" ? "Bovedas" : "Nichos";
+            try
+            {
+                _logger.LogInformation($"🔗 EstablecerRelacionContrato: Buscando relación para contrato {contratoActual.Id}, bóveda #{numeroBoveda}");
+                
+                // Buscar contrato en bóveda física con el mismo número Y del mismo bloque físico
+                var tipoBloque = DeterminarTipoBloque(seccion.Nombre);
+                var tipoComplementario = tipoBloque == "Nichos" ? "Bovedas" : "Nichos";
+                
+                _logger.LogInformation($"🔍 Tipo bloque: {tipoBloque}, Tipo complementario: {tipoComplementario}");
             
             // Obtener el nombre del bloque físico actual (sin "Lógico")
             var bloqueActual = await _context.Bloque
@@ -968,14 +1056,19 @@ namespace gad_checa_gestion_cementerio.Services
             // Extraer el identificador del bloque físico (B, C, D, E, F, 1, 2, etc.)
             var identificadorBloqueActual = ExtraerIdentificadorBloque(bloqueActual.Descripcion);
 
-            var contratoRelacionado = await _context.Contrato
+            // Cargar contratos candidatos primero (sin usar método personalizado en LINQ)
+            var contratosCandidatos = await _context.Contrato
                 .Include(c => c.Boveda)
                 .ThenInclude(b => b.Piso)
                 .ThenInclude(p => p.Bloque)
-                .FirstOrDefaultAsync(c => c.Boveda.Numero == numeroBoveda && 
-                                         c.Boveda.Piso.Bloque.Tipo == tipoComplementario &&
-                                         !c.Boveda.Piso.Bloque.Descripcion.Contains("Lógico") &&
-                                         ExtraerIdentificadorBloque(c.Boveda.Piso.Bloque.Descripcion) == identificadorBloqueActual);
+                .Where(c => c.Boveda.Numero == numeroBoveda && 
+                           c.Boveda.Piso.Bloque.Tipo == tipoComplementario &&
+                           !c.Boveda.Piso.Bloque.Descripcion.Contains("Lógico"))
+                .ToListAsync();
+
+            // Filtrar en cliente usando el método personalizado
+            var contratoRelacionado = contratosCandidatos
+                .FirstOrDefault(c => ExtraerIdentificadorBloque(c.Boveda.Piso.Bloque.Descripcion) == identificadorBloqueActual);
 
             if (contratoRelacionado != null)
             {
@@ -987,6 +1080,16 @@ namespace gad_checa_gestion_cementerio.Services
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"🔗 Relación establecida: Contrato {contratoActual.Id} ↔ Contrato {contratoRelacionado.Id} (Bóveda #{numeroBoveda}, Bloque {identificadorBloqueActual})");
+            }
+            else
+            {
+                _logger.LogInformation($"ℹ️ No se encontró contrato relacionado para bóveda #{numeroBoveda} en bloque {identificadorBloqueActual}");
+            }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ ERROR en EstablecerRelacionContrato: {ex.Message}");
+                // No propagar la excepción para que no interrumpa la migración
             }
         }
 
@@ -1127,12 +1230,12 @@ namespace gad_checa_gestion_cementerio.Services
             {
                 var contrato = new Contrato
                 {
-                    NumeroSecuencial = GenerarNumeroSecuencial(boveda.Id),
+                    NumeroSecuencial = _contratoService.getNumeroContrato(boveda.Id, isRenovacion: false),
                     BovedaId = boveda.Id,
                     DifuntoId = difunto.Id,
                     FechaInicio = registro.FechaContrato ?? DateTime.Now.AddYears(-1),
                     FechaFin = registro.FechaVencimiento ?? DateTime.Now.AddYears(4),
-                    NumeroDeMeses = CalcularMeses(registro.FechaContrato, registro.FechaVencimiento),
+                    NumeroDeMeses = CalcularAnios(registro.FechaContrato, registro.FechaVencimiento),
                     MontoTotal = registro.EsArrendado ? 250.00m : 0m,
                     Observaciones = registro.Observaciones ?? "",
                     Estado = true,
@@ -1149,29 +1252,53 @@ namespace gad_checa_gestion_cementerio.Services
                 // Agregar responsable si existe
                 if (responsable != null)
                 {
-                    var responsableContrato = new Responsable
+                    _logger.LogInformation($"📝 Intentando asignar responsable al contrato (TÚMULOS). Contrato ID: {contrato.Id}, Responsable: '{responsable.Nombres} {responsable.Apellidos}'");
+                    
+                    var responsableContrato = await ObtenerOCrearResponsable(responsable, contrato, usuario);
+
+                    // Recargar el contrato con sus responsables desde la BD para evitar problemas de contexto
+                    var contratoConResponsables = await _context.Contrato
+                        .Include(c => c.Responsables)
+                        .FirstOrDefaultAsync(c => c.Id == contrato.Id);
+
+                    if (contratoConResponsables != null)
                     {
-                        Nombres = TruncateString(responsable.Nombres, 95),
-                        Apellidos = TruncateString(responsable.Apellidos, 95),
-                        TipoIdentificacion = responsable.TipoIdentificacion,
-                        NumeroIdentificacion = responsable.NumeroIdentificacion,
-                        Telefono = TruncateString(responsable.Telefono, 20),
-                        Email = TruncateString(responsable.Email, 100),
-                        Direccion = TruncateString(responsable.Direccion, 200),
-                        FechaInicio = contrato.FechaInicio,
-                        FechaFin = contrato.FechaFin,
-                        Estado = true,
-                        FechaCreacion = DateTime.Now,
-                        UsuarioCreador = usuario,
-                        UsuarioCreadorId = usuario.Id
-                    };
-
-                    _context.Responsable.Add(responsableContrato);
-                    await _context.SaveChangesAsync();
-
-                    // Relacionar con el contrato
-                    contrato.Responsables = new List<Responsable> { responsableContrato };
-                    await _context.SaveChangesAsync();
+                        // Verificar si la relación ya existe
+                        var relacionExistente = contratoConResponsables.Responsables.Any(r => r.Id == responsableContrato.Id);
+                        
+                        if (!relacionExistente)
+                        {
+                            contratoConResponsables.Responsables.Add(responsableContrato);
+                            await _context.SaveChangesAsync();
+                            _logger.LogInformation($"🔗 Agregado responsable {responsableContrato.Id} al contrato {contrato.Id} (TÚMULOS)");
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"🔄 Relación ya existe entre contrato {contrato.Id} y responsable {responsableContrato.Id} (TÚMULOS)");
+                        }
+                    }
+                    
+                    // Verificar que la relación se guardó correctamente
+                    var verificacion = await _context.Contrato
+                        .Include(c => c.Responsables)
+                        .FirstOrDefaultAsync(c => c.Id == contrato.Id);
+                    
+                    if (verificacion?.Responsables?.Any() == true)
+                    {
+                        _logger.LogInformation($"✅ Relación contrato-responsable VERIFICADA (TÚMULOS): Contrato {contrato.Id} tiene {verificacion.Responsables.Count} responsables");
+                        foreach (var resp in verificacion.Responsables)
+                        {
+                            _logger.LogInformation($"   → Responsable ID: {resp.Id}, Nombre: {resp.Nombres} {resp.Apellidos}");
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError($"❌ ERROR: Relación contrato-responsable NO se guardó correctamente para Contrato {contrato.Id} (TÚMULOS)");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"⚠️ No se asigna responsable al contrato (TÚMULOS) {contrato.Id} - responsable es null");
                 }
 
                 resultado.ContratosCreados++;
@@ -1267,22 +1394,22 @@ namespace gad_checa_gestion_cementerio.Services
             return valor == "x" || valor == "true" || valor == "1" || valor == "sí" || valor == "si";
         }
 
-        private int CalcularMeses(DateTime? fechaInicio, DateTime? fechaFin)
+        private int CalcularAnios(DateTime? fechaInicio, DateTime? fechaFin)
         {
-            if (!fechaInicio.HasValue || !fechaFin.HasValue) return 60; // Default 5 años
+            if (!fechaInicio.HasValue || !fechaFin.HasValue) return 5; // Default 5 años
 
-            var meses = ((fechaFin.Value.Year - fechaInicio.Value.Year) * 12) + 
-                       fechaFin.Value.Month - fechaInicio.Value.Month;
+            var anios = fechaFin.Value.Year - fechaInicio.Value.Year;
             
-            return Math.Max(meses, 1);
+            // Ajustar si aún no se ha cumplido el aniversario en el año final
+            if (fechaFin.Value.Month < fechaInicio.Value.Month || 
+                (fechaFin.Value.Month == fechaInicio.Value.Month && fechaFin.Value.Day < fechaInicio.Value.Day))
+            {
+                anios--;
+            }
+            
+            return Math.Max(anios, 1); // Mínimo 1 año
         }
 
-        private string GenerarNumeroSecuencial(int bovedaId)
-        {
-            var year = DateTime.Now.Year;
-            var count = _context.Contrato.Count(c => c.BovedaId == bovedaId) + 1;
-            return $"{year}-{bovedaId:000}-{count:000}";
-        }
 
         private string TruncateString(string input, int maxLength)
         {
@@ -1364,6 +1491,45 @@ namespace gad_checa_gestion_cementerio.Services
                 return "16";
 
             return "DESCONOCIDO";
+        }
+
+        private async Task<Responsable> ObtenerOCrearResponsable(Persona responsable, Contrato contrato, ApplicationUser usuario)
+        {
+            // Buscar si ya existe un responsable con los mismos datos
+            var responsableExistente = await _context.Responsable
+                .FirstOrDefaultAsync(r => r.Nombres == responsable.Nombres && 
+                                         r.Apellidos == responsable.Apellidos &&
+                                         r.Estado == true);
+
+            if (responsableExistente != null)
+            {
+                _logger.LogInformation($"🔄 Reutilizando responsable existente. ID: {responsableExistente.Id}");
+                return responsableExistente;
+            }
+
+            // Crear nuevo responsable solo si no existe
+            var nuevoResponsable = new Responsable
+            {
+                Nombres = TruncateString(responsable.Nombres, 95),
+                Apellidos = TruncateString(responsable.Apellidos, 95),
+                TipoIdentificacion = responsable.TipoIdentificacion,
+                NumeroIdentificacion = responsable.NumeroIdentificacion,
+                Telefono = TruncateString(responsable.Telefono, 20),
+                Email = TruncateString(responsable.Email, 100),
+                Direccion = TruncateString(responsable.Direccion, 200),
+                FechaInicio = contrato.FechaInicio,
+                FechaFin = contrato.FechaFin,
+                Estado = true,
+                FechaCreacion = DateTime.Now,
+                UsuarioCreador = usuario,
+                UsuarioCreadorId = usuario.Id
+            };
+
+            _context.Responsable.Add(nuevoResponsable);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"✅ Nuevo responsable creado. ID: {nuevoResponsable.Id}");
+            
+            return nuevoResponsable;
         }
 
         private async Task CrearBovedasAutomaticamente(Piso piso, ApplicationUser usuario, CatastroMigrationResult resultado)

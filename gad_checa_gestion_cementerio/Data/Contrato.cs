@@ -27,6 +27,7 @@ namespace gad_checa_gestion_cementerio.Data
         public DateTime FechaFin { get; set; }
 
         [Required]
+        // Nota: A pesar del nombre, este campo almacena años, no meses (ej: 5 = 5 años)
         public int NumeroDeMeses { get; set; }
 
         [Required]

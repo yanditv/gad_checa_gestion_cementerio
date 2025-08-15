@@ -102,15 +102,9 @@ namespace gad_checa_gestion_cementerio.Models.Views
             if (NumeroDeMeses == null || NumeroDeMeses <= 0)
                 return "";
 
-            var años = NumeroDeMeses.Value / 12;
-            var mesesRestantes = NumeroDeMeses.Value % 12;
-
-            if (años > 0 && mesesRestantes > 0)
-                return $"{años} año{(años > 1 ? "s" : "")} {mesesRestantes} mes{(mesesRestantes > 1 ? "es" : "")}";
-            else if (años > 0)
-                return $"{años} año{(años > 1 ? "s" : "")}";
-            else
-                return $"{mesesRestantes} año{(mesesRestantes > 1 ? "s" : "")}";
+            // Ahora NumeroDeMeses almacena años directamente
+            var años = NumeroDeMeses.Value;
+            return años == 1 ? "1 año" : $"{años} años";
         }
     }
 }

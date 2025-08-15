@@ -6,4 +6,6 @@ public enum TipoContratos
     RENOVACION = 2,
     NUEVO_NICHO = 3,
     NUEVO_NICHO_RENOVACION = 4,
+    NUEVO_TUMULO = 5,
+    NUEVO_TUMULO_RENOVACION = 6,
 }

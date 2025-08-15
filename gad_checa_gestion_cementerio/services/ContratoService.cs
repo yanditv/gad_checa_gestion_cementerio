@@ -45,6 +45,8 @@ public class ContratoService
             TipoContratos.RENOVACION => "RNV",
             TipoContratos.NUEVO_NICHO => "NCH",
             TipoContratos.NUEVO_NICHO_RENOVACION => "NCR",
+            TipoContratos.NUEVO_TUMULO => "TML",
+            TipoContratos.NUEVO_TUMULO_RENOVACION => "TMR",
             _ => throw new ArgumentOutOfRangeException(nameof(tipo), tipo, null)
         };
     }
@@ -65,17 +67,19 @@ public class ContratoService
         {
             "Bovedas" => GetTipoContratoPrefix(TipoContratos.NUEVO),
             "Nichos" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
+            "Tumulos" => GetTipoContratoPrefix(TipoContratos.NUEVO_TUMULO),
             _ => GetTipoContratoPrefix(TipoContratos.NUEVO)
         };
 
         if (isRenovacion)
         {
             // Para renovaciones, usamos una combinación de prefijos
-            // RNV-CTR para bóvedas y RNV-NCH para nichos
+            // RNV-CTR para bóvedas, RNV-NCH para nichos y RNV-TML para túmulos
             var basePrefix = tipo switch
             {
                 "Bovedas" => GetTipoContratoPrefix(TipoContratos.NUEVO),
                 "Nichos" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
+                "Tumulos" => GetTipoContratoPrefix(TipoContratos.NUEVO_TUMULO),
                 _ => GetTipoContratoPrefix(TipoContratos.NUEVO)
             };
 
