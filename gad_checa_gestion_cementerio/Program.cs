@@ -517,6 +517,7 @@ async Task MigrarCatastroSiExiste(IServiceProvider services)
         {
             Path.Combine(env.ContentRootPath, "CATASTRO_FINAL.xlsx"),
             "/app/CATASTRO_FINAL.xlsx",
+            Path.Combine(Directory.GetCurrentDirectory(), "CATASTRO_FINAL.xlsx"),
             "./CATASTRO_FINAL.xlsx",
             "CATASTRO_FINAL.xlsx"
         };

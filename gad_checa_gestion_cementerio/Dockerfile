@@ -42,6 +42,12 @@ WORKDIR /src
 COPY ["gad_checa_gestion_cementerio/gad_checa_gestion_cementerio.csproj", "gad_checa_gestion_cementerio/"]
 RUN dotnet restore "./gad_checa_gestion_cementerio/gad_checa_gestion_cementerio.csproj"
 COPY . .
+
+# Verificar y mostrar archivos Excel disponibles
+RUN echo "🔍 Verificando archivos Excel disponibles:" && \
+    find /src -name "*.xlsx" -type f 2>/dev/null || echo "No se encontraron archivos .xlsx" && \
+    ls -la /src/ | grep -E "\.(xlsx|XLSX)" || echo "No hay archivos Excel en /src/"
+
 WORKDIR "/src/gad_checa_gestion_cementerio"
 RUN dotnet build "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
@@ -49,6 +55,11 @@ RUN dotnet build "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATION
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Copiar archivo Excel a la carpeta de publicación si existe
+RUN echo "🔍 Buscando CATASTRO_FINAL.xlsx para copiar a publish:" && \
+    find /src -name "CATASTRO_FINAL.xlsx" -type f -exec cp {} /app/publish/ \; -print || \
+    echo "⚠️ CATASTRO_FINAL.xlsx no encontrado para copiar a publish"
 
 # Esta fase se usa en producción o cuando se ejecuta desde VS en modo normal (valor predeterminado cuando no se usa la configuración de depuración)
 FROM base AS final
