@@ -512,48 +512,12 @@ async Task MigrarCatastroSiExiste(IServiceProvider services)
 
     try
     {
-        // Buscar el archivo de catastro en múltiples ubicaciones posibles
-        var posiblesRutas = new[]
-        {
-            Path.Combine(env.ContentRootPath, "CATASTRO_FINAL.xlsx"),
-            "/app/CATASTRO_FINAL.xlsx",
-            Path.Combine(Directory.GetCurrentDirectory(), "CATASTRO_FINAL.xlsx"),
-            "./CATASTRO_FINAL.xlsx",
-            "CATASTRO_FINAL.xlsx"
-        };
-
-        string? rutaArchivo = null;
-        foreach (var ruta in posiblesRutas)
-        {
-            if (File.Exists(ruta))
-            {
-                rutaArchivo = ruta;
-                logger.LogInformation($"📁 Archivo encontrado en: {ruta}");
-                break;
-            }
-            else
-            {
-                logger.LogInformation($"❌ No encontrado en: {ruta}");
-            }
-        }
+        // Buscar el archivo de catastro
+        var rutaArchivo = Path.Combine(env.ContentRootPath, "CATASTRO_FINAL.xlsx");
         
-        if (rutaArchivo == null)
+        if (!File.Exists(rutaArchivo))
         {
-            logger.LogInformation("📋 Archivo CATASTRO_FINAL.xlsx no encontrado en ninguna ubicación. Saltando migración del catastro.");
-            logger.LogInformation($"📂 Directorio actual: {Directory.GetCurrentDirectory()}");
-            logger.LogInformation($"📂 ContentRootPath: {env.ContentRootPath}");
-            
-            // Listar archivos en el directorio actual para debug
-            try
-            {
-                var archivosActuales = Directory.GetFiles(env.ContentRootPath, "*.xlsx", SearchOption.TopDirectoryOnly);
-                logger.LogInformation($"📁 Archivos .xlsx encontrados: {string.Join(", ", archivosActuales.Select(Path.GetFileName))}");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning($"Error listando archivos: {ex.Message}");
-            }
-            
+            logger.LogInformation("Archivo CATASTRO_FINAL.xlsx no encontrado. Saltando migración del catastro.");
             return;
         }
 
