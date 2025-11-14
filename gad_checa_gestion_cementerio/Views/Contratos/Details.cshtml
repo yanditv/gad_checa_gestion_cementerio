@@ -67,7 +67,7 @@
                                     <div>
                                         <small class="text-muted d-block">Fecha de Fin</small>
                                         <span class="fw-bold">@(Model.FechaFin?.ToString("dd/MM/yyyy") ??
-                                            "Indefinido")</ span >
+                                                                                        "Indefinido")</ span>
                                     </div>
                                 </div>
                             </div>
@@ -119,16 +119,57 @@
                                         <i class="fas fa-info-circle me-2"></i>
                                         <span class="fw-bold">Este contrato es una renovación</span>
                                     </div>
-                                    <p class="mb-1">Contrato original: <span class="fw-bold">@ViewBag.ContratoOrigen.NumeroSecuencial</span></p>
-                                    <p class="mb-1">Fecha de inicio original: <span class="fw-bold">@ViewBag.ContratoOrigen.FechaInicio.ToString("dd/MM/yyyy")</span></p>
-                                    <p class="mb-0">Fecha de finalización original: <span class="fw-bold">@(ViewBag.ContratoOrigen.FechaFin?.ToString("dd/MM/yyyy") ?? "No definida")</span></p>
-                                    <a asp-action="Details" asp-route-id="@Model.ContratoOrigenId" class="btn btn-outline-info btn-sm mt-2">
+                                    <p class="mb-1">Contrato original: <span
+                                            class="fw-bold">@ViewBag.ContratoOrigen.NumeroSecuencial</span></p>
+                                    <p class="mb-1">Fecha de inicio original: <span
+                                            class="fw-bold">@ViewBag.ContratoOrigen.FechaInicio.ToString("dd/MM/yyyy")</span>
+                                    </p>
+                                    <p class="mb-0">Fecha de finalización original: <span
+                                            class="fw-bold">@(ViewBag.ContratoOrigen.FechaFin?.ToString("dd/MM/yyyy") ?? "No                                       definida")</span></p>
+                                    <a asp-action="Details" asp-route-id="@Model.ContratoOrigenId"
+                                        class="btn btn-outline-info btn-sm mt-2">
                                         <i class="fas fa-arrow-left me-1"></i> Ver contrato original
                                     </a>
                                 </div>
                             </div>
                         }
-                        
+
+                        @if (Model.ContratoRelacionadoId.HasValue && Model.ContratoRelacionado != null)
+                        {
+                            <div class="col-12 mt-3">
+                                <div class="alert alert-success mb-0">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-link me-2"></i>
+                                        <span class="fw-bold">Este contrato está relacionado con otra bóveda</span>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><i class="fas fa-file-contract text-success me-2"></i>Contrato relacionado: <span
+                                                    class="fw-bold">@Model.ContratoRelacionado.NumeroSecuencial</span></p>
+                                            @if (Model.ContratoRelacionado.Difunto != null)
+                                            {
+                                                <p class="mb-1"><i class="fas fa-user text-success me-2"></i>Difunto: <span
+                                                        class="fw-bold">@Model.ContratoRelacionado.Difunto.Nombres @Model.ContratoRelacionado.Difunto.Apellidos</span></p>
+                                            }
+                                        </div>
+                                        <div class="col-md-6">
+                                            @if (Model.ContratoRelacionado.Boveda != null)
+                                            {
+                                                <p class="mb-1"><i class="fas fa-building text-success me-2"></i>Bóveda: <span
+                                                        class="fw-bold">@Model.ContratoRelacionado.Boveda.Piso?.Bloque?.Descripcion - Piso @Model.ContratoRelacionado.Boveda.Piso?.NumeroPiso - Bóveda @Model.ContratoRelacionado.Boveda.Numero</span></p>
+                                            }
+                                            <p class="mb-1"><i class="fas fa-calendar text-success me-2"></i>Vigencia: <span
+                                                    class="fw-bold">@Model.ContratoRelacionado.FechaInicio.ToString("dd/MM/yyyy") - @(Model.ContratoRelacionado.FechaFin?.ToString("dd/MM/yyyy") ?? "Indefinido")</span></p>
+                                        </div>
+                                    </div>
+                                    <a asp-action="Details" asp-route-id="@Model.ContratoRelacionadoId"
+                                        class="btn btn-outline-success btn-sm mt-2">
+                                        <i class="fas fa-external-link-alt me-1"></i> Ver contrato relacionado
+                                    </a>
+                                </div>
+                            </div>
+                        }
+
                         @if (ViewBag.ContratosHijos != null && ViewBag.ContratosHijos.Count > 0)
                         {
                             <div class="col-12 mt-3">
@@ -140,27 +181,31 @@
                                         </div>
                                         <div>
                                             <span class="badge bg-primary">
-                                                @(ViewBag.TotalRenovacionesEnCadena ?? ViewBag.ContratosHijos.Count) de @ViewBag.MaxRenovacionesPermitidas
+                                                @(ViewBag.TotalRenovacionesEnCadena ?? ViewBag.ContratosHijos.Count) de
+                                                @ViewBag.MaxRenovacionesPermitidas
                                                 renovaciones
                                             </span>
                                         </div>
                                     </div>
-                                    <p class="mb-2">Este contrato tiene @ViewBag.ContratosHijos.Count renovación(es) directa(s):</p>
+                                    <p class="mb-2">Este contrato tiene @ViewBag.ContratosHijos.Count renovación(es)
+                                        directa(s):</p>
                                     <ul class="mb-0">
-                                    @foreach (var hijo in ViewBag.ContratosHijos)
-                                    {
-                                        <li class="mb-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <span class="fw-bold">@hijo.NumeroSecuencial</span> - 
-                                                    @hijo.FechaInicio.ToString("dd/MM/yyyy") al @(hijo.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha fin")
+                                        @foreach (var hijo in ViewBag.ContratosHijos)
+                                        {
+                                            <li class="mb-1">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="fw-bold">@hijo.NumeroSecuencial</span> -
+                                                        @hijo.FechaInicio.ToString("dd/MM/yyyy") al
+                                                        @(hijo.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha fin")
+                                                    </div>
+                                                    <a asp-action="Details" asp-route-id="@hijo.Id"
+                                                        class="btn btn-outline-info btn-sm ms-1">
+                                                        <i class="fas fa-arrow-right me-1"></i> Ver
+                                                    </a>
                                                 </div>
-                                                <a asp-action="Details" asp-route-id="@hijo.Id" class="btn btn-outline-info btn-sm ms-1">
-                                                    <i class="fas fa-arrow-right me-1"></i> Ver
-                                                </a>
-                                            </div>
-                                        </li>
-                                    }
+                                            </li>
+                                        }
                                     </ul>
                                 </div>
                             </div>
@@ -210,8 +255,8 @@
                                     <div>
                                         <small class="text-muted d-block">Propietario</small>
                                         <span class="fw-bold">@(Model.Boveda?.Propietario != null ?
-                                            $"{Model.Boveda.Propietario.Nombres} {Model.Boveda.Propietario.Apellidos}" :
-                                                                                        "Sin propietario")</ span >
+                                                                                        $"{Model.Boveda.Propietario.Nombres} {Model.Boveda.Propietario.Apellidos}" :
+                                                                                        "Sin propietario")</ span>
                                     </div>
                                 </div>
                             </div>
@@ -255,7 +300,7 @@
                                 <i class="fas fa-calendar-times text-primary me-2"></i>
                                 <div>
                                     <small class="text-muted d-block">Fecha de Fallecimiento</small>
-                                    <span class="fw-bold">@Model.Difunto.FechaFallecimiento.ToString("dd/MM/yyyy")</span>
+                                    <span class="fw-bold">@Model.Difunto.FechaFallecimiento?.ToString("dd/MM/yyyy")</span>
                                 </div>
                             </div>
                         </div>
@@ -357,7 +402,8 @@
                                         <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
                                         <td>$@cuota.Monto.ToString("N2")</td>
                                         <td>
-                                            <span class="badge @(cuota.Estado == "Pagado" ? "bg-success" : cuota.Estado == "Pendiente" ? "bg-warning" : "bg-danger")">
+                                            <span
+                                                class="badge @(cuota.Estado == "Pagado" ? "bg-success" : cuota.Estado == "Pendiente" ? "bg-warning" : "bg-danger")">
                                                 @cuota.Estado
                                             </span>
                                         </td>
@@ -365,7 +411,8 @@
                                         <td>
                                             @if (cuota.Estado == "Pagado" && cuota.PagoId != null && cuota.PagoId > 0)
                                             {
-                                                <a class="btn btn-outline-primary btn-sm" target="_blank" href="@Url.Action("FacturaPdf", "Cobros", new { id = cuota.PagoId })">
+                                                <a class="btn btn-outline-primary btn-sm" target="_blank"
+                                                    href="@Url.Action("FacturaPdf", "Cobros", new { id = cuota.PagoId })">
                                                     <i class="ti ti-file-text me-1"></i>Ver PDF
                                                 </a>
                                             }

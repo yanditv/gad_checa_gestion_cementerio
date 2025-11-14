@@ -441,7 +441,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Cementerio = bloque.Cementerio,
                 BovedasOcupadas = bloque.Pisos
                     .SelectMany(p => p.Bovedas)
-                    .Count(b => b.Contratos.Any(c => c.FechaEliminacion == null)),
+                    .Count(b => b.Contratos != null && b.Contratos.Any(c =>
+                        c.FechaEliminacion == null &&
+                        c.FechaInicio <= DateTime.Now &&
+                        (c.FechaFin == null || c.FechaFin >= DateTime.Now))),
                 PreciosPorPiso = bloque.Pisos.Select(p => new PisoPrecioViewModel
                 {
                     NumeroPiso = p.NumeroPiso,
@@ -454,15 +457,24 @@ namespace gad_checa_gestion_cementerio.Controllers
                         Numero = b.Numero,
                         NumeroSecuencial = b.NumeroSecuencial,
                         NumeroPiso = p.NumeroPiso,
-                        TieneContratoActivo = b.Contratos.Any(c =>
+                        TieneContratoActivo = b.Contratos != null && b.Contratos.Any(c =>
+                            c.FechaEliminacion == null &&
                             c.FechaInicio <= DateTime.Now &&
                             (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
                         TienePropietario = b.Propietario != null,
-                        FechaFinContrato = b.Contratos
-                            .Where(c => c.FechaInicio <= DateTime.Now &&
+                        FechaFinContrato = b.Contratos != null ? b.Contratos
+                            .Where(c => c.FechaEliminacion == null &&
+                                      c.FechaInicio <= DateTime.Now &&
                                       (c.FechaFin == null || c.FechaFin >= DateTime.Now))
                             .Select(c => c.FechaFin)
-                            .FirstOrDefault()
+                            .FirstOrDefault() : null,
+                        NombreDifunto = b.Contratos != null ? b.Contratos
+                            .Where(c => c.FechaEliminacion == null &&
+                                      c.FechaInicio <= DateTime.Now &&
+                                      (c.FechaFin == null || c.FechaFin >= DateTime.Now) &&
+                                      c.Difunto != null)
+                            .Select(c => $"{c.Difunto.Nombres} {c.Difunto.Apellidos}")
+                            .FirstOrDefault() : null
                     })).ToList(),
                 Difuntos = bloque.Pisos
                     .SelectMany(p => p.Bovedas
@@ -526,7 +538,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                     {
                         Numero = b.Numero,
                         NumeroPiso = p.NumeroPiso,
-                        TieneContratoActivo = b.Contratos.Any(c =>
+                        TieneContratoActivo = b.Contratos != null && b.Contratos.Any(c =>
+                            c.FechaEliminacion == null &&
                             c.FechaInicio <= DateTime.Now &&
                             (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
                         TienePropietario = b.Propietario != null,

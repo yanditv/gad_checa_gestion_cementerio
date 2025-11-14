@@ -514,7 +514,7 @@ async Task MigrarCatastroSiExiste(IServiceProvider services)
     {
         // Buscar el archivo de catastro
         var rutaArchivo = Path.Combine(env.ContentRootPath, "CATASTRO_FINAL.xlsx");
-        
+
         if (!File.Exists(rutaArchivo))
         {
             logger.LogInformation("Archivo CATASTRO_FINAL.xlsx no encontrado. Saltando migración del catastro.");
@@ -523,10 +523,10 @@ async Task MigrarCatastroSiExiste(IServiceProvider services)
 
         // FORZAR MIGRACIÓN - Comentar las verificaciones para testing
         logger.LogInformation("🔄 FORZANDO EJECUCIÓN DE MIGRACIÓN DEL CATASTRO...");
-        
+
         // Limpiar datos existentes SIEMPRE
         logger.LogInformation("⚠️  Eliminando datos existentes para permitir migración...");
-        
+
         try
         {
             // Eliminar en orden correcto para evitar conflictos FK
@@ -535,11 +535,18 @@ async Task MigrarCatastroSiExiste(IServiceProvider services)
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [ContratoResponsable]");
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Contrato]");
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Difunto]");
+
+            // Importante: Primero quitar las referencias de Boveda a Persona (PropietarioId)
+            await dbContext.Database.ExecuteSqlRawAsync("UPDATE [Boveda] SET [PropietarioId] = NULL");
+
+            // Ahora sí podemos eliminar Personas sin conflictos FK
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Persona] WHERE TipoPersona IN ('Persona', 'Responsable', 'Propietario')");
+
+            // Finalmente eliminar la estructura física (bovedas, pisos, bloques)
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Boveda]");
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Piso]");
             await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Bloque]");
-            
+
             logger.LogInformation("✅ Datos eliminados exitosamente.");
         }
         catch (Exception ex)

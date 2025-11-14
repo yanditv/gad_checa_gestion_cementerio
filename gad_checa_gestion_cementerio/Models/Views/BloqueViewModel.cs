@@ -102,6 +102,7 @@ namespace gad_checa_gestion_cementerio.Models.Views
         public bool TienePropietario { get; set; }
         public DateTime? FechaFinContrato { get; set; }
         public PersonaModel? Propietario { get; set; }
+        public string? NombreDifunto { get; set; }
         public string Estado => GetEstado();
 
         private string GetEstado()

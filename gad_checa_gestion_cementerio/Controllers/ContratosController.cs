@@ -121,6 +121,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(c => c.ContratoOrigen) // Incluir el contrato original si existe
                 .Include(c => c.ContratoRelacionado) // Incluir el contrato relacionado si existe
                     .ThenInclude(cr => cr.Difunto) // Incluir el difunto del contrato relacionado
+                .Include(c => c.ContratoRelacionado) // Incluir el contrato relacionado con su bóveda
+                    .ThenInclude(cr => cr.Boveda) // Incluir la bóveda del contrato relacionado
+                        .ThenInclude(b => b.Piso) // Incluir el piso de la bóveda relacionada
+                            .ThenInclude(p => p.Bloque) // Incluir el bloque del piso de la bóveda relacionada
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (contrato == null)
@@ -236,8 +240,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             // Verificar que la bóveda no esté completamente ocupada (máximo 2 difuntos)
             var contratosEnBoveda = _context.Contrato
-                .Where(c => c.BovedaId == contratoExistente.BovedaId && 
-                           c.Estado == true && 
+                .Where(c => c.BovedaId == contratoExistente.BovedaId &&
+                           c.Estado == true &&
                            c.FechaFin >= DateTime.Today)
                 .Count();
 
@@ -266,7 +270,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             ViewBag.EsContratoRelacionado = true;
             ViewBag.ContratoExistente = contratoExistente;
-            
+
             return View("Create", model);
         }
 
@@ -2107,7 +2111,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(c => c.Boveda)
                     .ThenInclude(b => b.Piso)
                         .ThenInclude(p => p.Bloque)
-                .Where(c => c.Estado == true && 
+                .Where(c => c.Estado == true &&
                            c.Id != contratoActualId && // Excluir el contrato actual
                            c.ContratoRelacionadoId == null); // Solo contratos sin relación
 
@@ -2119,7 +2123,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (!string.IsNullOrEmpty(difunto))
             {
-                query = query.Where(c => c.Difunto.Nombres.Contains(difunto) || 
+                query = query.Where(c => c.Difunto.Nombres.Contains(difunto) ||
                                         c.Difunto.Apellidos.Contains(difunto));
             }
 
@@ -2184,9 +2188,10 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 await _context.SaveChangesAsync();
 
-                return Json(new { 
-                    success = true, 
-                    message = $"Contratos {contrato1.NumeroSecuencial} y {contrato2.NumeroSecuencial} relacionados exitosamente." 
+                return Json(new
+                {
+                    success = true,
+                    message = $"Contratos {contrato1.NumeroSecuencial} y {contrato2.NumeroSecuencial} relacionados exitosamente."
                 });
             }
             catch (Exception ex)
@@ -2203,7 +2208,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             try
             {
                 _logger.LogInformation($"Intentando remover relación para contrato ID: {contratoId}");
-                
+
                 var contrato = await _context.Contrato.FindAsync(contratoId);
                 if (contrato == null)
                 {

@@ -16,7 +16,7 @@ namespace gad_checa_gestion_cementerio.Services
         private readonly ContratoService _contratoService;
 
         public CatastroMigrationService(
-            ApplicationDbContext context, 
+            ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             ILogger<CatastroMigrationService> logger,
             ContratoService contratoService)
@@ -31,50 +31,41 @@ namespace gad_checa_gestion_cementerio.Services
         {
             var resultado = new CatastroMigrationResult();
 
-            try
+            // Configurar EPPlus para uso no comercial
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using var package = new ExcelPackage(new FileInfo(rutaArchivo));
+
+            _logger.LogInformation($"Iniciando migración de catastro desde: {rutaArchivo}");
+            _logger.LogInformation($"Hojas encontradas: {string.Join(", ", package.Workbook.Worksheets.Select(w => w.Name))}");
+
+            // Obtener usuario para la migración
+            var usuarioMigracion = await ObtenerUsuarioMigracion();
+
+            // Crear estructura base
+            var cementerio = await CrearOValidarCementerio(usuarioMigracion);
+
+            // Crear bloques lógicos para resolver conflictos de numeración
+            await CrearBloquesLogicos(cementerio, usuarioMigracion);
+
+            // Procesar cada hoja del archivo Excel
+            foreach (var worksheet in package.Workbook.Worksheets)
             {
-                // Configurar EPPlus para uso no comercial
-                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-                using var package = new ExcelPackage(new FileInfo(rutaArchivo));
-
-                _logger.LogInformation($"Iniciando migración de catastro desde: {rutaArchivo}");
-                _logger.LogInformation($"Hojas encontradas: {string.Join(", ", package.Workbook.Worksheets.Select(w => w.Name))}");
-
-                // Obtener usuario para la migración
-                var usuarioMigracion = await ObtenerUsuarioMigracion();
-
-                // Crear estructura base
-                var cementerio = await CrearOValidarCementerio(usuarioMigracion);
-
-                // Crear bloques lógicos para resolver conflictos de numeración
-                await CrearBloquesLogicos(cementerio, usuarioMigracion);
-
-                // Procesar cada hoja del archivo Excel
-                foreach (var worksheet in package.Workbook.Worksheets)
+                _logger.LogInformation($"📄 Procesando hoja: {worksheet.Name}");
+                if (worksheet.Name.ToUpper().Contains("TÚMULOS") || worksheet.Name.ToUpper().Contains("TUMULOS"))
                 {
-                    _logger.LogInformation($"📄 Procesando hoja: {worksheet.Name}");
-                    
-                    if (worksheet.Name.ToUpper().Contains("TÚMULOS") || worksheet.Name.ToUpper().Contains("TUMULOS"))
-                    {
-                        // Procesar hoja TÚMULOS con formato especial
-                        await ProcesarHojaTumulos(worksheet, cementerio, usuarioMigracion, resultado);
-                    }
-                    else
-                    {
-                        // Procesar hojas normales (NICHOS, BÓVEDAS)
-                        await ProcesarHojaNormal(worksheet, cementerio, usuarioMigracion, resultado);
-                    }
+                    // Procesar hoja TÚMULOS con formato especial
+                    await ProcesarHojaTumulos(worksheet, cementerio, usuarioMigracion, resultado);
                 }
+                else
+                {
+                    // Procesar hojas normales (NICHOS, BÓVEDAS)
+                    await ProcesarHojaNormal(worksheet, cementerio, usuarioMigracion, resultado);
+                }
+            }
 
-                resultado.EsExitoso = true;
-                _logger.LogInformation("Migración de catastro completada exitosamente");
-            }
-            catch (Exception ex)
-            {
-                resultado.Errores.Add($"Error general: {ex.Message}");
-                _logger.LogError(ex, "Error durante la migración del catastro");
-            }
+            resultado.EsExitoso = true;
+            _logger.LogInformation("Migración de catastro completada exitosamente");
 
             return resultado;
         }
@@ -95,7 +86,7 @@ namespace gad_checa_gestion_cementerio.Services
                     Tipo = "Nichos",
                     NumeroDePisos = 1,
                     BovedasPorPiso = 100,
-                    TarifaBase = cementerio.tarifa_arriendo_nicho ?? 30.00m,
+                    TarifaBase = cementerio.tarifa_arriendo_nicho ?? 240.00m,
                     Estado = true,
                     FechaCreacion = DateTime.Now,
                     FechaActualizacion = DateTime.Now,
@@ -174,10 +165,21 @@ namespace gad_checa_gestion_cementerio.Services
             // Crear bloques y pisos basados en las secciones
             await CrearEstructuraBovedas(secciones, cementerio, usuario, resultado);
 
-            // Migrar registros por sección
+            // Migrar registros por sección y actualizar BovedasPorPiso
             foreach (var seccion in secciones)
             {
-                await MigrarSeccion(worksheet, seccion, usuario, resultado);
+                var registros = await MigrarSeccion(worksheet, seccion, usuario, resultado);
+
+                // Actualizar el contador de bóvedas por piso en el bloque
+                if (seccion.BloqueId > 0)
+                {
+                    var bloque = await _context.Bloque.FirstOrDefaultAsync(b => b.Id == seccion.BloqueId);
+                    if (bloque != null)
+                    {
+                        bloque.BovedasPorPiso = registros;
+                        await _context.SaveChangesAsync();
+                    }
+                }
             }
         }
 
@@ -187,7 +189,7 @@ namespace gad_checa_gestion_cementerio.Services
 
             // Crear bloque TÚMULOS
             var bloqueExistente = await _context.Bloque.FirstOrDefaultAsync(b => b.Descripcion == "Túmulos");
-            
+
             Bloque bloque;
             if (bloqueExistente == null)
             {
@@ -195,7 +197,7 @@ namespace gad_checa_gestion_cementerio.Services
                 {
                     Descripcion = "Túmulos",
                     CalleA = "No especificada",
-                    CalleB = "No especificada", 
+                    CalleB = "No especificada",
                     Tipo = "Tumulos",
                     NumeroDePisos = 1,
                     BovedasPorPiso = 100,
@@ -219,7 +221,7 @@ namespace gad_checa_gestion_cementerio.Services
 
             // Crear piso para el bloque
             var pisoExistente = await _context.Piso.FirstOrDefaultAsync(p => p.BloqueId == bloque.Id);
-            
+
             Piso piso;
             if (pisoExistente == null)
             {
@@ -243,24 +245,25 @@ namespace gad_checa_gestion_cementerio.Services
             var filas = worksheet.Dimension?.Rows ?? 0;
             var numeroSecuencial = 1;
 
-            for (int fila = 2; fila <= filas; fila++) // Empezar desde fila 2 para saltar encabezado
+            var registros = 0;
+
+
+            for (int fila = 3; fila <= filas; fila++) // Empezar desde fila 2 para saltar encabezado
             {
-                try
+                _logger.LogInformation($"🔄 Procesando TÚMULOS fila {fila}");
+
+                var registro = ExtraerRegistroFilaTumulos(worksheet, fila, numeroSecuencial);
+
+                if (!EsFilaVacia(registro))
                 {
-                    var registro = ExtraerRegistroFilaTumulos(worksheet, fila, numeroSecuencial);
-                    
-                    if (!EsFilaVacia(registro))
-                    {
-                        await ProcesarRegistroTumulos(registro, piso.Id, usuario, resultado);
-                        numeroSecuencial++;
-                    }
+                    await ProcesarRegistroTumulos(registro, piso.Id, usuario, resultado);
+                    numeroSecuencial++;
                 }
-                catch (Exception ex)
-                {
-                    resultado.Errores.Add($"Error en fila {fila} de TÚMULOS: {ex.Message}");
-                    _logger.LogWarning($"Error procesando fila {fila} de TÚMULOS: {ex.Message}");
-                }
+                registros++;
             }
+
+            bloque.BovedasPorPiso = registros;
+            await _context.SaveChangesAsync();
         }
 
         private List<SeccionCatastro> IdentificarSecciones(ExcelWorksheet worksheet)
@@ -283,7 +286,7 @@ namespace gad_checa_gestion_cementerio.Services
                     }
                 }
                 contenidoFila = contenidoFila.Trim();
-                
+
                 // Buscar encabezados de sección
                 if (!string.IsNullOrEmpty(contenidoFila))
                 {
@@ -292,7 +295,7 @@ namespace gad_checa_gestion_cementerio.Services
                     {
                         _logger.LogInformation($"🔍 Fila {fila}: Detectado posible encabezado TÚMULOS: '{contenidoFila}'");
                     }
-                    
+
                     // Detectar secciones válidas
                     if (EsSeccionValida(contenidoFila))
                     {
@@ -307,7 +310,7 @@ namespace gad_checa_gestion_cementerio.Services
                         seccionActual = new SeccionCatastro
                         {
                             Nombre = contenidoFila,
-                            FilaInicio = fila + 2, // Saltar header
+                            FilaInicio = fila + 1, // Saltar header
                             TipoBloque = DeterminarTipoBloque(contenidoFila)
                         };
                     }
@@ -327,32 +330,32 @@ namespace gad_checa_gestion_cementerio.Services
         private bool EsSeccionValida(string contenidoFila)
         {
             if (string.IsNullOrEmpty(contenidoFila)) return false;
-            
+
             var contenido = contenidoFila.ToUpper();
-            
+
             // Excluir "BLOQUES DE NICHOS PARTE INFERIOR" - solo para nichos
             if (contenido.Contains("BLOQUES DE NICHOS PARTE INFERIOR"))
                 return false;
-            
+
             // Secciones de nichos
-            if (contenido.Contains("SOBRE BLOQUE") || 
+            if (contenido.Contains("SOBRE BLOQUE") ||
                 contenido.Contains("BLOQUE MANO DERECHA DEL CRISTO"))
                 return true;
-            
+
             // Secciones de túmulos
             if (contenido.Contains("TUMULOS") || contenido.Contains("TÚMULOS"))
                 return true;
-            
+
             // Secciones de bóvedas
             if (contenido.Contains("BLOQUES DE BÓVEDAS") ||
                 contenido.Contains("BOVEDAS") ||
                 EsBloqueBovedas(contenido))
                 return true;
-            
+
             // Secciones de nichos generales
             if (contenido.Contains("NICHOS") && !contenido.Contains("BLOQUES DE NICHOS"))
                 return true;
-            
+
             return false;
         }
 
@@ -361,20 +364,20 @@ namespace gad_checa_gestion_cementerio.Services
             // Bloques con letras: A, B, C, D, E, F
             var bloquesLetra = new[] { "BLOQUE \"A\"", "BLOQUE \"B\"", "BLOQUE \"C\"", "BLOQUE \"D\"", "BLOQUE \"E\"", "BLOQUE \"F\"",
                                      "BLOQUE 'A'", "BLOQUE 'B'", "BLOQUE 'C'", "BLOQUE 'D'", "BLOQUE 'E'", "BLOQUE 'F'" };
-            
+
             // Bloques numerados: 1-16
             for (int i = 1; i <= 16; i++)
             {
                 if (contenido.Contains($"BLOQUE {i}"))
                     return true;
             }
-            
+
             // Bloques especiales del Cristo
             if (contenido.Contains("BLOQUE MANO DERECHA DEL CRISTO") ||
                 contenido.Contains("BLOQUE MANO IZQUIERDA DEL CRISTO") ||
                 contenido.Contains("BLOQUE MANO IZQUIERDA DEL CRISTO PARTE BAJA"))
                 return true;
-            
+
             // Verificar bloques con letras
             return bloquesLetra.Any(bloque => contenido.Contains(bloque));
         }
@@ -396,7 +399,7 @@ namespace gad_checa_gestion_cementerio.Services
             {
                 // Crear bloque para cada sección
                 var nombreBloque = ExtraerNombreBloque(seccion.Nombre);
-                
+
                 var bloqueExistente = await _context.Bloque
                     .FirstOrDefaultAsync(b => b.Descripcion == nombreBloque);
 
@@ -450,18 +453,15 @@ namespace gad_checa_gestion_cementerio.Services
                     seccion.PisoId = piso.Id;
 
                     // Crear todas las bóvedas automáticamente (100 bóvedas por bloque)
-                    await CrearBovedasAutomaticamente(piso, usuario, resultado);
+
                 }
                 else
                 {
                     seccion.PisoId = pisoExistente.Id;
-                    
+
                     // Verificar si el piso existente tiene bóvedas, si no, crearlas
                     var bovedasExistentes = await _context.Boveda.CountAsync(b => b.PisoId == pisoExistente.Id);
-                    if (bovedasExistentes == 0)
-                    {
-                        await CrearBovedasAutomaticamente(pisoExistente, usuario, resultado);
-                    }
+
                 }
             }
         }
@@ -469,7 +469,7 @@ namespace gad_checa_gestion_cementerio.Services
         private string ExtraerNombreBloque(string nombreSeccion)
         {
             var seccion = nombreSeccion.ToUpper();
-            
+
             // Mapear los nombres específicos de bloques de nichos
             if (seccion.Contains("SOBRE BLOQUE \"B\" PARTE FRONTAL") || seccion.Contains("SOBRE BLOQUE 'B' PARTE FRONTAL"))
                 return "Sobre Bloque B Frontal";
@@ -491,7 +491,7 @@ namespace gad_checa_gestion_cementerio.Services
                 return "Sobre Bloque F Lateral";
             else if (seccion.Contains("BLOQUE MANO DERECHA DEL CRISTO"))
                 return "Bloque Mano Derecha del Cristo";
-            
+
             // Mapear bloques de bóvedas con letras
             else if (seccion.Contains("BLOQUE \"A\"") || seccion.Contains("BLOQUE 'A'"))
                 return "Bloque A";
@@ -505,7 +505,7 @@ namespace gad_checa_gestion_cementerio.Services
                 return "Bloque E";
             else if (seccion.Contains("BLOQUE \"F\"") || seccion.Contains("BLOQUE 'F'"))
                 return "Bloque F";
-            
+
             // Mapear bloques numerados de bóvedas
             else if (seccion.Contains("BLOQUE 1"))
                 return "Bloque 1";
@@ -539,13 +539,13 @@ namespace gad_checa_gestion_cementerio.Services
                 return "Bloque 15";
             else if (seccion.Contains("BLOQUE 16"))
                 return "Bloque 16";
-            
+
             // Bloques especiales del Cristo para bóvedas
             else if (seccion.Contains("BLOQUE MANO IZQUIERDA DEL CRISTO PARTE BAJA"))
                 return "Bloque Mano Izquierda del Cristo Parte Baja";
             else if (seccion.Contains("BLOQUE MANO IZQUIERDA DEL CRISTO"))
                 return "Bloque Mano Izquierda del Cristo";
-            
+
             // Otros tipos
             else if (seccion.Contains("TUMULOS") || seccion.Contains("TÚMULOS"))
                 return "Túmulos";
@@ -555,35 +555,33 @@ namespace gad_checa_gestion_cementerio.Services
                 return nombreSeccion;
         }
 
-        private async Task MigrarSeccion(ExcelWorksheet worksheet, SeccionCatastro seccion, ApplicationUser usuario, CatastroMigrationResult resultado)
+        private async Task<int> MigrarSeccion(ExcelWorksheet worksheet, SeccionCatastro seccion, ApplicationUser usuario, CatastroMigrationResult resultado)
         {
+            var registros = 0;
             for (int fila = seccion.FilaInicio; fila <= seccion.FilaFin; fila++)
             {
-                try
+                _logger.LogInformation($"🔄 Procesando sección '{seccion.Nombre}' fila {fila}");
+
+                var registro = ExtraerRegistroFila(worksheet, fila);
+
+                if (!EsFilaVacia(registro))
                 {
-                    var registro = ExtraerRegistroFila(worksheet, fila);
-                    
-                    if (!EsFilaVacia(registro))
-                    {
-                        await ProcesarRegistro(registro, seccion, usuario, resultado);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    resultado.Errores.Add($"Error en fila {fila} de sección '{seccion.Nombre}': {ex.Message}");
-                    _logger.LogWarning($"Error procesando fila {fila}: {ex.Message}");
+                    await ProcesarRegistro(registro, seccion, usuario, resultado);
+                    registros++;
                 }
             }
+
+            return registros;
         }
 
         private RegistroCatastro ExtraerRegistroFila(ExcelWorksheet worksheet, int fila)
         {
             var columnaA = worksheet.Cells[fila, 1].Value?.ToString()?.Trim();
-            
+
             // Para TÚMULOS: Si la columna A no tiene número o dice "suelo", usar un número secuencial
             int? numero = null;
             string nombreDifunto = null;
-            
+
             if (!string.IsNullOrEmpty(columnaA) && (columnaA.ToLower() == "suelo" || !int.TryParse(columnaA, out _)))
             {
                 // Es una fila tipo "suelo" - el nombre del difunto está en columna A, no hay número
@@ -598,7 +596,7 @@ namespace gad_checa_gestion_cementerio.Services
             }
 
             var representante = worksheet.Cells[fila, 8].Value?.ToString()?.Trim();
-            
+
             // Log para debugging específico de responsables faltantes
             if (!string.IsNullOrEmpty(representante))
             {
@@ -625,7 +623,7 @@ namespace gad_checa_gestion_cementerio.Services
         {
             // Para TÚMULOS: El nombre del difunto está en columna B (columna 2)
             var nombreDifunto = worksheet.Cells[fila, 2].Value?.ToString()?.Trim();
-            
+
             // Si la columna B está vacía, puede estar en columna A
             if (string.IsNullOrEmpty(nombreDifunto))
             {
@@ -633,7 +631,7 @@ namespace gad_checa_gestion_cementerio.Services
             }
 
             var representante = worksheet.Cells[fila, 5].Value?.ToString()?.Trim(); // Columna "Representante"
-            
+
             // Log para debugging específico de responsables faltantes (TÚMULOS)
             if (!string.IsNullOrEmpty(representante))
             {
@@ -647,7 +645,7 @@ namespace gad_checa_gestion_cementerio.Services
                 FechaContrato = ParsearFecha(worksheet.Cells[fila, 3].Value?.ToString()),
                 FechaVencimiento = ParsearFecha(worksheet.Cells[fila, 4].Value?.ToString()),
                 EsPropio = EsColumnaTrue(worksheet.Cells[fila, 4].Value?.ToString()), // Columna "Propio"
-                EsArrendado = !EsColumnaTrue(worksheet.Cells[fila, 4].Value?.ToString()), 
+                EsArrendado = !EsColumnaTrue(worksheet.Cells[fila, 4].Value?.ToString()),
                 ReutilizacionArriendo = worksheet.Cells[fila, 7].Value?.ToString()?.Trim(),
                 Representante = representante,
                 Contacto = worksheet.Cells[fila, 6].Value?.ToString()?.Trim(), // Columna "Contacto"
@@ -660,7 +658,7 @@ namespace gad_checa_gestion_cementerio.Services
         {
             // 1. Crear/obtener bóveda para TÚMULOS
             var boveda = await CrearOObtenerBovedaTumulos(registro, pisoId, usuario);
-            
+
             // 2. Crear/obtener difunto
             Difunto? difunto = null;
             if (!string.IsNullOrEmpty(registro.NombreDifunto))
@@ -709,7 +707,7 @@ namespace gad_checa_gestion_cementerio.Services
         private async Task<Boveda> CrearOObtenerBovedaTumulos(RegistroCatastro registro, int pisoId, ApplicationUser usuario)
         {
             var numeroBoveda = registro.Numero ?? 1;
-            
+
             var bovedaExistente = await _context.Boveda
                 .FirstOrDefaultAsync(b => b.Numero == numeroBoveda && b.PisoId == pisoId);
 
@@ -745,10 +743,10 @@ namespace gad_checa_gestion_cementerio.Services
         {
             // 1. Crear/obtener bóveda (puede ser en bloque físico o lógico)
             var boveda = await CrearOObtenerBovedaConLogica(registro, seccion, usuario);
-            
+
             // 2. Crear/obtener difunto
             Difunto? difunto = null;
-            if (!string.IsNullOrEmpty(registro.NombreDifunto) && 
+            if (!string.IsNullOrEmpty(registro.NombreDifunto) &&
                 !registro.NombreDifunto.Trim().Equals("vacío", StringComparison.OrdinalIgnoreCase) &&
                 !registro.NombreDifunto.Trim().Equals("vacio", StringComparison.OrdinalIgnoreCase) &&
                 !registro.NombreDifunto.Trim().Equals("empty", StringComparison.OrdinalIgnoreCase))
@@ -802,10 +800,10 @@ namespace gad_checa_gestion_cementerio.Services
             resultado.RegistrosProcesados++;
         }
 
-        private async Task<Boveda> CrearOObtenerBoveda(RegistroCatastro registro, SeccionCatastro seccion, ApplicationUser usuario)
+        private async Task<Boveda?> CrearOObtenerBoveda(RegistroCatastro registro, SeccionCatastro seccion, ApplicationUser usuario)
         {
             int numeroBoveda;
-            
+
             if (registro.Numero.HasValue)
             {
                 numeroBoveda = registro.Numero.Value;
@@ -818,13 +816,49 @@ namespace gad_checa_gestion_cementerio.Services
                     .MaxAsync(b => (int?)b.Numero) ?? 0;
                 numeroBoveda = ultimoNumero + 1;
             }
-            
+
+            // ❌ Si ya existe una bóveda con ese número en este piso, no crear otra
+            var yaExiste = await _context.Boveda
+                .AnyAsync(b => b.Numero == numeroBoveda && b.PisoId == seccion.PisoId);
+
+            if (yaExiste)
+            {
+                _logger.LogInformation($"⚠️ Ya existe una bóveda #{numeroBoveda} en piso físico ID={seccion.PisoId} → se usará bloque lógico.");
+                return null;
+            }
+
+            // ✅ Crear nueva bóveda física
+            var boveda = new Boveda
+            {
+                Numero = numeroBoveda,
+                NumeroSecuencial = $"{numeroBoveda:000}",
+                Estado = true,
+                FechaCreacion = DateTime.Now,
+                FechaActualizacion = DateTime.Now,
+                UsuarioCreadorId = usuario.Id,
+                PisoId = seccion.PisoId
+            };
+
+            _context.Boveda.Add(boveda);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ Bóveda física #{numeroBoveda} creada en piso ID={seccion.PisoId}");
+            return boveda;
+        }
+
+        private async Task<Boveda> CrearOObtenerBovedaConLogica(RegistroCatastro registro, SeccionCatastro seccion, ApplicationUser usuario)
+        {
+            var numeroBoveda = registro.Numero ?? 1;
+            var tipoBloque = DeterminarTipoBloque(seccion.Nombre);
+
+            // Verificar si ya existe una bóveda con ese número en este piso ESPECÍFICO
             var bovedaExistente = await _context.Boveda
                 .FirstOrDefaultAsync(b => b.Numero == numeroBoveda && b.PisoId == seccion.PisoId);
 
             if (bovedaExistente == null)
             {
-                var boveda = new Boveda
+                // No existe ninguna bóveda con ese número en este piso → crear bóveda física
+                var nuevaBoveda = new Boveda
                 {
                     Numero = numeroBoveda,
                     NumeroSecuencial = $"{numeroBoveda:000}",
@@ -835,47 +869,33 @@ namespace gad_checa_gestion_cementerio.Services
                     PisoId = seccion.PisoId
                 };
 
-                _context.Boveda.Add(boveda);
+                _context.Boveda.Add(nuevaBoveda);
                 await _context.SaveChangesAsync();
-                return boveda;
+
+                _logger.LogInformation($"✅ Bóveda física #{numeroBoveda} creada en piso ID={seccion.PisoId}, sección '{seccion.Nombre}' para {registro.NombreDifunto}");
+                return nuevaBoveda;
             }
 
-            return bovedaExistente;
+            // Ya existe una bóveda física con ese número en este piso
+            // → crear una nueva bóveda lógica para este difunto adicional
+            _logger.LogInformation($"🔄 Ya existe bóveda física #{numeroBoveda} en '{seccion.Nombre}' → creando bóveda lógica para difunto adicional: {registro.NombreDifunto}");
+
+            var pisoLogico = await ObtenerPisoLogico(tipoBloque);
+            var bovedaLogica = await CrearBovedaEnPisoLogico(registro, pisoLogico, usuario);
+
+            _logger.LogInformation($"🆕 Bóveda lógica #{numeroBoveda} creada en bloque '{pisoLogico.Bloque.Descripcion}' para difunto: {registro.NombreDifunto}");
+            return bovedaLogica;
         }
-
-        private async Task<Boveda> CrearOObtenerBovedaConLogica(RegistroCatastro registro, SeccionCatastro seccion, ApplicationUser usuario)
-        {
-            var numeroBoveda = registro.Numero ?? 1;
-            var tipoBloque = DeterminarTipoBloque(seccion.Nombre);
-
-            // Verificar si ya existe una bóveda con el mismo número en el mismo bloque físico específico
-            var conflicto = await VerificarConflictoNumeracionEnBloqueEspecifico(numeroBoveda, seccion);
-
-            if (conflicto)
-            {
-                // Usar bloque lógico para resolver conflicto de duplicado en el mismo bloque
-                _logger.LogInformation($"🔄 Conflicto detectado para bóveda #{numeroBoveda} - usando bloque lógico {tipoBloque}");
-                var pisoLogico = await ObtenerPisoLogico(tipoBloque);
-                return await CrearBovedaEnPisoLogico(registro, pisoLogico, usuario);
-            }
-            else
-            {
-                // Usar la lógica normal (bloque físico)
-                _logger.LogInformation($"✅ Sin conflicto para bóveda #{numeroBoveda} - usando bloque físico");
-                return await CrearOObtenerBoveda(registro, seccion, usuario);
-            }
-        }
-
         private async Task<bool> VerificarConflictoNumeracionEnBloqueEspecifico(int numeroBoveda, SeccionCatastro seccion)
         {
             // Verificar si ya existe un CONTRATO ACTIVO en una bóveda con el mismo número en el mismo bloque físico específico
             var nombreBloqueEspecifico = ExtraerNombreBloque(seccion.Nombre);
-            
+
             var contratoExistente = await _context.Contrato
                 .Include(c => c.Boveda)
                 .ThenInclude(b => b.Piso)
                 .ThenInclude(p => p.Bloque)
-                .FirstOrDefaultAsync(c => c.Boveda.Numero == numeroBoveda && 
+                .FirstOrDefaultAsync(c => c.Boveda.Numero == numeroBoveda &&
                                          c.Boveda.Piso.Bloque.Descripcion == nombreBloqueEspecifico &&
                                          !c.Boveda.Piso.Bloque.Descripcion.Contains("Lógico") &&
                                          c.FechaEliminacion == null &&
@@ -883,19 +903,18 @@ namespace gad_checa_gestion_cementerio.Services
 
             return contratoExistente != null;
         }
-
         private async Task<Piso> ObtenerPisoLogico(string tipoBloque)
         {
             var nombreBloqueLogico = tipoBloque == "Nichos" ? "Lógico Nichos" : "Lógico Bóvedas";
-            
+
             var piso = await _context.Piso
                 .Include(p => p.Bloque)
-                .FirstOrDefaultAsync(p => p.Bloque.Descripcion == nombreBloqueLogico);
+                .FirstOrDefaultAsync(p => p.Bloque != null &&
+                                          p.Bloque.Descripcion != null &&
+                                          p.Bloque.Descripcion.Trim() == nombreBloqueLogico);
 
             if (piso == null)
-            {
                 throw new InvalidOperationException($"No se encontró el bloque lógico: {nombreBloqueLogico}");
-            }
 
             return piso;
         }
@@ -903,52 +922,42 @@ namespace gad_checa_gestion_cementerio.Services
         private async Task<Boveda> CrearBovedaEnPisoLogico(RegistroCatastro registro, Piso pisoLogico, ApplicationUser usuario)
         {
             var numeroBoveda = registro.Numero ?? 1;
-            
-            var bovedaExistente = await _context.Boveda
-                .FirstOrDefaultAsync(b => b.Numero == numeroBoveda && b.PisoId == pisoLogico.Id);
 
-            if (bovedaExistente == null)
+            // Durante la migración, siempre crear una nueva bóveda lógica para cada difunto
+            // Esto permite tener múltiples difuntos con el mismo número de bóveda en la misma sección
+            var nuevaBoveda = new Boveda
             {
-                var boveda = new Boveda
-                {
-                    Numero = numeroBoveda,
-                    NumeroSecuencial = $"{numeroBoveda:000}",
-                    Estado = true,
-                    FechaCreacion = DateTime.Now,
-                    FechaActualizacion = DateTime.Now,
-                    UsuarioCreadorId = usuario.Id,
-                    PisoId = pisoLogico.Id
-                };
+                Numero = numeroBoveda,
+                NumeroSecuencial = $"{numeroBoveda:000}",
+                Estado = true,
+                FechaCreacion = DateTime.Now,
+                FechaActualizacion = DateTime.Now,
+                UsuarioCreadorId = usuario.Id,
+                PisoId = pisoLogico.Id
+            };
 
-                _context.Boveda.Add(boveda);
-                await _context.SaveChangesAsync();
-                
-                _logger.LogInformation($"🔗 Bóveda {numeroBoveda} creada en bloque lógico {pisoLogico.Bloque.Descripcion}");
-                return boveda;
-            }
+            _context.Boveda.Add(nuevaBoveda);
+            await _context.SaveChangesAsync();
 
-            return bovedaExistente;
+            _logger.LogInformation($"✅ Bóveda lógica #{numeroBoveda} creada en piso lógico ID={pisoLogico.Id}, bloque='{pisoLogico.Bloque?.Descripcion ?? "Desconocido"}' para difunto: {registro.NombreDifunto}");
+            return nuevaBoveda;
         }
-
         private async Task CrearContratoConRelaciones(RegistroCatastro registro, Boveda boveda, Difunto difunto, Persona? responsable, ApplicationUser usuario, CatastroMigrationResult resultado, SeccionCatastro seccion)
         {
-            try
-            {
-                _logger.LogInformation($"🔄 Iniciando CrearContratoConRelaciones para bóveda #{boveda.Numero}");
-                
-                var contratoExistente = await _context.Contrato
-                    .FirstOrDefaultAsync(c => c.BovedaId == boveda.Id && c.DifuntoId == difunto.Id);
+            _logger.LogInformation($"🔄 Iniciando CrearContratoConRelaciones para bóveda #{boveda.Numero}");
 
-                if (contratoExistente == null)
-                {
-                    _logger.LogInformation($"📄 Creando nuevo contrato para bóveda #{boveda.Numero}");
-                    var contrato = new Contrato
+            var contratoExistente = await _context.Contrato
+                .FirstOrDefaultAsync(c => c.BovedaId == boveda.Id && c.DifuntoId == difunto.Id);
+
+            if (contratoExistente == null)
+            {
+                _logger.LogInformation($"📄 Creando nuevo contrato para bóveda #{boveda.Numero}");
+                var contrato = new Contrato
                 {
                     NumeroSecuencial = _contratoService.getNumeroContrato(boveda.Id, isRenovacion: false),
                     BovedaId = boveda.Id,
                     DifuntoId = difunto.Id,
                     FechaInicio = registro.FechaContrato ?? DateTime.Now.AddYears(-1),
-                    FechaFin = registro.FechaVencimiento ?? DateTime.Now.AddYears(4),
                     NumeroDeMeses = CalcularAnios(registro.FechaContrato, registro.FechaVencimiento),
                     MontoTotal = registro.EsArrendado ? 250.00m : 0m,
                     Observaciones = registro.Observaciones ?? "",
@@ -964,15 +973,14 @@ namespace gad_checa_gestion_cementerio.Services
                 await _context.SaveChangesAsync();
                 _logger.LogInformation($"✅ Contrato creado y guardado. ID: {contrato.Id}, Número: {contrato.NumeroSecuencial}");
 
-                // Buscar contrato relacionado (mismo número de bóveda en bloque físico)
-                _logger.LogInformation($"🔗 Estableciendo relaciones de contrato para bóveda #{boveda.Numero}");
-                await EstablecerRelacionContrato(contrato, registro.Numero ?? 1, seccion, boveda);
+                // Establecer relación con contrato de bóveda física si esta es una bóveda lógica
+                await EstablecerRelacionContratoFisicoLogico(contrato, boveda, registro.Numero ?? 1, seccion);
 
                 // Agregar responsable si existe
                 if (responsable != null)
                 {
                     _logger.LogInformation($"📝 Intentando asignar responsable al contrato. Contrato ID: {contrato.Id}, Responsable: '{responsable.Nombres} {responsable.Apellidos}'");
-                    
+
                     var responsableContrato = await ObtenerOCrearResponsable(responsable, contrato, usuario);
 
                     // Recargar el contrato con sus responsables desde la BD para evitar problemas de contexto
@@ -984,7 +992,7 @@ namespace gad_checa_gestion_cementerio.Services
                     {
                         // Verificar si la relación ya existe
                         var relacionExistente = contratoConResponsables.Responsables.Any(r => r.Id == responsableContrato.Id);
-                        
+
                         if (!relacionExistente)
                         {
                             contratoConResponsables.Responsables.Add(responsableContrato);
@@ -996,12 +1004,12 @@ namespace gad_checa_gestion_cementerio.Services
                             _logger.LogInformation($"🔄 Relación ya existe entre contrato {contrato.Id} y responsable {responsableContrato.Id}");
                         }
                     }
-                    
+
                     // Verificar que la relación se guardó correctamente
                     var verificacion = await _context.Contrato
                         .Include(c => c.Responsables)
                         .FirstOrDefaultAsync(c => c.Id == contrato.Id);
-                    
+
                     if (verificacion?.Responsables?.Any() == true)
                     {
                         _logger.LogInformation($"✅ Relación contrato-responsable VERIFICADA: Contrato {contrato.Id} tiene {verificacion.Responsables.Count} responsables");
@@ -1023,36 +1031,83 @@ namespace gad_checa_gestion_cementerio.Services
                 resultado.ContratosCreados++;
                 _logger.LogInformation($"✅ ContratosCreados incrementado. Total: {resultado.ContratosCreados}");
             }
-            }
-            catch (Exception ex)
+        }
+
+        private async Task EstablecerRelacionContratoFisicoLogico(Contrato contratoActual, Boveda bovedaActual, int numeroBoveda, SeccionCatastro seccion)
+        {
+            _logger.LogInformation($"🔗 EstablecerRelacionContratoFisicoLogico: Buscando relación para contrato {contratoActual.Id}, bóveda #{numeroBoveda}");
+
+            // Verificar si la bóveda actual es lógica
+            var bloqueActual = await _context.Bloque
+                .Include(b => b.Pisos)
+                .ThenInclude(p => p.Bovedas)
+                .FirstOrDefaultAsync(b => b.Pisos.Any(p => p.Id == bovedaActual.PisoId));
+
+            if (bloqueActual == null)
             {
-                _logger.LogError(ex, $"❌ ERROR en CrearContratoConRelaciones para bóveda #{boveda?.Numero}: {ex.Message}");
-                resultado.Errores.Add($"Error creando contrato para bóveda #{boveda?.Numero}: {ex.Message}");
-                throw;
+                _logger.LogWarning($"⚠️ No se encontró el bloque para la bóveda actual #{numeroBoveda}");
+                return;
+            }
+
+            bool esBovedaLogica = bloqueActual.Descripcion.Contains("Lógico");
+
+            if (!esBovedaLogica)
+            {
+                // Si es bóveda física, no necesita relacionarse (es la primera)
+                _logger.LogInformation($"ℹ️ Bóveda física #{numeroBoveda} - No requiere relación");
+                return;
+            }
+
+            // Es bóveda lógica, buscar el contrato de la bóveda física con el mismo número 
+            // en el MISMO PISO de la sección original (no por nombre de bloque)
+            _logger.LogInformation($"🔍 Bóveda lógica detectada #{numeroBoveda} - Buscando contrato en bóveda física del piso {seccion.PisoId}");
+
+            var contratoFisico = await _context.Contrato
+                .Include(c => c.Boveda)
+                .ThenInclude(b => b.Piso)
+                .ThenInclude(p => p.Bloque)
+                .Where(c => c.Boveda.Numero == numeroBoveda &&
+                           c.Boveda.PisoId == seccion.PisoId && // Buscar en el mismo piso de la sección
+                           !c.Boveda.Piso.Bloque.Descripcion.Contains("Lógico") && // Asegurar que NO sea lógico
+                           c.FechaEliminacion == null &&
+                           c.Estado == true)
+                .OrderBy(c => c.FechaCreacion) // Tomar el primero creado (el de la bóveda física)
+                .FirstOrDefaultAsync();
+
+            if (contratoFisico != null)
+            {
+                // Establecer relación: el contrato lógico apunta al contrato físico
+                contratoActual.ContratoRelacionadoId = contratoFisico.Id;
+                _context.Contrato.Update(contratoActual);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"✅ Relación establecida: Contrato lógico {contratoActual.Id} → Contrato físico {contratoFisico.Id} (Bóveda #{numeroBoveda} en piso {seccion.PisoId})");
+            }
+            else
+            {
+                _logger.LogWarning($"⚠️ No se encontró contrato físico para bóveda #{numeroBoveda} en piso {seccion.PisoId}, sección '{seccion.Nombre}'");
             }
         }
 
         private async Task EstablecerRelacionContrato(Contrato contratoActual, int numeroBoveda, SeccionCatastro seccion, Boveda bovedaActual)
         {
-            try
-            {
-                _logger.LogInformation($"🔗 EstablecerRelacionContrato: Buscando relación para contrato {contratoActual.Id}, bóveda #{numeroBoveda}");
-                
-                // Buscar contrato en bóveda física con el mismo número Y del mismo bloque físico
-                var tipoBloque = DeterminarTipoBloque(seccion.Nombre);
-                var tipoComplementario = tipoBloque == "Nichos" ? "Bovedas" : "Nichos";
-                
-                _logger.LogInformation($"🔍 Tipo bloque: {tipoBloque}, Tipo complementario: {tipoComplementario}");
-            
+            _logger.LogInformation($"🔗 EstablecerRelacionContrato: Buscando relación para contrato {contratoActual.Id}, bóveda #{numeroBoveda}");
+
+            // Buscar contrato en bóveda física con el mismo número Y del mismo bloque físico
+            var tipoBloque = DeterminarTipoBloque(seccion.Nombre);
+            var tipoComplementario = tipoBloque == "Nichos" ? "Bovedas" : "Nichos";
+
+            _logger.LogInformation($"🔍 Tipo bloque: {tipoBloque}, Tipo complementario: {tipoComplementario}");
+
             // Obtener el nombre del bloque físico actual (sin "Lógico")
             var bloqueActual = await _context.Bloque
                 .FirstOrDefaultAsync(b => b.Id == bovedaActual.Piso.BloqueId);
-            
+
             if (bloqueActual == null || bloqueActual.Descripcion.Contains("Lógico"))
             {
                 return; // No relacionar contratos de bloques lógicos
             }
-            
+
             // Extraer el identificador del bloque físico (B, C, D, E, F, 1, 2, etc.)
             var identificadorBloqueActual = ExtraerIdentificadorBloque(bloqueActual.Descripcion);
 
@@ -1061,7 +1116,7 @@ namespace gad_checa_gestion_cementerio.Services
                 .Include(c => c.Boveda)
                 .ThenInclude(b => b.Piso)
                 .ThenInclude(p => p.Bloque)
-                .Where(c => c.Boveda.Numero == numeroBoveda && 
+                .Where(c => c.Boveda.Numero == numeroBoveda &&
                            c.Boveda.Piso.Bloque.Tipo == tipoComplementario &&
                            !c.Boveda.Piso.Bloque.Descripcion.Contains("Lógico"))
                 .ToListAsync();
@@ -1085,12 +1140,6 @@ namespace gad_checa_gestion_cementerio.Services
             {
                 _logger.LogInformation($"ℹ️ No se encontró contrato relacionado para bóveda #{numeroBoveda} en bloque {identificadorBloqueActual}");
             }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"❌ ERROR en EstablecerRelacionContrato: {ex.Message}");
-                // No propagar la excepción para que no interrumpa la migración
-            }
         }
 
         private async Task<Difunto> CrearOObtenerDifunto(RegistroCatastro registro, ApplicationUser usuario)
@@ -1098,57 +1147,66 @@ namespace gad_checa_gestion_cementerio.Services
             var partes = registro.NombreDifunto!.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var nombres = partes.Length > 0 ? string.Join(" ", partes.Take(partes.Length / 2 + 1)) : "Sin nombre";
             var apellidos = partes.Length > 1 ? string.Join(" ", partes.Skip(partes.Length / 2 + 1)) : "Sin apellido";
-            
-            // Truncar campos para evitar errores de longitud
-            nombres = TruncateString(nombres, 95); // Dejar espacio para posibles caracteres especiales
-            apellidos = TruncateString(apellidos, 95);
+
+
+            nombres = TruncateString(nombres.Trim(), 95);
+            apellidos = TruncateString(apellidos.Trim(), 95);
+
+            var fechaFallecimiento = registro.FechaContrato ?? DateTime.Now.AddDays(-30);
 
             var difuntoExistente = await _context.Difunto
-                .FirstOrDefaultAsync(d => d.Nombres == nombres && d.Apellidos == apellidos);
+                .FirstOrDefaultAsync(d =>
+                    d.Nombres.Trim().ToLower() == nombres.ToLower() &&
+                    d.Apellidos.Trim().ToLower() == apellidos.ToLower() &&
+                    d.FechaFallecimiento.HasValue &&
+                    d.FechaFallecimiento.Value.Date == fechaFallecimiento.Date);
 
-            if (difuntoExistente == null)
+            if (difuntoExistente != null)
             {
-                // Obtener el descuento por defecto (Ninguno)
-                var descuentoPorDefecto = await _context.Descuento
-                    .FirstOrDefaultAsync(d => d.Descripcion == "Ninguno") 
-                    ?? await _context.Descuento.FirstOrDefaultAsync();
-
-                if (descuentoPorDefecto == null)
-                {
-                    throw new InvalidOperationException("No se encontró ningún descuento en la base de datos. Verifique que los datos iniciales estén creados.");
-                }
-
-                // Usar fecha de contrato como fecha de fallecimiento si está disponible, sino una fecha por defecto
-                var fechaFallecimiento = registro.FechaContrato?.AddDays(-7) ?? DateTime.Now.AddDays(-30);
-                
-                var difunto = new Difunto
-                {
-                    Nombres = nombres,
-                    Apellidos = apellidos,
-                    NumeroIdentificacion = "9999999999", // Temporal
-                    FechaNacimiento = fechaFallecimiento.AddYears(-70),
-                    FechaFallecimiento = fechaFallecimiento,
-                    Estado = true,
-                    FechaCreacion = DateTime.Now,
-                    FechaActualizacion = DateTime.Now,
-                    UsuarioCreadorId = usuario.Id,
-                    DescuentoId = descuentoPorDefecto.Id
-                };
-
-                _context.Difunto.Add(difunto);
-                await _context.SaveChangesAsync();
-                return difunto;
+                _logger.LogInformation($"♻️ Difunto reutilizado: {nombres} {apellidos} - Fallecimiento: {fechaFallecimiento:dd/MM/yyyy}");
+                return difuntoExistente;
             }
 
-            return difuntoExistente;
-        }
+            var descuentoPorDefecto = await _context.Descuento
+                .FirstOrDefaultAsync(d => d.Descripcion == "Ninguno")
+                ?? await _context.Descuento.FirstOrDefaultAsync();
 
+            if (descuentoPorDefecto == null)
+                throw new InvalidOperationException("No se encontró ningún descuento en la base de datos.");
+
+            var nuevoDifunto = new Difunto
+            {
+                Nombres = nombres,
+                Apellidos = apellidos,
+                NumeroIdentificacion = "9999999999",
+                FechaNacimiento = fechaFallecimiento.AddYears(-70),
+                FechaFallecimiento = fechaFallecimiento,
+                Estado = true,
+                FechaCreacion = DateTime.Now,
+                FechaActualizacion = DateTime.Now,
+                UsuarioCreadorId = usuario.Id,
+                DescuentoId = descuentoPorDefecto.Id
+            };
+
+            try
+            {
+                _context.Difunto.Add(nuevoDifunto);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"🆕 Difunto creado: {nombres} {apellidos} - Fallecimiento: {fechaFallecimiento:dd/MM/yyyy}");
+                return nuevoDifunto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"❌ Error al guardar difunto: {ex.Message}");
+                throw;
+            }
+        }
         private async Task<Persona> CrearOObtenerPersona(RegistroCatastro registro, ApplicationUser usuario)
         {
             var partesNombre = registro.Representante!.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var nombres = partesNombre.Length > 0 ? string.Join(" ", partesNombre.Take(partesNombre.Length / 2 + 1)) : "Sin nombre";
             var apellidos = partesNombre.Length > 1 ? string.Join(" ", partesNombre.Skip(partesNombre.Length / 2 + 1)) : "Sin apellido";
-            
+
             // Truncar campos para evitar errores de longitud
             nombres = TruncateString(nombres, 95);
             apellidos = TruncateString(apellidos, 95);
@@ -1221,11 +1279,14 @@ namespace gad_checa_gestion_cementerio.Services
             }
         }
 
-        private async Task CrearContrato(RegistroCatastro registro, Boveda boveda, Difunto difunto, Persona? responsable, ApplicationUser usuario, CatastroMigrationResult resultado)
+
+        private async Task CrearContrato(RegistroCatastro registro, Boveda boveda, Difunto difunto, Persona? responsable, ApplicationUser usuario, CatastroMigrationResult resultado, bool CrearPagosPropietario = true)
         {
             var contratoExistente = await _context.Contrato
                 .FirstOrDefaultAsync(c => c.BovedaId == boveda.Id && c.DifuntoId == difunto.Id);
-
+            var cementerio = await _context.Cementerio.FirstOrDefaultAsync();
+            var bloque = await _context.Bloque.FirstOrDefaultAsync(b => b.Id == boveda.Piso.BloqueId);
+            var tipo = bloque.Tipo.Trim();
             if (contratoExistente == null)
             {
                 var contrato = new Contrato
@@ -1236,7 +1297,7 @@ namespace gad_checa_gestion_cementerio.Services
                     FechaInicio = registro.FechaContrato ?? DateTime.Now.AddYears(-1),
                     FechaFin = registro.FechaVencimiento ?? DateTime.Now.AddYears(4),
                     NumeroDeMeses = CalcularAnios(registro.FechaContrato, registro.FechaVencimiento),
-                    MontoTotal = registro.EsArrendado ? 250.00m : 0m,
+                    MontoTotal = tipo == "Nichos" ? (decimal)cementerio!.tarifa_arriendo_nicho : (decimal)cementerio!.tarifa_arriendo,
                     Observaciones = registro.Observaciones ?? "",
                     Estado = true,
                     EsRenovacion = false,
@@ -1247,13 +1308,21 @@ namespace gad_checa_gestion_cementerio.Services
                 };
 
                 _context.Contrato.Add(contrato);
+                var cuotas = GenerarCuotasParaContrato(contrato);
+                if (CrearPagosPropietario && responsable != null)
+                {
+                    var pagos = GenerarPagosIniciales(cuotas, responsable.Id, "Efectivo", "0000000");
+                    _context.Pago.AddRange(pagos);
+                }
+                _logger.LogInformation($"💰Cuotas generadas para contrato {contrato.Id}");
+
                 await _context.SaveChangesAsync();
 
                 // Agregar responsable si existe
                 if (responsable != null)
                 {
                     _logger.LogInformation($"📝 Intentando asignar responsable al contrato (TÚMULOS). Contrato ID: {contrato.Id}, Responsable: '{responsable.Nombres} {responsable.Apellidos}'");
-                    
+
                     var responsableContrato = await ObtenerOCrearResponsable(responsable, contrato, usuario);
 
                     // Recargar el contrato con sus responsables desde la BD para evitar problemas de contexto
@@ -1265,7 +1334,7 @@ namespace gad_checa_gestion_cementerio.Services
                     {
                         // Verificar si la relación ya existe
                         var relacionExistente = contratoConResponsables.Responsables.Any(r => r.Id == responsableContrato.Id);
-                        
+
                         if (!relacionExistente)
                         {
                             contratoConResponsables.Responsables.Add(responsableContrato);
@@ -1277,12 +1346,12 @@ namespace gad_checa_gestion_cementerio.Services
                             _logger.LogInformation($"🔄 Relación ya existe entre contrato {contrato.Id} y responsable {responsableContrato.Id} (TÚMULOS)");
                         }
                     }
-                    
+
                     // Verificar que la relación se guardó correctamente
                     var verificacion = await _context.Contrato
                         .Include(c => c.Responsables)
                         .FirstOrDefaultAsync(c => c.Id == contrato.Id);
-                    
+
                     if (verificacion?.Responsables?.Any() == true)
                     {
                         _logger.LogInformation($"✅ Relación contrato-responsable VERIFICADA (TÚMULOS): Contrato {contrato.Id} tiene {verificacion.Responsables.Count} responsables");
@@ -1365,23 +1434,44 @@ namespace gad_checa_gestion_cementerio.Services
 
         private DateTime? ParsearFecha(string? fechaTexto)
         {
-            if (string.IsNullOrEmpty(fechaTexto)) return null;
+            if (string.IsNullOrWhiteSpace(fechaTexto))
+                return null;
 
+            // ✅ Si el valor es un número (Excel serial date), conviértelo
+            if (double.TryParse(fechaTexto, out var oaDate))
+            {
+                try
+                {
+                    return DateTime.FromOADate(oaDate);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            // ✅ Intenta formatos comunes
             var formatos = new[]
             {
-                "d/M/yyyy",
-                "dd/MM/yyyy",
-                "MM/dd/yyyy", 
-                "yyyy-MM-dd",
-                "dd-MM-yyyy"
-            };
+        "d/M/yyyy",
+        "dd/MM/yyyy",
+        "MM/dd/yyyy",
+        "yyyy-MM-dd",
+        "dd-MM-yyyy"
+    };
 
             foreach (var formato in formatos)
             {
-                if (DateTime.TryParseExact(fechaTexto, formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fecha))
+                if (DateTime.TryParseExact(fechaTexto, formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                 {
                     return fecha;
                 }
+            }
+
+            // ✅ Último intento con parseo libre
+            if (DateTime.TryParse(fechaTexto, out var fechaLibre))
+            {
+                return fechaLibre;
             }
 
             return null;
@@ -1399,14 +1489,14 @@ namespace gad_checa_gestion_cementerio.Services
             if (!fechaInicio.HasValue || !fechaFin.HasValue) return 5; // Default 5 años
 
             var anios = fechaFin.Value.Year - fechaInicio.Value.Year;
-            
+
             // Ajustar si aún no se ha cumplido el aniversario en el año final
-            if (fechaFin.Value.Month < fechaInicio.Value.Month || 
+            if (fechaFin.Value.Month < fechaInicio.Value.Month ||
                 (fechaFin.Value.Month == fechaInicio.Value.Month && fechaFin.Value.Day < fechaInicio.Value.Day))
             {
                 anios--;
             }
-            
+
             return Math.Max(anios, 1); // Mínimo 1 año
         }
 
@@ -1415,7 +1505,7 @@ namespace gad_checa_gestion_cementerio.Services
         {
             if (string.IsNullOrEmpty(input))
                 return input;
-                
+
             return input.Length <= maxLength ? input : input.Substring(0, maxLength);
         }
 
@@ -1497,7 +1587,7 @@ namespace gad_checa_gestion_cementerio.Services
         {
             // Buscar si ya existe un responsable con los mismos datos
             var responsableExistente = await _context.Responsable
-                .FirstOrDefaultAsync(r => r.Nombres == responsable.Nombres && 
+                .FirstOrDefaultAsync(r => r.Nombres == responsable.Nombres &&
                                          r.Apellidos == responsable.Apellidos &&
                                          r.Estado == true);
 
@@ -1528,7 +1618,7 @@ namespace gad_checa_gestion_cementerio.Services
             _context.Responsable.Add(nuevoResponsable);
             await _context.SaveChangesAsync();
             _logger.LogInformation($"✅ Nuevo responsable creado. ID: {nuevoResponsable.Id}");
-            
+
             return nuevoResponsable;
         }
 
@@ -1536,7 +1626,7 @@ namespace gad_checa_gestion_cementerio.Services
         {
             // Crear 100 bóvedas automáticamente para cada piso
             const int totalBovedas = 100;
-            
+
             for (int numeroBoveda = 1; numeroBoveda <= totalBovedas; numeroBoveda++)
             {
                 // Verificar si la bóveda ya existe
@@ -1563,6 +1653,56 @@ namespace gad_checa_gestion_cementerio.Services
 
             await _context.SaveChangesAsync();
             _logger.LogInformation($"✅ Creadas {totalBovedas} bóvedas automáticamente para el piso {piso.NumeroPiso}");
+        }
+
+        private List<Cuota> GenerarCuotasParaContrato(gad_checa_gestion_cementerio.Data.Contrato contrato)
+        {
+
+            var cantidadCuotasBovedas = _context.Cementerio.First().AniosArriendoBovedas;
+            var cantidadCuotasNichos = _context.Cementerio.First().AniosArriendoNicho;
+            bool esNicho = contrato.Boveda!.Piso!.Bloque!.Tipo == "Nichos";
+            var tarifa_nicho = _context.Cementerio.First().tarifa_arriendo_nicho;
+            var tarifa_boveda = _context.Cementerio.First().tarifa_arriendo;
+
+            var cuotas = new List<Cuota>();
+            var cantidadCuotas = esNicho ? cantidadCuotasNichos : cantidadCuotasBovedas;
+
+            for (int i = 1; i <= cantidadCuotas; i++)
+            {
+                var cuota = new Cuota
+                {
+                    FechaVencimiento = contrato.FechaInicio.AddMonths(i),
+                    Monto = esNicho ? (decimal)tarifa_nicho / cantidadCuotasNichos : (decimal)(tarifa_boveda / cantidadCuotasBovedas),
+                    Pagada = true,
+                    // Asignar la navegación al contrato para que EF gestione la FK correctamente
+                    Contrato = contrato
+                };
+
+                cuotas.Add(cuota);
+            }
+
+            return cuotas;
+        }
+        private List<Pago> GenerarPagosIniciales(List<Cuota> cuotas, int personaId, string tipoPago, string comprobante)
+        {
+            var pagos = new List<Pago>();
+
+            var pago = new Pago
+            {
+                FechaPago = DateTime.Now,
+                TipoPago = tipoPago,
+                NumeroComprobante = comprobante,
+                Monto = cuotas.Sum(x => x.Monto),
+                PersonaPagoId = personaId,
+                Cuotas = cuotas
+            };
+            foreach (var cuota in pago.Cuotas)
+            {
+                cuota.Pagada = true;
+            }
+
+            pagos.Add(pago);
+            return pagos;
         }
     }
 

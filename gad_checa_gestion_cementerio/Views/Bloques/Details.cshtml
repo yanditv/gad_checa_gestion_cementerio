@@ -357,18 +357,31 @@
                                         <div class="d-flex flex-wrap gap-2">
                                             @for (int boveda = 1; boveda <= Model.BovedasPorPiso; boveda++)
                                             {
-                                                var bovedaInfo = Model.Bovedas?.Where(b => b.NumeroPiso == i && b.Numero == boveda)?.FirstOrDefault();
+                                                var bovedaInfo = Model.Bovedas?.FirstOrDefault(b => b.NumeroPiso == i && b.Numero == boveda);
+                                                string tooltipText = "Estado Desconocido";
+                                             
+                                                if (bovedaInfo != null)
+                                                {
+                                                    tooltipText = bovedaInfo.Estado switch {
+                                                        "disponible" => "Bóveda Disponible",
+                                                        "ocupada" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ? 
+                                                            $"Ocupada - {bovedaInfo.NombreDifunto}" : 
+                                                            "Bóveda Ocupada",
+                                                        "propietario" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ? 
+                                                            $"Con Propietario - {bovedaInfo.NombreDifunto}" : 
+                                                            "Bóveda con Propietario",
+                                                        "por-liberar" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ? 
+                                                            $"Por Liberar - {bovedaInfo.NombreDifunto}" : 
+                                                            "Bóveda por Liberar",
+                                                        _ => "Estado Desconocido"
+                                                    };
+                                                }
+                                                
                                                 <div class="border border-secondary bg-white position-relative rounded-lg shadow-sm p-3 d-flex flex-column align-items-center justify-content-center"
                                                     style="width: 100px; height: 100px;"
                                                     data-bs-toggle="tooltip" 
                                                     data-bs-placement="top" 
-                                                    title="@(bovedaInfo?.Estado switch {
-                                                        "disponible" => "Bóveda Disponible",
-                                                        "ocupada" => "Bóveda Ocupada",
-                                                        "propietario" => "Bóveda con Propietario",
-                                                        "por-liberar" => "Bóveda por Liberar",
-                                                        _ => "Estado Desconocido"
-                                                    })">
+                                                    title="@tooltipText">
                                                     <i class="fas fa-box-open fa-2x mb-2 @(bovedaInfo?.Estado switch {
                                                         "disponible" => "text-success",
                                                         "ocupada" => "text-danger",
