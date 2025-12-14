@@ -14,7 +14,7 @@
 1. [Acceso al Sistema](#1-acceso-al-sistema)
 2. [Panel Principal (Dashboard)](#2-panel-principal-dashboard)
 3. [Gestión de Contratos](#3-gestión-de-contratos)
-4. [Gestión de Espacios (Bóvedas y Nichos)](#4-gestión-de-espacios-bóvedas-y-nichos)
+4. [Gestión de Espacios (Bóvedas y Nicho)](#4-gestión-de-espacios-bóvedas-y-Nicho)
 5. [Registro de Difuntos](#5-registro-de-difuntos)
 6. [Sistema de Cobros y Pagos](#6-sistema-de-cobros-y-pagos)
 7. [Gestión de Personas](#7-gestión-de-personas)
@@ -64,8 +64,8 @@ El dashboard muestra tarjetas informativas con:
 - **🏛️ Número de Difuntos:** Total de difuntos registrados en el sistema
 - **📦 Bóvedas Disponibles:** Bóvedas sin contrato activo
 - **👥 Bóvedas Ocupadas:** Bóvedas con contrato vigente  
-- **✅ Nichos Disponibles:** Nichos actualmente libres
-- **👤 Nichos Ocupados:** Nichos ya asignados
+- **✅ Nicho Disponibles:** Nicho actualmente libres
+- **👤 Nicho Ocupados:** Nicho ya asignados
 - **⚠️ Bóvedas por Caducar:** Contratos próximos a vencer o vencidos
 
 ### 2.2 Accesos Rápidos
@@ -76,7 +76,7 @@ El panel incluye botones de acceso directo para las funciones más utilizadas:
 |---------|-------------|
 | **Nuevo Contrato** | Crear un contrato de arrendamiento nuevo |
 | **Ver Contratos** | Consultar y buscar contratos existentes |
-| **Gestionar Espacios** | Administrar bóvedas y nichos |
+| **Gestionar Espacios** | Administrar bóvedas y Nicho |
 | **Registro Difuntos** | Registrar información de nuevos difuntos |
 | **Cobros** | Gestionar pagos y cuotas pendientes |
 | **Reportes** | Generar informes y estadísticas |
@@ -217,7 +217,7 @@ Al hacer clic en un contrato, puede ver:
 
 ---
 
-## 4. Gestión de Espacios (Bóvedas y Nichos)
+## 4. Gestión de Espacios (Bóvedas y Nicho)
 
 ### 4.1 Visualizar Espacios Disponibles
 
@@ -229,7 +229,7 @@ Al hacer clic en un contrato, puede ver:
 
 **Por Tipo de Espacio:**
 - ☐ Bóvedas
-- ☐ Nichos
+- ☐ Nicho
 
 **Por Ubicación:**
 - Seleccione bloque específico
@@ -492,7 +492,7 @@ Al consultar una persona, puede ver:
 - **Filtros disponibles:**
   - Rango de fechas (desde/hasta)
   - Método de pago
-  - Tipo de contrato (bóvedas/nichos)
+  - Tipo de contrato (bóvedas/Nicho)
   - Usuario que registró el pago
 
 **Comparativa Mensual**
@@ -589,7 +589,7 @@ Al consultar una persona, puede ver:
 
 **Por Tipo de Contrato:**
 - Solo bóvedas
-- Solo nichos
+- Solo Nicho
 - Contratos renovados
 - Contratos nuevos
 - Contratos vencidos
@@ -699,7 +699,7 @@ Seleccione qué información incluir:
   - Costos de mantenimiento
   - Tarifas de renovación
 
-- **Nichos:**
+- **Nicho:**
   - Precio base por período
   - Diferencias por piso/altura
   - Costos adicionales

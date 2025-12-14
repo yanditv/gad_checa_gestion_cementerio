@@ -30,7 +30,7 @@ El sistema reconoce las siguientes secciones del archivo Excel:
 ### Secciones Reconocidas
 
 El sistema identifica automáticamente estas secciones:
-- **"BLOQUES DE NICHOS PARTE INFERIOR"** → Bloque: "Nichos Parte Inferior" (Tipo: Nichos)
+- **"BLOQUES DE Nicho PARTE INFERIOR"** → Bloque: "Nicho Parte Inferior" (Tipo: Nicho)
 - **"SOBRE BLOQUE 'B' PARTE FRONTAL"** → Bloque: "Bloque B Frontal" (Tipo: Bóvedas)  
 - **"SOBRE BLOQUE 'B' PARTE POSTERIOR"** → Bloque: "Bloque B Posterior" (Tipo: Bóvedas)
 

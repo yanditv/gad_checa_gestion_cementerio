@@ -37,7 +37,7 @@ Se ha implementado un sistema robusto y uniforme para el manejo de errores en la
 3. **`Controllers/ReportesController.cs`**
 
    - `CuentasPorCobrarPdf()` - Actualizado
-   - `BovedasPdf()` - Actualizado
+   - `BovedaPdf()` - Actualizado
    - `IngresosPorFechaPdf()` - Actualizado
 
 4. **`Controllers/ContratosController.cs`**

@@ -1662,7 +1662,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     Directory.CreateDirectory(carpetaDestino);
 
                     // En sistemas Unix/Linux, intentar establecer permisos más permisivos
-                    if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                     {
                         try
                         {

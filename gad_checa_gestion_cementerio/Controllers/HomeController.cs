@@ -51,39 +51,69 @@ namespace gad_checa_gestion_cementerio.Controllers
                                           })
                                           .Take(10)
                                           .ToList();
+            // Bóvedas disponibles
+            var bovedasDisponibles = _context.Boveda
+                .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
+                .Include(b => b.Contratos)
+                .Where(b => b.Piso.Bloque.Tipo == "Bovedas"
+                            && !b.Contratos.Any(c => c.Estado)) // Contratos activos = Estado = true, aquí filtramos disponibles
+                .Select(b => b.Id)
+                .Distinct()
+                .Count();
 
+            // Bóvedas ocupadas
+            var bovedasOcupadas = _context.Boveda
+                .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
+                .Include(b => b.Contratos)
+                .Where(b => b.Piso.Bloque.Tipo == "Bovedas"
+                            && b.Contratos.Any(c => c.Estado)) // Contratos activos
+                .Select(b => b.Id)
+                .Distinct()
+                .Count();
+
+            // Nichos disponibles
+            var nichosDisponibles = _context.Boveda
+                .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
+                .Include(b => b.Contratos)
+                .Where(b => b.Piso.Bloque.Tipo == "Nichos"
+                            && !b.Contratos.Any(c => c.Estado))
+                .Select(b => b.Id)
+                .Distinct()
+                .Count();
+
+            // Nichos ocupados
+            var nichosOcupados = _context.Boveda
+                .Include(b => b.Piso)
+                    .ThenInclude(p => p.Bloque)
+                .Include(b => b.Contratos)
+                .Where(b => b.Piso.Bloque.Tipo == "Nichos"
+                            && b.Contratos.Any(c => c.Estado))
+                .Select(b => b.Id)
+                .Distinct()
+                .Count();
+                
             var viewModel = new DashboardViewModel
             {
                 NumeroDifuntos = _context.Difunto.Count(),
 
-                BovedasDisponibles = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Bovedas").Count(b =>
-                    !_context.Contrato.Any(c =>
-                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin >= DateTime.Today)
-                    ||
-                    _context.Contrato.Any(c =>
-                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin < DateTime.Today)
-                ),
+                BovedasDisponibles = bovedasDisponibles,
+                BovedasOcupadas = bovedasOcupadas,
+                NichosDisponibles = nichosDisponibles,
+                NichosOcupados = nichosOcupados,
 
-                BovedasOcupadas = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Bovedas").Count(b =>
-                    _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.Estado == true)
-                ),
-
-                NichosDisponibles = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Nichos")
-                .Count(b =>
-                    !_context.Contrato.Any(c =>
-                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin >= DateTime.Today)
-                    ||
-                    _context.Contrato.Any(c =>
-                        c.BovedaId == b.Id && c.Estado == true && c.FechaFin < DateTime.Today)
-
-                ),
-                NichosOcupados = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Nichos").Count(b =>
-                    _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.Estado == true)
-                ),
-
-                BovedasPorCaducar = _context.Boveda.Include(x => x.Piso.Bloque).Where(x => x.Piso.Bloque.Tipo == "Bovedas").Count(b =>
-                    _context.Contrato.Any(c => c.BovedaId == b.Id && c.FechaFin >= DateTime.Today && c.FechaFin <= DateTime.Today.AddDays(8) && c.Estado == true)
-                ),
+                // Bóvedas por caducar: tienen contrato activo próximo a vencer
+                BovedasPorCaducar = (from boveda in _context.Boveda
+                                     join p in _context.Piso on boveda.PisoId equals p.Id
+                                     join bloque in _context.Bloque on p.BloqueId equals bloque.Id
+                                     join c in _context.Contrato on boveda.Id equals c.BovedaId
+                                     where bloque.Tipo == "Bovedas" 
+                                           && c.Estado == false
+                                           && c.FechaFin >= DateTime.Today 
+                                           && c.FechaFin <= DateTime.Today.AddDays(8)
+                                     select boveda.Id).Distinct().Count(),
 
                 UltimosContratos = _context.Contrato
                     .OrderByDescending(c => c.FechaFin)
