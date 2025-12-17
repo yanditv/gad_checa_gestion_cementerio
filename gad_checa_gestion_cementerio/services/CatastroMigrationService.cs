@@ -67,10 +67,10 @@ namespace gad_checa_gestion_cementerio.Services
                         // 10: Email
                         // 11: Piso Numero
                         // 12: Bloque (nombre del bloque)
-                        // 13: Numero Compartido
-                        // 14: BLOQUE LOGICO (0 = no lógico, 1 = lógico)
-                        // 15: Observaciones
-                        // 16: Tipo (NICHOS, BOVEDAS, etc.)
+                        // 13: Tipo (NICHOS, BOVEDAS, etc.)
+                        // 14: Observaciones
+                        // 15: Numero Compartido
+                        // 16: BLOQUE LOGICO (0 = no lógico, 1 = lógico)
 
                         // VALIDAR QUE EXISTA NÚMERO EN COLUMNA 1 (OBLIGATORIO para crear bóveda)
                         var numeroOTexto = ws.Cells[row, 1].Text?.Trim();
@@ -79,8 +79,9 @@ namespace gad_checa_gestion_cementerio.Services
                         result.RegistrosProcesados++;
 
                         string? nombreDifunto = ws.Cells[row, 2].Text?.Trim();
+                        // Si está vacío o es N/A, no tiene difunto
                         bool tieneDifunto = !string.IsNullOrWhiteSpace(nombreDifunto) && 
-                                           !EsTextoVacio(nombreDifunto);
+                                           nombreDifunto.ToUpper() != "N/A";
 
                         // Columna 1: Número de bóveda/nicho
                         int.TryParse(ws.Cells[row, 1].Text, out int numeroBoveda);
@@ -116,22 +117,35 @@ namespace gad_checa_gestion_cementerio.Services
                         // Columna 12: Bloque (nombre del bloque)
                         string? bloqueNombre = ws.Cells[row, 12].Text?.Trim();
                         
-                        // Columna 13: Número compartido
-                        int.TryParse(ws.Cells[row, 13].Text, out int numeroCompartido);
+                        // Columna 13: Tipo (NICHOS, BOVEDAS, TUMULOS, etc.)
+                        string? tipoTexto = ws.Cells[row, 13].Text?.Trim().ToUpper();
                         
-                        // Columna 14: BLOQUE LOGICO (0 = no lógico, 1 = lógico)
-                        int.TryParse(ws.Cells[row, 14].Text, out int bloqueLogicoNum);
+                        // Detectar tipo de bloque (TUMULOS puede venir con o sin tilde)
+                        bool esTumulos = bloqueNombre?.ToUpper().Contains("TUMULO") == true || 
+                                        tipoTexto?.Contains("TUMULO") == true ||
+                                        tipoTexto?.Contains("TÚMULO") == true;
+                        bool esNichos = tipoTexto?.Contains("NICHO") == true;
                         
-                        // Para BLOQUE TUMULOS: ignorar Numero Compartido y Bloque Lógico
-                        bool esTumulos = bloqueNombre?.ToUpper().Contains("TUMULOS") == true;
-                        bool esLogico = !esTumulos && (bloqueLogicoNum == 1 || string.IsNullOrWhiteSpace(bloqueNombre));
+                        // Determinar tipo para la BD
+                        string tipo = esNichos ? "Nichos" : "Bovedas";
                         
-                        // Columna 15: Observaciones
-                        string? observaciones = ws.Cells[row, 15].Text?.Trim();
+                        // Si el nombre del bloque es N/A o vacío, usar "BLOQUE " + tipo
+                        if (string.IsNullOrWhiteSpace(bloqueNombre) || bloqueNombre.ToUpper() == "N/A")
+                        {
+                            bloqueNombre = $"BLOQUE {tipo.ToUpper()}";
+                        }
                         
-                        // Columna 16: Tipo (NICHOS, BOVEDAS, etc.)
-                        string? tipoTexto = ws.Cells[row, 16].Text?.Trim().ToUpper();
-                        string tipo = tipoTexto?.Contains("NICHO") == true ? "Nichos" : "Bovedas";
+                        // Columna 14: Observaciones
+                        string? observaciones = ws.Cells[row, 14].Text?.Trim();
+                        
+                        // Columna 15: Número compartido
+                        int.TryParse(ws.Cells[row, 15].Text, out int numeroCompartido);
+                        
+                        // Columna 16: BLOQUE LOGICO (0 = no lógico, 1 = lógico)
+                        int.TryParse(ws.Cells[row, 16].Text, out int bloqueLogicoNum);
+                        
+                        // Determinar si es bloque lógico (TUMULOS y NICHOS nunca son lógicos)
+                        bool esLogico = !esTumulos && !esNichos && bloqueLogicoNum == 1;
                         
                         // Usar Fecha Contrato (columna 3) como Fecha Fallecimiento
                         DateTime? fechaFallecimiento = DateTime.TryParse(fechaContratoStr, out var fFallec) ? fFallec : null;
@@ -156,14 +170,19 @@ namespace gad_checa_gestion_cementerio.Services
                                 throw new Exception("Bloque lógico excede límite");
                         }
 
-                        // Para BLOQUE TUMULOS: usar ID secuencial comenzando desde 1
+                        // Paso 3: Determinar número final y crear bóveda
                         int numeroBovedaFinal = numeroBoveda;
+                        
+                        // Verificar si el número ya existe en este piso
+                        var bovedaExistente = await _context.Boveda
+                            .FirstOrDefaultAsync(b => b.PisoId == piso.Id && b.Numero == numeroBoveda);
+                        
+                        // Para TUMULOS: siempre usar numeración secuencial
                         if (esTumulos)
                         {
                             string keyBloquePiso = $"{bloque.Id}_{piso.Id}";
                             if (!_contadorBovedaPorBloque.ContainsKey(keyBloquePiso))
                             {
-                                // Obtener el máximo número de bóveda existente para este bloque/piso
                                 var maxExistente = await _context.Boveda
                                     .Where(b => b.PisoId == piso.Id)
                                     .MaxAsync(b => (int?)b.Numero) ?? 0;
@@ -172,8 +191,31 @@ namespace gad_checa_gestion_cementerio.Services
                             _contadorBovedaPorBloque[keyBloquePiso]++;
                             numeroBovedaFinal = _contadorBovedaPorBloque[keyBloquePiso];
                         }
+                        // Si el número ya existe (no TUMULOS), crear bloque lógico
+                        else if (bovedaExistente != null)
+                        {
+                            _logger.LogWarning($"⚠️ Fila {row}: Número {numeroBoveda} duplicado en bloque '{bloque.Descripcion}', creando bloque lógico");
+                            
+                            // Crear bloque lógico
+                            bloque = await ObtenerOCrearBloque(
+                                cementerio,
+                                $"Lógico {tipo}",
+                                tipo,
+                                true, // esLogico
+                                usuario,
+                                result
+                            );
+                            
+                            // Crear piso en el bloque lógico
+                            piso = await ObtenerOCrearPiso(bloque, 1, cementerio, result);
+                            
+                            // Verificar límite de bloques lógicos
+                            int totalLogico = await _context.Boveda.CountAsync(b => b.PisoId == piso.Id);
+                            if (totalLogico >= MAX_BOVEDAS_LOGICAS)
+                                throw new Exception($"Bloque lógico excede límite de {MAX_BOVEDAS_LOGICAS}");
+                        }
 
-                        // Paso 3: Crear Bóveda (SIEMPRE, independientemente de los demás datos)
+                        // Crear bóveda con el número determinado
                         var boveda = await ObtenerOCrearBoveda(piso, numeroBovedaFinal, usuario, result);
 
                         // Solo si tiene difunto: crear difunto, contrato, cuotas, pagos
@@ -942,26 +984,29 @@ namespace gad_checa_gestion_cementerio.Services
         private List<Cuota> GenerarCuotasParaContrato(Contrato contrato, Cementerio cementerio, string tipoBloque = "Bovedas")
         {
             bool esNicho = tipoBloque == "Nichos";
-            var cantidadCuotas = esNicho ? cementerio.AniosArriendoNicho : cementerio.AniosArriendoBovedas;
-            if (cantidadCuotas <= 0) cantidadCuotas = 5; // Valor por defecto
+            var aniosContrato = esNicho ? cementerio.AniosArriendoNicho : cementerio.AniosArriendoBovedas;
+            if (aniosContrato <= 0) aniosContrato = 5;
+            
             var tarifa = esNicho 
                 ? (cementerio.tarifa_arriendo_nicho ?? 30.00m) 
                 : (cementerio.tarifa_arriendo ?? 50.00m);
-            var montoPorCuota = tarifa / cantidadCuotas;
-
+            
+            // Generar cuotas anuales
+            var montoPorAnio = tarifa / aniosContrato;
             var cuotas = new List<Cuota>();
-            for (int i = 1; i <= cantidadCuotas; i++)
+            
+            for (int i = 1; i <= aniosContrato; i++)
             {
                 cuotas.Add(new Cuota
                 {
                     Contrato = contrato,
                     FechaVencimiento = contrato.FechaInicio.AddYears(i),
-                    Monto = montoPorCuota,
+                    Monto = montoPorAnio,
                     Pagada = false
                 });
             }
 
-            _logger.LogInformation($"💰 Generadas {cuotas.Count} cuotas para contrato {contrato.NumeroSecuencial}");
+            _logger.LogInformation($"💰 Generadas {cuotas.Count} cuotas anuales para contrato {contrato.NumeroSecuencial}, monto por cuota: {montoPorAnio:C}");
             return cuotas;
         }
 
