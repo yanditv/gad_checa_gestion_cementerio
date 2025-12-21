@@ -202,12 +202,17 @@ namespace gad_checa_gestion_cementerio.Controllers
             int maxRenovaciones = 0;
 
             // Determinar el tipo de espacio y su límite máximo de renovaciones
-            string? tipoBoveda = contrato.Boveda?.Piso?.Bloque?.Tipo?.ToLower();
-            if (tipoBoveda == "nichos")
+            string? tipoBoveda = contrato.Boveda?.Piso?.Bloque?.Tipo?.ToUpperInvariant();
+            if (tipoBoveda == "NICHOS")
             {
                 maxRenovaciones = cementerio?.VecesRenovacionNicho ?? 0;
             }
-            else
+            else if (tipoBoveda == "TÚMULOS")
+            {
+                // Si tienes lógica especial para TÚMULOS, agrégala aquí
+                maxRenovaciones = 0; // O el valor correspondiente
+            }
+            else // BÓVEDAS u otros
             {
                 maxRenovaciones = cementerio?.VecesRenovacionBovedas ?? 0;
             }
@@ -309,7 +314,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     string? tipoBoveda = null;
                     if (contrato.Boveda?.Piso?.Bloque != null)
                     {
-                        tipoBoveda = contrato.Boveda.Piso.Bloque.Tipo;
+                        tipoBoveda = contrato.Boveda.Piso.Bloque.Tipo?.ToUpperInvariant();
                     }
 
                     // Contar cuántas veces se ha renovado este contrato (hijos generados directamente)
@@ -318,11 +323,16 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                     // Determinar máximo de renovaciones según el tipo
                     int maxRenovaciones;
-                    if (tipoBoveda?.ToLower() == "nichos")
+                    if (tipoBoveda == "NICHOS")
                     {
                         maxRenovaciones = cementerio.VecesRenovacionNicho;
                     }
-                    else // Por defecto consideramos que es una bóveda
+                    else if (tipoBoveda == "TÚMULOS")
+                    {
+                        // Si tienes lógica especial para TÚMULOS, agrégala aquí
+                        maxRenovaciones = 0; // O el valor correspondiente
+                    }
+                    else // BÓVEDAS u otros
                     {
                         maxRenovaciones = cementerio.VecesRenovacionBovedas;
                     }
@@ -533,19 +543,24 @@ namespace gad_checa_gestion_cementerio.Controllers
                     return Json(new { success = false, errors = new List<string> { "No se pudo encontrar el contrato original de la cadena." } });
                 }
 
-                // Obtener el tipo de bóveda (nichos o bovedas)
-                string? tipoBoveda = contratoOriginal.Boveda?.Piso?.Bloque?.Tipo;
+                // Obtener el tipo de bóveda (NICHOS, TÚMULOS, BÓVEDAS)
+                string? tipoBoveda = contratoOriginal.Boveda?.Piso?.Bloque?.Tipo?.ToUpperInvariant();
 
                 // Contar cuántas veces se ha renovado en toda la cadena
                 int renovacionesTotales = ContarRenovacionesEnCadena(contratoRaizId);
 
                 // Determinar máximo de renovaciones según el tipo
                 int maxRenovaciones = 0; // Por defecto 0 si no se puede determinar el tipo
-                if (tipoBoveda?.ToLower() == "nichos")
+                if (tipoBoveda == "NICHOS")
                 {
                     maxRenovaciones = cementerio.VecesRenovacionNicho;
                 }
-                else if (tipoBoveda?.ToLower() == "bovedas")
+                else if (tipoBoveda == "TÚMULOS")
+                {
+                    // Si tienes lógica especial para TÚMULOS, agrégala aquí
+                    maxRenovaciones = 0; // O el valor correspondiente
+                }
+                else if (tipoBoveda == "BÓVEDAS")
                 {
                     maxRenovaciones = cementerio.VecesRenovacionBovedas;
                 }
