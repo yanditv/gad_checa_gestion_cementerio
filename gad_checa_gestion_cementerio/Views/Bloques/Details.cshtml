@@ -311,6 +311,30 @@
             </div>
         }
 
+        <!-- Secuencia de Bóvedas por Piso (basado en Difuntos)
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-list-ol me-2"></i>Secuencia de Bóvedas por Piso (Difuntos)</h5>
+            </div>
+            <div class="card-body">
+                @for (int piso = 1; piso <= Model.NumeroDePisos; piso++)
+                {
+                    var difuntosPiso = Model.Difuntos?.Where(d => d.NumeroPiso == piso).ToList();
+                    int minBoveda = (difuntosPiso?.Any() == true) ? difuntosPiso.Min(d => int.TryParse(d.NumeroBoveda, out var n) ? n : int.MaxValue) : 1;
+                    int capacidad = Model.BovedasPorPiso;
+                    <div class="mb-2">
+                        <strong>Piso @piso:</strong>
+                        <ul class="mb-0">
+                        @for (int i = 0; i < capacidad; i++)
+                        {
+                            <li>Piso @piso - Bóveda @(minBoveda + i)</li>
+                        }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+        -->
         <!-- Vista Gráfica de Bóvedas -->
         <div class="card border-0 shadow-sm mt-4">
             <div class="card-header bg-light">
@@ -352,35 +376,38 @@
                             <div class="bg-light p-4 pb-12">
                                 @for (int i = Model.NumeroDePisos; i > 0; i--)
                                 {
+                                    var bovedasEnPiso = Model.Bovedas?.Where(b => b.NumeroPiso == i).ToList();
+                                    int minBoveda = bovedasEnPiso != null && bovedasEnPiso.Any() ? bovedasEnPiso.Min(b => b.Numero) : 1;
+                                    int maxBoveda = bovedasEnPiso != null && bovedasEnPiso.Any() ? bovedasEnPiso.Max(b => b.Numero) : Model.BovedasPorPiso;
+
                                     <div class="d-flex flex-column mb-4">
                                         <p class="mb-2 h6 fw-bold">Piso @i</p>
                                         <div class="d-flex flex-wrap gap-2">
-                                            @for (int boveda = 1; boveda <= Model.BovedasPorPiso; boveda++)
+                                            @for (int boveda = minBoveda; boveda <= maxBoveda; boveda++)
                                             {
-                                                var bovedaInfo = Model.Bovedas?.FirstOrDefault(b => b.NumeroPiso == i && b.Numero == boveda);
+                                                var bovedaInfo = bovedasEnPiso?.FirstOrDefault(b => b.Numero == boveda);
                                                 string tooltipText = "Estado Desconocido";
-                                             
                                                 if (bovedaInfo != null)
                                                 {
                                                     tooltipText = bovedaInfo.Estado switch {
                                                         "disponible" => "Bóveda Disponible",
-                                                        "ocupada" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ? 
-                                                            $"Ocupada - {bovedaInfo.NombreDifunto}" : 
+                                                        "ocupada" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ?
+                                                            $"Ocupada - {bovedaInfo.NombreDifunto}" :
                                                             "Bóveda Ocupada",
-                                                        "propietario" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ? 
-                                                            $"Con Propietario - {bovedaInfo.NombreDifunto}" : 
+                                                        "propietario" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ?
+                                                            $"Con Propietario - {bovedaInfo.NombreDifunto}" :
                                                             "Bóveda con Propietario",
-                                                        "por-liberar" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ? 
-                                                            $"Por Liberar - {bovedaInfo.NombreDifunto}" : 
+                                                        "por-liberar" => !string.IsNullOrEmpty(bovedaInfo.NombreDifunto) ?
+                                                            $"Por Liberar - {bovedaInfo.NombreDifunto}" :
                                                             "Bóveda por Liberar",
                                                         _ => "Estado Desconocido"
                                                     };
                                                 }
-                                                
+
                                                 <div class="border border-secondary bg-white position-relative rounded-lg shadow-sm p-3 d-flex flex-column align-items-center justify-content-center"
                                                     style="width: 100px; height: 100px;"
-                                                    data-bs-toggle="tooltip" 
-                                                    data-bs-placement="top" 
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top"
                                                     title="@tooltipText">
                                                     <i class="fas fa-box-open fa-2x mb-2 @(bovedaInfo?.Estado switch {
                                                         "disponible" => "text-success",
@@ -390,29 +417,29 @@
                                                         _ => "text-secondary"
                                                     })"></i>
                                                     <p class="text-dark mb-0">
-                                                        @(string.IsNullOrEmpty(bovedaInfo?.NumeroSecuencial) ? 
-                                                            boveda.ToString() : 
+                                                        @(string.IsNullOrEmpty(bovedaInfo?.NumeroSecuencial) ?
+                                                            boveda.ToString() :
                                                             bovedaInfo.NumeroSecuencial)
                                                     </p>
                                                     <div class="d-flex gap-1 position-absolute" style="bottom: 0.5rem; right: 0.5rem;">
                                                         @if (bovedaInfo?.TienePropietario == true)
                                                         {
-                                                            <div style="height: 10px; width: 10px; background-color: #6c757d; border-radius: 50%;" 
+                                                            <div style="height: 10px; width: 10px; background-color: #6c757d; border-radius: 50%;"
                                                                 title="Tiene Propietario"></div>
                                                         }
                                                         @if (bovedaInfo?.TieneContratoActivo == true)
                                                         {
-                                                            <div style="height: 10px; width: 10px; background-color: #dc3545; border-radius: 50%;" 
+                                                            <div style="height: 10px; width: 10px; background-color: #dc3545; border-radius: 50%;"
                                                                 title="Tiene Contrato Activo"></div>
                                                         }
                                                         @if (bovedaInfo?.Estado == "por-liberar")
                                                         {
-                                                            <div style="height: 10px; width: 10px; background-color: #ffc107; border-radius: 50%;" 
+                                                            <div style="height: 10px; width: 10px; background-color: #ffc107; border-radius: 50%;"
                                                                 title="Por Liberar"></div>
                                                         }
                                                         @if (bovedaInfo?.Estado == "disponible")
                                                         {
-                                                            <div style="height: 10px; width: 10px; background-color: #28a745; border-radius: 50%;" 
+                                                            <div style="height: 10px; width: 10px; background-color: #28a745; border-radius: 50%;"
                                                                 title="Disponible"></div>
                                                         }
                                                     </div>
