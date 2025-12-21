@@ -119,18 +119,20 @@ namespace gad_checa_gestion_cementerio.Services
                         
                         // Columna 13: Tipo (NICHOS, BOVEDAS, TUMULOS, etc.)
                         string? tipoTexto = ws.Cells[row, 13].Text?.Trim().ToUpper();
-                        
-                        // Detectar tipo de bloque (TUMULOS puede venir con o sin tilde)
+
+                        // Detectar tipo de bloque (TÚMULOS puede venir con o sin tilde)
                         bool esTumulos = bloqueNombre?.ToUpper().Contains("TUMULO") == true || 
                                         tipoTexto?.Contains("TUMULO") == true ||
                                         tipoTexto?.Contains("TÚMULO") == true;
                         bool esNichos = tipoTexto?.Contains("NICHO") == true;
-                        
+                        bool esBovedas = tipoTexto?.Contains("BÓVEDA") == true || tipoTexto?.Contains("BOVEDA") == true;
+
                         // Determinar tipo para la BD
-                        string tipo = esNichos ? "Nichos" : "Bovedas";
-                        
-                        // Si el nombre del bloque es N/A o vacío, usar "BLOQUE " + tipo
-                        if (string.IsNullOrWhiteSpace(bloqueNombre) || bloqueNombre.ToUpper() == "N/A")
+                        string tipo = esTumulos ? "TÚMULOS" : esNichos ? "NICHOS" : esBovedas ? "BÓVEDAS" : tipoTexto ?? "";
+
+                        // Si el nombre del bloque es N/A o vacío, usar "BLOQUE " + tipo SOLO para TÚMULOS, NICHOS, BÓVEDAS
+                        if ((string.IsNullOrWhiteSpace(bloqueNombre) || bloqueNombre.ToUpper() == "N/A") &&
+                            (esTumulos || esNichos || esBovedas))
                         {
                             bloqueNombre = $"BLOQUE {tipo.ToUpper()}";
                         }
