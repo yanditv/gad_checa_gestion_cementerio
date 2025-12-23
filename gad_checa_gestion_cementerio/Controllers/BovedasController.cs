@@ -29,7 +29,7 @@ namespace WebApp.Controllers
             ViewBag.Bloques = new SelectList(await _context.Bloque
                 .Select(b => new { b.Id, b.Descripcion })
                 .ToListAsync(), "Id", "Descripcion");
-            ViewBag.Tipos = new SelectList(new[] { "Bovedas", "Nichos" });
+            ViewBag.Tipos = new SelectList(new[] { "Boveda", "Nicho" });
             ViewBag.Estados = new SelectList(new[] {
                 new { Value = "true", Text = "Disponible" },
                 new { Value = "false", Text = "Ocupada" }

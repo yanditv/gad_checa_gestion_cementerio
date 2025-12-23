@@ -203,11 +203,12 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             // Determinar el tipo de espacio y su límite máximo de renovaciones
             string? tipoBoveda = contrato.Boveda?.Piso?.Bloque?.Tipo?.ToUpperInvariant();
-            if (tipoBoveda == "NICHOS")
+            string? description = contrato.Boveda?.Piso?.Bloque?.Descripcion.ToUpperInvariant();
+            if (tipoBoveda == "Nicho")
             {
                 maxRenovaciones = cementerio?.VecesRenovacionNicho ?? 0;
             }
-            else if (tipoBoveda == "TÚMULOS")
+            else if (tipoBoveda == "Boveda" && description.Contains("Tumulos"))
             {
                 // Si tienes lógica especial para TÚMULOS, agrégala aquí
                 maxRenovaciones = 0; // O el valor correspondiente

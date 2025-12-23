@@ -167,7 +167,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     bloqueModel.TarifaBase = tarifaCementerio ?? 0;
 
                     var numero_piso = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-                    var tipos = new List<string> { "Bovedas", "Nichos", "Otros" };
+                    var tipos = new List<string> { "Boveda", "Nicho", "Otros" };
 
                     ViewData["NumeroDePisos"] = new SelectList(numero_piso);
                     ViewData["Tipos"] = new SelectList(tipos);
@@ -248,7 +248,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 }
 
                 var numero_piso = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-                var tipos = new List<string> { "Bovedas", "Nichos", "Otros" };
+                var tipos = new List<string> { "Boveda", "Nicho", "Otros" };
                 ViewData["NumeroDePisos"] = new SelectList(numero_piso);
                 ViewData["Tipos"] = new SelectList(tipos);
                 ViewData["Cementerios"] = new SelectList(_context.Cementerio, "Id", "Nombre");

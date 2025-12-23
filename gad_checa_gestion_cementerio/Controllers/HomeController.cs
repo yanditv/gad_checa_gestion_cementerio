@@ -56,7 +56,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
                 .Include(b => b.Contratos)
-                .Where(b => (b.Piso.Bloque.Tipo == "BÓVEDAS" || b.Piso.Bloque.Tipo == "TÚMULOS")
+                .Where(b => (b.Piso.Bloque.Tipo == "Boveda")
                             && !b.Contratos.Any(c => c.Estado)) // Contratos activos = Estado = true, aquí filtramos disponibles
                 .Select(b => b.Id)
                 .Distinct()
@@ -67,7 +67,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
                 .Include(b => b.Contratos)
-                .Where(b => (b.Piso.Bloque.Tipo == "BÓVEDAS" || b.Piso.Bloque.Tipo == "TÚMULOS")
+                .Where(b => (b.Piso.Bloque.Tipo == "Boveda")
                             && b.Contratos.Any(c => c.Estado)) // Contratos activos
                 .Select(b => b.Id)
                 .Distinct()
@@ -78,7 +78,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
                 .Include(b => b.Contratos)
-                .Where(b => b.Piso.Bloque.Tipo == "NICHOS"
+                .Where(b => b.Piso.Bloque.Tipo == "Nicho"
                             && !b.Contratos.Any(c => c.Estado))
                 .Select(b => b.Id)
                 .Distinct()
@@ -89,7 +89,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
                 .Include(b => b.Contratos)
-                .Where(b => b.Piso.Bloque.Tipo == "NICHOS"
+                .Where(b => b.Piso.Bloque.Tipo == "Nicho"
                             && b.Contratos.Any(c => c.Estado))
                 .Select(b => b.Id)
                 .Distinct()
@@ -109,7 +109,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                                      join p in _context.Piso on boveda.PisoId equals p.Id
                                      join bloque in _context.Bloque on p.BloqueId equals bloque.Id
                                      join c in _context.Contrato on boveda.Id equals c.BovedaId
-                                     where bloque.Tipo == "BÓVEDAS" || bloque.Tipo == "TÚMULOS"
+                                     where bloque.Tipo == "Boveda"
                                            && c.Estado == false
                                            && c.FechaFin >= DateTime.Today
                                            && c.FechaFin <= DateTime.Today.AddDays(8)
