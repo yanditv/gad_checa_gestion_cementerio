@@ -567,7 +567,13 @@ namespace gad_checa_gestion_cementerio.services
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "migracion");
             if (user == null)
             {
-                user = new ApplicationUser { UserName = "migracion", Email = "migracion@cementerio.com" };
+                user = new ApplicationUser
+                {
+                    UserName = "migracion",
+                    Email = "migracion@cementerio.com",
+                    Nombres = "Sistema",
+                    Apellidos = "Migracion"
+                };
                 await _userManager.CreateAsync(user, "Migracion.2024*");
             }
             return user;
