@@ -127,6 +127,22 @@ namespace gad_checa_gestion_cementerio.services
 
                         if (contratoActual != null)
                         {
+                            // 1. Generar las 5 cuotas usando tu método
+                            var cuotasParaGuardar = GenerarCuotasParaContrato(contratoActual);
+                            _context.Cuota.AddRange(cuotasParaGuardar);
+                            await _context.SaveChangesAsync();
+
+                            // 2. Generar el pago inicial que cubre todas las cuotas usando tu método
+                            var pagosParaGuardar = GenerarPagosIniciales(
+                                cuotasParaGuardar,
+                                respPersona.Id,
+                                "Efectivo",
+                                "MIGRACION-" + contratoActual.Id,
+                                true
+                            );
+                            _context.Pago.AddRange(pagosParaGuardar);
+                            await _context.SaveChangesAsync();
+
                             // === LÓGICA DE RELACIÓN BIDIRECCIONAL ===
                             bool esBloqueLogico = registro.Bloque.Contains("Lógico", StringComparison.OrdinalIgnoreCase);
 
