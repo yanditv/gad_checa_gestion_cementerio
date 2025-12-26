@@ -8,6 +8,10 @@ namespace gad_checa_gestion_cementerio.Models.Views
         public int NichosOcupados { get; set; }
         public int BovedasOcupadas { get; set; }
         public int BovedasPorCaducar { get; set; }
+        public int ContratosActivos { get; set; }
+        public int ContratosPorVencer { get; set; }
+        public int ContratosVencidos { get; set; }
+
 
         public List<ContratoResumenViewModel> UltimosContratos { get; set; } = new();
 

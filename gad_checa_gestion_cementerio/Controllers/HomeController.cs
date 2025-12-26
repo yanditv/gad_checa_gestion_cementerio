@@ -23,16 +23,30 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public IActionResult Index()
         {
-            // Agrupar cuotas por mes y año
-            var ingresosMensuales = _context.Cuota
+            // Agrupar cuotas por mes y año para deudas
+            var deudasMensuales = _context.Cuota
                 .AsEnumerable()
                 .GroupBy(c => new { c.FechaVencimiento.Year, c.FechaVencimiento.Month })
+                .Select(g => new
+                {
+                    Anio = g.Key.Year,
+                    Mes = g.Key.Month,
+                    TotalDeuda = g.Where(c => !c.Pagada).Sum(c => c.Monto)
+                })
+                .ToList();
+
+            // Agrupar pagos por mes y año para ingresos
+            var ingresosMensuales = _context.Pago
+                .AsEnumerable()
+                .GroupBy(p => new { p.FechaPago.Year, p.FechaPago.Month })
                 .Select(g => new IngresoMensualViewModel
                 {
                     Anio = g.Key.Year,
                     Mes = g.Key.Month,
-                    TotalIngresado = g.Where(c => c.Pagada).Sum(c => c.Monto),
-                    TotalDeuda = g.Where(c => !c.Pagada).Sum(c => c.Monto)
+                    TotalIngresado = g.Sum(p => p.Monto),
+                    TotalDeuda = deudasMensuales
+                        .Where(d => d.Anio == g.Key.Year && d.Mes == g.Key.Month)
+                        .Sum(d => d.TotalDeuda)
                 })
                 .OrderBy(x => x.Anio)
                 .ThenBy(x => x.Mes)
@@ -131,7 +145,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .ToList(),
 
                 IngresosMensuales = ingresosMensuales,
-                TransaccionesRecientes = transaccionesRecientes
+                TransaccionesRecientes = transaccionesRecientes,
+
+                // Calcular estados de contratos
+                ContratosActivos = _context.Contrato.Count(c => c.Estado),
+                ContratosPorVencer = _context.Contrato.Count(c => c.Estado && c.FechaFin >= DateTime.Today && c.FechaFin <= DateTime.Today.AddDays(8)),
+                ContratosVencidos = _context.Contrato.Count(c => c.FechaFin < DateTime.Today)
             };
 
             return View(viewModel);
