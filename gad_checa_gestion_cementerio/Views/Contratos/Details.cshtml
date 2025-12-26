@@ -144,22 +144,28 @@
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <p class="mb-1"><i class="fas fa-file-contract text-success me-2"></i>Contrato relacionado: <span
+                                            <p class="mb-1"><i class="fas fa-file-contract text-success me-2"></i>Contrato
+                                                relacionado: <span
                                                     class="fw-bold">@Model.ContratoRelacionado.NumeroSecuencial</span></p>
                                             @if (Model.ContratoRelacionado.Difunto != null)
                                             {
                                                 <p class="mb-1"><i class="fas fa-user text-success me-2"></i>Difunto: <span
-                                                        class="fw-bold">@Model.ContratoRelacionado.Difunto.Nombres @Model.ContratoRelacionado.Difunto.Apellidos</span></p>
+                                                        class="fw-bold">@Model.ContratoRelacionado.Difunto.Nombres
+                                                        @Model.ContratoRelacionado.Difunto.Apellidos</span></p>
                                             }
                                         </div>
                                         <div class="col-md-6">
                                             @if (Model.ContratoRelacionado.Boveda != null)
                                             {
                                                 <p class="mb-1"><i class="fas fa-building text-success me-2"></i>Bóveda: <span
-                                                        class="fw-bold">@Model.ContratoRelacionado.Boveda.Piso?.Bloque?.Descripcion - Piso @Model.ContratoRelacionado.Boveda.Piso?.NumeroPiso - Bóveda @Model.ContratoRelacionado.Boveda.Numero</span></p>
+                                                        class="fw-bold">@Model.ContratoRelacionado.Boveda.Piso?.Bloque?.Descripcion
+                                                        - Piso @Model.ContratoRelacionado.Boveda.Piso?.NumeroPiso - Bóveda
+                                                        @Model.ContratoRelacionado.Boveda.NumeroSecuencial</span></p>
                                             }
                                             <p class="mb-1"><i class="fas fa-calendar text-success me-2"></i>Vigencia: <span
-                                                    class="fw-bold">@Model.ContratoRelacionado.FechaInicio.ToString("dd/MM/yyyy") - @(Model.ContratoRelacionado.FechaFin?.ToString("dd/MM/yyyy") ?? "Indefinido")</span></p>
+                                                    class="fw-bold">@Model.ContratoRelacionado.FechaInicio.ToString("dd/MM/yyyy")
+                                                    - @(Model.ContratoRelacionado.FechaFin?.ToString("dd/MM/yyyy") ??
+                                                                                                    "Indefinido")</span></p>
                                         </div>
                                     </div>
                                     <a asp-action="Details" asp-route-id="@Model.ContratoRelacionadoId"
@@ -245,7 +251,7 @@
                                     <i class="fas fa-box text-primary me-2"></i>
                                     <div>
                                         <small class="text-muted d-block">Bóveda</small>
-                                        <span class="fw-bold">@Model.Boveda?.Numero</span>
+                                        <span class="fw-bold">@Model.Boveda?.NumeroSecuencial</span>
                                     </div>
                                 </div>
                             </div>
@@ -354,7 +360,8 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-circle bg-info text-white me-3">
-                                                    @responsable.Nombres[0]@responsable.Apellidos[0]
+                                                    @(responsable.Nombres?.FirstOrDefault() ?? ' ')
+                                                    @(responsable.Apellidos?.FirstOrDefault() ?? ' ')
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0">@responsable.Nombres @responsable.Apellidos</h6>

@@ -26,6 +26,7 @@ namespace WebApp.Controllers
         // GET: Bovedas
         public async Task<IActionResult> Index(string filtro, int? bloqueId, string tipo, bool? estado, bool? tienePropietario, int pagina = 1, int registrosPorPagina = 10)
         {
+            // 1. Cargar select lists para los filtros
             ViewBag.Bloques = new SelectList(await _context.Bloque
                 .Select(b => new { b.Id, b.Descripcion })
                 .ToListAsync(), "Id", "Descripcion");
@@ -35,6 +36,14 @@ namespace WebApp.Controllers
                 new { Value = "false", Text = "Ocupada" }
             }, "Value", "Text");
 
+            ViewBag.Tipos = new SelectList(new[] { "Boveda", "Nicho" });
+
+            ViewBag.Estados = new SelectList(new[] {
+        new { Value = "true", Text = "Disponible" },
+        new { Value = "false", Text = "Ocupada" }
+    }, "Value", "Text");
+
+            // 2. Query base con los Includes necesarios
             var query = _context.Boveda
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
@@ -42,7 +51,7 @@ namespace WebApp.Controllers
                 .Include(b => b.Contratos)
                 .AsQueryable();
 
-            // Aplicar filtros
+            // 3. Aplicar filtros
             if (!string.IsNullOrEmpty(filtro))
             {
                 query = query.Where(b =>
@@ -50,8 +59,8 @@ namespace WebApp.Controllers
                     b.NumeroSecuencial.Contains(filtro) ||
                     b.Piso.Bloque.Descripcion.Contains(filtro) ||
                     (b.Propietario != null &&
-                        (b.Propietario.Nombres + " " + b.Propietario.Apellidos).Contains(filtro) ||
-                        b.Propietario.NumeroIdentificacion.Contains(filtro))
+                        ((b.Propietario.Nombres + " " + b.Propietario.Apellidos).Contains(filtro) ||
+                        b.Propietario.NumeroIdentificacion.Contains(filtro)))
                 );
             }
 
@@ -65,42 +74,28 @@ namespace WebApp.Controllers
                 query = query.Where(b => b.Piso.Bloque.Tipo == tipo);
             }
 
+            // FILTRO DE ESTADO: 
+            // En la migración: Estado = true (Disponible), Estado = false (Ocupada)
             if (estado.HasValue)
             {
-                var fechaActual = DateTime.Now;
-                if (estado.Value)
-                {
-                    // Disponible: No tiene contratos activos
-                    query = query.Where(b => !b.Contratos.Any(c =>
-                        c.FechaInicio <= fechaActual &&
-                        (c.FechaFin == null || c.FechaFin >= fechaActual)));
-                }
-                else
-                {
-                    // Ocupada: Tiene al menos un contrato activo
-                    query = query.Where(b => b.Contratos.Any(c =>
-                        c.FechaInicio <= fechaActual &&
-                        (c.FechaFin == null || c.FechaFin >= fechaActual)));
-                }
+                query = query.Where(b => b.Estado == estado.Value);
             }
 
             if (tienePropietario.HasValue)
             {
                 if (tienePropietario.Value)
-                {
-                    query = query.Where(b => b.Propietario != null);
-                }
+                    query = query.Where(b => b.PropietarioId != null);
                 else
-                {
-                    query = query.Where(b => b.Propietario == null);
-                }
+                    query = query.Where(b => b.PropietarioId == null);
             }
 
-            // Obtener el total de resultados después de aplicar los filtros
+            // 4. Conteo y Paginación
             var totalResultados = await query.CountAsync();
 
-            // Aplicar paginación
             var bovedas = await query
+                .OrderBy(b => b.Piso.Bloque.Descripcion)
+                .ThenBy(b => b.Piso.NumeroPiso)
+                .ThenBy(b => b.Numero)
                 .Skip((pagina - 1) * registrosPorPagina)
                 .Take(registrosPorPagina)
                 .Select(b => new BovedaModel
@@ -108,15 +103,16 @@ namespace WebApp.Controllers
                     Id = b.Id,
                     Numero = b.Numero,
                     NumeroSecuencial = b.NumeroSecuencial,
-                    Estado = b.Contratos.Any(c =>
-                        c.FechaInicio <= DateTime.Now &&
-                        (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
+                    // IMPORTANTE: Mantenemos el valor de la base de datos
+                    // true = Disponible, false = Ocupada
+                    Estado = b.Estado,
                     Piso = _mapper.Map<PisoModel>(b.Piso),
                     Propietario = b.Propietario,
                     Contratos = b.Contratos
                 })
                 .ToListAsync();
 
+            // 5. Preparar ViewModel
             var viewModel = new BovedaPaginadaViewModel
             {
                 Bovedas = bovedas,
@@ -126,6 +122,7 @@ namespace WebApp.Controllers
                 TotalResultados = totalResultados
             };
 
+            // Soporte para carga AJAX
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return PartialView("_ListaBovedas", viewModel);
@@ -133,35 +130,30 @@ namespace WebApp.Controllers
 
             return View(viewModel);
         }
-
         // GET: Bovedas/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var boveda = await _context.Boveda
-                .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                .Include(b => b.Propietario)
-                .Include(b => b.Contratos)
-                    .ThenInclude(c => c.Difunto)
-                        .ThenInclude(d => d.Descuento)
-                .Include(b => b.Contratos)
-                    .ThenInclude(c => c.Responsables)
-                .Include(b => b.Contratos)
-                    .ThenInclude(c => c.Cuotas)
+                .Include(b => b.Piso).ThenInclude(p => p.Bloque)
+                .Include(b => b.Propietario) // Aquí viene el genérico 9999999999
+                .Include(b => b.Contratos).ThenInclude(c => c.Difunto)
+                .Include(b => b.Contratos).ThenInclude(c => c.Responsables)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (boveda == null)
+            if (boveda == null) return NotFound();
+
+            // Mapeamos al modelo asegurando que el Estado se mantenga
+            var viewModel = _mapper.Map<BovedaModel>(boveda);
+
+            // Forzamos la lógica: Si tiene contratos, el estado en el modelo debe ser "Ocupado"
+            if (boveda.Contratos != null && boveda.Contratos.Any())
             {
-                return NotFound();
+                viewModel.Estado = false; // false = Ocupada para la vista
             }
 
-            var bovedaModel = _mapper.Map<BovedaModel>(boveda);
-            return View(bovedaModel);
+            return View(viewModel);
         }
 
         // GET: Bovedas/Create
