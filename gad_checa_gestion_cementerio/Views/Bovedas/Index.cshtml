@@ -107,18 +107,16 @@
                                     <td>@item.NumeroSecuencial</td>
                                     <td>@item.Piso?.Bloque?.Descripcion</td>
                                     <td>@item.Piso?.NumeroPiso</td>
-                                    <td class="text-center">
-                                        @if (item.Estado) // true significa LIBRE
+                                    <td>
+                                        @if (!item.TieneContratoActivo)
                                         {
-                                            <span class="badge bg-success-subtle text-success px-3">
-                                                <i class="ti ti-check me-1"></i> Disponible
-                                            </span>
+                                            <span class="badge bg-success-subtle text-success"><i
+                                                    class="ti ti-check me-1"></i>Disponible</span>
                                         }
-                                        else // false significa OCUPADA
+                                        else
                                         {
-                                            <span class="badge bg-danger-subtle text-danger px-3">
-                                                <i class="ti ti-lock me-1"></i> Ocupada
-                                            </span>
+                                            <span class="badge bg-danger-subtle text-danger"><i
+                                                    class="ti ti-x me-1"></i>Ocupada</span>
                                         }
                                     </td>
                                     <td>
@@ -127,10 +125,8 @@
                                             <div class="d-flex align-items-center">
                                                 <span class="avatar-circle bg-info text-white me-2">
                                                     @{
-                                                        var inicial1 = !string.IsNullOrEmpty(item.Propietario.Nombres) ?
-                                                        item.Propietario.Nombres[0].ToString().ToUpper() : "?";
-                                                        var inicial2 = !string.IsNullOrEmpty(item.Propietario.Apellidos) ?
-                                                        item.Propietario.Apellidos[0].ToString().ToUpper() : "?";
+                                                        var inicial1 = !string.IsNullOrEmpty(item.Propietario.Nombres) ? item.Propietario.Nombres[0].ToString().ToUpper() : "?";
+                                                        var inicial2 = !string.IsNullOrEmpty(item.Propietario.Apellidos) ? item.Propietario.Apellidos[0].ToString().ToUpper() : "?";
                                                     }
                                                     @inicial1@inicial2
                                                 </span>

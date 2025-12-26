@@ -404,10 +404,12 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         // GET: Bloque/Details/5
-        // GET: Bloque/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null)
+            {
+                return NotFound();
+            }
 
             var bloque = await _context.Bloque
                 .Include(b => b.Cementerio)
@@ -420,13 +422,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                         .ThenInclude(b => b.Propietario)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (bloque == null) return NotFound();
-
-            // CALCULO DE OCUPADAS BASADO EN TU SQL (Estado = 0 es ocupado)
-            // Esto asegura que las cards superiores coincidan con tu consulta de base de datos
-            int ocupadasCount = bloque.Pisos
-                .SelectMany(p => p.Bovedas)
-                .Count(b => b.Estado == false); // En bit: 0 es false (Ocupada), 1 es true (Disponible)
+            if (bloque == null)
+            {
+                return NotFound();
+            }
 
             var viewModel = new BloqueViewModel
             {
@@ -440,71 +439,65 @@ namespace gad_checa_gestion_cementerio.Controllers
                 TarifaBase = bloque.TarifaBase,
                 CementerioId = bloque.CementerioId,
                 Cementerio = bloque.Cementerio,
-
-                // Asignamos el conteo físico
-                BovedasOcupadas = ocupadasCount,
-
+                BovedasOcupadas = bloque.Pisos
+                    .SelectMany(p => p.Bovedas)
+                    .Count(b => b.Contratos != null && b.Contratos.Any(c =>
+                        c.FechaEliminacion == null &&
+                        c.FechaInicio <= DateTime.Now &&
+                        (c.FechaFin == null || c.FechaFin >= DateTime.Now))),
                 PreciosPorPiso = bloque.Pisos.Select(p => new PisoPrecioViewModel
                 {
                     NumeroPiso = p.NumeroPiso,
                     PrecioPersonalizado = p.Precio,
                     UsarTarifaBase = p.Precio == bloque.TarifaBase
                 }).ToList(),
-
-                // Dentro de la acción Details...
-                // Dentro de public async Task<IActionResult> Details(int? id) en BloquesController.cs
                 Bovedas = bloque.Pisos
-    .SelectMany(p => p.Bovedas.Select(b =>
-    {
-        var contratoVigente = b.Contratos?
-            .Where(c => c.FechaEliminacion == null)
-            .OrderByDescending(c => c.FechaInicio)
-            .FirstOrDefault();
-
-        // Lógica de estados:
-        // 1. Ocupada: Si el bit Estado es 0 (false) o tiene contrato.
-        bool estaOcupada = (b.Estado == false) || (contratoVigente != null);
-
-        // 2. Por Liberar: Si está ocupada y el contrato vence pronto (ej. menos de 1 mes) 
-        // o ya venció pero sigue marcada como ocupada.
-        bool porLiberar = estaOcupada && contratoVigente?.FechaFin != null &&
-                          contratoVigente.FechaFin <= DateTime.Now.AddMonths(1);
-
-        return new BovedaInfo
-        {
-            Numero = b.Numero,
-            NumeroSecuencial = b.NumeroSecuencial,
-            NumeroPiso = p.NumeroPiso,
-            TieneContratoActivo = estaOcupada,
-            // Agregamos esta lógica para la vista
-            FechaFinContrato = contratoVigente?.FechaFin,
-            NombreDifunto = contratoVigente?.Difunto != null
-                ? $"{contratoVigente.Difunto.Nombres} {contratoVigente.Difunto.Apellidos}"
-                : (estaOcupada ? "Ocupada (Migración)" : null)
-        };
-    })).ToList(),
-
+                    .SelectMany(p => p.Bovedas.Select(b => new BovedaInfo
+                    {
+                        Numero = b.Numero,
+                        NumeroSecuencial = b.NumeroSecuencial,
+                        NumeroPiso = p.NumeroPiso,
+                        TieneContratoActivo = b.Contratos != null && b.Contratos.Any(c =>
+                            c.FechaEliminacion == null &&
+                            c.FechaInicio <= DateTime.Now &&
+                            (c.FechaFin == null || c.FechaFin >= DateTime.Now)),
+                        TienePropietario = b.Propietario != null,
+                        FechaFinContrato = b.Contratos != null ? b.Contratos
+                            .Where(c => c.FechaEliminacion == null &&
+                                      c.FechaInicio <= DateTime.Now &&
+                                      (c.FechaFin == null || c.FechaFin >= DateTime.Now))
+                            .Select(c => c.FechaFin)
+                            .FirstOrDefault() : null,
+                        NombreDifunto = b.Contratos != null ? b.Contratos
+                            .Where(c => c.FechaEliminacion == null &&
+                                      c.FechaInicio <= DateTime.Now &&
+                                      (c.FechaFin == null || c.FechaFin >= DateTime.Now) &&
+                                      c.Difunto != null)
+                            .Select(c => $"{c.Difunto.Nombres} {c.Difunto.Apellidos}")
+                            .FirstOrDefault() : null
+                    })).ToList(),
                 Difuntos = bloque.Pisos
-                        .SelectMany(p => p.Bovedas
-                            .SelectMany(b => b.Contratos
-                                .Where(c => c.Difunto != null && c.FechaEliminacion == null)
-                                .Select(c => new DifuntoInfo
-                                {
-                                    Id = c.Difunto.Id,
-                                    Nombres = c.Difunto.Nombres,
-                                    Apellidos = c.Difunto.Apellidos,
-                                    FechaFallecimiento = c.Difunto.FechaFallecimiento,
-                                    NumeroBoveda = b.Numero.ToString(),
-                                    NumeroPiso = p.NumeroPiso,
-                                    Propietario = b.Propietario != null ?
-                                        $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" :
-                                        "Sin propietario"
-                                }))).ToList()
+                    .SelectMany(p => p.Bovedas
+                        .SelectMany(b => b.Contratos
+                            .Where(c => c.Difunto != null)
+                            .Select(c => new DifuntoInfo
+                            {
+                                Id = c.Difunto.Id,
+                                Nombres = c.Difunto.Nombres,
+                                Apellidos = c.Difunto.Apellidos,
+                                FechaFallecimiento = c.Difunto.FechaFallecimiento,
+                                NumeroBoveda = b.Numero.ToString(),
+                                NumeroPiso = p.NumeroPiso,
+                                Propietario = b.Propietario != null ?
+                                    $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" :
+                                    "Sin propietario"
+                            }))).ToList()
             };
 
             ViewBag.CementerioNombre = bloque.Cementerio?.Nombre;
             return View(viewModel);
         }
+
         // GET: Bloque/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
