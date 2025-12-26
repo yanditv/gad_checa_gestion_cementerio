@@ -31,14 +31,14 @@
                     <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
                         <i class="ti ti-refresh me-1"></i>Actualizar
                     </button>
-                    <div class="dropdown">
+                    <div class="dropdown" id="period-filter">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="ti ti-calendar me-1"></i>@DateTime.Now.ToString("MMMM yyyy")
+                            <i class="ti ti-calendar me-1"></i> Este Año
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Este mes</a></li>
-                            <li><a class="dropdown-item" href="#">Últimos 3 meses</a></li>
-                            <li><a class="dropdown-item" href="#">Este año</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Este mes">Este mes</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Últimos 3 meses">Últimos 3 meses</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Este año">Este año</a></li>
                         </ul>
                     </div>
                 </div>
@@ -361,14 +361,14 @@
                         <i class="ti ti-chart-bar text-info me-2"></i>
                         Ingresos vs Deudas Mensuales
                     </h5>
-                    <div class="dropdown">
+                    <div class="dropdown" id="bar-chart-filter">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="ti ti-calendar me-1"></i>Este año
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Este mes</a></li>
-                            <li><a class="dropdown-item" href="#">Últimos 6 meses</a></li>
-                            <li><a class="dropdown-item" href="#">Este año</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Este mes">Este mes</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Últimos 6 meses">Últimos 6 meses</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Este año">Este año</a></li>
                         </ul>
                     </div>
                 </div>
@@ -603,6 +603,77 @@
         const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
                       "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
+        // Variables para los gráficos
+        let barChart, areaChart, lineChart;
+
+        // Función para filtrar datos según el período
+        function getFilteredData(period) {
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1; // 1-12
+            let filtered = datosIngresos;
+            if (period === 'Este mes') {
+                filtered = datosIngresos.filter(d => d.mes === currentMonth);
+            } else if (period === 'Últimos 3 meses' || period === 'Últimos 6 meses') {
+                const numMonths = period === 'Últimos 3 meses' ? 3 : 6;
+                const months = [];
+                for (let i = 0; i < numMonths; i++) {
+                    let m = currentMonth - i;
+                    if (m <= 0) m += 12;
+                    months.push(m);
+                }
+                filtered = datosIngresos.filter(d => months.includes(d.mes));
+            } else if (period === 'Este año') {
+                filtered = datosIngresos;
+            }
+            return filtered;
+        }
+
+        // Función para actualizar gráfico de barras
+        function updateBarChartForPeriod(period) {
+            const filteredData = getFilteredData(period);
+            const categorias = filteredData.map(d => meses[d.mes - 1]);
+            const ingresos = filteredData.map(d => d.totalIngresado);
+            const deudas = filteredData.map(d => d.totalDeuda);
+
+            if (barChart) {
+                barChart.updateOptions({
+                    xaxis: { categories: categorias },
+                    series: [
+                        {
+                            name: 'Ingresos',
+                            data: ingresos
+                        },
+                        {
+                            name: 'Deudas',
+                            data: deudas
+                        }
+                    ]
+                });
+            }
+
+            // Actualizar texto del botón
+            document.querySelector('#bar-chart-filter .dropdown-toggle').innerHTML = `<i class="ti ti-calendar me-1"></i> ${period}`;
+        }
+
+        // Event listener para el filtro
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('#period-filter .dropdown-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const period = this.getAttribute('data-period');
+                    updateChartsForPeriod(period);
+                });
+            });
+
+            document.querySelectorAll('#bar-chart-filter .dropdown-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const period = this.getAttribute('data-period');
+                    updateBarChartForPeriod(period);
+                });
+            });
+        });
+
         // 1. GRÁFICO DE PIE - Distribución de Espacios
         const espaciosTotales = espaciosData.bovedasDisponibles + espaciosData.bovedasOcupadas +
                                espaciosData.nichosDisponibles + espaciosData.nichosOcupados;
@@ -700,7 +771,7 @@
             const ingresos = datosIngresos.map(d => d.totalIngresado);
             const deudas = datosIngresos.map(d => d.totalDeuda);
 
-            new ApexCharts(document.querySelector("#ingresos-bar-chart"), {
+            barChart = new ApexCharts(document.querySelector("#ingresos-bar-chart"), {
                 chart: {
                     type: 'bar',
                     height: 350,
@@ -755,7 +826,8 @@
                     position: 'top',
                     horizontalAlign: 'right'
                 }
-            }).render();
+            });
+            barChart.render();
         } else {
             document.querySelector("#ingresos-bar-chart").innerHTML =
                 "<div class='text-center text-muted py-4'><i class='ti ti-chart-bar h1 mb-3'></i><p>No hay datos de ingresos</p></div>";
@@ -763,19 +835,11 @@
 
         // 4. GRÁFICO DE ÁREA - Tendencia de Ingresos
         if (datosIngresos && datosIngresos.length > 0) {
-            // Preparar datos para el gráfico de área (últimos 12 meses)
-            const ingresosPorMes = Array(12).fill(0);
-            const deudasPorMes = Array(12).fill(0);
+            const categorias = datosIngresos.map(d => meses[d.mes - 1]);
+            const ingresos = datosIngresos.map(d => d.totalIngresado);
+            const deudas = datosIngresos.map(d => d.totalDeuda);
 
-            datosIngresos.forEach(d => {
-                const mesIndex = d.mes - 1;
-                if (mesIndex >= 0 && mesIndex < 12) {
-                    ingresosPorMes[mesIndex] = d.totalIngresado;
-                    deudasPorMes[mesIndex] = d.totalDeuda;
-                }
-            });
-
-            new ApexCharts(document.querySelector("#ingresos-area-chart"), {
+            areaChart = new ApexCharts(document.querySelector("#ingresos-area-chart"), {
                 chart: {
                     type: 'area',
                     height: 300,
@@ -789,11 +853,11 @@
                 series: [
                     {
                         name: 'Ingresos',
-                        data: ingresosPorMes
+                        data: ingresos
                     },
                     {
                         name: 'Deudas',
-                        data: deudasPorMes
+                        data: deudas
                     }
                 ],
                 stroke: {
@@ -810,7 +874,7 @@
                     }
                 },
                 xaxis: {
-                    categories: meses,
+                    categories: categorias,
                     labels: {
                         style: { fontSize: '11px' }
                     }
@@ -833,7 +897,8 @@
                     position: 'top',
                     horizontalAlign: 'right'
                 }
-            }).render();
+            });
+            areaChart.render();
         } else {
             document.querySelector("#ingresos-area-chart").innerHTML =
                 "<div class='text-center text-muted py-4'><i class='ti ti-chart-line h1 mb-3'></i><p>No hay datos de tendencias</p></div>";
@@ -844,7 +909,7 @@
             const categorias = datosIngresos.map(d => meses[d.mes - 1]);
             const ingresos = datosIngresos.map(d => d.totalIngresado);
 
-            new ApexCharts(document.querySelector("#ingresos-chart"), {
+            lineChart = new ApexCharts(document.querySelector("#ingresos-chart"), {
                 chart: {
                     type: 'line',
                     height: 280,
@@ -888,7 +953,8 @@
                 grid: {
                     borderColor: '#f1f1f1'
                 }
-            }).render();
+            });
+            lineChart.render();
         } else {
             document.querySelector("#ingresos-chart").innerHTML =
                 "<div class='text-center text-muted py-4'><i class='ti ti-chart-line h1 mb-3'></i><p>No hay datos de ingresos mensuales</p></div>";
