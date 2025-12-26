@@ -838,6 +838,61 @@
             document.querySelector("#ingresos-area-chart").innerHTML =
                 "<div class='text-center text-muted py-4'><i class='ti ti-chart-line h1 mb-3'></i><p>No hay datos de tendencias</p></div>";
         }
+
+        // 5. GRÁFICO DE LÍNEA - Ingresos Mensuales
+        if (datosIngresos && datosIngresos.length > 0) {
+            const categorias = datosIngresos.map(d => meses[d.mes - 1]);
+            const ingresos = datosIngresos.map(d => d.totalIngresado);
+
+            new ApexCharts(document.querySelector("#ingresos-chart"), {
+                chart: {
+                    type: 'line',
+                    height: 280,
+                    fontFamily: 'Public Sans, sans-serif',
+                    toolbar: { show: false }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                colors: [colors.primary],
+                series: [
+                    {
+                        name: 'Ingresos Mensuales',
+                        data: ingresos
+                    }
+                ],
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
+                xaxis: {
+                    categories: categorias,
+                    labels: {
+                        style: { fontSize: '12px' }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function(value) {
+                            return '$' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                },
+                grid: {
+                    borderColor: '#f1f1f1'
+                }
+            }).render();
+        } else {
+            document.querySelector("#ingresos-chart").innerHTML =
+                "<div class='text-center text-muted py-4'><i class='ti ti-chart-line h1 mb-3'></i><p>No hay datos de ingresos mensuales</p></div>";
+        }
     </script>
 }
 

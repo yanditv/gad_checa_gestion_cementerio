@@ -36,21 +36,33 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .ToList();
 
             // Agrupar pagos por mes y año para ingresos
-            var ingresosMensuales = _context.Pago
+            var pagosAgrupados = _context.Pago
                 .AsEnumerable()
                 .GroupBy(p => new { p.FechaPago.Year, p.FechaPago.Month })
-                .Select(g => new IngresoMensualViewModel
+                .Select(g => new
                 {
                     Anio = g.Key.Year,
                     Mes = g.Key.Month,
-                    TotalIngresado = g.Sum(p => p.Monto),
-                    TotalDeuda = deudasMensuales
-                        .Where(d => d.Anio == g.Key.Year && d.Mes == g.Key.Month)
-                        .Sum(d => d.TotalDeuda)
+                    TotalIngresado = g.Sum(p => p.Monto)
                 })
-                .OrderBy(x => x.Anio)
-                .ThenBy(x => x.Mes)
                 .ToList();
+
+            // Crear lista completa de ingresos mensuales para el año actual
+            var anioActual = DateTime.Now.Year;
+            var ingresosMensuales = new List<IngresoMensualViewModel>();
+            for (int mes = 1; mes <= 12; mes++)
+            {
+                var pagoMes = pagosAgrupados.FirstOrDefault(p => p.Anio == anioActual && p.Mes == mes);
+                var deudaMes = deudasMensuales.FirstOrDefault(d => d.Anio == anioActual && d.Mes == mes);
+
+                ingresosMensuales.Add(new IngresoMensualViewModel
+                {
+                    Anio = anioActual,
+                    Mes = mes,
+                    TotalIngresado = pagoMes?.TotalIngresado ?? 0,
+                    TotalDeuda = deudaMes?.TotalDeuda ?? 0
+                });
+            }
 
             // Transacciones recientes (últimos pagos)
             var transaccionesRecientes = (from pago in _context.Pago
