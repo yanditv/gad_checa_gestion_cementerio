@@ -37,12 +37,12 @@ namespace gad_checa_gestion_cementerio.Controllers
             var anioActual = DateTime.Now.Year;
             var ingresosMensuales = _context.Cuota
                 .Where(c => c.FechaVencimiento.Year == anioActual)
+                .GroupBy(c => c.FechaVencimiento.Month)
                 .AsEnumerable()
-                .GroupBy(c => new { c.FechaVencimiento.Month })
                 .Select(g => new IngresoMensualViewModel
                 {
                     Anio = anioActual,
-                    Mes = g.Key.Month,
+                    Mes = g.Key,
                     TotalIngresado = g.Where(c => c.Pagada).Sum(c => c.Monto),
                     TotalDeuda = g.Where(c => !c.Pagada).Sum(c => c.Monto)
                 })
