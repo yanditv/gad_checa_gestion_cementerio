@@ -17,25 +17,59 @@
 
     <div class="card-body">
         <!-- Barra de Herramientas -->
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+        <div class="mb-4">
             <!-- Filtros -->
-            <form id="searchForm" asp-action="Index" method="get" class="d-flex gap-2 align-items-center flex-grow-1">
-                <div class="input-group position-relative">
-                    <span class="input-group-text bg-light">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" id="searchInput" name="filtro" value="@Model.Filtro"
-                        placeholder="Buscar por número de identificación, nombres, apellidos o bóveda..."
-                        class="form-control form-control-sm" autocomplete="off" />
-                    <div id="searchSpinner" class="position-absolute end-0 top-50 translate-middle-y me-3 d-none">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                            <span class="visually-hidden">Buscando...</span>
+            <form id="searchForm" asp-action="Index" method="get">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label for="filtroNumeroIdentificacion" class="form-label fw-bold">
+                            <i class="fas fa-id-card me-1"></i>Número de identificación
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="filtroNumeroIdentificacion" name="filtroNumeroIdentificacion" value="@Model.FiltroNumeroIdentificacion"
+                                placeholder="Buscar por número..."
+                                class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtroNombres" class="form-label fw-bold">
+                            <i class="fas fa-user me-1"></i>Nombres
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="filtroNombres" name="filtroNombres" value="@Model.FiltroNombres"
+                                placeholder="Buscar por nombres..."
+                                class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtroApellidos" class="form-label fw-bold">
+                            <i class="fas fa-user-tag me-1"></i>Apellidos
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="filtroApellidos" name="filtroApellidos" value="@Model.FiltroApellidos"
+                                placeholder="Buscar por apellidos..."
+                                class="form-control" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtroBoveda" class="form-label fw-bold">
+                            <i class="fas fa-building me-1"></i>Bóveda/Contrato
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="filtroBoveda" name="filtroBoveda" value="@Model.FiltroBoveda"
+                                placeholder="Buscar por bóveda..."
+                                class="form-control" autocomplete="off" />
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary d-flex align-items-center">
-                    <i class="fas fa-filter me-2"></i>Filtrar
-                </button>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" id="clearFilters" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Limpiar filtros
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
             </form>
         </div>
 
@@ -49,10 +83,9 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.getElementById('searchInput');
             const searchForm = document.getElementById('searchForm');
-            const searchSpinner = document.getElementById('searchSpinner');
             const resultsContainer = document.getElementById('resultsContainer');
+            const clearFiltersBtn = document.getElementById('clearFilters');
 
             let searchTimeout = null;
             let isSearching = false;
@@ -62,7 +95,6 @@
                 if (isSearching) return;
 
                 isSearching = true;
-                searchSpinner.classList.remove('d-none');
 
                 try {
                     let requestUrl = url;
@@ -103,7 +135,6 @@
                         `;
                 } finally {
                     isSearching = false;
-                    searchSpinner.classList.add('d-none');
                 }
             }
 
@@ -120,10 +151,16 @@
                 });
             }
 
-            // Evento de entrada en el campo de búsqueda
-            searchInput.addEventListener('input', function () {
+            // Función para manejar cambios en los inputs
+            function handleInputChange() {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(performSearch, 500);
+            }
+
+            // Agregar event listeners a todos los inputs de filtro
+            const filterInputs = searchForm.querySelectorAll('input[type="text"]');
+            filterInputs.forEach(input => {
+                input.addEventListener('input', handleInputChange);
             });
 
             // Prevenir el envío del formulario tradicional
@@ -132,14 +169,21 @@
                 performSearch();
             });
 
+            // Función para limpiar filtros
+            clearFiltersBtn.addEventListener('click', function () {
+                filterInputs.forEach(input => {
+                    input.value = '';
+                });
+                performSearch();
+            });
+
             // Inicializar los event handlers de paginación
             attachPaginationHandlers();
 
             // Manejar la navegación del historial
             window.addEventListener('popstate', function () {
-                const urlParams = new URLSearchParams(window.location.search);
-                searchInput.value = urlParams.get('filtro') || '';
-                performSearch();
+                // Recargar la página para obtener los parámetros correctos
+                window.location.reload();
             });
         });
     </script>

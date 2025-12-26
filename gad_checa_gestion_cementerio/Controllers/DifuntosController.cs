@@ -18,7 +18,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         // GET: Difuntos
-        public async Task<IActionResult> Index(string filtro, int pagina = 1, int registrosPorPagina = 10)
+        public async Task<IActionResult> Index(string filtroNumeroIdentificacion, string filtroNombres, string filtroApellidos, string filtroBoveda, int pagina = 1, int registrosPorPagina = 10)
         {
             var query = _context.Difunto
                 .Include(d => d.Contrato)
@@ -29,31 +29,31 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .AsQueryable();
 
             // Aplicar filtros
-            if (!string.IsNullOrEmpty(filtro))
+            if (!string.IsNullOrEmpty(filtroNumeroIdentificacion))
             {
-                // Limpiar el filtro removiendo espacios al inicio y final
-                filtro = filtro.Trim();
-                Console.WriteLine($"[DEBUG] Buscando con filtro: '{filtro}'");
+                filtroNumeroIdentificacion = filtroNumeroIdentificacion.Trim();
+                query = query.Where(d => d.NumeroIdentificacion.Contains(filtroNumeroIdentificacion));
+            }
 
-                // Debug: verificar si existen contratos con este número
-                var contratosConNumero = await _context.Contrato
-                    .Where(c => c.NumeroSecuencial != null && c.NumeroSecuencial.Contains(filtro))
-                    .Select(c => new { c.Id, c.NumeroSecuencial })
-                    .ToListAsync();
+            if (!string.IsNullOrEmpty(filtroNombres))
+            {
+                filtroNombres = filtroNombres.Trim();
+                query = query.Where(d => d.Nombres.Contains(filtroNombres));
+            }
 
-                Console.WriteLine($"[DEBUG] Contratos encontrados con número secuencial que contiene '{filtro}': {contratosConNumero.Count}");
-                foreach (var contrato in contratosConNumero)
-                {
-                    Console.WriteLine($"[DEBUG] - Contrato ID: {contrato.Id}, NumeroSecuencial: {contrato.NumeroSecuencial}");
-                }
+            if (!string.IsNullOrEmpty(filtroApellidos))
+            {
+                filtroApellidos = filtroApellidos.Trim();
+                query = query.Where(d => d.Apellidos.Contains(filtroApellidos));
+            }
 
+            if (!string.IsNullOrEmpty(filtroBoveda))
+            {
+                filtroBoveda = filtroBoveda.Trim();
                 query = query.Where(d =>
-                    d.Nombres.Contains(filtro) ||
-                    d.Apellidos.Contains(filtro) ||
-                    d.NumeroIdentificacion.Contains(filtro) ||
-                    (d.Contrato != null && d.Contrato.NumeroSecuencial != null && d.Contrato.NumeroSecuencial.Contains(filtro)) ||
+                    (d.Contrato != null && d.Contrato.NumeroSecuencial != null && d.Contrato.NumeroSecuencial.Contains(filtroBoveda)) ||
                     (d.Contrato != null && d.Contrato.Boveda != null && d.Contrato.Boveda.Piso != null &&
-                     d.Contrato.Boveda.Piso.Bloque != null && d.Contrato.Boveda.Piso.Bloque.Descripcion.Contains(filtro))
+                     d.Contrato.Boveda.Piso.Bloque != null && d.Contrato.Boveda.Piso.Bloque.Descripcion.Contains(filtroBoveda))
                 );
             }
 
@@ -101,8 +101,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Difuntos = difuntos,
                 PaginaActual = pagina,
                 TotalPaginas = (int)Math.Ceiling(totalResultados / (double)registrosPorPagina),
-                Filtro = filtro,
+                Filtro = string.Join(" ", new[] { filtroNumeroIdentificacion, filtroNombres, filtroApellidos, filtroBoveda }.Where(f => !string.IsNullOrEmpty(f))), // Para compatibilidad
                 TotalResultados = totalResultados,
+                FiltroNumeroIdentificacion = filtroNumeroIdentificacion,
+                FiltroNombres = filtroNombres,
+                FiltroApellidos = filtroApellidos,
+                FiltroBoveda = filtroBoveda,
             };
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
