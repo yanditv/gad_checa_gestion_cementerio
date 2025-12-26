@@ -34,18 +34,19 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .ToHashSet();
 
             // Agrupar cuotas por mes y año (Mantenemos tu lógica de ingresos)
+            var anioActual = DateTime.Now.Year;
             var ingresosMensuales = _context.Cuota
+                .Where(c => c.FechaVencimiento.Year == anioActual)
                 .AsEnumerable()
-                .GroupBy(c => new { c.FechaVencimiento.Year, c.FechaVencimiento.Month })
+                .GroupBy(c => new { c.FechaVencimiento.Month })
                 .Select(g => new IngresoMensualViewModel
                 {
-                    Anio = g.Key.Year,
+                    Anio = anioActual,
                     Mes = g.Key.Month,
                     TotalIngresado = g.Where(c => c.Pagada).Sum(c => c.Monto),
                     TotalDeuda = g.Where(c => !c.Pagada).Sum(c => c.Monto)
                 })
-                .OrderBy(x => x.Anio)
-                .ThenBy(x => x.Mes)
+                .OrderBy(x => x.Mes)
                 .ToList();
 
             // Transacciones recientes
