@@ -20,19 +20,19 @@
 
 <div class="container-fluid">
     <!-- HEADER -->
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2 class="mb-1">Dashboard - Gestión del Cementerio</h2>
-                    <p class="text-muted mb-0">Vista general del estado operativo y financiero</p>
+                    <p class="text-muted mb-0 small">Vista general del estado operativo y financiero</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                    <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
                         <i class="ti ti-refresh me-1"></i>Actualizar
                     </button>
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="ti ti-calendar me-1"></i>@DateTime.Now.ToString("MMMM yyyy")
                         </button>
                         <ul class="dropdown-menu">
@@ -46,10 +46,20 @@
         </div>
     </div>
 
+    <!-- METRICS SECTION -->
+    <div class="row mb-3">
+        <div class="col-12 mb-2">
+            <h5 class="section-title mb-3">
+                <i class="ti ti-chart-bar text-primary me-2"></i>
+                Indicadores Principales
+            </h5>
+        </div>
+    </div>
+
     <!-- KPI CARDS -->
     <div class="row mb-4">
         <!-- Número de Difuntos -->
-        <div class="col-md-6 col-xl-3 mb-3">
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -69,58 +79,8 @@
             </div>
         </div>
 
-        <!-- Espacios Disponibles -->
-        <div class="col-md-6 col-xl-3 mb-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="mb-2 f-w-400 text-muted">Espacios Libres</h6>
-                            <h3 class="mb-1 text-success">@((Model.BovedasDisponibles + Model.NichosDisponibles).ToString("N0"))</h3>
-                            <small class="text-muted">@Model.BovedasDisponibles Bóvedas + @Model.NichosDisponibles Nichos</small>
-                        </div>
-                        <div class="avatar bg-light-success text-success">
-                            <i class="ti ti-check-circle f-24"></i>
-                        </div>
-                    </div>
-                    <div class="progress mt-3" style="height: 4px;">
-                        @{
-                            var totalEspaciosDisponibles = Model.BovedasDisponibles + Model.BovedasOcupadas + Model.NichosDisponibles + Model.NichosOcupados;
-                            var porcentajeDisponibleCalc = totalEspaciosDisponibles > 0 ? ((Model.BovedasDisponibles + Model.NichosDisponibles) * 100) / totalEspaciosDisponibles : 0;
-                        }
-                        <div class="progress-bar bg-success" style="width: @porcentajeDisponibleCalc%"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Espacios Ocupados -->
-        <div class="col-md-6 col-xl-3 mb-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="mb-2 f-w-400 text-muted">Espacios Ocupados</h6>
-                            <h3 class="mb-1 text-info">@((Model.BovedasOcupadas + Model.NichosOcupados).ToString("N0"))</h3>
-                            <small class="text-muted">@Model.BovedasOcupadas Bóvedas + @Model.NichosOcupados Nichos</small>
-                        </div>
-                        <div class="avatar bg-light-info text-info">
-                            <i class="ti ti-building f-24"></i>
-                        </div>
-                    </div>
-                    <div class="progress mt-3" style="height: 4px;">
-                        @{
-                            var totalEspaciosOcupados = Model.BovedasDisponibles + Model.BovedasOcupadas + Model.NichosDisponibles + Model.NichosOcupados;
-                            var porcentajeOcupadoCalc = totalEspaciosOcupados > 0 ? ((Model.BovedasOcupadas + Model.NichosOcupados) * 100) / totalEspaciosOcupados : 0;
-                        }
-                        <div class="progress-bar bg-info" style="width: @porcentajeOcupadoCalc%"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Ingresos Totales -->
-        <div class="col-md-6 col-xl-3 mb-3">
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -139,12 +99,148 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bóvedas Disponibles -->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2 f-w-400 text-muted">Bóvedas Disponibles</h6>
+                            <h3 class="mb-1 text-success">@Model.BovedasDisponibles.ToString("N0")</h3>
+                            <small class="text-muted">Sin contrato activo</small>
+                        </div>
+                        <div class="avatar bg-light-success text-success">
+                            <i class="ti ti-box f-24"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bóvedas Ocupadas -->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2 f-w-400 text-muted">Bóvedas Ocupadas</h6>
+                            <h3 class="mb-1 text-info">@Model.BovedasOcupadas.ToString("N0")</h3>
+                            <small class="text-muted">Con contrato activo</small>
+                        </div>
+                        <div class="avatar bg-light-info text-info">
+                            <i class="ti ti-user-check f-24"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 4px;">
+                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nichos Disponibles -->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2 f-w-400 text-muted">Nichos Disponibles</h6>
+                            <h3 class="mb-1 text-success">@Model.NichosDisponibles.ToString("N0")</h3>
+                            <small class="text-muted">Actualmente libres</small>
+                        </div>
+                        <div class="avatar bg-light-success text-success">
+                            <i class="ti ti-check f-24"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nichos Ocupados -->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2 f-w-400 text-muted">Nichos Ocupados</h6>
+                            <h3 class="mb-1 text-secondary">@Model.NichosOcupados.ToString("N0")</h3>
+                            <small class="text-muted">Ya asignados</small>
+                        </div>
+                        <div class="avatar bg-light-secondary text-secondary">
+                            <i class="ti ti-user f-24"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 4px;">
+                        <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bóvedas por Caducar -->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2 f-w-400 text-muted">Bóvedas por Caducar</h6>
+                            <h3 class="mb-1 text-warning">@Model.BovedasPorCaducar.ToString("N0")</h3>
+                            <small class="text-muted">Contratos por vencer</small>
+                        </div>
+                        <div class="avatar bg-light-warning text-warning">
+                            <i class="ti ti-alert-triangle f-24"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 4px;">
+                        <div class="progress-bar bg-warning" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Ingresos del Año -->
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2 f-w-400 text-muted">Total Ingresos del Año</h6>
+                            <h3 class="mb-1 text-primary">$@Model.IngresosMensuales.Sum(s => s.TotalIngresado).ToString("N0")</h3>
+                            <small class="text-muted">Acumulado anual</small>
+                        </div>
+                        <div class="avatar bg-light-primary text-primary">
+                            <i class="ti ti-trending-up f-24"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 4px;">
+                        <div class="progress-bar bg-primary" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS SECTION -->
+    <div class="row mb-3">
+        <div class="col-12 mb-2">
+            <h5 class="section-title mb-3">
+                <i class="ti ti-chart-pie text-success me-2"></i>
+                Análisis y Estadísticas
+            </h5>
+        </div>
     </div>
 
     <!-- CHARTS ROW 1 -->
     <div class="row mb-4">
         <!-- Espacios por Tipo - PIE CHART -->
-        <div class="col-lg-4 mb-4">
+        <div class="col-12 col-md-6 col-xl-4 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">
@@ -153,13 +249,13 @@
                     </h5>
                 </div>
                 <div class="card-body d-flex align-items-center justify-content-center">
-                    <div id="espacios-pie-chart" style="height: 300px; width: 100%;"></div>
+                    <div id="espacios-pie-chart" style="height: 250px; width: 100%;"></div>
                 </div>
             </div>
         </div>
 
         <!-- Estado de Contratos - DONUT CHART -->
-        <div class="col-lg-4 mb-4">
+        <div class="col-12 col-md-6 col-xl-4 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">
@@ -168,13 +264,13 @@
                     </h5>
                 </div>
                 <div class="card-body d-flex align-items-center justify-content-center">
-                    <div id="contratos-donut-chart" style="height: 300px; width: 100%;"></div>
+                    <div id="contratos-donut-chart" style="height: 250px; width: 100%;"></div>
                 </div>
             </div>
         </div>
 
         <!-- Alertas y Notificaciones -->
-        <div class="col-lg-4 mb-4">
+        <div class="col-12 col-xl-4 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">
@@ -258,7 +354,7 @@
     <!-- CHARTS ROW 2 -->
     <div class="row mb-4">
         <!-- Ingresos vs Deudas - BAR CHART -->
-        <div class="col-lg-8 mb-4">
+        <div class="col-12 col-lg-8 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -277,13 +373,13 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="ingresos-bar-chart" style="height: 350px;"></div>
+                    <div id="ingresos-bar-chart" style="height: 280px;"></div>
                 </div>
             </div>
         </div>
 
         <!-- Transacciones Recientes -->
-        <div class="col-lg-4 mb-4">
+        <div class="col-12 col-lg-4 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -336,9 +432,9 @@
     </div>
 
     <!-- CHARTS ROW 3 -->
-    <div class="row mb-4">
+    <div class="row mb-5">
         <!-- Tendencia de Ingresos - AREA CHART -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-12 col-lg-6 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">
@@ -347,13 +443,13 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div id="ingresos-area-chart" style="height: 300px;"></div>
+                    <div id="ingresos-area-chart" style="height: 250px;"></div>
                 </div>
             </div>
         </div>
 
         <!-- Últimos Contratos -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-12 col-lg-6 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -417,63 +513,67 @@
         </div>
     </div>
 
+    <!-- QUICK ACCESS SECTION -->
+    <div class="row mb-3">
+        <div class="col-12 mb-2">
+            <h5 class="section-title mb-3">
+                <i class="ti ti-layout-dashboard text-info me-2"></i>
+                Accesos Rápidos
+            </h5>
+        </div>
+    </div>
+
     <!-- ACCESOS RÁPIDOS -->
     <div class="row">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">
-                        <i class="ti ti-layout-dashboard text-info me-2"></i>
-                        Accesos Rápidos
-                    </h5>
-                </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-6 col-md-3 col-lg-2">
-                            <a href="@Url.Action("Create", "Contratos")" class="card text-center p-3 border-0 bg-light-primary text-decoration-none h-100">
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="@Url.Action("Create", "Contratos")" class="card text-center p-3 border-0 bg-light-primary text-decoration-none h-100 hover-lift">
                                 <div class="card-body">
-                                    <i class="ti ti-file-plus text-primary mb-2" style="font-size: 1.5rem;"></i>
-                                    <div class="small fw-medium">Nuevo Contrato</div>
+                                    <i class="ti ti-file-plus text-primary mb-2" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-medium small">Nuevo Contrato</div>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-6 col-md-3 col-lg-2">
-                            <a href="@Url.Action("Index", "Contratos")" class="card text-center p-3 border-0 bg-light-success text-decoration-none h-100">
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="@Url.Action("Index", "Contratos")" class="card text-center p-3 border-0 bg-light-success text-decoration-none h-100 hover-lift">
                                 <div class="card-body">
-                                    <i class="ti ti-files text-success mb-2" style="font-size: 1.5rem;"></i>
-                                    <div class="small fw-medium">Ver Contratos</div>
+                                    <i class="ti ti-files text-success mb-2" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-medium small">Ver Contratos</div>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-6 col-md-3 col-lg-2">
-                            <a href="@Url.Action("Index", "Bovedas")" class="card text-center p-3 border-0 bg-light-info text-decoration-none h-100">
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="@Url.Action("Index", "Bovedas")" class="card text-center p-3 border-0 bg-light-info text-decoration-none h-100 hover-lift">
                                 <div class="card-body">
-                                    <i class="ti ti-building text-info mb-2" style="font-size: 1.5rem;"></i>
-                                    <div class="small fw-medium">Gestionar Espacios</div>
+                                    <i class="ti ti-building text-info mb-2" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-medium small">Gestionar Espacios</div>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-6 col-md-3 col-lg-2">
-                            <a href="@Url.Action("Index", "Difuntos")" class="card text-center p-3 border-0 bg-light-secondary text-decoration-none h-100">
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="@Url.Action("Index", "Difuntos")" class="card text-center p-3 border-0 bg-light-secondary text-decoration-none h-100 hover-lift">
                                 <div class="card-body">
-                                    <i class="ti ti-users text-secondary mb-2" style="font-size: 1.5rem;"></i>
-                                    <div class="small fw-medium">Registro Difuntos</div>
+                                    <i class="ti ti-users text-secondary mb-2" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-medium small">Registro Difuntos</div>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-6 col-md-3 col-lg-2">
-                            <a href="@Url.Action("Index", "Cobros")" class="card text-center p-3 border-0 bg-light-warning text-decoration-none h-100">
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="@Url.Action("Index", "Cobros")" class="card text-center p-3 border-0 bg-light-warning text-decoration-none h-100 hover-lift">
                                 <div class="card-body">
-                                    <i class="ti ti-receipt text-warning mb-2" style="font-size: 1.5rem;"></i>
-                                    <div class="small fw-medium">Cobros</div>
+                                    <i class="ti ti-receipt text-warning mb-2" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-medium small">Cobros</div>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-6 col-md-3 col-lg-2">
-                            <a href="@Url.Action("CuentasPorCobrar", "Reportes")" class="card text-center p-3 border-0 bg-light-danger text-decoration-none h-100">
+                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                            <a href="@Url.Action("CuentasPorCobrar", "Reportes")" class="card text-center p-3 border-0 bg-light-danger text-decoration-none h-100 hover-lift">
                                 <div class="card-body">
-                                    <i class="ti ti-chart-bar text-danger mb-2" style="font-size: 1.5rem;"></i>
-                                    <div class="small fw-medium">Reportes</div>
+                                    <i class="ti ti-chart-bar text-danger mb-2" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-medium small">Reportes</div>
                                 </div>
                             </a>
                         </div>
@@ -765,7 +865,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="ingresos-chart" style="height: 350px;"></div>
+                    <div id="ingresos-chart" style="height: 280px;"></div>
                 </div>
             </div>
         </div>
@@ -818,164 +918,6 @@
                             <p class="mb-0">No hay transacciones recientes</p>
                         </div>
                     }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ALERTAS Y CONTRATOS -->
-    <div class="row mb-4">
-        <!-- Alertas Importantes -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">
-                        <i class="ti ti-bell me-2 text-warning"></i>
-                        Alertas Importantes
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (Model.BovedasPorCaducar > 0)
-                    {
-                        <div class="alert alert-warning border-0 mb-3" role="alert">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-alert-triangle me-2"></i>
-                                <div>
-                                    <strong>@Model.BovedasPorCaducar contratos</strong> próximos a vencer o vencidos.
-                                    <br><small class="text-muted">Acción requerida</small>
-                                </div>
-                            </div>
-                        </div>
-                    }
-
-                    @{
-                        int espaciosDisponibles = Model.BovedasDisponibles + Model.NichosDisponibles;
-                        int espaciosTotales = Model.BovedasDisponibles + Model.BovedasOcupadas + Model.NichosDisponibles + Model.NichosOcupados;
-                        double porcentajeDisponible = espaciosTotales > 0 ? ((double)espaciosDisponibles / espaciosTotales) * 100 : 0;
-                    }
-
-                    @if (porcentajeDisponible < 20)
-                    {
-                        <div class="alert alert-danger border-0 mb-3" role="alert">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-alert-circle me-2"></i>
-                                <div>
-                                    <strong>Capacidad limitada:</strong> Solo @porcentajeDisponible.ToString("F0")% de espacios disponibles.
-                                    <br><small class="text-muted">Considerar expansión</small>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else if (porcentajeDisponible < 50)
-                    {
-                        <div class="alert alert-info border-0 mb-3" role="alert">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-info-circle me-2"></i>
-                                <div>
-                                    <strong>Capacidad media:</strong> @porcentajeDisponible.ToString("F0")% de espacios disponibles.
-                                    <br><small class="text-muted">Monitorear disponibilidad</small>
-                                </div>
-                            </div>
-                        </div>
-                    }
-
-                    @if (Model.BovedasPorCaducar == 0 && porcentajeDisponible >= 50)
-                    {
-                        <div class="alert alert-success border-0 mb-3" role="alert">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-check-circle me-2"></i>
-                                <div>
-                                    <strong>Todo en orden:</strong> No hay alertas importantes en este momento.
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- ÚLTIMOS CONTRATOS -->
-        <div class="col-lg-8 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">
-                        <i class="ti ti-file-text me-2 text-secondary"></i>
-                        Últimos Contratos
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (Model.UltimosContratos != null && Model.UltimosContratos.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Número</th>
-                                        <th>Fecha Fin</th>
-                                        <th>Estado</th>
-                                        <th>Cuotas Pendientes</th>
-                                        <th class="text-end">Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var contrato in Model.UltimosContratos.Take(8))
-                                    {
-                                        <tr>
-                                            <td>
-                                                <span class="fw-medium">@contrato.NumeroSecuencial</span>
-                                            </td>
-                                            <td>
-                                                <span class="small">@contrato.FechaFin.ToString("dd/MM/yyyy")</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge @(contrato.EstadoContrato switch {
-                                                    "Vencido" => "bg-danger",
-                                                    "Próximo a vencer" => "bg-warning",
-                                                    _ => "bg-success"
-                                                })">
-                                                    @contrato.EstadoContrato
-                                                </span>
-                                            </td>
-                                            <td>@contrato.CuotasPendientes</td>
-                                            <td class="text-end">
-                                                <span class="fw-medium">$@contrato.MontoTotal.ToString("N0")</span>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center text-muted py-4">
-                            <i class="ti ti-file-x h1 mb-3"></i>
-                            <p class="mb-0">No hay contratos registrados</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- INGRESOS SUMMARY CARD -->
-    <div class="row">
-        <div class="col-md-6 col-lg-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="mb-2 f-w-400 text-muted">Total Ingresos del Año</h6>
-                            <h3 class="mb-1 text-primary">$@Model.IngresosMensuales.Sum(s => s.TotalIngresado).ToString("N0")</h3>
-                            <small class="text-muted">Acumulado anual</small>
-                        </div>
-                        <div class="avatar bg-light-primary text-primary">
-                            <i class="ti ti-trending-up f-24"></i>
-                        </div>
-                    </div>
-                    <div class="progress mt-3" style="height: 4px;">
-                        <div class="progress-bar bg-primary" style="width: 85%"></div>
-                    </div>
                 </div>
             </div>
         </div>
