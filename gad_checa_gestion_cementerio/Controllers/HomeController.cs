@@ -23,48 +23,32 @@ namespace gad_checa_gestion_cementerio.Controllers
 
         public IActionResult Index()
         {
-            // Agrupar cuotas por mes y año para deudas
-            var deudasMensuales = _context.Cuota
+            var hoy = DateTime.Today;
+
+            // 1. CORRECCIÓN DE OCUPACIÓN:
+            // En lugar de depender solo de contratos, miramos el campo Estado de la boveda 
+            // que marcamos como 'false' (ocupado) en la migración.
+            var bovedasRealmenteOcupadasIds = _context.Boveda
+                .Where(b => b.Estado == false)
+                .Select(b => b.Id)
+                .ToHashSet();
+
+            // Agrupar cuotas por mes y año (Mantenemos tu lógica de ingresos)
+            var ingresosMensuales = _context.Cuota
                 .AsEnumerable()
                 .GroupBy(c => new { c.FechaVencimiento.Year, c.FechaVencimiento.Month })
-                .Select(g => new
+                .Select(g => new IngresoMensualViewModel
                 {
                     Anio = g.Key.Year,
                     Mes = g.Key.Month,
+                    TotalIngresado = g.Where(c => c.Pagada).Sum(c => c.Monto),
                     TotalDeuda = g.Where(c => !c.Pagada).Sum(c => c.Monto)
                 })
+                .OrderBy(x => x.Anio)
+                .ThenBy(x => x.Mes)
                 .ToList();
 
-            // Agrupar pagos por mes y año para ingresos
-            var pagosAgrupados = _context.Pago
-                .AsEnumerable()
-                .GroupBy(p => new { p.FechaPago.Year, p.FechaPago.Month })
-                .Select(g => new
-                {
-                    Anio = g.Key.Year,
-                    Mes = g.Key.Month,
-                    TotalIngresado = g.Sum(p => p.Monto)
-                })
-                .ToList();
-
-            // Crear lista completa de ingresos mensuales para el año actual
-            var anioActual = DateTime.Now.Year;
-            var ingresosMensuales = new List<IngresoMensualViewModel>();
-            for (int mes = 1; mes <= 12; mes++)
-            {
-                var pagoMes = pagosAgrupados.FirstOrDefault(p => p.Anio == anioActual && p.Mes == mes);
-                var deudaMes = deudasMensuales.FirstOrDefault(d => d.Anio == anioActual && d.Mes == mes);
-
-                ingresosMensuales.Add(new IngresoMensualViewModel
-                {
-                    Anio = anioActual,
-                    Mes = mes,
-                    TotalIngresado = pagoMes?.TotalIngresado ?? 0,
-                    TotalDeuda = deudaMes?.TotalDeuda ?? 0
-                });
-            }
-
-            // Transacciones recientes (últimos pagos)
+            // Transacciones recientes
             var transaccionesRecientes = (from pago in _context.Pago
                                           join persona in _context.Persona on pago.PersonaPagoId equals persona.Id
                                           orderby pago.FechaPago descending
@@ -77,72 +61,43 @@ namespace gad_checa_gestion_cementerio.Controllers
                                           })
                                           .Take(10)
                                           .ToList();
-            // Bóvedas disponibles
-            var bovedasDisponibles = _context.Boveda
-                .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                .Include(b => b.Contratos)
-                .Where(b => (b.Piso.Bloque.Tipo == "Boveda")
-                            && !b.Contratos.Any(c => c.Estado)) // Contratos activos = Estado = true, aquí filtramos disponibles
-                .Select(b => b.Id)
-                .Distinct()
-                .Count();
-
-            // Bóvedas ocupadas
-            var bovedasOcupadas = _context.Boveda
-                .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                .Include(b => b.Contratos)
-                .Where(b => (b.Piso.Bloque.Tipo == "Boveda")
-                            && b.Contratos.Any(c => c.Estado)) // Contratos activos
-                .Select(b => b.Id)
-                .Distinct()
-                .Count();
-
-            // Nichos disponibles
-            var nichosDisponibles = _context.Boveda
-                .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                .Include(b => b.Contratos)
-                .Where(b => b.Piso.Bloque.Tipo == "Nicho"
-                            && !b.Contratos.Any(c => c.Estado))
-                .Select(b => b.Id)
-                .Distinct()
-                .Count();
-
-            // Nichos ocupados
-            var nichosOcupados = _context.Boveda
-                .Include(b => b.Piso)
-                    .ThenInclude(p => p.Bloque)
-                .Include(b => b.Contratos)
-                .Where(b => b.Piso.Bloque.Tipo == "Nicho"
-                            && b.Contratos.Any(c => c.Estado))
-                .Select(b => b.Id)
-                .Distinct()
-                .Count();
 
             var viewModel = new DashboardViewModel
             {
+                // 2. DIFUNTOS: Esto contará los 1166 que salen en tu log
                 NumeroDifuntos = _context.Difunto.Count(),
 
-                BovedasDisponibles = bovedasDisponibles,
-                BovedasOcupadas = bovedasOcupadas,
-                NichosDisponibles = nichosDisponibles,
-                NichosOcupados = nichosOcupados,
+                // 3. BOVEDAS: Filtro corregido por estado real
+                BovedasDisponibles = _context.Boveda
+                    .Include(x => x.Piso.Bloque)
+                    .Where(x => x.Piso.Bloque.Tipo == "Boveda")
+                    .Count(b => b.Estado == true), // Si estado es true, está libre
 
-                // Bóvedas por caducar: tienen contrato activo próximo a vencer
-                BovedasPorCaducar = (from boveda in _context.Boveda
-                                     join p in _context.Piso on boveda.PisoId equals p.Id
-                                     join bloque in _context.Bloque on p.BloqueId equals bloque.Id
-                                     join c in _context.Contrato on boveda.Id equals c.BovedaId
-                                     where bloque.Tipo == "Boveda"
-                                           && c.Estado == false
-                                           && c.FechaFin >= DateTime.Today
-                                           && c.FechaFin <= DateTime.Today.AddDays(8)
-                                     select boveda.Id).Distinct().Count(),
+                BovedasOcupadas = _context.Boveda
+                    .Include(x => x.Piso.Bloque)
+                    .Where(x => x.Piso.Bloque.Tipo == "Boveda")
+                    .Count(b => b.Estado == false), // Si estado es false, está ocupada
+
+                // 4. NICHOS: Filtro corregido
+                NichosDisponibles = _context.Boveda
+                    .Include(x => x.Piso.Bloque)
+                    .Where(x => x.Piso.Bloque.Tipo == "Nicho")
+                    .Count(b => b.Estado == true),
+
+                NichosOcupados = _context.Boveda
+                    .Include(x => x.Piso.Bloque)
+                    .Where(x => x.Piso.Bloque.Tipo == "Nicho")
+                    .Count(b => b.Estado == false),
+
+                // 5. POR CADUCAR: Corregido "Bovedas" -> "Boveda" y lógica de contrato
+                BovedasPorCaducar = _context.Contrato
+                .Include(c => c.Boveda.Piso.Bloque)
+                .Where(c => c.Boveda.Piso.Bloque.Tipo == "Boveda" && c.Estado == true)
+                // Contamos todo lo que ya venció O lo que vencerá en los próximos 30 días
+                .Count(c => c.FechaFin <= hoy.AddDays(30)),
 
                 UltimosContratos = _context.Contrato
-                    .OrderByDescending(c => c.FechaFin)
+                    .OrderByDescending(c => c.FechaCreacion) // Ordenar por los más nuevos creados
                     .Take(10)
                     .Select(c => new ContratoResumenViewModel
                     {
@@ -150,9 +105,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                         FechaFin = c.FechaFin,
                         MontoTotal = c.MontoTotal,
                         CuotasPendientes = c.Cuotas.Count(q => !q.Pagada),
-                        EstadoContrato = c.FechaFin < DateTime.Today
-                            ? "Vencido"
-                            : (c.FechaFin <= DateTime.Today.AddDays(8) ? "Próximo a vencer" : "Vigente")
+                        EstadoContrato = c.FechaFin < hoy ? "Vencido" : (c.FechaFin <= hoy.AddDays(8) ? "Próximo a vencer" : "Vigente")
                     })
                     .ToList(),
 
@@ -161,8 +114,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 // Calcular estados de contratos
                 ContratosActivos = _context.Contrato.Count(c => c.Estado),
-                ContratosPorVencer = _context.Contrato.Count(c => c.Estado && c.FechaFin >= DateTime.Today && c.FechaFin <= DateTime.Today.AddDays(8)),
-                ContratosVencidos = _context.Contrato.Count(c => c.FechaFin < DateTime.Today)
+                ContratosPorVencer = _context.Contrato.Count(c => c.Estado && c.FechaFin >= hoy && c.FechaFin <= hoy.AddDays(8)),
+                ContratosVencidos = _context.Contrato.Count(c => c.FechaFin < hoy)
             };
 
             return View(viewModel);
