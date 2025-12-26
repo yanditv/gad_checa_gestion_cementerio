@@ -18,7 +18,7 @@ public class ContratoService
     {
 
         var tarifa = _context.Cementerio.FirstOrDefault()?.tarifa_arriendo ?? 0;
-        var periodo = 5;
+        var periodo = 5 * 12;
         return new Contrato
         {
             FechaCreacion = DateTime.Now,
