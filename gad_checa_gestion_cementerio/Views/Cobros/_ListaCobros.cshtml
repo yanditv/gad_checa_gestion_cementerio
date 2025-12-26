@@ -14,6 +14,7 @@
                     <th scope="col" class="text-uppercase small fw-bold">Monto Contrato</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Pagado</th>
                     <th scope="col" class="text-uppercase small fw-bold">Monto Pendiente</th>
+                    <th scope="col" class="text-uppercase small fw-bold">Estado</th>
                     <th scope="col" class="text-uppercase small fw-bold">Fecha de vencimiento</th>
                     <th scope="col" class="text-end text-uppercase small fw-bold">Acciones</th>
                 </tr>
@@ -21,7 +22,8 @@
             <tbody class="">
                 @foreach (var item in Model)
                 {
-                    <tr>
+                    var status = item.MontoPendiente > 0 ? "Pendiente" : (item.MontoPagado == item.MontoTotal ? "Pagado" : "Parcial");
+                    <tr data-monto-total="@item.MontoTotal" data-monto-pagado="@item.MontoPagado" data-monto-pendiente="@item.MontoPendiente" data-status="@status">
                         <td class="fw-semibold">@item.Id</td>
                         <td><span class="badge bg-primary-subtle text-primary"><i
                                     class="ti ti-file-description me-1"></i>@item.NumeroSecuencial</span></td>
@@ -47,6 +49,11 @@
                             <span
                                 class="badge @(item.MontoPendiente == 0 ? "bg-light text-dark" : "bg-danger-subtle text-danger")">
                                 <i class="ti ti-currency-dollar me-1"></i>@CurrencyHelper.FormatCurrency(item.MontoPendiente)
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge @(status == "Pendiente" ? "bg-danger-subtle text-danger" : status == "Pagado" ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
+                                @status
                             </span>
                         </td>
                         <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
