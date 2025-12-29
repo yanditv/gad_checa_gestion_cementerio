@@ -30,12 +30,24 @@ namespace gad_checa_gestion_cementerio.Controllers
             var personasQuery = _context.Persona
             .AsQueryable();
 
+            // Filtro por texto - Búsqueda inteligente
             if (!string.IsNullOrEmpty(filtro))
             {
-                personasQuery = personasQuery.Where(c =>
-                    c.Nombres.Contains(filtro) ||
-                    c.NumeroIdentificacion.Contains(filtro) ||
-                    c.Apellidos.Contains(filtro));
+                filtro = filtro.Trim();
+
+                // Dividir el filtro en palabras para búsqueda flexible
+                var palabras = filtro.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var palabra in palabras)
+                {
+                    var palabraLocal = palabra; // Variable local para closure
+                    personasQuery = personasQuery.Where(c =>
+                        c.Nombres.Contains(palabraLocal) ||
+                        c.Apellidos.Contains(palabraLocal) ||
+                        (c.NumeroIdentificacion != null && c.NumeroIdentificacion.Contains(palabraLocal)) ||
+                        (c.Telefono != null && c.Telefono.Contains(palabraLocal)) ||
+                        (c.Email != null && c.Email.Contains(palabraLocal)));
+                }
             }
 
             int total = await personasQuery.CountAsync();

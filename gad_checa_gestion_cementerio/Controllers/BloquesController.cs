@@ -37,12 +37,18 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
 
         // GET: Bloques
-        public async Task<IActionResult> Index(string filtro, int pagina = 1, int registrosPorPagina = 10)
+        public async Task<IActionResult> Index(string filtro, string tipo, int pagina = 1, int registrosPorPagina = 10)
         {
             var query = _context.Bloque
                 .Include(b => b.Cementerio)
                 .Where(b => b.FechaEliminacion == null)
                 .AsQueryable();
+
+            // Filtro por tipo
+            if (!string.IsNullOrWhiteSpace(tipo))
+            {
+                query = query.Where(b => b.Tipo == tipo);
+            }
 
             if (!string.IsNullOrWhiteSpace(filtro))
             {
@@ -106,6 +112,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             };
 
             ViewBag.Filtro = filtro;
+            ViewBag.Tipo = tipo;
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {

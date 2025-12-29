@@ -6,40 +6,68 @@
 
 <div class="my-4">
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-light border-0 d-flex flex-wrap justify-content-between align-items-center py-3">
-            <div class="d-flex align-items-center">
-                <span class="me-3"><i class="ti ti-building text-primary fs-3"></i></span>
-                <div>
-                    <h4 class="mb-1 text-dark">Lista de Bloques</h4>
-                    <p class="mb-0 text-muted small">Gestione los bloques del cementerio: puede listar, crear,
-                        modificar, buscar y eliminar.</p>
-                </div>
-            </div>
-            <div class="d-flex gap-2 align-items-center mt-3 mt-md-0 flex-wrap-nowrap">
-                <div class="position-relative">
-                    <div class="input-group input-group-sm">
-                        <input type="text" name="Filtro" id="hs-table-search" class="form-control"
-                            placeholder="Buscar por descripción, tipo, ubicación..." aria-label="Search"
-                            value="@ViewBag.Filtro" />
-                        <span class="input-group-text bg-white" id="search-icon">
-                            <i class="ti ti-search"></i>
-                        </span>
+        <div class="card-header bg-light border-0 py-3">
+            <div class="row align-items-center g-3">
+                <!-- Título y descripción -->
+                <div class="col-md-5">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3"><i class="ti ti-building text-primary fs-3"></i></span>
+                        <div>
+                            <h4 class="mb-1 text-dark">Lista de Bloques</h4>
+                            <p class="mb-0 text-muted small">Gestione los bloques del cementerio</p>
+                        </div>
                     </div>
-                    <small class="text-muted position-absolute" id="search-hint"
-                        style="font-size: 0.75rem; top: 100%; left: 0; display: none;">
-                        <i class="ti ti-clock me-1"></i>Buscando en 2s...
-                    </small>
-                    <small class="text-primary position-absolute" id="search-tip"
-                        style="font-size: 0.75rem; top: 100%; left: 0; white-space: nowrap;">
-                        💡 Presiona Enter para buscar inmediatamente
-                    </small>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-clear-search">
-                    <i class="ti ti-list-search me-1"></i>Ver todos
-                </button>
-                <a asp-action="Create" class="btn btn-primary btn-sm">
-                    <i class="ti ti-plus me-1"></i>Nuevo Bloque
-                </a>
+
+                <!-- Filtros y acciones -->
+                <div class="col-md-7">
+                    <div class="row g-2">
+                        <!-- Filtro por tipo -->
+                        <div class="col-md-3 col-sm-6">
+                            <select name="Tipo" id="tipo-filter" class="form-select form-select-sm">
+                                <option value="">Todos los tipos</option>
+                                <option value="Boveda" selected="@(ViewBag.Tipo == "Boveda" ? "selected" : null)">
+                                    Bóvedas</option>
+                                <option value="Nicho" selected="@(ViewBag.Tipo == "Nicho" ? "selected" : null)">Nichos
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Búsqueda -->
+                        <div class="col-md-5 col-sm-6">
+                            <div class="position-relative">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="Filtro" id="hs-table-search" class="form-control"
+                                        placeholder="Buscar bloque..." aria-label="Search" value="@ViewBag.Filtro" />
+                                    <span class="input-group-text bg-white" id="search-icon">
+                                        <i class="ti ti-search"></i>
+                                    </span>
+                                </div>
+                                <small class="text-muted position-absolute" id="search-hint"
+                                    style="font-size: 0.75rem; top: 100%; left: 0; display: none;">
+                                    <i class="ti ti-clock me-1"></i>Buscando en 2s...
+                                </small>
+                                <small class="text-primary position-absolute" id="search-tip"
+                                    style="font-size: 0.75rem; top: 100%; left: 0; white-space: nowrap;">
+                                    💡 Presiona Enter para buscar
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="col-md-4 col-sm-12">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm flex-fill"
+                                    id="btn-clear-search">
+                                    <i class="ti ti-refresh me-1"></i>Limpiar
+                                </button>
+                                <a asp-action="Create" class="btn btn-primary btn-sm flex-fill">
+                                    <i class="ti ti-plus me-1"></i>Nuevo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -101,7 +129,8 @@
             // Función para realizar la búsqueda con AJAX
             function performSearch(forceSearch = false) {
                 const filtro = searchInput.val().trim();
-                console.log('performSearch llamada con filtro:', filtro);
+                const tipo = $('#tipo-filter').val();
+                console.log('performSearch llamada con filtro:', filtro, 'tipo:', tipo);
                 console.log('lastSearchTerm:', lastSearchTerm);
                 console.log('isSearching:', isSearching);
                 console.log('forceSearch:', forceSearch);
@@ -125,6 +154,7 @@
                 const url = '@Url.Action("Index", "Bloques")';
                 const data = {
                     filtro: filtro,
+                    tipo: tipo,
                     pagina: 1 // Resetear a la primera página
                 };
 
@@ -243,6 +273,12 @@
                 isTyping = false;
             });
 
+            // Evento change para el filtro de tipo
+            $('#tipo-filter').on('change', function () {
+                console.log('Tipo cambiado, ejecutando búsqueda');
+                performSearch(true);
+            });
+
             // Limpiar búsqueda al hacer clic en "Ver todos"
             btnClearSearch.on('click', function (e) {
                 console.log('Botón "Ver todos" clickeado');
@@ -250,6 +286,7 @@
                 hideSearchIndicator();
                 isTyping = false;
                 searchInput.val('');
+                $('#tipo-filter').val('');
                 lastSearchTerm = ''; // Actualizar antes de la búsqueda
 
                 console.log('Ejecutando búsqueda vacía con forceSearch=true...');

@@ -64,13 +64,23 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .ThenInclude(cr => cr.Difunto)
             .AsQueryable();
 
-            // Filtro por texto
+            // Filtro por texto - Búsqueda inteligente
             if (!string.IsNullOrEmpty(filtro))
             {
-                contratosQuery = contratosQuery.Where(c =>
-                    c.NumeroSecuencial.Contains(filtro) ||
-                    c.Difunto.Nombres.Contains(filtro) ||
-                    c.Difunto.Apellidos.Contains(filtro));
+                filtro = filtro.Trim();
+
+                // Dividir el filtro en palabras para búsqueda flexible
+                var palabras = filtro.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var palabra in palabras)
+                {
+                    var palabraLocal = palabra; // Variable local para closure
+                    contratosQuery = contratosQuery.Where(c =>
+                        c.NumeroSecuencial.Contains(palabraLocal) ||
+                        c.Difunto.Nombres.Contains(palabraLocal) ||
+                        c.Difunto.Apellidos.Contains(palabraLocal) ||
+                        (c.Difunto.NumeroIdentificacion != null && c.Difunto.NumeroIdentificacion.Contains(palabraLocal)));
+                }
             }
 
             // Filtro por estado

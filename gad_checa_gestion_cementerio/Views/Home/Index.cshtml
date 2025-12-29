@@ -33,12 +33,15 @@
                     </button>
                     <div class="dropdown" id="period-filter">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="ti ti-calendar me-1"></i> Este Año
+                            <i class="ti ti-calendar me-1"></i> Este año
                         </button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" data-period="Este mes">Este mes</a></li>
                             <li><a class="dropdown-item" href="#" data-period="Últimos 3 meses">Últimos 3 meses</a></li>
-                            <li><a class="dropdown-item" href="#" data-period="Este año">Este año</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Últimos 6 meses">Últimos 6 meses</a></li>
+                            <li><a class="dropdown-item active" href="#" data-period="Este año">Este año</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" data-period="Todo">Todo el tiempo</a></li>
                         </ul>
                     </div>
                 </div>
@@ -367,8 +370,11 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" data-period="Este mes">Este mes</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="Últimos 3 meses">Últimos 3 meses</a></li>
                             <li><a class="dropdown-item" href="#" data-period="Últimos 6 meses">Últimos 6 meses</a></li>
-                            <li><a class="dropdown-item" href="#" data-period="Este año">Este año</a></li>
+                            <li><a class="dropdown-item active" href="#" data-period="Este año">Este año</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" data-period="Todo">Todo el tiempo</a></li>
                         </ul>
                     </div>
                 </div>
@@ -611,20 +617,33 @@
             const now = new Date();
             const currentMonth = now.getMonth() + 1; // 1-12
             let filtered = datosIngresos;
+            
             if (period === 'Este mes') {
                 filtered = datosIngresos.filter(d => d.mes === currentMonth);
-            } else if (period === 'Últimos 3 meses' || period === 'Últimos 6 meses') {
-                const numMonths = period === 'Últimos 3 meses' ? 3 : 6;
+            } else if (period === 'Últimos 3 meses') {
                 const months = [];
-                for (let i = 0; i < numMonths; i++) {
+                for (let i = 0; i < 3; i++) {
+                    let m = currentMonth - i;
+                    if (m <= 0) m += 12;
+                    months.push(m);
+                }
+                filtered = datosIngresos.filter(d => months.includes(d.mes));
+            } else if (period === 'Últimos 6 meses') {
+                const months = [];
+                for (let i = 0; i < 6; i++) {
                     let m = currentMonth - i;
                     if (m <= 0) m += 12;
                     months.push(m);
                 }
                 filtered = datosIngresos.filter(d => months.includes(d.mes));
             } else if (period === 'Este año') {
+                // Todos los meses del año actual
+                filtered = datosIngresos;
+            } else if (period === 'Todo') {
+                // Todos los datos disponibles
                 filtered = datosIngresos;
             }
+            
             return filtered;
         }
 
@@ -655,20 +674,72 @@
             document.querySelector('#bar-chart-filter .dropdown-toggle').innerHTML = `<i class="ti ti-calendar me-1"></i> ${period}`;
         }
 
+        // Función para actualizar todos los gráficos según el período
+        function updateChartsForPeriod(period) {
+            const filteredData = getFilteredData(period);
+            const categorias = filteredData.map(d => meses[d.mes - 1]);
+            const ingresos = filteredData.map(d => d.totalIngresado);
+            const deudas = filteredData.map(d => d.totalDeuda);
+
+            // Actualizar gráfico de barras
+            if (barChart) {
+                barChart.updateOptions({
+                    xaxis: { categories: categorias },
+                    series: [
+                        { name: 'Ingresos', data: ingresos },
+                        { name: 'Deudas', data: deudas }
+                    ]
+                });
+            }
+
+            // Actualizar gráfico de área
+            if (areaChart) {
+                areaChart.updateOptions({
+                    xaxis: { categories: categorias },
+                    series: [{ name: 'Ingresos', data: ingresos }]
+                });
+            }
+
+            // Actualizar gráfico de línea
+            if (lineChart) {
+                lineChart.updateOptions({
+                    xaxis: { categories: categorias },
+                    series: [{ name: 'Ingresos', data: ingresos }]
+                });
+            }
+
+            // Actualizar texto del botón del período general
+            document.querySelector('#period-filter .dropdown-toggle').innerHTML = `<i class="ti ti-calendar me-1"></i> ${period}`;
+        }
+
         // Event listener para el filtro
         document.addEventListener('DOMContentLoaded', function() {
+            // Filtro principal del dashboard
             document.querySelectorAll('#period-filter .dropdown-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     const period = this.getAttribute('data-period');
+                    
+                    // Remover clase active de todos los items
+                    document.querySelectorAll('#period-filter .dropdown-item').forEach(i => i.classList.remove('active'));
+                    // Agregar clase active al item seleccionado
+                    this.classList.add('active');
+                    
                     updateChartsForPeriod(period);
                 });
             });
 
+            // Filtro del gráfico de barras
             document.querySelectorAll('#bar-chart-filter .dropdown-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     const period = this.getAttribute('data-period');
+                    
+                    // Remover clase active de todos los items
+                    document.querySelectorAll('#bar-chart-filter .dropdown-item').forEach(i => i.classList.remove('active'));
+                    // Agregar clase active al item seleccionado
+                    this.classList.add('active');
+                    
                     updateBarChartForPeriod(period);
                 });
             });
