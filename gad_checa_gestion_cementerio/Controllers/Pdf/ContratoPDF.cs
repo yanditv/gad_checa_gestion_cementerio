@@ -27,6 +27,15 @@ public class ContratoPDF : IDocument
         var responsables = model.responsables;
         var responsable = model.responsables.FirstOrDefault();
         var pago = model.pago;
+
+        // Logging detallado para identificar problemas
+        Console.WriteLine($"=== GENERANDO PDF ===");
+        Console.WriteLine($"Presidente: {cementerio.Presidente} (Length: {cementerio.Presidente?.Length ?? 0})");
+        Console.WriteLine($"Difunto: {difunto?.NombresCompletos} (Length: {difunto?.NombresCompletos?.Length ?? 0})");
+        Console.WriteLine($"Responsable: {responsable?.NombresCompletos} (Length: {responsable?.NombresCompletos?.Length ?? 0})");
+        Console.WriteLine($"Observaciones: {contrato.Observaciones?.Length ?? 0} caracteres");
+        Console.WriteLine($"Bloque: {boveda?.Piso?.Bloque?.Descripcion} (Length: {boveda?.Piso?.Bloque?.Descripcion?.Length ?? 0})");
+
         var presidente = TruncateText(cementerio.Presidente ?? "Presidente del GAD Parroquial de Checa", 60);
         var telefono_cementerio = TruncateText(cementerio.Telefono ?? "02-XXXXXXX", 15);
         var email_cementerio = TruncateText(cementerio.Email ?? "checa@example.gob.ec", 40);
@@ -39,6 +48,7 @@ public class ContratoPDF : IDocument
         // Validar y truncar observaciones para evitar texto excesivamente largo
         if (!string.IsNullOrWhiteSpace(contrato.Observaciones) && contrato.Observaciones.Length > 300)
         {
+            Console.WriteLine($"ADVERTENCIA: Observaciones truncadas de {contrato.Observaciones.Length} a 300 caracteres");
             contrato.Observaciones = contrato.Observaciones.Substring(0, 297) + "...";
         }
         container.Page(page =>
@@ -183,10 +193,10 @@ public class ContratoPDF : IDocument
                     });
                 }
 
-                column.Item().Height(20);
+                column.Item().PaddingTop(20);
                 column.Item().AlignCenter().Row(row =>
                 {
-                    row.Spacing(100); // Espacio horizontal entre columnas (ajustable)
+                    row.Spacing(40); // Espacio horizontal entre columnas - reducido para evitar overflow
 
                     row.AutoItem().Column(col =>
                     {

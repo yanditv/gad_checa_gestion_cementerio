@@ -57,7 +57,7 @@ public class ContratoService
             .Include(b => b.Piso)
             .ThenInclude(p => p.Bloque)
             .FirstOrDefault(b => b.Id == idBoveda);
-        var tipo = "Bovedas";
+        var tipo = "Boveda";
         if (boveda != null)
         {
             tipo = boveda.Piso.Bloque.Tipo;
@@ -65,9 +65,9 @@ public class ContratoService
 
         var prefix = tipo switch
         {
-            "Bovedas" => GetTipoContratoPrefix(TipoContratos.NUEVO),
-            "Nichos" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
-            "Tumulos" => GetTipoContratoPrefix(TipoContratos.NUEVO_TUMULO),
+            "Boveda" => GetTipoContratoPrefix(TipoContratos.NUEVO),
+            "Nicho" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
+            "Tumulo" => GetTipoContratoPrefix(TipoContratos.NUEVO_TUMULO),
             _ => GetTipoContratoPrefix(TipoContratos.NUEVO)
         };
 
@@ -77,9 +77,9 @@ public class ContratoService
             // RNV-CTR para bóvedas, RNV-NCH para nichos y RNV-TML para túmulos
             var basePrefix = tipo switch
             {
-                "Bovedas" => GetTipoContratoPrefix(TipoContratos.NUEVO),
-                "Nichos" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
-                "Tumulos" => GetTipoContratoPrefix(TipoContratos.NUEVO_TUMULO),
+                "Boveda" => GetTipoContratoPrefix(TipoContratos.NUEVO),
+                "Nicho" => GetTipoContratoPrefix(TipoContratos.NUEVO_NICHO),
+                "Tumulo" => GetTipoContratoPrefix(TipoContratos.NUEVO_TUMULO),
                 _ => GetTipoContratoPrefix(TipoContratos.NUEVO)
             };
 

@@ -938,6 +938,24 @@ namespace gad_checa_gestion_cementerio.Controllers
                     modelo.difunto.NumeroIdentificacion = "No especificado";
                 }
 
+                // LOGGING DETALLADO PARA DEBUGGING
+                _logger.LogInformation("=== DATOS DEL CONTRATO PARA PDF ===");
+                _logger.LogInformation("Contrato ID: {Id}", id);
+                _logger.LogInformation("Número Secuencial: {NumSec}", modelo.contrato.NumeroSecuencial);
+                _logger.LogInformation("Presidente: {Pres} (Length: {Len})", cementerio.Presidente, cementerio.Presidente?.Length ?? 0);
+                _logger.LogInformation("Difunto: {Dif} (Length: {Len})", modelo.difunto.NombresCompletos, modelo.difunto.NombresCompletos?.Length ?? 0);
+                _logger.LogInformation("Responsable: {Resp} (Length: {Len})",
+                    modelo.responsables.FirstOrDefault()?.NombresCompletos,
+                    modelo.responsables.FirstOrDefault()?.NombresCompletos?.Length ?? 0);
+                _logger.LogInformation("Observaciones: {Obs} (Length: {Len})",
+                    modelo.contrato.Observaciones?.Substring(0, Math.Min(50, modelo.contrato.Observaciones?.Length ?? 0)) + "...",
+                    modelo.contrato.Observaciones?.Length ?? 0);
+                _logger.LogInformation("Bloque Descripción: {Bloq} (Length: {Len})",
+                    modelo.contrato.Boveda?.Piso?.Bloque?.Descripcion,
+                    modelo.contrato.Boveda?.Piso?.Bloque?.Descripcion?.Length ?? 0);
+                _logger.LogInformation("Número de Cuotas: {NCuotas}", modelo.contrato.Cuotas?.Count ?? 0);
+                _logger.LogInformation("===================================");
+
                 // Intentar generar el PDF con manejo robusto de errores
                 var documento = new ContratoPDF(modelo, cementerio);
                 var pdfBytes = PdfErrorHandler.GeneratePdfSafely(() => documento.GeneratePdf(), "Contrato PDF");
