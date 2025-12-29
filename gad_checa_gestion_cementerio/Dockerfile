@@ -56,9 +56,10 @@ USER root
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Copiar archivo de catastro si existe (opcional)
-# Para incluir el archivo en Docker, debe existir como CATASTRO_FINAL.xlsx en la raíz del proyecto
-COPY --from=build /src/gad_checa_gestion_cementerio/CATASTRO_FINAL*.xlsx /app/ 2>/dev/null || echo "Archivo CATASTRO_FINAL.xlsx no encontrado, se omitirá la migración del catastro"
+# NOTA: Para incluir el archivo CATASTRO_FINAL.xlsx para migración automática:
+# 1. Coloca el archivo en la raíz del proyecto antes de hacer docker build
+# 2. O monta un volumen al ejecutar: docker run -v /ruta/local/CATASTRO_FINAL.xlsx:/app/CATASTRO_FINAL.xlsx
+# El archivo se copiará automáticamente durante COPY . . en la fase de build si existe
 
 # Asegurar que los directorios críticos existan y tengan permisos correctos en la imagen final
 RUN mkdir -p /app/wwwroot/documentos && \
