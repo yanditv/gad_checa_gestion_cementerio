@@ -45,21 +45,30 @@ COPY . .
 WORKDIR "/src/gad_checa_gestion_cementerio"
 RUN dotnet build "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
+# Copiar o renombrar archivo CATASTRO si existe algún archivo migrado
+RUN if [ -f CATASTRO_FINAL_MIGRADO_*.xlsx ]; then \
+        cp CATASTRO_FINAL_MIGRADO_*.xlsx CATASTRO_FINAL.xlsx && \
+        echo "Archivo CATASTRO_FINAL.xlsx preparado para migración"; \
+    elif [ ! -f CATASTRO_FINAL.xlsx ]; then \
+        echo "ADVERTENCIA: No se encontró archivo CATASTRO_FINAL.xlsx. La migración del catastro se omitirá."; \
+    fi
+
 # Esta fase se usa para publicar el proyecto de servicio que se copiará en la fase final.
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./gad_checa_gestion_cementerio.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Copiar archivo CATASTRO a la carpeta publish si existe
+RUN if [ -f /src/gad_checa_gestion_cementerio/CATASTRO_FINAL.xlsx ]; then \
+        cp /src/gad_checa_gestion_cementerio/CATASTRO_FINAL.xlsx /app/publish/ && \
+        echo "Archivo CATASTRO_FINAL.xlsx copiado a la imagen final"; \
+    fi
 
 # Esta fase se usa en producción o cuando se ejecuta desde VS en modo normal (valor predeterminado cuando no se usa la configuración de depuración)
 FROM base AS final
 USER root
 WORKDIR /app
 COPY --from=publish /app/publish .
-
-# NOTA: Para incluir el archivo CATASTRO_FINAL.xlsx para migración automática:
-# 1. Coloca el archivo en la raíz del proyecto antes de hacer docker build
-# 2. O monta un volumen al ejecutar: docker run -v /ruta/local/CATASTRO_FINAL.xlsx:/app/CATASTRO_FINAL.xlsx
-# El archivo se copiará automáticamente durante COPY . . en la fase de build si existe
 
 # Asegurar que los directorios críticos existan y tengan permisos correctos en la imagen final
 RUN mkdir -p /app/wwwroot/documentos && \
