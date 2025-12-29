@@ -117,8 +117,38 @@ namespace gad_checa_gestion_cementerio.services
                     if (debeEstarOcupada)
                     {
                         var difunto = await CrearOObtenerDifunto(registro, usuario);
-                        var propFinal = await ObtenerPropietarioGenerico(usuario);
-                        var respPersona = await _context.Persona.FirstAsync(p => p.NumeroIdentificacion == "9999999999");
+
+                        // Determinar responsable y propietario según el Excel
+                        Persona respPersona;
+                        Propietario propFinal;
+
+                        // Si hay un representante en el Excel, usarlo
+                        if (!string.IsNullOrWhiteSpace(registro.Representante) &&
+                            registro.Representante != "CONTRIBUYENTE DESCONOCIDO")
+                        {
+                            // Crear o obtener la persona del representante
+                            respPersona = await CrearOObtenerPersona(registro, usuario);
+
+                            // Si está marcado como "Propio" (columna H), el representante también es propietario
+                            if (registro.EsPropio)
+                            {
+                                propFinal = await CrearOObtenerPropietario(respPersona, usuario);
+                                _logger.LogInformation($"Fila {fila}: {respPersona.Nombres} {respPersona.Apellidos} es RESPONSABLE y PROPIETARIO");
+                            }
+                            else
+                            {
+                                // Si no es propio, usar propietario genérico
+                                propFinal = await ObtenerPropietarioGenerico(usuario);
+                                _logger.LogInformation($"Fila {fila}: {respPersona.Nombres} {respPersona.Apellidos} es solo RESPONSABLE");
+                            }
+                        }
+                        else
+                        {
+                            // Si no hay representante, usar genéricos
+                            propFinal = await ObtenerPropietarioGenerico(usuario);
+                            respPersona = await _context.Persona.FirstAsync(p => p.NumeroIdentificacion == "9999999999");
+                            _logger.LogInformation($"Fila {fila}: Usando responsable y propietario GENÉRICO");
+                        }
 
                         // 1. Creamos el contrato de la fila actual
                         var contratoActual = await CrearContratoEstandar(registro, boveda, difunto, respPersona, usuario, resultado,
@@ -368,24 +398,40 @@ namespace gad_checa_gestion_cementerio.services
         private async Task<Persona> CrearOObtenerPersona(RegistroCatastro registro, ApplicationUser usuario)
         {
             string nombreEntrada = (registro.Representante ?? "CONTRIBUYENTE DESCONOCIDO").Trim();
+
+            // Si es el valor por defecto, usar la persona genérica
+            if (nombreEntrada == "CONTRIBUYENTE DESCONOCIDO" || string.IsNullOrWhiteSpace(nombreEntrada))
+            {
+                return await _context.Persona.FirstAsync(p => p.NumeroIdentificacion == "9999999999");
+            }
+
             var partes = nombreEntrada.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             string nombres = TruncateString(partes.Length > 0 ? string.Join(" ", partes.Take((partes.Length + 1) / 2)) : "SIN NOMBRE", 95);
             string apellidos = TruncateString(partes.Length > 1 ? string.Join(" ", partes.Skip((partes.Length + 1) / 2)) : "(MIGRACION)", 95);
 
-            string identificacion = !string.IsNullOrWhiteSpace(registro.Contacto) ? registro.Contacto : "0000000000";
+            // Usar Contacto (columna 12) como identificación si existe, sino generar una
+            string identificacion = !string.IsNullOrWhiteSpace(registro.Contacto) && registro.Contacto != "0000000000"
+                ? TruncateString(registro.Contacto, 20)
+                : GenerarIdentificacionUnica(nombres, apellidos);
 
+            // Buscar por identificación primero
             var personaExistente = await _context.Persona.FirstOrDefaultAsync(p => p.NumeroIdentificacion == identificacion);
-            if (personaExistente != null) return personaExistente;
+            if (personaExistente != null)
+            {
+                _logger.LogInformation($"Persona encontrada: {personaExistente.Nombres} {personaExistente.Apellidos} - CI: {identificacion}");
+                return personaExistente;
+            }
 
+            // Si no existe, crear nueva persona
             var nuevaPersona = new Persona
             {
                 Nombres = nombres,
                 Apellidos = apellidos,
                 TipoIdentificacion = "CEDULA",
-                NumeroIdentificacion = TruncateString(identificacion, 20),
-                Telefono = TruncateString(identificacion, 20),
-                Email = TruncateString(registro.CorreoElectronico ?? "sin@correo.com", 100),
+                NumeroIdentificacion = identificacion,
+                Telefono = TruncateString(registro.Contacto ?? identificacion, 20),
+                Email = TruncateString(registro.CorreoElectronico ?? $"{identificacion}@migracion.com", 100),
                 Direccion = TruncateString(registro.Observaciones ?? "CONOCIDA", 200),
                 Estado = true,
                 FechaCreacion = DateTime.Now,
@@ -394,16 +440,35 @@ namespace gad_checa_gestion_cementerio.services
 
             _context.Persona.Add(nuevaPersona);
             await _context.SaveChangesAsync();
+            _logger.LogInformation($"Persona creada: {nuevaPersona.Nombres} {nuevaPersona.Apellidos} - CI: {identificacion}");
             return nuevaPersona;
+        }
+
+        /// <summary>
+        /// Genera una identificación única basada en el nombre completo para personas sin cédula
+        /// </summary>
+        private string GenerarIdentificacionUnica(string nombres, string apellidos)
+        {
+            // Crear un hash basado en el nombre completo
+            var nombreCompleto = $"{nombres} {apellidos}".ToLower();
+            var hash = nombreCompleto.GetHashCode();
+            // Generar una "cédula" ficticia en formato MIG-XXXXX
+            return $"MIG{Math.Abs(hash) % 1000000:D6}";
         }
 
         private async Task<Propietario> CrearOObtenerPropietario(Persona persona, ApplicationUser usuario)
         {
+            // Buscar propietario existente por número de identificación
             var propietarioExistente = await _context.Propietario
                 .FirstOrDefaultAsync(p => p.NumeroIdentificacion == persona.NumeroIdentificacion);
 
-            if (propietarioExistente != null) return propietarioExistente;
+            if (propietarioExistente != null)
+            {
+                _logger.LogInformation($"Propietario encontrado: {propietarioExistente.Nombres} {propietarioExistente.Apellidos} - CI: {persona.NumeroIdentificacion}");
+                return propietarioExistente;
+            }
 
+            // Crear nuevo propietario basado en la persona
             var propietario = new Propietario
             {
                 Nombres = persona.Nombres,
@@ -411,16 +476,17 @@ namespace gad_checa_gestion_cementerio.services
                 TipoIdentificacion = persona.TipoIdentificacion,
                 NumeroIdentificacion = persona.NumeroIdentificacion,
                 Telefono = persona.Telefono ?? "0000000000",
-                Email = persona.Email ?? "migracion@cementerio.com",
+                Email = persona.Email ?? $"{persona.NumeroIdentificacion}@migracion.com",
                 Direccion = persona.Direccion ?? "CONOCIDA",
                 Estado = true,
                 FechaCreacion = DateTime.Now,
                 UsuarioCreadorId = usuario.Id,
-                Catastro = "MIGRADO"
+                Catastro = "MIGRADO - PROPIETARIO"
             };
 
             _context.Propietario.Add(propietario);
             await _context.SaveChangesAsync();
+            _logger.LogInformation($"Propietario creado: {propietario.Nombres} {propietario.Apellidos} - CI: {persona.NumeroIdentificacion}");
             return propietario;
         }
 
