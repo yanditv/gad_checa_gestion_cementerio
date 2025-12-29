@@ -69,68 +69,176 @@
 
     <div class="min-h-screen bg-white p-6 flex flex-col items-center">
 
+        @{
+            var totalOcupadas = Model.BovedasOcupadas + Model.NichosOcupados;
+            var totalLibres = Model.BovedasDisponibles + Model.NichosDisponibles;
+            var porcentajeOcupacion = Model.TotalGeneral > 0 ? Math.Round((double)totalOcupadas / Model.TotalGeneral * 100,
+            1) : 0;
+            var porcentajeDisponible = Model.TotalGeneral > 0 ? Math.Round((double)totalLibres / Model.TotalGeneral * 100,
+            1) : 0;
+            var porcentajeCaducar = totalOcupadas > 0 ? Math.Round((double)Model.BovedasPorCaducar / totalOcupadas * 100, 1)
+            : 0;
+
+            var ocupacionBovedas = Model.TotalBovedas > 0 ? Math.Round((double)Model.BovedasOcupadas / Model.TotalBovedas *
+            100, 1) : 0;
+            var ocupacionNichos = Model.TotalNichos > 0 ? Math.Round((double)Model.NichosOcupados / Model.TotalNichos * 100,
+            1) : 0;
+
+            var disponibilidadBovedas = Model.TotalBovedas > 0 ? Math.Round((double)Model.BovedasDisponibles /
+            Model.TotalBovedas * 100, 1) : 0;
+            var disponibilidadNichos = Model.TotalNichos > 0 ? Math.Round((double)Model.NichosDisponibles /
+            Model.TotalNichos * 100, 1) : 0;
+
+            var porcentajeBovedas = Model.TotalGeneral > 0 ? Math.Round((double)Model.TotalBovedas / Model.TotalGeneral *
+            100, 1) : 0;
+            var porcentajeNichos = Model.TotalGeneral > 0 ? Math.Round((double)Model.TotalNichos / Model.TotalGeneral * 100,
+            1) : 0;
+        }
+
         <!-- Estadísticas Resumen -->
         <div class="row mb-4 w-100">
-            <div class="col-12">
-                <div class="card bg-light">
+            <!-- Resumen General -->
+            <div class="col-12 mb-3">
+                <div class="card border-primary shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="ti ti-chart-pie me-2"></i>Resumen General del Cementerio</h5>
+                    </div>
                     <div class="card-body">
-                        
-                        <div class="row">
-                            @{
-                                // Función auxiliar para determinar si es bóveda o nicho
-                                Func<string, bool> esBoveda = (tipo) => {
-                                    var tipoUpper = tipo?.ToUpper() ?? "";
-                                    return tipoUpper.Contains("BOVEDA") || tipoUpper.Contains("BÓVEDA");
-                                };
-                                
-                                Func<string, bool> esNicho = (tipo) => {
-                                    var tipoUpper = tipo?.ToUpper() ?? "";
-                                    return tipoUpper.Contains("NICHO");
-                                };
+                        <div class="row g-3">
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="ti ti-sum fs-3 text-primary mb-2"></i>
+                                    <div class="fw-bold text-primary fs-2">@Model.TotalGeneral</div>
+                                    <small class="text-muted d-block">Total Espacios</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center p-3 bg-success bg-opacity-10 rounded">
+                                    <i class="ti ti-users fs-3 text-success mb-2"></i>
+                                    <div class="fw-bold text-success fs-2">@totalOcupadas</div>
+                                    <small class="text-muted d-block">Ocupadas</small>
+                                    <small class="text-success fw-bold">@porcentajeOcupacion%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center p-3 bg-secondary bg-opacity-10 rounded">
+                                    <i class="ti ti-door-enter fs-3 text-secondary mb-2"></i>
+                                    <div class="fw-bold text-secondary fs-2">@totalLibres</div>
+                                    <small class="text-muted d-block">Disponibles</small>
+                                    <small class="text-secondary fw-bold">@porcentajeDisponible%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
+                                    <i class="ti ti-alert-triangle fs-3 text-warning mb-2"></i>
+                                    <div class="fw-bold text-warning fs-2">@Model.BovedasPorCaducar</div>
+                                    <small class="text-muted d-block">Por Caducar</small>
+                                    <small class="text-warning fw-bold">@porcentajeCaducar% de ocupadas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center p-3 bg-info bg-opacity-10 rounded">
+                                    <i class="ti ti-building fs-3 text-info mb-2"></i>
+                                    <div class="fw-bold text-info fs-2">@Model.TotalBovedas</div>
+                                    <small class="text-muted d-block">Total Bóvedas</small>
+                                    <small class="text-info fw-bold">@porcentajeBovedas% del total</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="text-center p-3 bg-info bg-opacity-10 rounded">
+                                    <i class="ti ti-layout-grid fs-3 text-info mb-2"></i>
+                                    <div class="fw-bold text-info fs-2">@Model.TotalNichos</div>
+                                    <small class="text-muted d-block">Total Nichos</small>
+                                    <small class="text-info fw-bold">@porcentajeNichos% del total</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                var totalBovedas = Model.Bovedas.Where(b => esBoveda(b.TipoBloque)).Count();
-                                var totalNichos = Model.Bovedas.Where(b => esNicho(b.TipoBloque)).Count();
-                                var totalOcupadas = Model.Bovedas.Count(b => b.TieneContratoActivo());
-                                var totalPorCaducar = Model.Bovedas.Count(b => b.TieneContratoPorCaducar());
-                                var totalLibres = Model.Bovedas.Count(b => !b.TieneContratoActivo() &&
-                                !b.TieneContratoPorCaducar());
-                                var totalGeneral = Model.Bovedas.Count();
-                            }
-                            <div class="col-md-2 col-sm-4 col-6">
-                                <div class="text-center">
-                                    <div class="fw-bold text-primary fs-4">@totalGeneral</div>
-                                    <small class="text-muted">Total General</small>
+            <!-- Desglose por Tipo -->
+            <div class="col-md-6 mb-3">
+                <div class="card border-success shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="ti ti-building me-2"></i>Bóvedas</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-success bg-opacity-10 rounded">
+                                    <i class="ti ti-check-circle fs-2 text-success mb-2"></i>
+                                    <div class="fw-bold text-success fs-1">@Model.BovedasOcupadas</div>
+                                    <small class="text-muted d-block">Ocupadas</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar"
+                                            style="width: @ocupacionBovedas%" aria-valuenow="@ocupacionBovedas"
+                                            aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-success fw-bold">@ocupacionBovedas% ocupación</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-4 col-6">
-                                <div class="text-center">
-                                    <div class="fw-bold text-info fs-4">@totalBovedas</div>
-                                    <small class="text-muted">Bóvedas</small>
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="ti ti-circle-dashed fs-2 text-muted mb-2"></i>
+                                    <div class="fw-bold text-secondary fs-1">@Model.BovedasDisponibles</div>
+                                    <small class="text-muted d-block">Disponibles</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-secondary" role="progressbar"
+                                            style="width: @disponibilidadBovedas%"
+                                            aria-valuenow="@disponibilidadBovedas" aria-valuemin="0"
+                                            aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-secondary fw-bold">@disponibilidadBovedas% libre</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-4 col-6">
-                                <div class="text-center">
-                                    <div class="fw-bold text-info fs-4">@totalNichos</div>
-                                    <small class="text-muted">Nichos</small>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <div class="badge bg-success-subtle text-success fs-6 px-3 py-2">
+                                Total: @Model.TotalBovedas bóvedas
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="card border-primary shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="ti ti-layout-grid me-2"></i>Nichos</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-primary bg-opacity-10 rounded">
+                                    <i class="ti ti-check-circle fs-2 text-primary mb-2"></i>
+                                    <div class="fw-bold text-primary fs-1">@Model.NichosOcupados</div>
+                                    <small class="text-muted d-block">Ocupados</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" role="progressbar"
+                                            style="width: @ocupacionNichos%" aria-valuenow="@ocupacionNichos"
+                                            aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-primary fw-bold">@ocupacionNichos% ocupación</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-4 col-6">
-                                <div class="text-center">
-                                    <div class="fw-bold text-success fs-4">@totalOcupadas</div>
-                                    <small class="text-muted">Ocupadas</small>
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="ti ti-circle-dashed fs-2 text-muted mb-2"></i>
+                                    <div class="fw-bold text-secondary fs-1">@Model.NichosDisponibles</div>
+                                    <small class="text-muted d-block">Disponibles</small>
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-secondary" role="progressbar"
+                                            style="width: @disponibilidadNichos%" aria-valuenow="@disponibilidadNichos"
+                                            aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-secondary fw-bold">@disponibilidadNichos% libre</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-sm-4 col-6">
-                                <div class="text-center">
-                                    <div class="fw-bold text-warning fs-4">@totalPorCaducar</div>
-                                    <small class="text-muted">Por Caducar</small>
-                                </div>
-                            </div>
-                            <div class="col-md-2 col-sm-4 col-6">
-                                <div class="text-center">
-                                    <div class="fw-bold text-secondary fs-4">@totalLibres</div>
-                                    <small class="text-muted">Libres</small>
-                                </div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <div class="badge bg-primary-subtle text-primary fs-6 px-3 py-2">
+                                Total: @Model.TotalNichos nichos
                             </div>
                         </div>
                     </div>
@@ -166,7 +274,7 @@
                                     @if (!string.IsNullOrEmpty(item.GetInfoAdicionalEstado()))
                                     {
                                         <br />
-                                
+
                                         <small class="text-muted">@item.GetInfoAdicionalEstado()</small>
                                     }
                                 </span>

@@ -51,7 +51,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             HttpContext.Session.SetString("NuevoContrato", contratoJson);
         }
         // GET: Contratos
-        public async Task<IActionResult> Index(string filtro = "", int pagina = 1)
+        public async Task<IActionResult> Index(string filtro = "", string estado = "", int pagina = 1)
         {
             int pageSize = 10;
             var contratosQuery = _context.Contrato
@@ -64,12 +64,35 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .ThenInclude(cr => cr.Difunto)
             .AsQueryable();
 
+            // Filtro por texto
             if (!string.IsNullOrEmpty(filtro))
             {
                 contratosQuery = contratosQuery.Where(c =>
                     c.NumeroSecuencial.Contains(filtro) ||
                     c.Difunto.Nombres.Contains(filtro) ||
                     c.Difunto.Apellidos.Contains(filtro));
+            }
+
+            // Filtro por estado
+            var hoy = DateTime.Today;
+            if (!string.IsNullOrEmpty(estado))
+            {
+                switch (estado.ToLower())
+                {
+                    case "activos":
+                        contratosQuery = contratosQuery.Where(c => c.Estado == true && c.FechaFin >= hoy);
+                        break;
+                    case "porvencer":
+                        var fecha30Dias = hoy.AddDays(30);
+                        contratosQuery = contratosQuery.Where(c => c.Estado == true && c.FechaFin >= hoy && c.FechaFin <= fecha30Dias);
+                        break;
+                    case "vencidos":
+                        contratosQuery = contratosQuery.Where(c => c.Estado == true && c.FechaFin < hoy);
+                        break;
+                    case "inactivos":
+                        contratosQuery = contratosQuery.Where(c => c.Estado == false);
+                        break;
+                }
             }
 
             int total = await contratosQuery.CountAsync();
@@ -90,6 +113,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             // Agregar información adicional para la vista
             ViewBag.Filtro = filtro;
+            ViewBag.Estado = estado;
 
             // Obtener configuración del cementerio
             var cementerio = _context.Cementerio.FirstOrDefault();

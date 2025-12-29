@@ -65,6 +65,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         [HttpGet]
         public async Task<IActionResult> Bovedas(string? tipoBloque, string? nombreBloque)
         {
+            // Traer todas las bóvedas con sus relaciones
             var bovedas = await _context.Boveda
                 .Include(b => b.Propietario)
                 .Include(b => b.Piso)
@@ -91,6 +92,21 @@ namespace gad_checa_gestion_cementerio.Controllers
                 var responsable = contrato?.Responsables.FirstOrDefault();
                 var difunto = contrato?.Difunto;
 
+                // Determinar estado según la misma lógica del dashboard
+                string estadoBoveda = "Disponible";
+                if (b.Estado == false) // Ocupada
+                {
+                    estadoBoveda = "Ocupada";
+                    // Verificar si está por caducar (próximos 30 días)
+                    if (contrato != null && contrato.FechaFin <= DateTime.Today.AddDays(30))
+                    {
+                        if (contrato.FechaFin < DateTime.Today)
+                            estadoBoveda = "Vencida";
+                        else
+                            estadoBoveda = "Por Caducar";
+                    }
+                }
+
                 return new ReporteBovedasViewModel
                 {
                     BovedaId = b.Id,
@@ -100,6 +116,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     NombreBloque = bloque?.Descripcion ?? "Sin Bloque",
                     TipoBloque = bloque?.Tipo ?? "Sin Tipo",
                     NombreCementerio = cementerio?.Nombre,
+                    EstadoBoveda = estadoBoveda, // NUEVO: Añadir estado
                     NombrePropietario = b.Propietario != null ? $"{b.Propietario.Nombres} {b.Propietario.Apellidos}" : null,
                     CedulaPropietario = b.Propietario?.NumeroIdentificacion,
                     NumeroSecuencialContrato = contrato?.NumeroSecuencial,
@@ -120,10 +137,42 @@ namespace gad_checa_gestion_cementerio.Controllers
                 };
             }).ToList();
 
-            // Debug: Verificar la transformación de datos
-            Console.WriteLine($"[DEBUG] Total registros transformados: {resultado.Count}");
-            var tiposEncontrados = resultado.Select(r => r.TipoBloque).Distinct().ToList();
-            Console.WriteLine($"[DEBUG] Tipos encontrados: {string.Join(", ", tiposEncontrados)}");
+            // Calcular estadísticas EXACTAMENTE como en el dashboard
+            var hoy = DateTime.Today;
+
+            // Usar bóvedas de la base de datos directamente (antes de filtrar)
+            var totalBovedas = bovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Boveda").Count();
+            var totalNichos = bovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Nicho").Count();
+            var totalGeneral = totalBovedas + totalNichos;
+
+            // BÓVEDAS: Separados por estado (igual que dashboard)
+            var bovedasDisponibles = bovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Boveda" && b.Estado == true).Count();
+            var bovedasOcupadas = bovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Boveda" && b.Estado == false).Count();
+
+            // NICHOS: Separados por estado (igual que dashboard)
+            var nichosDisponibles = bovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Nicho" && b.Estado == true).Count();
+            var nichosOcupados = bovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Nicho" && b.Estado == false).Count();
+
+            // POR CADUCAR: Contar contratos de bóvedas que vencen en 30 días (igual que dashboard)
+            var bovedasPorCaducar = contratos.Where(c =>
+                c.Boveda != null &&
+                c.Boveda.Piso != null &&
+                c.Boveda.Piso.Bloque != null &&
+                c.Boveda.Piso.Bloque.Tipo == "Boveda" &&
+                c.Estado == true &&
+                c.FechaFin <= hoy.AddDays(30)
+            ).Count();
+
+            // Debug: Mostrar estadísticas
+            Console.WriteLine($"[DEBUG] === ESTADÍSTICAS DEL REPORTE (DASHBOARD LOGIC) ===");
+            Console.WriteLine($"[DEBUG] Total General: {totalGeneral}");
+            Console.WriteLine($"[DEBUG] Total Bóvedas: {totalBovedas}");
+            Console.WriteLine($"[DEBUG] Total Nichos: {totalNichos}");
+            Console.WriteLine($"[DEBUG] Bóvedas Disponibles: {bovedasDisponibles}");
+            Console.WriteLine($"[DEBUG] Bóvedas Ocupadas: {bovedasOcupadas}");
+            Console.WriteLine($"[DEBUG] Nichos Disponibles: {nichosDisponibles}");
+            Console.WriteLine($"[DEBUG] Nichos Ocupados: {nichosOcupados}");
+            Console.WriteLine($"[DEBUG] Bóvedas Por Caducar: {bovedasPorCaducar}");
 
             // Carga tipos disponibles
             var tipos = resultado.Select(r => r.TipoBloque).Distinct().OrderBy(x => x).ToList();
@@ -149,7 +198,16 @@ namespace gad_checa_gestion_cementerio.Controllers
                 NombreBloque = nombreBloque,
                 TiposDisponibles = tipos,
                 BloquesDisponibles = bloques,
-                Bovedas = resultado
+                Bovedas = resultado,
+                // Estadísticas exactamente como el dashboard
+                TotalGeneral = totalGeneral,
+                TotalBovedas = totalBovedas,
+                TotalNichos = totalNichos,
+                BovedasDisponibles = bovedasDisponibles,
+                BovedasOcupadas = bovedasOcupadas,
+                NichosDisponibles = nichosDisponibles,
+                NichosOcupados = nichosOcupados,
+                BovedasPorCaducar = bovedasPorCaducar
             };
 
             return PartialView("~/Views/Reportes/ReporteBovedas/Bovedas.cshtml", vm);
@@ -404,8 +462,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             return PdfErrorHandler.ExecutePdfOperation(() =>
             {
-                // Traer bóvedas y su ubicación
-                var bovedas = _context.Boveda
+                // Traer TODAS las bóvedas para estadísticas correctas (sin filtrar aún)
+                var todasLasBovedas = _context.Boveda
                     .Include(b => b.Propietario)
                     .Include(b => b.Piso)
                         .ThenInclude(p => p!.Bloque)
@@ -419,7 +477,29 @@ namespace gad_checa_gestion_cementerio.Controllers
                     .Where(c => c.Estado)
                     .ToList();
 
-                // Filtros
+                // Calcular estadísticas ANTES de filtrar (igual que dashboard)
+                var hoy = DateTime.Today;
+                var totalBovedas = todasLasBovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Boveda").Count();
+                var totalNichos = todasLasBovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Nicho").Count();
+                var totalGeneral = totalBovedas + totalNichos;
+
+                var bovedasDisponibles = todasLasBovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Boveda" && b.Estado == true).Count();
+                var bovedasOcupadas = todasLasBovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Boveda" && b.Estado == false).Count();
+
+                var nichosDisponibles = todasLasBovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Nicho" && b.Estado == true).Count();
+                var nichosOcupados = todasLasBovedas.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == "Nicho" && b.Estado == false).Count();
+
+                var bovedasPorCaducar = contratos.Where(c =>
+                    c.Boveda != null &&
+                    c.Boveda.Piso != null &&
+                    c.Boveda.Piso.Bloque != null &&
+                    c.Boveda.Piso.Bloque.Tipo == "Boveda" &&
+                    c.Estado == true &&
+                    c.FechaFin <= hoy.AddDays(30)
+                ).Count();
+
+                // Ahora aplicar filtros para el reporte
+                var bovedas = todasLasBovedas;
                 if (!string.IsNullOrEmpty(tipoBloque))
                     bovedas = bovedas.Where(b => b.Piso?.Bloque?.Tipo == tipoBloque).ToList();
 
@@ -436,11 +516,26 @@ namespace gad_checa_gestion_cementerio.Controllers
                     var bloque = piso?.Bloque;
                     var cementerio = bloque?.Cementerio;
 
+                    // Determinar estado según la misma lógica del dashboard
+                    string estadoBoveda = "Disponible";
+                    if (b.Estado == false) // Ocupada
+                    {
+                        estadoBoveda = "Ocupada";
+                        // Verificar si está por caducar (próximos 30 días)
+                        if (contrato != null && contrato.FechaFin <= DateTime.Today.AddDays(30))
+                        {
+                            if (contrato.FechaFin < DateTime.Today)
+                                estadoBoveda = "Vencida";
+                            else
+                                estadoBoveda = "Por Caducar";
+                        }
+                    }
+
                     return new ReporteBovedasViewModel
                     {
                         BovedaId = b.Id,
                         NumeroBoveda = string.IsNullOrEmpty(b.NumeroSecuencial) ? b.Id.ToString() : b.NumeroSecuencial,
-                        EstadoBoveda = b.Estado ? "Ocupada" : "Libre",
+                        EstadoBoveda = estadoBoveda,
                         FechaCreacionBoveda = b.FechaCreacion,
                         NumeroPiso = piso?.NumeroPiso ?? 0,
                         NombreBloque = bloque?.Descripcion ?? "N/A",
@@ -469,7 +564,21 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 PdfErrorHandler.ValidateRequiredData(viewModels, "Datos de bóvedas");
 
-                var document = new BovedasPdfDocument(viewModels);
+                // Crear el viewmodel con estadísticas
+                var vm = new FiltroBovedasViewModel
+                {
+                    Bovedas = viewModels,
+                    TotalGeneral = totalGeneral,
+                    TotalBovedas = totalBovedas,
+                    TotalNichos = totalNichos,
+                    BovedasDisponibles = bovedasDisponibles,
+                    BovedasOcupadas = bovedasOcupadas,
+                    NichosDisponibles = nichosDisponibles,
+                    NichosOcupados = nichosOcupados,
+                    BovedasPorCaducar = bovedasPorCaducar
+                };
+
+                var document = new BovedasPdfDocument(vm);
                 var pdf = PdfErrorHandler.GeneratePdfSafely(() => document.GeneratePdf(), "Reporte de Bóvedas");
 
                 Response.Headers["Content-Disposition"] = "inline; filename=ReporteBovedas.pdf";

@@ -10,11 +10,13 @@ using System;
 
 public class BovedasPdfDocument : IDocument
 {
+    private readonly FiltroBovedasViewModel _viewModel;
     private readonly List<ReporteBovedasViewModel> _viewModels;
 
-    public BovedasPdfDocument(List<ReporteBovedasViewModel> viewModels)
+    public BovedasPdfDocument(FiltroBovedasViewModel viewModel)
     {
-        _viewModels = viewModels ?? new List<ReporteBovedasViewModel>();
+        _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        _viewModels = viewModel.Bovedas ?? new List<ReporteBovedasViewModel>();
     }
 
     public DocumentMetadata GetMetadata() => new DocumentMetadata
@@ -416,15 +418,16 @@ public class BovedasPdfDocument : IDocument
     }
 
     // Métodos auxiliares para estadísticas
-    private int GetBovedasOcupadas() => _viewModels.Count(v => EsBoveda(v) && TieneContratoActivo(v));
-    private int GetBovedasLibres() => _viewModels.Count(v => EsBoveda(v) && !TieneContratoActivo(v) && !TieneContratoPorCaducar(v));
-    private int GetBovedasPorCaducar() => _viewModels.Count(v => EsBoveda(v) && TieneContratoPorCaducar(v));
-    private int GetNichosOcupados() => _viewModels.Count(v => EsNicho(v) && TieneContratoActivo(v));
-    private int GetNichosLibres() => _viewModels.Count(v => EsNicho(v) && !TieneContratoActivo(v) && !TieneContratoPorCaducar(v));
+    // Métodos de estadísticas usando datos del viewModel (pre-calculados en el controlador)
+    private int GetBovedasOcupadas() => _viewModel.BovedasOcupadas;
+    private int GetBovedasLibres() => _viewModel.BovedasDisponibles;
+    private int GetBovedasPorCaducar() => _viewModel.BovedasPorCaducar;
+    private int GetNichosOcupados() => _viewModel.NichosOcupados;
+    private int GetNichosLibres() => _viewModel.NichosDisponibles;
     private int GetNichosPorCaducar() => _viewModels.Count(v => EsNicho(v) && TieneContratoPorCaducar(v));
     private int GetContratosActivos() => _viewModels.Count(v => TieneContratoActivo(v));
-    private int GetTotalNichos() => _viewModels.Count(v => EsNicho(v));
-    private int GetTotalBovedas() => _viewModels.Count(v => EsBoveda(v));
+    private int GetTotalNichos() => _viewModel.TotalNichos;
+    private int GetTotalBovedas() => _viewModel.TotalBovedas;
     private int GetEspaciosConPropietario() => _viewModels.Count(v => TienePropietario(v));
 
     // Métodos auxiliares para determinar tipos - Versión más robusta
