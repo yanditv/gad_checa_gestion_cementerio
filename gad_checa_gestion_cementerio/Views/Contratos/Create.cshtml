@@ -419,10 +419,10 @@
                 } catch (error) {
                     console.error('Error loading step:', error);
                     contentDiv.innerHTML = `
-                                                                                                                                                            <div class="alert alert-danger">
-                                                                                                                                                                Error al cargar el paso ${step}. Intente nuevamente.<br>
-                                                                                                                                                                ${error.message}
-                                                                                                                                                            </div>`;
+                                                                                                                                                                <div class="alert alert-danger">
+                                                                                                                                                                    Error al cargar el paso ${step}. Intente nuevamente.<br>
+                                                                                                                                                                    ${error.message}
+                                                                                                                                                                </div>`;
                     return false;
                 } finally {
                     setLoading(false);
@@ -484,49 +484,7 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                const responsableHtml = `
-                                                                                                                                                                        <div class="responsable mb-4" data-id="${selectedOption.val()}">
-                                                                                                                                                                            <div class="card border-1 shadow-sm">
-                                                                                                                                                                                <div class="card-body">
-                                                                                                                                                                                    <div class="row">
-                                                                                                                                                                                        <div class="col-md-8">
-                                                                                                                                                                                            <div class="d-flex align-items-center">
-                                                                                                                                                                                                <i class="ti ti-user me-2 fs-4"></i>
-                                                                                                                                                                                                <div class="flex-grow-1">
-                                                                                                                                                                                                    <h5 class="mb-1">${selectedOption.data('nombres')} ${selectedOption.data('apellidos')}</h5>
-                                                                                                                                                                                                    <p class="mb-0 text-muted">
-                                                                                                                                                                                                        ${selectedOption.data('tipo')}: ${selectedOption.data('numero')}
-                                                                                                                                                                                                    </p>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                        </div>
-                                                                                                                                                                                        <div class="col-md-4">
-                                                                                                                                                                                            <div class="row">
-                                                                                                                                                                                                <div class="col-md-6">
-                                                                                                                                                                                                    <div class="mb-3">
-                                                                                                                                                                                                        <label class="form-label">Fecha Inicio</label>
-                                                                                                                                                                                                        <input type="date" class="form-control fecha-inicio" 
-                                                                                                                                                                                                            value="${new Date().toISOString().split('T')[0]}" />
-                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                                <div class="col-md-6">
-                                                                                                                                                                                                    <div class="mb-3">
-                                                                                                                                                                                                        <label class="form-label">Fecha Fin</label>
-                                                                                                                                                                                                        <input type="date" class="form-control fecha-fin" />
-                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                        </div>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                    <div class="text-end mt-2">
-                                                                                                                                                                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${selectedOption.val()})">
-                                                                                                                                                                                            <i class="ti ti-trash me-1"></i>Quitar
-                                                                                                                                                                                        </button>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                </div>
-                                                                                                                                                                            </div>
-                                                                                                                                                                        </div>
-                                                                                                                                                                    `;
+                                const responsableHtml = `                                                                                                                                   `;
                                 document.getElementById('responsablesContainer').innerHTML += responsableHtml;
                                 $('#searchResponsable').val(null).trigger('change');
                             } else {
@@ -629,49 +587,49 @@
                             container.innerHTML = '';
                             data.responsables.forEach(responsable => {
                                 const html = `
-                                                                                                                                                                        <div class="responsable mb-4" data-id="${responsable.id}">
-                                                                                                                                                                            <div class="card border-0 shadow-sm">
-                                                                                                                                                                                <div class="card-body">
-                                                                                                                                                                                    <div class="row">
-                                                                                                                                                                                        <div class="col-md-8">
-                                                                                                                                                                                            <div class="d-flex align-items-center">
-                                                                                                                                                                                                <i class="ti ti-user me-2 fs-4"></i>
-                                                                                                                                                                                                <div class="flex-grow-1">
-                                                                                                                                                                                                    <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
-                                                                                                                                                                                                    <p class="mb-0 text-muted">
-                                                                                                                                                                                                        ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
-                                                                                                                                                                                                    </p>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                        </div>
-                                                                                                                                                                                        <div class="col-md-4">
-                                                                                                                                                                                            <div class="row">
-                                                                                                                                                                                                <div class="col-md-6">
-                                                                                                                                                                                                    <div class="mb-3">
-                                                                                                                                                                                                        <label class="form-label">Fecha Inicio</label>
-                                                                                                                                                                                                        <input type="date" class="form-control fecha-inicio" 
-                                                                                                                                                                                                            value="${responsable.fechaInicio}" />
-                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                                <div class="col-md-6">
-                                                                                                                                                                                                    <div class="mb-3">
-                                                                                                                                                                                                        <label class="form-label">Fecha Fin</label>
-                                                                                                                                                                                                        <input type="date" class="form-control fecha-fin" 
-                                                                                                                                                                                                            value="${responsable.fechaFin || ''}" />
+                                                                                                                                                                            <div class="responsable mb-4" data-id="${responsable.id}">
+                                                                                                                                                                                <div class="card border-0 shadow-sm">
+                                                                                                                                                                                    <div class="card-body">
+                                                                                                                                                                                        <div class="row">
+                                                                                                                                                                                            <div class="col-md-8">
+                                                                                                                                                                                                <div class="d-flex align-items-center">
+                                                                                                                                                                                                    <i class="ti ti-user me-2 fs-4"></i>
+                                                                                                                                                                                                    <div class="flex-grow-1">
+                                                                                                                                                                                                        <h5 class="mb-1">${responsable.nombres} ${responsable.apellidos}</h5>
+                                                                                                                                                                                                        <p class="mb-0 text-muted">
+                                                                                                                                                                                                            ${responsable.tipoIdentificacion}: ${responsable.numeroIdentificacion}
+                                                                                                                                                                                                        </p>
                                                                                                                                                                                                     </div>
                                                                                                                                                                                                 </div>
                                                                                                                                                                                             </div>
+                                                                                                                                                                                            <div class="col-md-4">
+                                                                                                                                                                                                <div class="row">
+                                                                                                                                                                                                    <div class="col-md-6">
+                                                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                                                            <label class="form-label">Fecha Inicio</label>
+                                                                                                                                                                                                            <input type="date" class="form-control fecha-inicio" 
+                                                                                                                                                                                                                value="${responsable.fechaInicio}" />
+                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                    <div class="col-md-6">
+                                                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                                                            <label class="form-label">Fecha Fin</label>
+                                                                                                                                                                                                            <input type="date" class="form-control fecha-fin" 
+                                                                                                                                                                                                                value="${responsable.fechaFin || ''}" />
+                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                            </div>
                                                                                                                                                                                         </div>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                    <div class="text-end mt-2">
-                                                                                                                                                                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${responsable.id})">
-                                                                                                                                                                                            <i class="ti ti-trash me-1"></i>Quitar
-                                                                                                                                                                                        </button>
+                                                                                                                                                                                        <div class="text-end mt-2">
+                                                                                                                                                                                            <button type="button" class="btn btn-danger btn-sm" onclick="removeResponsable(${responsable.id})">
+                                                                                                                                                                                                <i class="ti ti-trash me-1"></i>Quitar
+                                                                                                                                                                                            </button>
+                                                                                                                                                                                        </div>
                                                                                                                                                                                     </div>
                                                                                                                                                                                 </div>
                                                                                                                                                                             </div>
-                                                                                                                                                                        </div>
-                                                                                                                                                                    `;
+                                                                                                                                                                        `;
                                 container.innerHTML += html;
                             });
                             initSelect2();
