@@ -542,14 +542,13 @@ namespace gad_checa_gestion_cementerio.services
         private List<Cuota> GenerarCuotasParaContrato(Contrato contrato)
         {
             var cuotas = new List<Cuota>();
-            var montoPorCuota = contrato.MontoTotal / 5;
             for (int i = 1; i <= 5; i++)
             {
                 cuotas.Add(new Cuota
                 {
                     ContratoId = contrato.Id,
                     FechaVencimiento = contrato.FechaInicio.AddYears(i),
-                    Monto = montoPorCuota,
+                    Monto = 0.00m, // Monto 0 para que no se contabilice en ingresos históricos
                     Pagada = false
                 });
             }
@@ -563,11 +562,11 @@ namespace gad_checa_gestion_cementerio.services
                 FechaPago = DateTime.Now,
                 TipoPago = tipo,
                 NumeroComprobante = comprobante,
-                Monto = cuotas.Sum(c => c.Monto),
+                Monto = 0.00m, // Monto 0 para que no se contabilice en ingresos históricos
                 PersonaPagoId = personaId,
                 Cuotas = cuotas
             };
-            foreach (var c in cuotas) c.Pagada = true;
+            foreach (var c in cuotas) c.Pagada = true; // Marcar cuotas como pagadas
             return new List<Pago> { pago };
         }
 
