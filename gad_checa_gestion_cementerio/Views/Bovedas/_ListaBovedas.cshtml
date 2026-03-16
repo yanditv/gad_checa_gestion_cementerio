@@ -31,7 +31,7 @@
                 @foreach (var item in Model.Bovedas)
                 {
                     <tr>
-                        <td>@item.Id</td>
+                        <td>@item.Numero</td>
                         <td>@item.Numero</td>
                         <td>@item.NumeroSecuencial</td>
                         <td>@item.Piso?.Bloque?.Descripcion</td>
@@ -59,33 +59,33 @@
                                         <div class="fw-bold">@item.Propietario.Nombres @item.Propietario.Apellidos</div>
                                         <small class="text-muted">@item.Propietario.TipoIdentificacion:
                                             @item.Propietario.NumeroIdentificacion</small>
+                                        </div>
                                     </div>
-                                </div>
-                            }
+                                }
                             else
-                            {
-                                <span class="text-muted">Sin propietario</span>
-                            }
-                        </td>
-                        <td>
-                            <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="Detalles">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" title="Eliminar">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
+                                {
+                                    <span class="text-muted">Sin propietario</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="Detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
-            }
-        </tbody>
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
 
-<!-- Paginación -->
-<partial name="_Paginacion" model="Model" />
+    <!-- Paginación -->
+    <partial name="_Paginacion" model="Model" />

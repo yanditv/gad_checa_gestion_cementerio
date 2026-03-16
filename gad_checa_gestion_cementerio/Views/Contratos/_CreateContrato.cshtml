@@ -21,7 +21,7 @@
                 {
                     <p class="mb-0 small text-muted">
                         Número de contrato original: <span
-                            class="badge bg-light text-dark">@ViewBag.ContratoOriginalNumero</span>
+                        class="badge bg-light text-dark">@ViewBag.ContratoOriginalNumero</span>
                     </p>
                 }
             </div>
@@ -77,11 +77,11 @@
                             <i class="ti ti-building text-muted"></i>
                         </span>
                         <input id="boveda_seleccionada"
-                            value="@(Model.Boveda?.NumeroSecuencial != null && Model.Boveda.NumeroSecuencial != "S/N" ? $"Bóveda #{Model.Boveda.NumeroSecuencial}" : (Model.BovedaId > 0 ? $"Bóveda #{Model.BovedaId}" : "Seleccionar bóveda"))"
-                            readonly class="form-control border-start-0 border-end-0" />
+                               value="@(Model.Boveda?.NumeroSecuencial != null && Model.Boveda.NumeroSecuencial != "S/N" ? $"Bóveda #{Model.Boveda.NumeroSecuencial}" : (Model.BovedaId > 0 ? $"Bóveda #{Model.BovedaId}" : "Seleccionar bóveda"))"
+                               readonly class="form-control border-start-0 border-end-0" />
                         <button type="button" class="btn btn-outline-primary" onclick="abrirModalBovedas('')"
                             @(Model.NumeroSecuencial != null && Model.NumeroSecuencial.StartsWith("RNV-") ? "disabled" :
-                                                        "")>
+                                                                                    "")>
                             <i class="ti ti-search me-1"></i> Buscar
                         </button>
                     </div>
@@ -163,7 +163,7 @@
                         <i class="ti ti-notes text-muted"></i>
                     </span>
                     <textarea asp-for="Observaciones" rows="3" class="form-control border-start-0"
-                        placeholder="Ingrese observaciones adicionales..."></textarea>
+                              placeholder="Ingrese observaciones adicionales..."></textarea>
                 </div>
                 <span asp-validation-for="Observaciones" class="text-danger small"></span>
             </div>
@@ -177,266 +177,264 @@
                             <strong>Información de renovación</strong>
                             <p class="mb-0 small">Este contrato está vinculado al contrato original ID:
                                 @Model.ContratoOrigenId</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-        </form>
+                }
+            </form>
+        </div>
     </div>
-</div>
 
-<div id="contenedorModalBovedas"></div>
-@* @await Html.PartialAsync("_SelectBoveda", new List<gad_checa_gestion_cementerio.Models.BovedaModel>()) *@
+    <div id="contenedorModalBovedas"></div>
+    @* @await Html.PartialAsync("_SelectBoveda", new List<gad_checa_gestion_cementerio.Models.BovedaModel>()) *@
 
-<script>
-
+    <script>
 
 
 
-    document.getElementById('FechaInicio').addEventListener('change', calcularCuotas);
-    document.getElementById('FechaFin').addEventListener('change', calcularCuotas);
-    document.getElementById('MontoTotal').addEventListener('input', calcularCuotas);
 
-    function calcularCuotas() {
-        var fechaInicio = new Date(document.getElementById('FechaInicio').value);
-        var fechaFin = new Date(document.getElementById('FechaFin').value);
-        var montoTotal = parseFloat(document.getElementById('MontoTotal').value);
-        var cuotasContainer = document.getElementById('cuotasContainer');
-        cuotasContainer.innerHTML = '';
+        document.getElementById('FechaInicio').addEventListener('change', calcularCuotas);
+        document.getElementById('FechaFin').addEventListener('change', calcularCuotas);
+        document.getElementById('MontoTotal').addEventListener('input', calcularCuotas);
 
-        if (isNaN(fechaInicio) || isNaN(fechaFin) || isNaN(montoTotal)) {
-            return;
+        function calcularCuotas() {
+            var fechaInicio = new Date(document.getElementById('FechaInicio').value);
+            var fechaFin = new Date(document.getElementById('FechaFin').value);
+            var montoTotal = parseFloat(document.getElementById('MontoTotal').value);
+            var cuotasContainer = document.getElementById('cuotasContainer');
+            cuotasContainer.innerHTML = '';
+
+            if (isNaN(fechaInicio) || isNaN(fechaFin) || isNaN(montoTotal)) {
+                return;
+            }
+
+            var numeroDeMeses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + (fechaFin.getMonth() - fechaInicio.getMonth());
+            document.getElementById('NumeroDeMeses').value = numeroDeMeses;
+
+            var montoCuota = montoTotal / numeroDeMeses;
+
+            for (var i = 0; i < numeroDeMeses; i++) {
+                var cuotaFecha = new Date(fechaInicio);
+                cuotaFecha.setMonth(cuotaFecha.getMonth() + i);
+
+                var cuotaDiv = document.createElement('div');
+                cuotaDiv.className = 'form-group';
+
+                var cuotaLabel = document.createElement('label');
+                cuotaLabel.innerText = 'Cuota ' + (i + 1) + ' - Fecha: ' + cuotaFecha.toLocaleDateString() + ' - Monto: ' + montoCuota.toFixed(2);
+                cuotaDiv.appendChild(cuotaLabel);
+
+                cuotasContainer.appendChild(cuotaDiv);
+            }
         }
 
-        var numeroDeMeses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + (fechaFin.getMonth() - fechaInicio.getMonth());
-        document.getElementById('NumeroDeMeses').value = numeroDeMeses;
+    </script>
 
-        var montoCuota = montoTotal / numeroDeMeses;
+    <script>
 
-        for (var i = 0; i < numeroDeMeses; i++) {
-            var cuotaFecha = new Date(fechaInicio);
-            cuotaFecha.setMonth(cuotaFecha.getMonth() + i);
+        function renderTablaBovedas(data) {
+            const tbody = document.getElementById("tablaBovedasBody");
+            tbody.innerHTML = ""; // Limpiar
 
-            var cuotaDiv = document.createElement('div');
-            cuotaDiv.className = 'form-group';
+            data.bovedas.forEach(boveda => {
+                const row = document.createElement("tr");
 
-            var cuotaLabel = document.createElement('label');
-            cuotaLabel.innerText = 'Cuota ' + (i + 1) + ' - Fecha: ' + cuotaFecha.toLocaleDateString() + ' - Monto: ' + montoCuota.toFixed(2);
-            cuotaDiv.appendChild(cuotaLabel);
+                row.innerHTML = `
+                <td>${boveda.numeroSecuencial}</td>
+                <td>${boveda.numero}</td>
+                <td>${boveda.estado}</td>
+                <td style="text-align: right;">
+                    <button type="button" class="btn btn-success btn-sm"
+                        onclick="seleccionarBoveda(${boveda.id}, '${boveda.numeroSecuencial}')">
+                        Seleccionar
+                    </button>
+                </td>
+            `;
 
-            cuotasContainer.appendChild(cuotaDiv);
+                tbody.appendChild(row);
+            });
+
+            // Aquí podrías regenerar también la paginación si quieres
+            //renderPaginacion(data.paginaActual, data.totalPaginas);
         }
-    }
+        function abrirModalBovedas(filtro) {
+            const tipoSelect = document.getElementById('tipoBoveda');
+            const tipo = tipoSelect ? tipoSelect.value : '';
 
-</script>
+            fetch(`/Contratos/BuscarBovedas?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=1`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('contenedorModalBovedas').innerHTML = html;
 
-<script>
+                    // Esperar a que el HTML sea insertado antes de iniciar el modal
+                    requestAnimationFrame(() => {
+                        const modalElement = document.getElementById('modalBovedas');
+                        if (modalElement) {
+                            const modal = new bootstrap.Modal(modalElement);
+                            modal.show();
 
-    function renderTablaBovedas(data) {
-        const tbody = document.getElementById("tablaBovedasBody");
-        tbody.innerHTML = ""; // Limpiar
-
-        data.bovedas.forEach(boveda => {
-            const row = document.createElement("tr");
-
-            row.innerHTML = `
-            <td>${boveda.numeroSecuencial}</td>
-            <td>${boveda.numero}</td>
-            <td>${boveda.estado}</td>
-            <td style="text-align: right;">
-                <button type="button" class="btn btn-success btn-sm"
-                    onclick="seleccionarBoveda(${boveda.id}, '${boveda.numeroSecuencial}')">
-                    Seleccionar
-                </button>
-            </td>
-        `;
-
-            tbody.appendChild(row);
-        });
-
-        // Aquí podrías regenerar también la paginación si quieres
-        //renderPaginacion(data.paginaActual, data.totalPaginas);
-    }
-    function abrirModalBovedas(filtro) {
-        const tipoSelect = document.getElementById('tipoBoveda');
-        const tipo = tipoSelect ? tipoSelect.value : '';
-
-        fetch(`/Contratos/BuscarBovedas?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=1`)
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('contenedorModalBovedas').innerHTML = html;
-
-                // Esperar a que el HTML sea insertado antes de iniciar el modal
-                requestAnimationFrame(() => {
-                    const modalElement = document.getElementById('modalBovedas');
-                    if (modalElement) {
-                        const modal = new bootstrap.Modal(modalElement);
-                        modal.show();
-
-                        // Esperar a que el modal se muestre antes de llamar a buscarBovedasJson
-                        modalElement.addEventListener('shown.bs.modal', function () {
-                            buscarBovedasJson(1);
-                        }, { once: true }); // Solo una vez por apertura
-                    } else {
-                        console.error('modalBovedas no se encontró en el DOM.');
-                    }
+                            // Esperar a que el modal se muestre antes de llamar a buscarBovedasJson
+                            modalElement.addEventListener('shown.bs.modal', function () {
+                                buscarBovedasJson(1);
+                            }, { once: true }); // Solo una vez por apertura
+                        } else {
+                            console.error('modalBovedas no se encontró en el DOM.');
+                        }
+                    });
                 });
-            });
-    }
+        }
 
-    function buscarBovedasJson(pagina = 1) {
-        const filtroInput = document.getElementById('filtroBoveda');
-        const tipoSelect = document.getElementById('tipoBoveda');
-        const filtro = filtroInput ? filtroInput.value : '';
-        const tipo = tipoSelect ? tipoSelect.value : '';
+        function buscarBovedasJson(pagina = 1) {
+            const filtroInput = document.getElementById('filtroBoveda');
+            const tipoSelect = document.getElementById('tipoBoveda');
+            const filtro = filtroInput ? filtroInput.value : '';
+            const tipo = tipoSelect ? tipoSelect.value : '';
 
-        fetch(`/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=${pagina}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Error en la solicitud');
-                return response.json();
-            })
-            .then(data => {
-                const body = document.getElementById('tablaBovedasBody');
-                body.innerHTML = '';
-                console.log(data);
-
-                data.bovedas.forEach(b => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-
-                        <td>${b.id}</td>
-                        <td>${b.numeroSecuencial == null ? "S/N" : b.numeroSecuencial}</td>
-                        <td>${b.numero}</td>
-                        <td>${b.propietario}</td>
-                        <td>${b.tipo}</td>
-                        <td>${b.estado}</td>
-                        <td style="text-align: right;">
-                            <button type="button" class="btn btn-success btn-sm"
-                                    onclick="seleccionarBoveda(${b.id}, '${b.numeroSecuencial}')">
-                                Seleccionar
-                            </button>
-                        </td>
-                    `;
-                    body.appendChild(row);
-                });
-
-                generarPaginacion(data.paginaActual, data.totalPaginas, filtro);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
-
-
-    function generarPaginacion(paginaActual, totalPaginas, filtro) {
-        const paginacion = document.getElementById('paginacionBovedas');
-        paginacion.innerHTML = '';
-
-        const tieneAnterior = paginaActual > 1;
-        const tieneSiguiente = paginaActual < totalPaginas;
-
-        const contenedor = document.createElement('div');
-        contenedor.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'my-3', 'small');
-
-        const info = document.createElement('div');
-        info.textContent = `Página ${paginaActual} de ${totalPaginas}`;
-
-        const controles = document.createElement('div');
-        controles.innerHTML = `
-        <button class="btn btn-sm btn-light me-2" ${!tieneAnterior ? 'disabled' : ''} onclick="buscarBovedasJson(${paginaActual - 1})">
-            &larr; Prev
-        </button>
-        <button class="btn btn-sm btn-light" ${!tieneSiguiente ? 'disabled' : ''} onclick="buscarBovedasJson(${paginaActual + 1})">
-            Next &rarr;
-        </button>
-    `;
-
-        contenedor.appendChild(info);
-        contenedor.appendChild(controles);
-        paginacion.appendChild(contenedor);
-    }
-
-
-
-    // Seleccionar una bóveda y cerrar el modal
-    function seleccionarBoveda(id, numeroSecuencial) {
-        const inputBovedaId = document.getElementById('BovedaId');
-        const inputBovedaSeleccionada = document.getElementById('boveda_seleccionada');
-        const inputNumeroSecuencial = document.querySelector('input[name="NumeroSecuencial"]')
-        const numeroSecuencialSpan = document.querySelector('input[name="Boveda.NumeroSecuencial"]');
-        const inputEsRenovacion = document.getElementById('EsRenovacion');
-        const inputContratoOrigenId = document.getElementById('ContratoOrigenId');
-
-        if (inputBovedaId) {
-            inputBovedaId.value = id;
-            numeroSecuencialSpan.value = numeroSecuencial;
-
-            // Preservar los valores de renovación antes de la solicitud
-            const esRenovacion = inputEsRenovacion.value === 'True' || inputEsRenovacion.value === 'true';
-            const contratoOrigenId = inputContratoOrigenId.value;
-
-            fetch('@Url.Action("RecargarContratoByTipo", "Contratos")?idBoveda=' + id)
-                .then(response => response.json())
+            fetch(`/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=${pagina}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en la solicitud');
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success) {
-                        // Actualiza el campo del secuencial en el formulario
-                        inputNumeroSecuencial.value = data.data.numeroSecuencial;
+                    const body = document.getElementById('tablaBovedasBody');
+                    body.innerHTML = '';
+                    console.log(data);
 
-                        // Actualizar el monto total si está disponible
-                        if (data.data.montoTotal !== undefined) {
-                            const montoTotalInput = document.getElementById('MontoTotal');
-                            if (montoTotalInput) {
-                                montoTotalInput.value = parseFloat(data.data.montoTotal).toFixed(2);
-                            }
-                        }
+                    data.bovedas.forEach(b => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                <td>${b.numero}</td>
+                <td>${b.numeroSecuencial == null ? "S/N" : b.numeroSecuencial}</td>
+                <td>${b.propietario}</td>
+                <td>${b.tipo}</td>
+                <td>${b.estado}</td>
+                <td style="text-align: right;">
+                    <button type="button" class="btn btn-success btn-sm"
+                        onclick="seleccionarBoveda(${b.id}, '${b.numeroSecuencial}')">
+                        Seleccionar
+                    </button>
+                </td>
+            `;
+                        body.appendChild(row);
+                    });
 
-                        // Si hay un elemento para mostrar el número secuencial, actualizarlo también
-                        const numeroSecuencialElement = document.getElementById("numero-secuencial-contrato");
-                        if (numeroSecuencialElement) {
-                            numeroSecuencialElement.textContent = data.data.numeroSecuencial;
-                        }
-
-                        // Restaurar los valores de renovación si es necesario
-                        if (esRenovacion) {
-                            inputEsRenovacion.value = 'true';
-                        }
-
-                        if (contratoOrigenId) {
-                            inputContratoOrigenId.value = contratoOrigenId;
-                        }
-
-                        // Actualizar la información del contrato original si está disponible
-                        if (data.data.contratoOriginalNumero) {
-                            // Intentar actualizar la información en la UI si existe un contenedor para ello
-                            const infoContratoOriginal = document.querySelector('.info-contrato-original');
-                            if (infoContratoOriginal) {
-                                infoContratoOriginal.textContent = data.data.contratoOriginalNumero;
-                            }
-                        }
-                    }
+                    generarPaginacion(data.paginaActual, data.totalPaginas, filtro);
                 })
                 .catch(error => {
-                    console.error('Error al recargar el contrato:', error);
+                    console.error('Error:', error);
                 });
-
-            inputBovedaId.dispatchEvent(new Event('change'));
-            inputNumeroSecuencial.dispatchEvent(new Event('change'));
-            numeroSecuencialSpan.dispatchEvent(new Event('change'));
-
-
-            let mostrar = numeroSecuencialSpan.value && numeroSecuencialSpan.value !== "S/N" && numeroSecuencialSpan.value !== ""
-                ? numeroSecuencialSpan.value
-                : inputBovedaId.value;
-
-            inputBovedaSeleccionada.value = `Bóveda #${mostrar}`;
-            inputBovedaSeleccionada.dispatchEvent(new Event('change'))
         }
 
-        // Cerrar el modal
-        const modalElement = document.getElementById('modalBovedas');
-        if (modalElement) {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            modal.hide();
+
+        function generarPaginacion(paginaActual, totalPaginas, filtro) {
+            const paginacion = document.getElementById('paginacionBovedas');
+            paginacion.innerHTML = '';
+
+            const tieneAnterior = paginaActual > 1;
+            const tieneSiguiente = paginaActual < totalPaginas;
+
+            const contenedor = document.createElement('div');
+            contenedor.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'my-3', 'small');
+
+            const info = document.createElement('div');
+            info.textContent = `Página ${paginaActual} de ${totalPaginas}`;
+
+            const controles = document.createElement('div');
+            controles.innerHTML = `
+            <button class="btn btn-sm btn-light me-2" ${!tieneAnterior ? 'disabled' : ''} onclick="buscarBovedasJson(${paginaActual - 1})">
+                &larr; Prev
+            </button>
+            <button class="btn btn-sm btn-light" ${!tieneSiguiente ? 'disabled' : ''} onclick="buscarBovedasJson(${paginaActual + 1})">
+                Next &rarr;
+            </button>
+        `;
+
+            contenedor.appendChild(info);
+            contenedor.appendChild(controles);
+            paginacion.appendChild(contenedor);
         }
-    }
-</script>
+
+
+
+        // Seleccionar una bóveda y cerrar el modal
+        function seleccionarBoveda(id, numeroSecuencial) {
+            const inputBovedaId = document.getElementById('BovedaId');
+            const inputBovedaSeleccionada = document.getElementById('boveda_seleccionada');
+            const inputNumeroSecuencial = document.querySelector('input[name="NumeroSecuencial"]')
+            const numeroSecuencialSpan = document.querySelector('input[name="Boveda.NumeroSecuencial"]');
+            const inputEsRenovacion = document.getElementById('EsRenovacion');
+            const inputContratoOrigenId = document.getElementById('ContratoOrigenId');
+
+            if (inputBovedaId) {
+                inputBovedaId.value = id;
+                numeroSecuencialSpan.value = numeroSecuencial;
+
+                // Preservar los valores de renovación antes de la solicitud
+                const esRenovacion = inputEsRenovacion.value === 'True' || inputEsRenovacion.value === 'true';
+                const contratoOrigenId = inputContratoOrigenId.value;
+
+                fetch('@Url.Action("RecargarContratoByTipo", "Contratos")?idBoveda=' + id)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Actualiza el campo del secuencial en el formulario
+                            inputNumeroSecuencial.value = data.data.numeroSecuencial;
+
+                            // Actualizar el monto total si está disponible
+                            if (data.data.montoTotal !== undefined) {
+                                const montoTotalInput = document.getElementById('MontoTotal');
+                                if (montoTotalInput) {
+                                    montoTotalInput.value = parseFloat(data.data.montoTotal).toFixed(2);
+                                }
+                            }
+
+                            // Si hay un elemento para mostrar el número secuencial, actualizarlo también
+                            const numeroSecuencialElement = document.getElementById("numero-secuencial-contrato");
+                            if (numeroSecuencialElement) {
+                                numeroSecuencialElement.textContent = data.data.numeroSecuencial;
+                            }
+
+                            // Restaurar los valores de renovación si es necesario
+                            if (esRenovacion) {
+                                inputEsRenovacion.value = 'true';
+                            }
+
+                            if (contratoOrigenId) {
+                                inputContratoOrigenId.value = contratoOrigenId;
+                            }
+
+                            // Actualizar la información del contrato original si está disponible
+                            if (data.data.contratoOriginalNumero) {
+                                // Intentar actualizar la información en la UI si existe un contenedor para ello
+                                const infoContratoOriginal = document.querySelector('.info-contrato-original');
+                                if (infoContratoOriginal) {
+                                    infoContratoOriginal.textContent = data.data.contratoOriginalNumero;
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al recargar el contrato:', error);
+                    });
+
+                inputBovedaId.dispatchEvent(new Event('change'));
+                inputNumeroSecuencial.dispatchEvent(new Event('change'));
+                numeroSecuencialSpan.dispatchEvent(new Event('change'));
+
+
+                let mostrar = numeroSecuencialSpan.value && numeroSecuencialSpan.value !== "S/N" && numeroSecuencialSpan.value !== ""
+                    ? numeroSecuencialSpan.value
+                    : inputBovedaId.value;
+
+                inputBovedaSeleccionada.value = `Bóveda #${mostrar}`;
+                inputBovedaSeleccionada.dispatchEvent(new Event('change'))
+            }
+
+            // Cerrar el modal
+            const modalElement = document.getElementById('modalBovedas');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                modal.hide();
+            }
+        }
+    </script>
