@@ -366,4 +366,7 @@ FodyWeavers.xsd
 
 .env
 
+.idea
+.vscode
+
 gad_checa_gestion_cementerio/wwwroot/documentos/
