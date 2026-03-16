@@ -11,7 +11,12 @@
     var alertClass = "alert-info"; // Por defecto
     var icon = "bi-info-circle-fill";
 
-    if (item.title.ToLower().Contains("contrato"))
+    if (item.title.ToLower().Contains("contrato") && item.title.ToLower().Contains("caducado"))
+    {
+        alertClass = "alert-danger";
+        icon = "bi-exclamation-triangle-fill";
+    }
+    else if (item.title.ToLower().Contains("contrato") || item.title.ToLower().Contains("renovación"))
     {
         alertClass = "alert-warning";
         icon = "bi-exclamation-triangle-fill";

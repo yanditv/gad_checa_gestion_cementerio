@@ -35,6 +35,20 @@ namespace gad_checa_gestion_cementerio.Controllers
                 });
             }
 
+            // Contratos de renovación que vencen en los próximos 30 días (posiblemente para nichos)
+            var contratosRenovacionPorVencer = _context.Contrato
+                .Where(c => c.EsRenovacion && c.FechaFin >= DateTime.Now && c.FechaFin <= DateTime.Now.AddDays(30) && c.Estado)
+                .ToList();
+
+            foreach (var contrato in contratosRenovacionPorVencer)
+            {
+                ListNotify.Add(new NotifyModel
+                {
+                    title = "Renovación próxima a caducar",
+                    description = $"La renovación del contrato #{contrato.NumeroSecuencial} vence el {contrato.FechaFin:dd/MM/yyyy}. Posible conversión a nicho."
+                });
+            }
+
             // Cuotas no pagadas que vencen en los próximos 15 días
             var cuotasPorVencer = _context.Cuota
                 .Include(q => q.Contrato)
