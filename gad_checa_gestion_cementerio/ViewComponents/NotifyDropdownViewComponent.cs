@@ -28,6 +28,26 @@ namespace gad_checa_gestion_cementerio.ViewComponents
                 description = $"Contrato #{c.NumeroSecuencial} vence el {c.FechaFin:dd/MM/yyyy}"
             }));
 
+            var contratosCaducados = await _context.Contrato
+                .Where(c => c.FechaFin < DateTime.Now && c.Estado)
+                .ToListAsync();
+
+            notificaciones.AddRange(contratosCaducados.Select(c => new NotifyModel
+            {
+                title = "Contrato caducado",
+                description = $"Contrato #{c.NumeroSecuencial} caducó el {c.FechaFin:dd/MM/yyyy}"
+            }));
+
+            var contratosRenovacion = await _context.Contrato
+                .Where(c => c.EsRenovacion && c.FechaFin >= DateTime.Now && c.FechaFin <= DateTime.Now.AddDays(30) && c.Estado)
+                .ToListAsync();
+
+            notificaciones.AddRange(contratosRenovacion.Select(c => new NotifyModel
+            {
+                title = "Renovación próxima a caducar",
+                description = $"Renovación #{c.NumeroSecuencial} vence el {c.FechaFin:dd/MM/yyyy}"
+            }));
+
             var cuotas = await _context.Cuota
                 .Include(c => c.Contrato)
                 .Where(c => !c.Pagada && c.FechaVencimiento >= DateTime.Now && c.FechaVencimiento <= DateTime.Now.AddDays(15))
