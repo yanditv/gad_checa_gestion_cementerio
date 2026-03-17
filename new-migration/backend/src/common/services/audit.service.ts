@@ -4,9 +4,9 @@ import { PrismaService } from "../../prisma/prisma.service";
 type AuditLogInput = {
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   entityName: string;
-  entityId: string | number;
-  actorId?: string | null;
-  details?: Record<string, unknown>;
+  entityId: string;
+  actorId?: string;
+  details?: any;
 };
 
 @Injectable()

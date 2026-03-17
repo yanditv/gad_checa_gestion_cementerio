@@ -117,7 +117,7 @@ model Person {
   gender               String?
   isActive             Boolean   @default(true)
   createdAt            DateTime  @default(now())
-  personType           String    @default("Persona")
+  personType           String    @default("Person")
 
   responsibleParties ResponsibleParty[]
   owners             Owner[]
@@ -143,13 +143,13 @@ model ResponsibleParty {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 
-  personId String @unique
+  personId String
   person   Person @relation(fields: [personId], references: [id])
 
   ownerId String? @unique
   owner   Owner? @relation(fields: [ownerId], references: [id])
 
-  contractAssignments ContractAssignment[]
+  contracts Contract[]
 }
 
 model Deceased {
@@ -189,6 +189,9 @@ model Contract {
   vaultId String
   vault   Vault  @relation(fields: [vaultId], references: [id])
 
+  responsiblePartyId String?
+  responsibleParty   ResponsibleParty? @relation(fields: [responsiblePartyId], references: [id])
+
   deceasedId String?
   deceased   Deceased? @relation(fields: [deceasedId], references: [id])
 
@@ -200,17 +203,7 @@ model Contract {
   relatedContract   Contract?  @relation("RelatedContract", fields: [relatedContractId], references: [id])
   relatedContracts  Contract[] @relation("RelatedContract")
 
-  assignments  ContractAssignment[]
   installments Installment[]
-}
-
-model ContractAssignment {
-  contractId         String
-  responsiblePartyId String
-  contract           Contract         @relation(fields: [contractId], references: [id])
-  responsibleParty   ResponsibleParty @relation(fields: [responsiblePartyId], references: [id])
-
-  @@id([contractId, responsiblePartyId])
 }
 
 model Installment {

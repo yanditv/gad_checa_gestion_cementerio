@@ -17,6 +17,7 @@ async function bootstrap() {
   aplicacion.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
+    forbidNonWhitelisted: true,
   }));
 
   const configuracionSwagger = new DocumentBuilder()

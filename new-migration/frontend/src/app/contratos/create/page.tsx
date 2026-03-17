@@ -188,7 +188,7 @@ export default function CreateContratoPage() {
           page: bovedasPage,
           limit: 10,
           search: bovedaSearch,
-          tipo: bovedaTipo || undefined,
+          type: bovedaTipo || undefined,
         });
         setBovedasDisponibles(result.data || []);
         setBovedasMeta(result.meta);
@@ -271,14 +271,9 @@ export default function CreateContratoPage() {
   }
 
   function addExistingResponsable(persona: any) {
-    if (form.responsables.some((item) => item.id === persona.id && item.esExistente)) {
-      return;
-    }
-
     setForm((prev) => ({
       ...prev,
       responsables: [
-        ...prev.responsables,
         {
           localId: `existing-${persona.id}`,
           id: persona.id,
@@ -307,7 +302,6 @@ export default function CreateContratoPage() {
     setForm((prev) => ({
       ...prev,
       responsables: [
-        ...prev.responsables,
         {
           ...newResponsable,
           localId: `new-${Date.now()}`,
@@ -438,16 +432,52 @@ export default function CreateContratoPage() {
 
     try {
       const result = await contratosApi.create({
-        contrato: {
-          ...form.contrato,
-          cuotas: form.cuotas.map((cuota) => ({
-            ...cuota,
-            pagada: form.pago.cuotasSeleccionadas.includes(cuota.numero),
+        contract: {
+          sequentialNumber: form.contrato.numeroSecuencial || undefined,
+          vaultId: String(form.contrato.bovedaId),
+          startDate: form.contrato.fechaInicio,
+          endDate: form.contrato.fechaFin || null,
+          monthCount: Number(form.contrato.numeroDeMeses),
+          totalAmount: Number(form.contrato.montoTotal),
+          notes: form.contrato.observaciones || null,
+          isRenewal: form.contrato.esRenovacion,
+          sourceContractId: form.contrato.contratoOrigenId ? String(form.contrato.contratoOrigenId) : null,
+          relatedContractId: form.contrato.contratoRelacionadoId ? String(form.contrato.contratoRelacionadoId) : null,
+          installments: form.cuotas.map((installment) => ({
+            number: installment.numero,
+            amount: installment.monto,
+            dueDate: installment.fechaVencimiento,
+            isPaid: form.pago.cuotasSeleccionadas.includes(installment.numero),
           })),
         },
-        difunto: form.difunto,
-        responsables: form.responsables,
-        pago: form.pago,
+        deceased: {
+          identificationNumber: form.difunto.numeroIdentificacion || null,
+          firstName: form.difunto.nombres,
+          lastName: form.difunto.apellidos,
+          birthDate: form.difunto.fechaNacimiento || null,
+          deathDate: form.difunto.fechaFallecimiento || null,
+        },
+        responsibles: form.responsables.map((responsible) => ({
+          id: responsible.id ? String(responsible.id) : undefined,
+          isExisting: responsible.esExistente,
+          firstName: responsible.nombres,
+          lastName: responsible.apellidos,
+          identificationType: responsible.tipoIdentificacion,
+          identificationNumber: responsible.numeroIdentificacion,
+          phone: responsible.telefono || null,
+          email: responsible.email || null,
+          address: responsible.direccion || null,
+          relationship: responsible.parentesco || null,
+        })),
+        payment: {
+          paymentMethod: form.pago.tipoPago,
+          reference: form.pago.numeroComprobante || null,
+          amount: Number(form.pago.monto),
+          paidAt: form.pago.fechaPago,
+          bankId: form.pago.bancoId || null,
+          note: form.pago.observacion || null,
+          selectedInstallmentNumbers: form.pago.cuotasSeleccionadas,
+        },
       });
       router.push(`/contratos/${result.id}`);
     } catch (err: any) {

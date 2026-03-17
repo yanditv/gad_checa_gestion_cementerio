@@ -1,0 +1,2 @@
+export const PAYMENT_RECEIPT_PREFIX = 'REC';
+export const PAYMENT_RECEIPT_PAD_LENGTH = 5;

@@ -29,10 +29,10 @@ export async function obtenerMetadatosCreacionContratoAction() {
   }
 }
 
-export async function obtenerNumeroSecuencialContratoAction(bovedaId?: number, isRenovacion?: boolean) {
+export async function obtenerNumeroSecuencialContratoAction(vaultId?: number | string, isRenewal?: boolean) {
   try {
     return await fetchApiPayload<any>(
-      `/contratos/numero-secuencial${buildQueryString({ bovedaId, isRenovacion })}`,
+      `/contratos/numero-secuencial${buildQueryString({ vaultId, isRenewal })}`,
     );
   } catch {
     return {

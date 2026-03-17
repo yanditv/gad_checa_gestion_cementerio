@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuditService } from '../common/services/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CatastroImportService } from './catastro-import.service';
+import { CadastralImportService } from './cadastral-import.service';
 
 @Injectable()
 export class SeedService {
@@ -11,17 +11,17 @@ export class SeedService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-    private readonly catastroImportService: CatastroImportService,
+    private readonly cadastralImportService: CadastralImportService,
   ) {}
 
   async run() {
     const adminUser = await this.seedRolesAndAdmin();
     await this.seedInitialData(adminUser.id);
-    await this.catastroImportService.run(adminUser.id);
+    await this.cadastralImportService.run(adminUser.id);
   }
 
   private async seedRolesAndAdmin() {
-    const roles = ['Admin', 'Usuario', 'Administrador'];
+    const roles = ['Admin', 'User', 'Administrator'];
 
     for (const roleName of roles) {
       await this.prisma.role.upsert({
@@ -45,8 +45,8 @@ export class SeedService {
       },
       create: {
         identificationNumber: '9999999999',
-        firstName: 'Administrador',
-        lastName: 'Sistema',
+        firstName: 'System',
+        lastName: 'Administrator',
         email: adminEmail,
         passwordHash,
         phone: '',
@@ -56,28 +56,28 @@ export class SeedService {
       },
     });
 
-    const roleAdministrador = await this.prisma.role.findUnique({
-      where: { name: 'Administrador' },
+    const administratorRole = await this.prisma.role.findUnique({
+      where: { name: 'Administrator' },
       select: { id: true },
     });
 
-    if (roleAdministrador) {
+    if (administratorRole) {
       await this.prisma.userRole.upsert({
         where: {
           userId_roleId: {
             userId: adminUser.id,
-            roleId: roleAdministrador.id,
+            roleId: administratorRole.id,
           },
         },
         update: {},
         create: {
           userId: adminUser.id,
-          roleId: roleAdministrador.id,
+          roleId: administratorRole.id,
         },
       });
     }
 
-    this.logger.log('Roles y usuario administrador verificados');
+    this.logger.log('Roles and administrator user verified');
     return adminUser;
   }
 
@@ -101,14 +101,14 @@ export class SeedService {
     }
 
     const existingCemetery = await this.prisma.cemetery.findFirst({
-      where: { name: 'Cementerio de checa' },
+      where: { name: 'Checa Cemetery' },
       select: { id: true },
     });
 
     if (!existingCemetery) {
       const cemetery = await this.prisma.cemetery.create({
         data: {
-          name: 'Cementerio de checa',
+          name: 'Checa Cemetery',
           address: 'Eloy Riera, Parroquia Checa',
           phone: '0987654321',
           email: 'jpcheca0@gmail.com',
@@ -162,6 +162,6 @@ export class SeedService {
       }
     }
 
-    this.logger.log('Datos iniciales verificados');
+    this.logger.log('Initial data verified');
   }
 }

@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import type { ConfigType } from '@nestjs/config';
+import type { StringValue } from 'ms';
 import { z } from 'zod';
 
 const booleanFlagSchema = z.preprocess((value) => {
@@ -16,11 +17,11 @@ const booleanFlagSchema = z.preprocess((value) => {
 const envVarsSchema = z.object({
 	PORT: z.coerce.number().int().positive().default(3001),
 	FRONTEND_URL: z.string().url().default('http://localhost:3000'),
-	JWT_SECRET: z.string().min(1).default('cementerio-secret-key'),
+	JWT_SECRET: z.string().min(1).default('cemetery-secret-key'),
 	JWT_EXPIRES_IN: z.string().min(1).default('24h'),
-	CATASTRO_IMPORT_ENABLED: booleanFlagSchema.default(false),
-	CATASTRO_FILE_PATH: z.string().trim().min(1).optional(),
-	CATASTRO_IMPORT_FORCE: booleanFlagSchema.default(false),
+	CADASTRAL_IMPORT_ENABLED: booleanFlagSchema.default(false),
+	CADASTRAL_FILE_PATH: z.string().trim().min(1).optional(),
+	CADASTRAL_IMPORT_FORCE: booleanFlagSchema.default(false),
 });
 
 const parsedEnvVars = envVarsSchema.safeParse(process.env);
@@ -43,18 +44,18 @@ export default registerAs('app', () => ({
 	},
 	jwt: {
 		secret: envVars.JWT_SECRET,
-		expiresIn: envVars.JWT_EXPIRES_IN,
+		expiresIn: envVars.JWT_EXPIRES_IN as StringValue,
 	},
 	swagger: {
 		path: 'api/docs',
-		title: 'GAD Checa Cementerio API',
-		description: 'API para la gestión del cementerio',
+		title: 'GAD Checa Cemetery API',
+		description: 'API for cemetery management',
 		version: '1.0',
 	},
-	catastroImport: {
-		enabled: envVars.CATASTRO_IMPORT_ENABLED,
-		filePath: envVars.CATASTRO_FILE_PATH,
-		force: envVars.CATASTRO_IMPORT_FORCE,
+	cadastralImport: {
+		enabled: envVars.CADASTRAL_IMPORT_ENABLED,
+		filePath: envVars.CADASTRAL_FILE_PATH,
+		force: envVars.CADASTRAL_IMPORT_FORCE,
 	},
 }));
 

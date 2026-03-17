@@ -1,45 +1,44 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import appConfig from './config/appConfig';
 import { AuthModule } from './modules/auth/auth.module';
-import { CementerioModule } from './modules/cementerio/cementerio.module';
-import { BloqueModule } from './modules/bloque/bloque.module';
-import { BovedaModule } from './modules/boveda/boveda.module';
-import { ContratoModule } from './modules/contrato/contrato.module';
-import { PersonaModule } from './modules/persona/persona.module';
-import { DifuntoModule } from './modules/difunto/difunto.module';
-import { PagoModule } from './modules/pago/pago.module';
-import { CuotaModule } from './modules/cuota/cuota.module';
-import { UserModule } from './modules/usuario/usuario.module';
-import { RolModule } from './modules/rol/rol.module';
+import { CemeteryModule } from './modules/cemetery/cemetery.module';
+import { BlockModule } from './modules/block/block.module';
+import { VaultModule } from './modules/vault/vault.module';
+import { ContractModule } from './modules/contract/contract.module';
+import { PersonModule } from './modules/person/person.module';
+import { DeceasedModule } from './modules/deceased/deceased.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { InstallmentModule } from './modules/installment/installment.module';
+import { UserModule } from './modules/user/user.module';
+import { RoleModule } from './modules/role/role.module';
 import { SeedService } from './bootstrap/seed.service';
-import { CatastroImportService } from './bootstrap/catastro-import.service';
-import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
+import { CadastralImportService } from './bootstrap/cadastral-import.service';
+import { CadastralImportPersistenceService } from './bootstrap/cadastral-import.persistence.service';
 import { AuditService } from './common/services/audit.service';
-import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [appConfig] }),
     PrismaModule,
     AuthModule,
-    CementerioModule,
-    BloqueModule,
-    BovedaModule,
-    ContratoModule,
-    PersonaModule,
-    DifuntoModule,
-    PagoModule,
-    CuotaModule,
+    CemeteryModule,
+    BlockModule,
+    VaultModule,
+    ContractModule,
+    PersonModule,
+    DeceasedModule,
+    PaymentModule,
+    InstallmentModule,
     UserModule,
-    RolModule,
+    RoleModule,
   ],
   providers: [
     AuditService,
     SeedService,
-    CatastroImportService,
+    CadastralImportPersistenceService,
+    CadastralImportService,
   ],
 })
 export class AppModule {}

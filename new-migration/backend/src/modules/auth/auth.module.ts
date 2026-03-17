@@ -1,25 +1,20 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, type ConfigType } from '@nestjs/config';
+import type { SignOptions } from 'jsonwebtoken';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import appConfig from '../../config/appConfig';
-import { UserRepository } from '../usuario/user.repository';
+import { UserRepository } from '../user/user.repository';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [appConfig.KEY],
-      useFactory: (config: ConfigType<typeof appConfig>) => ({
-        secret: config.jwt.secret,
-        signOptions: {
-          expiresIn: config.jwt.expiresIn,
-        },
-      }),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET ?? 'cemetery-secret-key',
+      signOptions: {
+        expiresIn: (process.env.JWT_EXPIRES_IN ?? '24h') as SignOptions['expiresIn'],
+      },
     }),
   ],
   providers: [AuthService, UserRepository, JwtStrategy],

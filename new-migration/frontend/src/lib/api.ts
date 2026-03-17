@@ -213,13 +213,13 @@ export const contratosApi = {
     api['isBrowser']()
       ? api['requestRelative']<any>('/api/contratos/create-metadata', { method: 'GET', cache: 'no-store' })
       : api.get<any>('/contratos/create-metadata'),
-  obtenerNumeroSecuencial: (bovedaId?: number, isRenovacion?: boolean) =>
+  obtenerNumeroSecuencial: (vaultId?: number | string, isRenewal?: boolean) =>
     api['isBrowser']()
       ? api['requestRelative']<any>(
-          `/api/contratos/numero-secuencial${bovedaId ? `?bovedaId=${bovedaId}&isRenovacion=${Boolean(isRenovacion)}` : ''}`,
+          `/api/contratos/numero-secuencial${vaultId ? `?vaultId=${vaultId}&isRenewal=${Boolean(isRenewal)}` : ''}`,
           { method: 'GET', cache: 'no-store' },
         )
-      : api.get<any>(`/contratos/numero-secuencial${bovedaId ? `?bovedaId=${bovedaId}&isRenovacion=${Boolean(isRenovacion)}` : ''}`),
+      : api.get<any>(`/contratos/numero-secuencial${vaultId ? `?vaultId=${vaultId}&isRenewal=${Boolean(isRenewal)}` : ''}`),
   obtenerBovedasDisponibles: (params?: PaginationParams) =>
     api['isBrowser']()
       ? api['getPaginatedRelative']<any>('/api/contratos/bovedas-disponibles', params)
@@ -256,7 +256,7 @@ export const difuntosApi = {
 };
 
 export const personasApi = {
-  findAll: (tipo?: string) => api.get<any[]>(`/personas${tipo ? `?tipo=${tipo}` : ''}`),
+  findAll: (type?: string) => api.get<any[]>(`/personas${type ? `?type=${type}` : ''}`),
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/personas', params),
   findOne: (id: number) => api.get<any>(`/personas/${id}`),
   create: (data: any) => api.post<any>('/personas', data),

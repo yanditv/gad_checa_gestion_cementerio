@@ -41,7 +41,7 @@ export default function PersonasPage() {
         page,
         limit: 15,
         search,
-        tipo: tipo || undefined,
+        type: tipo || undefined,
       });
       setPersonas(result.data);
       setMeta(result.meta);
