@@ -20,7 +20,45 @@ export class PaymentRepository {
   findMany() {
     return this.payment.findMany({
       where: { isActive: true },
-      include: { bank: true, installmentPayments: { include: { installment: { include: { contract: true } } } } },
+      select: {
+        id: true,
+        receiptNumber: true,
+        amount: true,
+        paidAt: true,
+        paymentMethod: true,
+        reference: true,
+        note: true,
+        isActive: true,
+        bankId: true,
+        bank: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        installmentPayments: {
+          select: {
+            installmentId: true,
+            installment: {
+              select: {
+                id: true,
+                contract: {
+                  select: {
+                    id: true,
+                    deceased: {
+                      select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { paidAt: 'desc' },
     });
   }

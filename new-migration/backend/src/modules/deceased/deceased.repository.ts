@@ -67,7 +67,34 @@ export class DeceasedRepository {
     const [items, total] = await this.prisma.$transaction([
       this.deceased.findMany({
         where,
-        include: { vault: { include: { block: { include: { cemetery: true } } } } },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          identificationNumber: true,
+          birthDate: true,
+          deathDate: true,
+          burialDate: true,
+          causeOfDeath: true,
+          notes: true,
+          age: true,
+          gender: true,
+          isActive: true,
+          createdAt: true,
+          vaultId: true,
+          vault: {
+            select: {
+              id: true,
+              number: true,
+              block: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take,

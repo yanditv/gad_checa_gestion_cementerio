@@ -49,7 +49,14 @@ export class BlockRepository {
     const [items, total] = await this.prisma.$transaction([
       this.block.findMany({
         where,
-        include: { cemetery: true, floors: true, vaults: { where: { isActive: true } } },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          isActive: true,
+          createdAt: true,
+          cemeteryId: true,
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take,
@@ -63,7 +70,14 @@ export class BlockRepository {
   listByCemetery(cemeteryId: string) {
     return this.block.findMany({
       where: { cemeteryId, isActive: true },
-      include: { floors: true, vaults: { where: { isActive: true } } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+        createdAt: true,
+        cemeteryId: true,
+      },
     });
   }
 

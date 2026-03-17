@@ -110,7 +110,20 @@ export class PersonRepository {
     const [items, total] = await this.prisma.$transaction([
       this.person.findMany({
         where,
-        include: { owners: true, responsibleParties: true },
+        select: {
+          id: true,
+          identificationNumber: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          email: true,
+          address: true,
+          identificationType: true,
+          gender: true,
+          isActive: true,
+          createdAt: true,
+          personType: true,
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take,

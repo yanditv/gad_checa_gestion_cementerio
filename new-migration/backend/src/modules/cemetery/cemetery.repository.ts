@@ -38,7 +38,16 @@ export class CemeteryRepository {
   findActive() {
     return this.cemetery.findMany({
       where: { isActive: true },
-      include: { blocks: { where: { isActive: true } } },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phone: true,
+        email: true,
+        taxId: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
   }
 

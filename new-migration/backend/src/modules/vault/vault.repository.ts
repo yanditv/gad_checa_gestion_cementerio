@@ -87,10 +87,50 @@ export class VaultRepository {
 
     const itemsQuery = this.prisma.vault.findMany({
       where,
-      include: {
-        block: { include: { cemetery: true } },
-        floor: true,
-        owner: { include: { person: true } },
+      select: {
+        id: true,
+        number: true,
+        capacity: true,
+        type: true,
+        isActive: true,
+        notes: true,
+        location: true,
+        price: true,
+        rentalPrice: true,
+        createdAt: true,
+        blockId: true,
+        floorId: true,
+        ownerId: true,
+        block: {
+          select: {
+            id: true,
+            name: true,
+            cemetery: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        floor: {
+          select: {
+            id: true,
+            number: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            person: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -110,7 +150,28 @@ export class VaultRepository {
   async listByBlock(blockId: string) {
     return await this.vault.findMany({
       where: { blockId, isActive: true },
-      include: { floor: true },
+      select: {
+        id: true,
+        number: true,
+        capacity: true,
+        type: true,
+        isActive: true,
+        blockId: true,
+        floorId: true,
+        ownerId: true,
+        floor: {
+          select: {
+            id: true,
+            number: true,
+          },
+        },
+        block: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
   }
 
@@ -129,10 +190,39 @@ export class VaultRepository {
 
     return await this.vault.findMany({
       where,
-      include: {
-        block: { include: { cemetery: true } },
-        floor: true,
-        owner: { include: { person: true } },
+      select: {
+        id: true,
+        number: true,
+        type: true,
+        isActive: true,
+        rentalPrice: true,
+        blockId: true,
+        floorId: true,
+        ownerId: true,
+        block: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        floor: {
+          select: {
+            id: true,
+            number: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            person: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [{ number: "asc" }],
       skip,

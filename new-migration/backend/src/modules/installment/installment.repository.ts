@@ -74,7 +74,15 @@ export class InstallmentRepository {
   findActive() {
     return this.installment.findMany({
       where: { isActive: true },
-      include: { contract: { include: { deceased: true, vault: true } }, installmentPayments: { include: { payment: true } } },
+      select: {
+        id: true,
+        number: true,
+        amount: true,
+        dueDate: true,
+        paidAt: true,
+        isActive: true,
+        contractId: true,
+      },
       orderBy: { dueDate: 'asc' },
     });
   }
@@ -82,7 +90,15 @@ export class InstallmentRepository {
   findByContract(contractId: string) {
     return this.installment.findMany({
       where: { contractId, isActive: true },
-      include: { installmentPayments: { include: { payment: true } } },
+      select: {
+        id: true,
+        number: true,
+        amount: true,
+        dueDate: true,
+        paidAt: true,
+        isActive: true,
+        contractId: true,
+      },
       orderBy: { number: 'asc' },
     });
   }
@@ -90,7 +106,27 @@ export class InstallmentRepository {
   findPending() {
     return this.installment.findMany({
       where: { paidAt: null, dueDate: { lte: new Date() }, isActive: true },
-      include: { contract: { include: { deceased: true, vault: true } } },
+      select: {
+        id: true,
+        number: true,
+        amount: true,
+        dueDate: true,
+        paidAt: true,
+        isActive: true,
+        contractId: true,
+        contract: {
+          select: {
+            id: true,
+            deceased: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: { dueDate: 'asc' },
     });
   }

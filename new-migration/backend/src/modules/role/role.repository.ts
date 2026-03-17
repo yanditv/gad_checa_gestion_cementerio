@@ -14,9 +14,15 @@ export class RoleRepository {
 
   findMany() {
     return this.role.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        normalizedName: true,
+        permissions: true,
         users: {
-          include: { user: true },
+          select: {
+            userId: true,
+          },
         },
       },
       orderBy: { name: 'asc' },

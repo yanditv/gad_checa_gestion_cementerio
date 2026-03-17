@@ -49,11 +49,41 @@ export class ContractRepository {
 
     return this.contract.findMany({
       where,
-      include: {
-        vault: { include: { block: { include: { cemetery: true } } } },
-        deceased: true,
-        responsibleParty: { include: { person: true } },
-        installments: { where: { isActive: true } },
+      select: {
+        id: true,
+        sequentialNumber: true,
+        startDate: true,
+        endDate: true,
+        monthCount: true,
+        totalAmount: true,
+        isActive: true,
+        notes: true,
+        createdAt: true,
+        vaultId: true,
+        deceasedId: true,
+        responsiblePartyId: true,
+        sourceContractId: true,
+        relatedContractId: true,
+        vault: {
+          select: {
+            id: true,
+            number: true,
+            block: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        deceased: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            identificationNumber: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       skip,

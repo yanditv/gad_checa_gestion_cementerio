@@ -35,9 +35,21 @@ export class UserRepository {
 
     return this.user.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        identificationNumber: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        identificationType: true,
+        isActive: true,
+        createdAt: true,
         userRoles: {
-          include: { role: true },
+          select: {
+            roleId: true,
+          },
         },
       },
       orderBy: { createdAt: "desc" },
