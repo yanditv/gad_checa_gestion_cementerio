@@ -5,7 +5,6 @@ import { CreateContractDeceasedDto } from './dto/create-contract-deceased.dto';
 import { CreateDeceasedDto } from './dto/create-deceased.dto';
 import { DeceasedListQueryDto } from './dto/deceased-list-query.dto';
 import { UpdateDeceasedDto } from './dto/update-deceased.dto';
-import { Deceased } from './deceased.entity';
 import { DeceasedRepository } from './deceased.repository';
 
 @Injectable()
@@ -37,8 +36,7 @@ export class DeceasedService {
   }
 
   async create(data: CreateDeceasedDto) {
-    const deceased = Deceased.create(data);
-    return this.deceasedRepository.create(deceased);
+    return this.deceasedRepository.create(data);
   }
 
   async createForContract(tx: Prisma.TransactionClient, data: CreateContractDeceasedDto) {
@@ -53,27 +51,24 @@ export class DeceasedService {
       throw new BadRequestException('Deceased last name is required.');
     }
 
-    return tx.deceased.create({
-      data: {
-        firstName,
-        lastName,
-        identificationNumber: data.identificationNumber ?? null,
-        birthDate: data.birthDate ?? null,
-        deathDate: data.deathDate ?? null,
-        vaultId: data.vaultId,
-        isActive: true,
-      },
+    return this.deceasedRepository.createInTransaction(tx, {
+      firstName,
+      lastName,
+      identificationNumber: data.identificationNumber ?? null,
+      birthDate: data.birthDate ?? null,
+      deathDate: data.deathDate ?? null,
+      vaultId: data.vaultId,
+      isActive: true,
     });
   }
 
   async update(id: string, data: UpdateDeceasedDto) {
     await this.getById(id);
-    const deceased = Deceased.create(data);
-    return this.deceasedRepository.update(id, deceased);
+    return this.deceasedRepository.update(id, data);
   }
 
   async remove(id: string) {
     await this.getById(id);
-    return this.deceasedRepository.update(id, Deceased.create({ isActive: false }));
+    return this.deceasedRepository.update(id, { isActive: false });
   }
 }

@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Cemetery } from './cemetery.entity';
+
+type CemeteryMutation = {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  taxId?: string;
+  isActive?: boolean;
+};
 
 @Injectable()
 export class CemeteryRepository {
@@ -13,32 +22,16 @@ export class CemeteryRepository {
     });
   }
 
-  create(data: Cemetery) {
+  create(data: CemeteryMutation) {
     return this.cemetery.create({
-      data: {
-        name: data.name ?? '',
-        address: data.address ?? null,
-        phone: data.phone ?? null,
-        email: data.email ?? null,
-        taxId: data.taxId ?? null,
-        isActive: data.isActive ?? true,
-      },
+      data: this.mapCreate(data),
     });
   }
 
-  update(id: string, data: Partial<Cemetery>) {
-    const updateData: Partial<Cemetery> = {};
-
-    updateData.name = data.name ?? updateData.name;
-    updateData.address = data.address ?? updateData.address;
-    updateData.phone = data.phone ?? updateData.phone;
-    updateData.email = data.email ?? updateData.email;
-    updateData.taxId = data.taxId ?? updateData.taxId;
-    updateData.isActive = data.isActive ?? updateData.isActive;
-
+  update(id: string, data: CemeteryMutation) {
     return this.cemetery.update({
       where: { id },
-      data: updateData,
+      data: this.mapUpdate(data),
     });
   }
 
@@ -51,5 +44,46 @@ export class CemeteryRepository {
 
   private get cemetery() {
     return this.prisma.cemetery;
+  }
+
+  private mapCreate(data: CemeteryMutation): Prisma.CemeteryCreateInput {
+    return {
+      name: data.name ?? '',
+      address: data.address ?? null,
+      phone: data.phone ?? null,
+      email: data.email ?? null,
+      taxId: data.taxId ?? null,
+      isActive: data.isActive ?? true,
+    };
+  }
+
+  private mapUpdate(data: CemeteryMutation): Prisma.CemeteryUpdateInput {
+    const updateData: Prisma.CemeteryUpdateInput = {};
+
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+
+    if (data.address !== undefined) {
+      updateData.address = data.address;
+    }
+
+    if (data.phone !== undefined) {
+      updateData.phone = data.phone;
+    }
+
+    if (data.email !== undefined) {
+      updateData.email = data.email;
+    }
+
+    if (data.taxId !== undefined) {
+      updateData.taxId = data.taxId;
+    }
+
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+
+    return updateData;
   }
 }

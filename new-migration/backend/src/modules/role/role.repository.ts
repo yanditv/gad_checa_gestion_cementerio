@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Role } from './role.entity';
+
+type RoleMutation = {
+  name?: string;
+  normalizedName?: string;
+  permissions?: string | null;
+};
 
 @Injectable()
 export class RoleRepository {
@@ -40,14 +46,18 @@ export class RoleRepository {
     });
   }
 
-  create(data: Role) {
+  create(data: RoleMutation) {
     return this.role.create({
-      data,
+      data: {
+        name: data.name ?? '',
+        normalizedName: data.normalizedName ?? '',
+        permissions: data.permissions ?? null,
+      },
     });
   }
 
-  update(id: string, data: Partial<Role>) {
-    const updateData: Partial<Role> = {};
+  update(id: string, data: RoleMutation) {
+    const updateData: Prisma.RoleUpdateInput = {};
 
     updateData.name = data.name ?? updateData.name;
     updateData.normalizedName = data.normalizedName ?? updateData.normalizedName;

@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Block } from './block.entity';
+
+type BlockMutation = {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+  cemeteryId?: string;
+};
 
 @Injectable()
 export class BlockRepository {
@@ -14,21 +20,16 @@ export class BlockRepository {
     });
   }
 
-  create(data: Block) {
-    return this.block.create({ data });
+  create(data: BlockMutation) {
+    return this.block.create({
+      data: this.mapCreate(data),
+    });
   }
 
-  update(id: string, data: Partial<Block>) {
-    const updateData: Partial<Block> = {};
-
-    updateData.name = data.name ?? updateData.name;
-    updateData.description = data.description ?? updateData.description;
-    updateData.isActive = data.isActive ?? updateData.isActive;
-    updateData.cemeteryId = data.cemeteryId ?? updateData.cemeteryId;
-
+  update(id: string, data: BlockMutation) {
     return this.block.update({
       where: { id },
-      data: updateData,
+      data: this.mapUpdate(data),
     });
   }
 
@@ -68,5 +69,36 @@ export class BlockRepository {
 
   private get block() {
     return this.prisma.block;
+  }
+
+  private mapCreate(data: BlockMutation): Prisma.BlockUncheckedCreateInput {
+    return {
+      name: data.name ?? '',
+      description: data.description ?? null,
+      isActive: data.isActive ?? true,
+      cemeteryId: data.cemeteryId ?? '',
+    };
+  }
+
+  private mapUpdate(data: BlockMutation): Prisma.BlockUncheckedUpdateInput {
+    const updateData: Prisma.BlockUncheckedUpdateInput = {};
+
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+
+    if (data.description !== undefined) {
+      updateData.description = data.description;
+    }
+
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+
+    if (data.cemeteryId !== undefined) {
+      updateData.cemeteryId = data.cemeteryId;
+    }
+
+    return updateData;
   }
 }

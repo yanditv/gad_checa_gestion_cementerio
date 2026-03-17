@@ -5,7 +5,6 @@ import { CreatePersonDto } from './dto/create-person.dto';
 import { PersonListQueryDto } from './dto/person-list-query.dto';
 import { ResolveContractResponsibleDto } from './dto/resolve-contract-responsible.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
-import { Person } from './person.entity';
 import { PersonRepository } from './person.repository';
 
 @Injectable()
@@ -37,8 +36,7 @@ export class PersonService {
   }
 
   async create(data: CreatePersonDto) {
-    const person = Person.create(data);
-    return this.personRepository.create(person);
+    return this.personRepository.create(data);
   }
 
   async resolveResponsiblePartyForContract(tx: Prisma.TransactionClient, data: ResolveContractResponsibleDto) {
@@ -47,36 +45,26 @@ export class PersonService {
         throw new BadRequestException('Responsible person id is required.');
       }
 
-      const person = await tx.person.findFirst({
-        where: {
-          id: data.id,
-          isActive: true,
-        },
-      });
+      const person = await this.personRepository.findActiveByIdInTransaction(tx, data.id);
 
       if (!person) {
         throw new NotFoundException('Responsible person not found');
       }
 
       const relationship = data.relationship ?? null;
-      const existingResponsible = await tx.responsibleParty.findFirst({
-        where: {
-          personId: person.id,
-          relationship,
-          ownerId: null,
-        },
-      });
+      const existingResponsible = await this.personRepository.findResponsiblePartyInTransaction(
+        tx,
+        person.id,
+        relationship,
+      );
 
       if (existingResponsible) {
         return existingResponsible;
       }
 
-      return tx.responsibleParty.create({
-        data: {
-          personId: person.id,
-          relationship,
-          isActive: true,
-        },
+      return this.personRepository.createResponsiblePartyInTransaction(tx, {
+        personId: person.id,
+        relationship,
       });
     }
 
@@ -96,37 +84,31 @@ export class PersonService {
       throw new BadRequestException('Responsible last name is required.');
     }
 
-    const person = await tx.person.create({
-      data: {
-        firstName,
-        lastName,
-        identificationNumber,
-        identificationType: data.identificationType ?? 'Cedula',
-        phone: data.phone ?? null,
-        email: data.email ?? null,
-        address: data.address ?? null,
-        personType: 'Responsible',
-        isActive: true,
-      },
+    const person = await this.personRepository.createInTransaction(tx, {
+      firstName,
+      lastName,
+      identificationNumber,
+      identificationType: data.identificationType ?? 'Cedula',
+      phone: data.phone ?? null,
+      email: data.email ?? null,
+      address: data.address ?? null,
+      personType: 'Responsible',
+      isActive: true,
     });
 
-    return tx.responsibleParty.create({
-      data: {
-        personId: person.id,
-        relationship: data.relationship ?? null,
-        isActive: true,
-      },
+    return this.personRepository.createResponsiblePartyInTransaction(tx, {
+      personId: person.id,
+      relationship: data.relationship ?? null,
     });
   }
 
   async update(id: string, data: UpdatePersonDto) {
     await this.getById(id);
-    const person = Person.create(data);
-    return this.personRepository.update(id, person);
+    return this.personRepository.update(id, data);
   }
 
   async remove(id: string) {
     await this.getById(id);
-    return this.personRepository.update(id, Person.create({ isActive: false }));
+    return this.personRepository.update(id, { isActive: false });
   }
 }

@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
-import { toNumber, toOptionalBoolean, trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
+import { IsBoolean, IsDate, IsInt, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
+import { toDate, toNumber, toOptionalBoolean, toOptionalDate, trimString } from '../../../common/dto/dto-transforms';
 
 export class CreateInstallmentDto {
   @ApiProperty({ example: 1 })
@@ -16,15 +16,15 @@ export class CreateInstallmentDto {
   amount: number;
 
   @ApiProperty({ example: '2026-03-17' })
-  @Transform(({ value }) => trimString(value))
-  @IsDateString()
-  dueDate: string;
+  @Transform(({ value }) => toDate(value))
+  @IsDate()
+  dueDate: Date;
 
   @ApiPropertyOptional({ example: '2026-03-17' })
   @IsOptional()
-  @Transform(({ value }) => trimOptionalString(value))
-  @IsDateString()
-  paidAt?: string;
+  @Transform(({ value }) => toOptionalDate(value))
+  @IsDate()
+  paidAt?: Date;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()

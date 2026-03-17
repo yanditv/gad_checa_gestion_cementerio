@@ -1,15 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
 import { DeceasedService } from '../deceased/deceased.service';
 import { InstallmentService } from '../installment/installment.service';
 import { PaymentService } from '../payment/payment.service';
 import { PersonService } from '../person/person.service';
 import { VaultService } from '../vault/vault.service';
-import { Contract } from './contract.entity';
 import { CONTRACT_CREATION_PAYMENT_TYPES, CONTRACT_NUMBER_OWNER_CODE, CONTRACT_NUMBER_PREFIX, DEFAULT_CONTRACT_MONTH_COUNT } from './contract.constants';
 import { ContractRepository } from './contract.repository';
 import { AvailableVaultsQueryDto } from './dto/available-vaults-query.dto';
+import { ContractListQueryDto } from './dto/contract-list-query.dto';
 import { CreateContractRequestDto } from './dto/create-contract-request.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 
@@ -50,12 +50,13 @@ export class ContractService {
     };
   }
 
-  async list(query: PaginationQueryDto) {
+  async list(query: ContractListQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const search = query.resolvedSearch ?? '';
 
     const [items, total] = await Promise.all([
-      this.contractRepository.findMany(query.resolvedSearch, skip, limit),
-      this.contractRepository.count(query.resolvedSearch),
+      this.contractRepository.findMany(search, skip, limit),
+      this.contractRepository.count(search),
     ]);
 
     return {
@@ -66,7 +67,10 @@ export class ContractService {
 
   async getById(id: string) {
     const contract = await this.contractRepository.findById(id);
-    if (!contract) throw new NotFoundException('Contract not found');
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+
     return contract;
   }
 
@@ -76,24 +80,22 @@ export class ContractService {
     }
 
     const contractData = data.toContractData();
-    const responsibleIds = data.resolvedResponsibleIds;
     const contractNumber = await this.generateContractNumber(contractData.vaultId, false);
 
-    const contract = Contract.create({
-      ...contractData,
-      sequentialNumber: contractNumber,
-    });
-
-    const createdContract = await this.contractRepository.create(contract, responsibleIds);
-
-    return createdContract;
+    return this.contractRepository.create(
+      {
+        ...contractData,
+        sequentialNumber: contractNumber,
+      },
+      data.resolvedResponsibleId,
+    );
   }
 
   private async generateContractNumber(vaultId?: string, isRenewal = false): Promise<string> {
     const currentYear = new Date().getFullYear();
     const { contractTypeKey } = await this.vaultService.getContractContext(vaultId);
     const basePrefix = CONTRACT_NUMBER_PREFIX[contractTypeKey];
-    let prefix = basePrefix;
+    let prefix: string = basePrefix;
 
     if (isRenewal) {
       prefix = `${CONTRACT_NUMBER_PREFIX.renewal}-${basePrefix}`;
@@ -125,22 +127,19 @@ export class ContractService {
 
       const responsible = await this.personService.resolveResponsiblePartyForContract(tx, responsibles[0]);
 
-      const createdContract = await tx.contract.create({
-        data: {
-          sequentialNumber: contractNumber,
-          startDate: contract.resolvedStartDate,
-          endDate: contract.resolvedEndDate,
-          monthCount: contract.resolvedMonthCount,
-          totalAmount: contract.resolvedTotalAmount,
-          notes: contract.resolvedNotes,
-          isActive: true,
-          sourceContractId: contract.resolvedSourceContractId,
-          relatedContractId: contract.resolvedRelatedContractId,
-          vaultId: contract.resolvedVaultId,
-          responsiblePartyId: responsible.id,
-          deceasedId: createdDeceased.id,
-        },
-      });
+      const createdContract = await this.contractRepository.createInTransaction(tx, {
+        sequentialNumber: contractNumber,
+        startDate: contract.resolvedStartDate,
+        endDate: contract.resolvedEndDate,
+        monthCount: contract.resolvedMonthCount,
+        totalAmount: contract.resolvedTotalAmount,
+        notes: contract.resolvedNotes,
+        isActive: true,
+        sourceContractId: contract.resolvedSourceContractId,
+        relatedContractId: contract.resolvedRelatedContractId,
+        vaultId: contract.resolvedVaultId,
+        deceasedId: createdDeceased.id,
+      }, responsible.id);
 
       const createdInstallments = await this.installmentService.createForContract(
         tx,
@@ -157,34 +156,24 @@ export class ContractService {
         payment.toInstallmentPaymentDto(selectedInstallments.map((installment) => installment.id)),
       );
 
-      return tx.contract.findUnique({
-        where: { id: createdContract.id },
-        include: {
-          vault: { include: { block: true, floor: true } },
-          deceased: true,
-          responsibleParty: { include: { person: true } },
-          installments: { orderBy: { number: 'asc' } },
-        },
-      });
+      return this.contractRepository.findByIdInTransaction(tx, createdContract.id);
     });
   }
 
   async update(id: string, data: UpdateContractDto) {
     await this.getById(id);
-    const contractData = data.toContractData();
     const responsibleIds = data.resolvedResponsibleIds;
-    const contract = Contract.create(contractData);
 
     if (responsibleIds) {
       await this.contractRepository.replaceResponsibleAssignments(id, responsibleIds);
     }
 
-    return this.contractRepository.update(id, contract);
+    return this.contractRepository.update(id, data.toContractData());
   }
 
   async remove(id: string) {
     await this.getById(id);
-    return this.contractRepository.update(id, Contract.create({ isActive: false }));
+    return this.contractRepository.update(id, { isActive: false });
   }
 
   async getReports() {

@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import { CreateInstallmentPaymentDto } from './dto/create-installment-payment.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { Payment } from './payment.entity';
 import { PaymentRepository } from './payment.repository';
 import { buildPaymentReceiptNumber } from './payment.utils';
 
@@ -25,12 +24,7 @@ export class PaymentService {
     const { installmentIds = [], ...paymentData } = dto;
 
     const createdPayment = await this.createPaymentRecord({
-      amount: paymentData.amount,
-      paidAt: paymentData.paidAt,
-      paymentMethod: paymentData.paymentMethod,
-      reference: paymentData.reference,
-      note: paymentData.note,
-      bankId: paymentData.bankId,
+      ...paymentData,
       installmentIds,
     });
 
@@ -45,10 +39,7 @@ export class PaymentService {
     await this.getById(id);
 
     const { installmentIds: _installmentIds, ...paymentData } = dto;
-
-    const payment = Payment.create(paymentData);
-
-    return this.paymentRepository.update(id, payment);
+    return this.paymentRepository.update(id, paymentData);
   }
 
   async createForInstallments(tx: Prisma.TransactionClient, input: CreateInstallmentPaymentDto) {
@@ -58,12 +49,7 @@ export class PaymentService {
 
     const createdPayment = await this.createPaymentRecord(input, tx);
 
-    await tx.installment.updateMany({
-      where: { id: { in: input.installmentIds } },
-      data: {
-        paidAt: input.paidAt,
-      },
-    });
+    await this.paymentRepository.updateInstallmentsAsPaidInTransaction(tx, input.installmentIds, input.paidAt);
 
     return createdPayment;
   }
@@ -74,7 +60,7 @@ export class PaymentService {
     await this.paymentRepository.updateInstallmentsAsPending(
       payment.installmentPayments.map((installmentPayment: { installmentId: string }) => installmentPayment.installmentId),
     );
-    return this.paymentRepository.update(id, Payment.create({ isActive: false }));
+    return this.paymentRepository.update(id, { isActive: false });
   }
 
   private async createPaymentRecord(input: CreatePaymentDto | CreateInstallmentPaymentDto, tx?: Prisma.TransactionClient) {
@@ -82,37 +68,28 @@ export class PaymentService {
       await this.getNextReceiptSequence(tx),
       input.paidAt,
     );
+    const installmentIds = input.installmentIds ?? [];
 
-    const payment = Payment.create({
+    const payment = {
       amount: input.amount,
       paidAt: input.paidAt,
       paymentMethod: input.paymentMethod ?? undefined,
       reference: input.reference ?? undefined,
       note: input.note ?? undefined,
-      bankId: input.bankId ?? null,
+      bankId: input.bankId ?? undefined,
       receiptNumber,
-    });
+    };
 
     if (!tx) {
-      return this.paymentRepository.create(payment, input.installmentIds);
+      return this.paymentRepository.create(payment, installmentIds);
     }
 
-    return tx.payment.create({
-      data: {
-        ...payment,
-        installmentPayments: input.installmentIds.length
-          ? {
-              create: input.installmentIds.map((installmentId) => ({ installmentId })),
-            }
-          : undefined,
-      },
-      include: { installmentPayments: { include: { installment: true } } },
-    });
+    return this.paymentRepository.createInTransaction(tx, payment, installmentIds);
   }
 
   private async getNextReceiptSequence(tx?: Prisma.TransactionClient) {
     const lastPayment = tx
-      ? await tx.payment.findFirst({ orderBy: { paidAt: 'desc' } })
+      ? await this.paymentRepository.findLastPaymentInTransaction(tx)
       : await this.paymentRepository.findLastPayment();
 
     const lastSequence = lastPayment?.receiptNumber.match(/-(\d+)$/)?.[1];

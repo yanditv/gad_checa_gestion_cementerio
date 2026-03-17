@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
-import { BlockListQueryDto } from './block-list-query.dto';
-import { Block } from './block.entity';
-import { CreateBlockDto } from './create-block.dto';
-import { UpdateBlockDto } from './update-block.dto';
+import { BlockListQueryDto } from './dto/block-list-query.dto';
+import { CreateBlockDto } from './dto/create-block.dto';
+import { UpdateBlockDto } from './dto/update-block.dto';
 import { BlockRepository } from './block.repository';
 
 @Injectable()
@@ -12,7 +11,7 @@ export class BlockService {
 
   async list(query: BlockListQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
-    const search = query.search;
+    const search = query.resolvedSearch;
 
     const { items, total } = await this.blockRepository.listPaginated(search, skip, limit);
 
@@ -36,18 +35,16 @@ export class BlockService {
   }
 
   async create(data: CreateBlockDto) {
-    const block = Block.create(data);
-    return this.blockRepository.create(block);
+    return this.blockRepository.create(data);
   }
 
   async update(id: string, data: UpdateBlockDto) {
     await this.getById(id);
-    const block = Block.create(data);
-    return this.blockRepository.update(id, block);
+    return this.blockRepository.update(id, data);
   }
 
   async remove(id: string) {
     await this.getById(id);
-    return this.blockRepository.update(id, Block.create({ isActive: false }));
+    return this.blockRepository.update(id, { isActive: false });
   }
 }

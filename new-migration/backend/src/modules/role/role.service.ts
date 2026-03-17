@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { Role } from './role.entity';
 import { RoleRepository } from './role.repository';
 
 function normalizeRoleName(name: string): string {
@@ -35,13 +34,11 @@ export class RoleService {
       throw new ConflictException('Role already exists');
     }
 
-    const role = Role.create({
+    return this.roleRepository.create({
       name,
       normalizedName,
       permissions: permissions ?? null,
     });
-
-    return this.roleRepository.create(role);
   }
 
   async update(id: string, data: UpdateRoleDto) {
@@ -61,7 +58,7 @@ export class RoleService {
       }
     }
 
-    const roleData: { name?: string; normalizedName?: string; permissions?: string[] | null } = {};
+    const roleData: { name?: string; normalizedName?: string; permissions?: string | null } = {};
 
     if (name) {
       roleData.name = name;
@@ -72,9 +69,7 @@ export class RoleService {
       roleData.permissions = permissions;
     }
 
-    const role = Role.create(roleData);
-
-    return this.roleRepository.update(id, role);
+    return this.roleRepository.update(id, roleData);
   }
 
   async remove(id: string) {

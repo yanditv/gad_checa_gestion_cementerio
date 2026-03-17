@@ -18,6 +18,14 @@ export function trimOptionalString(value: unknown) {
   return trimmedValue.length > 0 ? trimmedValue : undefined;
 }
 
+export function trimNullableString(value: unknown) {
+  if (value === null) {
+    return null;
+  }
+
+  return trimOptionalString(value);
+}
+
 export function normalizeEmail(value: unknown) {
   const trimmedValue = trimString(value);
 
@@ -98,6 +106,36 @@ export function toOptionalNumber(value: unknown) {
   }
 
   return toNumber(value);
+}
+
+export function toDate(value: unknown) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return value;
+  }
+
+  const parsedValue = new Date(trimmedValue);
+  return Number.isNaN(parsedValue.getTime()) ? value : parsedValue;
+}
+
+export function toOptionalDate(value: unknown) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return undefined;
+  }
+
+  return toDate(value);
 }
 
 export function toTrimmedStringArray(value: unknown) {

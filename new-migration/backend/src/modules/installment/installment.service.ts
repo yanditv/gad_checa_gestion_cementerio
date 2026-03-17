@@ -1,46 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { SoftDeleteCrudService } from '../../common/services/soft-delete-crud.service';
 import { CreateContractInstallmentDto } from './dto/create-contract-installment.dto';
 import { CreateInstallmentDto } from './dto/create-installment.dto';
 import { UpdateInstallmentDto } from './dto/update-installment.dto';
 import { InstallmentRepository } from './installment.repository';
 
 @Injectable()
-export class InstallmentService extends SoftDeleteCrudService<
-  Prisma.InstallmentGetPayload<{
-    include: {
-      contract: {
-        include: {
-          deceased: true;
-          vault: true;
-        };
-      };
-      installmentPayments: {
-        include: {
-          payment: true;
-        };
-      };
-    };
-  }>,
-  number,
-  Prisma.InstallmentUncheckedCreateInput,
-  Prisma.InstallmentUncheckedUpdateInput
-> {
-  constructor(private readonly installmentRepository: InstallmentRepository) {
-    super('Installment');
-  }
-
-  protected get repository() {
-    return this.installmentRepository;
-  }
-
-  protected override detailRelations() {
-    return {
-      contract: { include: { deceased: true, vault: true } },
-      installmentPayments: { include: { payment: true } },
-    };
-  }
+export class InstallmentService {
+  constructor(private readonly installmentRepository: InstallmentRepository) {}
 
   async list() {
     return this.installmentRepository.findActive();
@@ -55,11 +22,16 @@ export class InstallmentService extends SoftDeleteCrudService<
   }
 
   async getById(id: string) {
-    return this.getByIdOrThrow(id);
+    const installment = await this.installmentRepository.findById(id);
+    if (!installment || installment.isActive === false) {
+      throw new NotFoundException('Installment not found');
+    }
+
+    return installment;
   }
 
   async create(data: CreateInstallmentDto) {
-    return super.create(data);
+    return this.installmentRepository.create(data);
   }
 
   async createForContract(
@@ -71,22 +43,7 @@ export class InstallmentService extends SoftDeleteCrudService<
       return [];
     }
 
-    await tx.installment.createMany({
-      data: installments.map((installment) => ({
-        number: installment.number,
-        amount: installment.amount,
-        dueDate: installment.dueDate,
-        paidAt: installment.paidAt ?? null,
-        contractId,
-        isActive: true,
-        notes: null,
-      })),
-    });
-
-    return tx.installment.findMany({
-      where: { contractId },
-      orderBy: { number: 'asc' },
-    });
+    return this.installmentRepository.createManyForContract(tx, contractId, installments);
   }
 
   async listByContractNumbers(tx: Prisma.TransactionClient, contractId: string, numbers: number[]) {
@@ -94,13 +51,7 @@ export class InstallmentService extends SoftDeleteCrudService<
       return [];
     }
 
-    return tx.installment.findMany({
-      where: {
-        contractId,
-        number: { in: numbers },
-      },
-      orderBy: { number: 'asc' },
-    });
+    return this.installmentRepository.listByContractNumbers(tx, contractId, numbers);
   }
 
   calculatePaidAmount(installments: Array<{ amount: unknown; paidAt?: Date | null }>) {
@@ -114,10 +65,12 @@ export class InstallmentService extends SoftDeleteCrudService<
   }
 
   async update(id: string, data: UpdateInstallmentDto) {
-    return super.update(id, data);
+    await this.getById(id);
+    return this.installmentRepository.update(id, data);
   }
 
   async remove(id: string) {
-    return super.remove(id);
+    await this.getById(id);
+    return this.installmentRepository.update(id, { isActive: false });
   }
 }

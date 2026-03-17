@@ -1,11 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { ArrayUnique, IsArray, IsBoolean, IsDate, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
-import { trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
+import { Transform } from 'class-transformer';
+import { ArrayUnique, IsArray, IsBoolean, IsDate, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateIf } from 'class-validator';
+import { toDate, toNumber, toOptionalBoolean, toTrimmedStringArray, trimNullableString, trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
 
 export class CreatePaymentDto {
   @ApiProperty({ example: 120 })
-  @Type(() => Number)
+  @Transform(({ value }) => toNumber(value))
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   amount: number;
@@ -16,7 +16,7 @@ export class CreatePaymentDto {
   paymentMethod: string;
 
   @ApiProperty({ example: '2026-03-17T10:30:00.000Z' })
-  @Type(() => Date)
+  @Transform(({ value }) => toDate(value))
   @IsDate()
   paidAt: Date;
 
@@ -34,23 +34,20 @@ export class CreatePaymentDto {
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => toOptionalBoolean(value))
   @IsBoolean()
   isActive?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => trimOptionalString(value))
+  @Transform(({ value }) => trimNullableString(value))
+  @ValidateIf((_, value) => value !== null && value !== undefined)
   @IsUUID()
-  bankId?: string;
+  bankId?: string | null;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @Transform(({ value }) => Array.isArray(value)
-    ? value
-      .map((item) => (typeof item === 'string' ? item.trim() : item))
-      .filter((item) => typeof item === 'string' && item.length > 0)
-    : value)
+  @Transform(({ value }) => toTrimmedStringArray(value))
   @IsArray()
   @ArrayUnique()
   @IsUUID(undefined, { each: true })

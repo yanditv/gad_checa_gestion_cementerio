@@ -1,7 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { Contract } from './contract.entity';
 import { PrismaService } from '../../prisma/prisma.service';
+
+type ContractMutation = {
+  sequentialNumber?: string;
+  startDate?: Date;
+  endDate?: Date | null;
+  monthCount?: number;
+  totalAmount?: number;
+  isActive?: boolean;
+  notes?: string | null;
+  signedDocumentPath?: string | null;
+  vaultId?: string;
+  deceasedId?: string | null;
+  sourceContractId?: string | null;
+  relatedContractId?: string | null;
+};
 
 @Injectable()
 export class ContractRepository {
@@ -71,57 +85,48 @@ export class ContractRepository {
     });
   }
 
-  create(data: Contract, responsibleIds: string[] = []) {
-    const responsiblePartyId = responsibleIds[0];
-    const createData: Parameters<typeof this.contract.create>[0]['data'] = {
-      ...data,
-    };
-
-    if (responsiblePartyId) {
-      createData.responsiblePartyId = responsiblePartyId;
-    }
-
+  create(data: ContractMutation, responsiblePartyId?: string) {
     return this.contract.create({
-      data: createData,
+      data: this.mapCreate(data, responsiblePartyId),
       include: {
         responsibleParty: { include: { person: true } },
       },
     });
   }
 
-  update(id: string, data: Partial<Contract>) {
-    const updateData: Partial<Contract> = {};
-
-    updateData.sequentialNumber = data.sequentialNumber ?? updateData.sequentialNumber;
-    updateData.startDate = data.startDate ?? updateData.startDate;
-    updateData.endDate = data.endDate ?? updateData.endDate;
-    updateData.monthCount = data.monthCount ?? updateData.monthCount;
-    updateData.totalAmount = data.totalAmount ?? updateData.totalAmount;
-    updateData.isActive = data.isActive ?? updateData.isActive;
-    updateData.notes = data.notes ?? updateData.notes;
-    updateData.isRenewal = data.isRenewal ?? updateData.isRenewal;
-    updateData.renewalCount = data.renewalCount ?? updateData.renewalCount;
-    updateData.signedDocumentPath = data.signedDocumentPath ?? updateData.signedDocumentPath;
-    updateData.vaultId = data.vaultId ?? updateData.vaultId;
-    updateData.deceasedId = data.deceasedId ?? updateData.deceasedId;
-    updateData.sourceContractId = data.sourceContractId ?? updateData.sourceContractId;
-    updateData.relatedContractId = data.relatedContractId ?? updateData.relatedContractId;
-    updateData.createdByUserId = data.createdByUserId ?? updateData.createdByUserId;
-    updateData.updatedByUserId = data.updatedByUserId ?? updateData.updatedByUserId;
-    updateData.deletedByUserId = data.deletedByUserId ?? updateData.deletedByUserId;
-
+  update(id: string, data: ContractMutation) {
     return this.contract.update({
       where: { id },
-      data: updateData,
+      data: this.mapUpdate(data),
+    });
+  }
+
+  createInTransaction(
+    tx: Prisma.TransactionClient,
+    data: ContractMutation,
+    responsiblePartyId?: string,
+  ) {
+    return tx.contract.create({
+      data: this.mapCreate(data, responsiblePartyId),
+    });
+  }
+
+  findByIdInTransaction(tx: Prisma.TransactionClient, id: string) {
+    return tx.contract.findUnique({
+      where: { id },
+      include: {
+        vault: { include: { block: true, floor: true } },
+        deceased: true,
+        responsibleParty: { include: { person: true } },
+        installments: { orderBy: { number: 'asc' } },
+      },
     });
   }
 
   replaceResponsibleAssignments(contractId: string, responsibleIds: string[]) {
-    const responsiblePartyId = responsibleIds[0] ?? null;
-
     return this.contract.update({
       where: { id: contractId },
-      data: { responsiblePartyId },
+      data: { responsiblePartyId: responsibleIds[0] ?? null },
     });
   }
 
@@ -179,5 +184,82 @@ export class ContractRepository {
 
   private get bank() {
     return this.prisma.bank;
+  }
+
+  private mapCreate(data: ContractMutation, responsiblePartyId?: string): Prisma.ContractUncheckedCreateInput {
+    const createData: Prisma.ContractUncheckedCreateInput = {
+      sequentialNumber: data.sequentialNumber ?? '',
+      startDate: data.startDate ?? new Date(),
+      endDate: data.endDate ?? null,
+      monthCount: data.monthCount ?? 1,
+      totalAmount: data.totalAmount ?? 0,
+      isActive: data.isActive ?? true,
+      notes: data.notes ?? null,
+      signedDocumentPath: data.signedDocumentPath ?? null,
+      vaultId: data.vaultId ?? '',
+      deceasedId: data.deceasedId ?? null,
+      sourceContractId: data.sourceContractId ?? null,
+      relatedContractId: data.relatedContractId ?? null,
+    };
+
+    if (responsiblePartyId !== undefined) {
+      createData.responsiblePartyId = responsiblePartyId;
+    }
+
+    return createData;
+  }
+
+  private mapUpdate(data: ContractMutation): Prisma.ContractUncheckedUpdateInput {
+    const updateData: Prisma.ContractUncheckedUpdateInput = {};
+
+    if (data.sequentialNumber !== undefined) {
+      updateData.sequentialNumber = data.sequentialNumber;
+    }
+
+    if (data.startDate !== undefined) {
+      updateData.startDate = data.startDate;
+    }
+
+    if (data.endDate !== undefined) {
+      updateData.endDate = data.endDate;
+    }
+
+    if (data.monthCount !== undefined) {
+      updateData.monthCount = data.monthCount;
+    }
+
+    if (data.totalAmount !== undefined) {
+      updateData.totalAmount = data.totalAmount;
+    }
+
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+
+    if (data.notes !== undefined) {
+      updateData.notes = data.notes;
+    }
+
+    if (data.signedDocumentPath !== undefined) {
+      updateData.signedDocumentPath = data.signedDocumentPath;
+    }
+
+    if (data.vaultId !== undefined) {
+      updateData.vaultId = data.vaultId;
+    }
+
+    if (data.deceasedId !== undefined) {
+      updateData.deceasedId = data.deceasedId;
+    }
+
+    if (data.sourceContractId !== undefined) {
+      updateData.sourceContractId = data.sourceContractId;
+    }
+
+    if (data.relatedContractId !== undefined) {
+      updateData.relatedContractId = data.relatedContractId;
+    }
+
+    return updateData;
   }
 }

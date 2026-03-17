@@ -1,7 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Deceased } from './deceased.entity';
+
+type DeceasedMutation = {
+  firstName?: string;
+  lastName?: string;
+  identificationNumber?: string | null;
+  birthDate?: Date | null;
+  deathDate?: Date | null;
+  burialDate?: Date | null;
+  causeOfDeath?: string | null;
+  notes?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  isActive?: boolean;
+  vaultId?: string;
+};
 
 @Injectable()
 export class DeceasedRepository {
@@ -17,28 +31,22 @@ export class DeceasedRepository {
     });
   }
 
-  create(data: Deceased) {
+  create(data: DeceasedMutation) {
     return this.deceased.create({
-      data
+      data: this.mapCreate(data),
     });
   }
 
-  update(id: string, data: Partial<Deceased>) {
-    const updateData: Partial<Deceased> = {};
-
-    updateData.firstName = data.firstName ?? updateData.firstName;
-    updateData.lastName = data.lastName ?? updateData.lastName;
-    updateData.identificationNumber = data.identificationNumber ?? updateData.identificationNumber;
-    updateData.causeOfDeath = data.causeOfDeath ?? updateData.causeOfDeath;
-    updateData.notes = data.notes ?? updateData.notes;
-    updateData.age = data.age ?? updateData.age;
-    updateData.gender = data.gender ?? updateData.gender;
-    updateData.isActive = data.isActive ?? updateData.isActive;
-    updateData.vaultId = data.vaultId ?? updateData.vaultId;
-
+  update(id: string, data: DeceasedMutation) {
     return this.deceased.update({
       where: { id },
-      data: updateData,
+      data: this.mapUpdate(data),
+    });
+  }
+
+  createInTransaction(tx: Prisma.TransactionClient, data: DeceasedMutation) {
+    return tx.deceased.create({
+      data: this.mapCreate(data),
     });
   }
 
@@ -78,5 +86,76 @@ export class DeceasedRepository {
 
   private get deceased() {
     return this.prisma.deceased;
+  }
+
+  private mapCreate(data: DeceasedMutation): Prisma.DeceasedUncheckedCreateInput {
+    return {
+      firstName: data.firstName ?? '',
+      lastName: data.lastName ?? '',
+      identificationNumber: data.identificationNumber ?? null,
+      birthDate: data.birthDate ?? null,
+      deathDate: data.deathDate ?? null,
+      burialDate: data.burialDate ?? null,
+      causeOfDeath: data.causeOfDeath ?? null,
+      notes: data.notes ?? null,
+      age: data.age ?? null,
+      gender: data.gender ?? null,
+      isActive: data.isActive ?? true,
+      vaultId: data.vaultId ?? '',
+    };
+  }
+
+  private mapUpdate(data: DeceasedMutation): Prisma.DeceasedUncheckedUpdateInput {
+    const updateData: Prisma.DeceasedUncheckedUpdateInput = {};
+
+    if (data.firstName !== undefined) {
+      updateData.firstName = data.firstName;
+    }
+
+    if (data.lastName !== undefined) {
+      updateData.lastName = data.lastName;
+    }
+
+    if (data.identificationNumber !== undefined) {
+      updateData.identificationNumber = data.identificationNumber;
+    }
+
+    if (data.birthDate !== undefined) {
+      updateData.birthDate = data.birthDate;
+    }
+
+    if (data.deathDate !== undefined) {
+      updateData.deathDate = data.deathDate;
+    }
+
+    if (data.burialDate !== undefined) {
+      updateData.burialDate = data.burialDate;
+    }
+
+    if (data.causeOfDeath !== undefined) {
+      updateData.causeOfDeath = data.causeOfDeath;
+    }
+
+    if (data.notes !== undefined) {
+      updateData.notes = data.notes;
+    }
+
+    if (data.age !== undefined) {
+      updateData.age = data.age;
+    }
+
+    if (data.gender !== undefined) {
+      updateData.gender = data.gender;
+    }
+
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+
+    if (data.vaultId !== undefined) {
+      updateData.vaultId = data.vaultId;
+    }
+
+    return updateData;
   }
 }

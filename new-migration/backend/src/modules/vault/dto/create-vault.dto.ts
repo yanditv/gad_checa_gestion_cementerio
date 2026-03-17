@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
-import { toNumber, toOptionalBoolean, toOptionalNumber, trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
+import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateIf } from 'class-validator';
+import { toNumber, toOptionalBoolean, toOptionalNumber, trimNullableString, trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
 
 export class CreateVaultDto {
   @ApiProperty({ example: 'N-001' })
@@ -57,13 +57,15 @@ export class CreateVaultDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => trimOptionalString(value))
+  @Transform(({ value }) => trimNullableString(value))
+  @ValidateIf((_, value) => value !== null && value !== undefined)
   @IsUUID()
-  floorId?: string;
+  floorId?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => trimOptionalString(value))
+  @Transform(({ value }) => trimNullableString(value))
+  @ValidateIf((_, value) => value !== null && value !== undefined)
   @IsUUID()
-  ownerId?: string;
+  ownerId?: string | null;
 }

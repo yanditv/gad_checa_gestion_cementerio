@@ -5,7 +5,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
-  IsDateString,
+  IsDate,
   IsInt,
   IsNumber,
   IsOptional,
@@ -13,7 +13,7 @@ import {
   IsUUID,
   Min,
 } from 'class-validator';
-import { toNumber, toOptionalBoolean, toTrimmedStringArray, trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
+import { toDate, toNumber, toOptionalBoolean, toOptionalDate, toTrimmedStringArray, trimOptionalString, trimString } from '../../../common/dto/dto-transforms';
 
 export class CreateContractDto {
   @ApiProperty()
@@ -22,15 +22,15 @@ export class CreateContractDto {
   sequentialNumber: string;
 
   @ApiProperty()
-  @Transform(({ value }) => trimString(value))
-  @IsDateString()
-  startDate: string;
+  @Transform(({ value }) => toDate(value))
+  @IsDate()
+  startDate: Date;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => trimOptionalString(value))
-  @IsDateString()
-  endDate?: string;
+  @Transform(({ value }) => toOptionalDate(value))
+  @IsDate()
+  endDate?: Date;
 
   @ApiProperty()
   @Transform(({ value }) => toNumber(value))
@@ -115,8 +115,12 @@ export class CreateContractDto {
     return normalizedIds;
   }
 
+  get resolvedResponsibleId(): string | undefined {
+    return this.resolvedResponsibleIds?.[0];
+  }
+
   toContractData(): Partial<CreateContractDto> {
-    const { responsibleIds: _responsibleIds, ...contractData } = this;
+    const { responsibleIds: _responsibleIds, responsiblePartyId: _responsiblePartyId, ...contractData } = this;
     return contractData;
   }
 }
