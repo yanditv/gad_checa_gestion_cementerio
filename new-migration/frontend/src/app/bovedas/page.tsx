@@ -10,6 +10,7 @@ import { SelectInput } from '@/components/ui/SelectInput';
 import { SearchFilters } from '@/components/ui/SearchFilters';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PaginationMeta } from '@/lib/api';
+import { listBovedasAction } from '@/app/actions/entity-actions';
 
 interface Boveda {
   id: number;
@@ -46,21 +47,16 @@ export default function BovedasPage() {
   const loadBovedas = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '15',
+      const result = await listBovedasAction({
+        page,
+        limit: 15,
+        search: searchTerm.trim() || undefined,
       });
-      if (searchTerm.trim()) params.set('search', searchTerm.trim());
-
-      const response = await fetch(`/api/bovedas?${params.toString()}`);
-      if (response.ok) {
-        const payload = await response.json();
-        let rows = payload.data || [];
-        if (filterEstado === 'disponible') rows = rows.filter((b: Boveda) => b.estado);
-        if (filterEstado === 'ocupada') rows = rows.filter((b: Boveda) => !b.estado);
-        setBovedas(rows);
-        setMeta(payload.meta);
-      }
+      let rows = result.data || [];
+      if (filterEstado === 'disponible') rows = rows.filter((b: Boveda) => b.estado);
+      if (filterEstado === 'ocupada') rows = rows.filter((b: Boveda) => !b.estado);
+      setBovedas(rows);
+      setMeta(result.meta);
     } catch (error) {
       console.log('Error loading bovedas');
     } finally {

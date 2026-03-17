@@ -199,28 +199,28 @@ class ApiClient {
 export const api = new ApiClient();
 
 export const authApi = {
-  login: (email: string, password: string) => 
+  iniciarSesion: (email: string, password: string) => 
     api.post<{ user: any; token: string }>('/auth/login', { email, password }),
-  register: (data: any) => 
+  registrar: (data: any) => 
     api.post<{ user: any; token: string }>('/auth/register', data),
-  getProfile: () => api.get<any>('/auth/profile'),
+  obtenerPerfil: () => api.get<any>('/auth/profile'),
 };
 
 export const contratosApi = {
   findAll: () => api.get<any[]>('/contratos'),
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/contratos', params),
-  getCreateMetadata: () =>
+  obtenerMetadatosCreacion: () =>
     api['isBrowser']()
       ? api['requestRelative']<any>('/api/contratos/create-metadata', { method: 'GET', cache: 'no-store' })
       : api.get<any>('/contratos/create-metadata'),
-  getNumeroSecuencial: (bovedaId?: number, isRenovacion?: boolean) =>
+  obtenerNumeroSecuencial: (bovedaId?: number, isRenovacion?: boolean) =>
     api['isBrowser']()
       ? api['requestRelative']<any>(
           `/api/contratos/numero-secuencial${bovedaId ? `?bovedaId=${bovedaId}&isRenovacion=${Boolean(isRenovacion)}` : ''}`,
           { method: 'GET', cache: 'no-store' },
         )
       : api.get<any>(`/contratos/numero-secuencial${bovedaId ? `?bovedaId=${bovedaId}&isRenovacion=${Boolean(isRenovacion)}` : ''}`),
-  getBovedasDisponibles: (params?: PaginationParams) =>
+  obtenerBovedasDisponibles: (params?: PaginationParams) =>
     api['isBrowser']()
       ? api['getPaginatedRelative']<any>('/api/contratos/bovedas-disponibles', params)
       : api.getPaginated<any>('/contratos/bovedas-disponibles', params),
@@ -234,7 +234,7 @@ export const contratosApi = {
       : api.post<any>('/contratos', data),
   update: (id: number, data: any) => api.put<any>(`/contratos/${id}`, data),
   delete: (id: number) => api.delete<any>(`/contratos/${id}`),
-  getReportes: () => api.get<any>('/contratos/reportes'),
+  obtenerReportes: () => api.get<any>('/contratos/reportes'),
 };
 
 export const bovedasApi = {
@@ -262,7 +262,7 @@ export const personasApi = {
   create: (data: any) => api.post<any>('/personas', data),
   update: (id: number, data: any) => api.put<any>(`/personas/${id}`, data),
   delete: (id: number) => api.delete<any>(`/personas/${id}`),
-  search: (termino: string) => api.get<any[]>(`/personas/search?q=${termino}`),
+  buscar: (termino: string) => api.get<any[]>(`/personas/search?q=${termino}`),
 };
 
 export const pagosApi = {
@@ -303,8 +303,8 @@ export const usuariosApi = {
   findAll: (q?: string) => api.get<any[]>(`/usuarios${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   findOne: (id: string) => api.get<any>(`/usuarios/${id}`),
   update: (id: string, data: any) => api.put<any>(`/usuarios/${id}`, data),
-  updateEstado: (id: string, estado: boolean) => api.patch<any>(`/usuarios/${id}/estado`, { estado }),
-  setRoles: (id: string, roleIds: string[]) => api.put<any>(`/usuarios/${id}/roles`, { roleIds }),
+  actualizarEstado: (id: string, estado: boolean) => api.patch<any>(`/usuarios/${id}/estado`, { estado }),
+  asignarRoles: (id: string, roleIds: string[]) => api.put<any>(`/usuarios/${id}/roles`, { roleIds }),
 };
 
 export const rolesApi = {

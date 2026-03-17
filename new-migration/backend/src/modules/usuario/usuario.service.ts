@@ -1,95 +1,54 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { UserDto } from './user.dto';
+import { User } from './user.entity';
+import { UserRepository } from './user.repository';
 
 @Injectable()
-export class UsuarioService {
-  constructor(private prisma: PrismaService) {}
+export class UserService {
+  constructor(private readonly userRepository: UserRepository) {}
 
-  async findAll(search?: string) {
-    return this.prisma.usuario.findMany({
-      where: {
-        ...(search
-          ? {
-              OR: [
-                { nombre: { contains: search, mode: 'insensitive' } },
-                { apellido: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
-                { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        usuarioRols: {
-          include: { rol: true },
-        },
-      },
-      orderBy: { fechaCreacion: 'desc' },
-    });
+  async list(search?: string) {
+    return this.userRepository.findMany(search?.trim());
   }
 
-  async findOne(id: string) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id },
-      include: {
-        usuarioRols: {
-          include: { rol: true },
-        },
-      },
-    });
-
-    if (!usuario) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    return usuario;
+  async getById(id: string) {
+    return this.getExistingUser(id);
   }
 
-  async update(id: string, data: any) {
-    await this.findOne(id);
+  async update(id: string, dto: UserDto) {
+    await this.getExistingUser(id);
 
-    const { id: _, passwordHash, ...safeData } = data || {};
-    return this.prisma.usuario.update({
-      where: { id },
-      data: safeData,
-      include: {
-        usuarioRols: {
-          include: { rol: true },
-        },
-      },
-    });
+    const user = User.create(dto);
+
+    return this.userRepository.update(id, user);
   }
 
-  async updateEstado(id: string, estado: boolean) {
-    await this.findOne(id);
-    return this.prisma.usuario.update({
-      where: { id },
-      data: { estado },
-    });
+  async updateStatus(id: string, isActive: boolean) {
+    await this.getExistingUser(id);
+    return this.userRepository.updateStatus(id, isActive);
   }
 
-  async setRoles(id: string, roleIds: string[]) {
-    await this.findOne(id);
+  async assignRoles(id: string, roleIds: string[] = []) {
+    await this.getExistingUser(id);
 
-    const roles = await this.prisma.rol.findMany({
-      where: { id: { in: roleIds } },
-      select: { id: true },
-    });
+    const roles = await this.userRepository.findRolesByIds(roleIds);
 
     if (roles.length !== roleIds.length) {
-      throw new NotFoundException('Uno o más roles no existen');
+      throw new NotFoundException('One or more roles do not exist');
     }
 
-    await this.prisma.usuarioRol.deleteMany({
-      where: { usuarioId: id },
-    });
+    await this.userRepository.replaceRoles(id, roleIds);
 
-    if (roleIds.length > 0) {
-      await this.prisma.usuarioRol.createMany({
-        data: roleIds.map((rolId) => ({ usuarioId: id, rolId })),
-      });
+    return this.getExistingUser(id);
+  }
+
+  private async getExistingUser(id: string) {
+    const user = await this.userRepository.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    return this.findOne(id);
+    return user;
   }
 }

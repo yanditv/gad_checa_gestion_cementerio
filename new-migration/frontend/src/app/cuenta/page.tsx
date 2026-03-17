@@ -12,7 +12,7 @@ export default function CuentaPage() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const data = await authApi.getProfile();
+        const data = await authApi.obtenerPerfil();
         setProfile(data);
       } catch (err: any) {
         setError(err.message || 'No hay sesión activa');

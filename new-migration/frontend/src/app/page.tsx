@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getDashboardDataAction } from '@/app/actions/entity-actions';
 
 interface DashboardData {
   numeroDifuntos: number;
@@ -31,17 +32,10 @@ export default function Home() {
 
   useEffect(() => {
     const loadDashboard = async () => {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 8000);
-
       try {
-        const response = await fetch('/api/dashboard', { signal: controller.signal });
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
-        }
+        const result = await getDashboardDataAction();
+        setData(result);
       } finally {
-        window.clearTimeout(timeout);
         setLoading(false);
       }
     };

@@ -3,34 +3,35 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { SeedService } from './bootstrap/seed.service';
+import appConfig, { type AppConfig } from './config/appConfig';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const aplicacion = await NestFactory.create(AppModule);
+  const config = aplicacion.get<AppConfig>(appConfig.KEY);
   
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
+  aplicacion.enableCors({
+    origin: config.frontendUrl,
+    credentials: config.cors.credentials,
   });
 
-  app.useGlobalPipes(new ValidationPipe({
+  aplicacion.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
   }));
 
-  const config = new DocumentBuilder()
-    .setTitle('GAD Checa Cementerio API')
-    .setDescription('API para la gestión del cementerio')
-    .setVersion('1.0')
+  const configuracionSwagger = new DocumentBuilder()
+    .setTitle(config.swagger.title)
+    .setDescription(config.swagger.description)
+    .setVersion(config.swagger.version)
     .addBearerAuth()
     .build();
   
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  const documento = SwaggerModule.createDocument(aplicacion, configuracionSwagger);
+  SwaggerModule.setup(config.swagger.path, aplicacion, documento);
 
-  await app.get(SeedService).run();
+  await aplicacion.get(SeedService).run();
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🚀 Server running on http://localhost:${port}`);
+  await aplicacion.listen(config.port);
+  console.log(`Servidor iniciado en http://localhost:${config.port}`);
 }
 bootstrap();

@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { difuntosApi, PaginationMeta } from '@/lib/api';
+import { PaginationMeta } from '@/lib/api';
 import { DataGrid, DataGridColumn } from '@/components/ui/DataGrid';
 import { PaginationNav } from '@/components/ui/PaginationNav';
 import { TextInput } from '@/components/ui/TextInput';
 import { SearchFilters } from '@/components/ui/SearchFilters';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { listDifuntosAction } from '@/app/actions/entity-actions';
 
 interface Difunto {
   id: number;
@@ -37,7 +38,7 @@ export default function DifuntosPage() {
   const loadDifuntos = async () => {
     setLoading(true);
     try {
-      const result = await difuntosApi.findPage({ page, limit: 15, search });
+      const result = await listDifuntosAction({ page, limit: 15, search });
       setDifuntos(result.data);
       setMeta(result.meta);
     } catch (error) {

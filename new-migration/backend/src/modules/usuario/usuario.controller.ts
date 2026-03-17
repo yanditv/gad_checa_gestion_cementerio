@@ -1,34 +1,30 @@
 import { Body, Controller, Get, Param, Patch, Put, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { UsuarioService } from './usuario.service';
+import { UserDto } from './user.dto';
+import { UserService } from './usuario.service';
 
-@ApiTags('usuarios')
+@ApiTags('users')
 @Controller('usuarios')
-export class UsuarioController {
-  constructor(private service: UsuarioService) {}
+export class UserController {
+  constructor(private readonly service: UserService) {}
 
   @Get()
-  findAll(@Query('q') q?: string) {
-    return this.service.findAll(q);
+  list(@Query('q') search?: string) {
+    return this.service.list(search);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  getById(@Param('id') id: string) {
+    return this.service.getById(id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(id, data);
+  update(@Param('id') id: string, @Body() dto: UserDto) {
+    return this.service.update(id, dto);
   }
 
   @Patch(':id/estado')
-  updateEstado(@Param('id') id: string, @Body('estado') estado: boolean) {
-    return this.service.updateEstado(id, !!estado);
-  }
-
-  @Put(':id/roles')
-  setRoles(@Param('id') id: string, @Body('roleIds') roleIds: string[] = []) {
-    return this.service.setRoles(id, roleIds);
+  updateStatus(@Param('id') id: string, @Body() body: {isActive: boolean}) {
+    return this.service.updateStatus(id, body.isActive)
   }
 }

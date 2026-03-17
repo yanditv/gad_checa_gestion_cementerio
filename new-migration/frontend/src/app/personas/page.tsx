@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { personasApi, PaginationMeta } from '@/lib/api';
+import { PaginationMeta } from '@/lib/api';
 import { DataGrid, DataGridColumn } from '@/components/ui/DataGrid';
 import { PaginationNav } from '@/components/ui/PaginationNav';
 import { TextInput } from '@/components/ui/TextInput';
@@ -10,6 +10,7 @@ import { SelectInput } from '@/components/ui/SelectInput';
 import { SearchFilters } from '@/components/ui/SearchFilters';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { listPersonasAction } from '@/app/actions/entity-actions';
 
 interface Persona {
   id: number;
@@ -36,7 +37,7 @@ export default function PersonasPage() {
   const loadPersonas = async () => {
     setLoading(true);
     try {
-      const result = await personasApi.findPage({
+      const result = await listPersonasAction({
         page,
         limit: 15,
         search,

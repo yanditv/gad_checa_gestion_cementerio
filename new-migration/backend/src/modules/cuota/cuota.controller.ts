@@ -1,31 +1,31 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CuotaService } from './cuota.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@ApiTags('cuotas')
-@Controller('cuotas')
+@ApiTags('installments')
+@Controller('installments')
 export class CuotaController {
-  constructor(private service: CuotaService) {}
+  constructor(private readonly service: CuotaService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  list() {
+    return this.service.list();
   }
 
-  @Get('pendientes')
-  pendientes() {
-    return this.service.pendientes();
+  @Get('pending')
+  listPending() {
+    return this.service.listPending();
   }
 
-  @Get('contrato/:contratoId')
-  findByContrato(@Param('contratoId') contratoId: string) {
-    return this.service.findByContrato(+contratoId);
+  @Get('contract/:contractId')
+  listByContract(@Param('contractId') contractId: string) {
+    return this.service.listByContract(Number(contractId));
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  getById(@Param('id') id: string) {
+    return this.service.getById(Number(id));
   }
 
   @Post()
@@ -39,13 +39,13 @@ export class CuotaController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+    return this.service.update(Number(id), data);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+    return this.service.remove(Number(id));
   }
 }

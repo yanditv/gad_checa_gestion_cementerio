@@ -1,99 +1,75 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { CreateRoleDto, UpdateRoleDto } from './role.dto';
+import { Role } from './role.entity';
+import { RolRepository } from './rol.repository';
 
-function normalizeRoleName(nombre: string): string {
-  return nombre.trim().toUpperCase();
+function normalizeRoleName(name: string): string {
+  return name.trim().toUpperCase();
 }
 
 @Injectable()
 export class RolService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly rolRepository: RolRepository) {}
 
-  async findAll() {
-    return this.prisma.rol.findMany({
-      include: {
-        usuarios: {
-          include: { usuario: true },
-        },
-      },
-      orderBy: { nombre: 'asc' },
-    });
+  async list() {
+    return this.rolRepository.findMany();
   }
 
-  async findOne(id: string) {
-    const rol = await this.prisma.rol.findUnique({
-      where: { id },
-      include: {
-        usuarios: {
-          include: { usuario: true },
-        },
-      },
-    });
+  async getById(id: string) {
+    const role = await this.rolRepository.findById(id);
 
-    if (!rol) {
-      throw new NotFoundException('Rol no encontrado');
+    if (!role) {
+      throw new NotFoundException('Role not found');
     }
 
-    return rol;
+    return role;
   }
 
-  async create(data: any) {
-    const nombre = (data?.nombre || '').trim();
-    if (!nombre) {
-      throw new ConflictException('El nombre del rol es obligatorio');
+  async create(data: CreateRoleDto) {
+    const name = (data?.name || '').trim();
+    if (!name) {
+      throw new ConflictException('Role name is required');
     }
 
-    const nombreNormalizado = normalizeRoleName(nombre);
-    const exists = await this.prisma.rol.findUnique({ where: { nombreNormalizado } });
+    const normalizedName = normalizeRoleName(name);
+    const exists = await this.rolRepository.findByNormalizedName(normalizedName);
     if (exists) {
-      throw new ConflictException('El rol ya existe');
+      throw new ConflictException('Role already exists');
     }
 
-    return this.prisma.rol.create({
-      data: {
-        nombre,
-        nombreNormalizado,
-        permisos: data?.permisos || null,
-      },
+    const role = Role.create({
+      name,
+      normalizedName,
+      permissions: data?.permissions || null,
     });
+
+    return this.rolRepository.create(role);
   }
 
-  async update(id: string, data: any) {
-    await this.findOne(id);
+  async update(id: string, data: UpdateRoleDto) {
+    await this.getById(id);
 
-    const nombre = (data?.nombre || '').trim();
-    const nombreNormalizado = nombre ? normalizeRoleName(nombre) : undefined;
+    const name = (data?.name || '').trim();
+    const normalizedName = name ? normalizeRoleName(name) : undefined;
 
-    if (nombreNormalizado) {
-      const existing = await this.prisma.rol.findFirst({
-        where: { nombreNormalizado, id: { not: id } },
-      });
+    if (normalizedName) {
+      const existing = await this.rolRepository.findAnotherByNormalizedName(normalizedName, id);
       if (existing) {
-        throw new ConflictException('Ya existe otro rol con ese nombre');
+        throw new ConflictException('Another role with this name already exists');
       }
     }
 
-    return this.prisma.rol.update({
-      where: { id },
-      data: {
-        ...(nombre ? { nombre, nombreNormalizado } : {}),
-        ...(data?.permisos !== undefined ? { permisos: data.permisos } : {}),
-      },
-      include: {
-        usuarios: {
-          include: { usuario: true },
-        },
-      },
+    const role = Role.create({
+      ...(name ? { name, normalizedName } : {}),
+      ...(data?.permissions !== undefined ? { permissions: data.permissions } : {}),
     });
+
+    return this.rolRepository.update(id, role);
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    await this.prisma.usuarioRol.deleteMany({
-      where: { rolId: id },
-    });
-    return this.prisma.rol.delete({
-      where: { id },
-    });
+    await this.getById(id);
+    await this.rolRepository.deleteUserRolesByRoleId(id);
+    return this.rolRepository.delete(id);
   }
 }

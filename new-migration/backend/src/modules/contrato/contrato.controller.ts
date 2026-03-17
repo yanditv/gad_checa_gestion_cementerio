@@ -2,62 +2,69 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ContratoService } from './contrato.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import {
+  AvailableVaultsQueryDto,
+  ContractIdParamDto,
+  ContractListQueryDto,
+  ContractNumberPreviewQueryDto,
+  CreateContractDto,
+  UpdateContractDto,
+} from './contract.dto';
 
-@ApiTags('contratos')
-@Controller('contratos')
+@ApiTags('contracts')
+@Controller('contracts')
 export class ContratoController {
-  constructor(private service: ContratoService) {}
+  constructor(private readonly service: ContratoService) {}
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.service.findAll(query);
+  list(@Query() query: ContractListQueryDto) {
+    return this.service.list(query);
   }
 
-  @Get('reportes')
-  getReportes() {
-    return this.service.getReportes();
+  @Get('reports')
+  getReports() {
+    return this.service.getReports();
   }
 
   @Get('create-metadata')
-  getCreateMetadata() {
-    return this.service.getCreateMetadata();
+  getCreationMetadata() {
+    return this.service.getCreationMetadata();
   }
 
-  @Get('bovedas-disponibles')
-  getBovedasDisponibles(@Query() query: PaginationQueryDto, @Query('tipo') tipo?: string) {
-    return this.service.getBovedasDisponibles(query, tipo);
+  @Get('available-vaults')
+  getAvailableVaults(@Query() query: AvailableVaultsQueryDto) {
+    return this.service.getAvailableVaults(query, query.type || query.tipo);
   }
 
-  @Get('numero-secuencial')
-  getNumeroSecuencial(@Query('bovedaId') bovedaId?: string, @Query('isRenovacion') isRenovacion?: string) {
-    return this.service.getNumeroSecuencialPreview(
-      bovedaId ? Number(bovedaId) : undefined,
-      isRenovacion === 'true',
+  @Get('sequential-number')
+  getContractNumberPreview(@Query() query: ContractNumberPreviewQueryDto) {
+    return this.service.getContractNumberPreview(
+      query.vaultId ?? query.bovedaId,
+      query.isRenewal ?? query.isRenovacion ?? false,
     );
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  getById(@Param() params: ContractIdParamDto) {
+    return this.service.getById(params.id);
   }
 
   @Post()
-  create(@Body() data: any) {
+  create(@Body() data: CreateContractDto) {
     return this.service.create(data);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+  update(@Param() params: ContractIdParamDto, @Body() data: UpdateContractDto) {
+    return this.service.update(params.id, data);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  remove(@Param() params: ContractIdParamDto) {
+    return this.service.remove(params.id);
   }
 }

@@ -21,7 +21,7 @@ export default function ReportesPage() {
 
   const loadReportes = async () => {
     try {
-      const data = await contratosApi.getReportes();
+      const data = await contratosApi.obtenerReportes();
       setReportes(data);
     } catch (error) {
       console.error('Error loading reportes:', error);

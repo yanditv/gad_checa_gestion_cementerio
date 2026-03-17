@@ -1,57 +1,69 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { ServicioCrudSuave } from '../../common/services/soft-delete-crud.service';
+import { CuotaRepository } from './cuota.repository';
 
 @Injectable()
-export class CuotaService {
-  constructor(private prisma: PrismaService) {}
-
-  async findAll() {
-    return this.prisma.cuota.findMany({
-      where: { estado: true },
-      include: { contrato: { include: { difunto: true, boveda: true } }, pagos: { include: { pago: true } } },
-      orderBy: { fechaVencimiento: 'asc' }
-    });
+export class CuotaService extends ServicioCrudSuave<
+  Prisma.CuotaGetPayload<{
+    include: {
+      contrato: {
+        include: {
+          difunto: true;
+          boveda: true;
+        };
+      };
+      pagos: {
+        include: {
+          pago: true;
+        };
+      };
+    };
+  }>,
+  number,
+  Prisma.CuotaUncheckedCreateInput,
+  Prisma.CuotaUncheckedUpdateInput
+> {
+  constructor(private readonly cuotaRepository: CuotaRepository) {
+    super('Cuota');
   }
 
-  async findByContrato(contratoId: number) {
-    return this.prisma.cuota.findMany({
-      where: { contratoId, estado: true },
-      include: { pagos: { include: { pago: true } } },
-      orderBy: { numero: 'asc' }
-    });
+  protected get repositorio() {
+    return this.cuotaRepository;
   }
 
-  async findOne(id: number) {
-    const cuota = await this.prisma.cuota.findUnique({
-      where: { id },
-      include: { 
-        contrato: { include: { difunto: true, boveda: true } }, 
-        pagos: { include: { pago: true } } 
-      },
-    });
-    if (!cuota) throw new NotFoundException('Cuota no encontrada');
-    return cuota;
+  protected override relacionesDetalle() {
+    return {
+      contrato: { include: { difunto: true, boveda: true } },
+      pagos: { include: { pago: true } },
+    };
+  }
+
+  async list() {
+    return this.cuotaRepository.findActive();
+  }
+
+  async listByContract(contractId: number) {
+    return this.cuotaRepository.findByContract(contractId);
+  }
+
+  async listPending() {
+    return this.cuotaRepository.findPending();
+  }
+
+  async getById(id: number) {
+    return this.obtenerPorId(id);
   }
 
   async create(data: any) {
-    return this.prisma.cuota.create({ data });
+    return this.crear(data);
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    return this.prisma.cuota.update({ where: { id }, data });
+    return this.actualizar(id, data);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.cuota.update({ where: { id }, data: { estado: false } });
-  }
-
-  async pendientes() {
-    return this.prisma.cuota.findMany({
-      where: { pagada: false, fechaVencimiento: { lte: new Date() }, estado: true },
-      include: { contrato: { include: { difunto: true, boveda: true } } },
-      orderBy: { fechaVencimiento: 'asc' }
-    });
+    return this.eliminar(id);
   }
 }

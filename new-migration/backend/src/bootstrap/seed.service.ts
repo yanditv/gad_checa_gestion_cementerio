@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import { AuditService } from '../common/services/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CatastroImportService } from './catastro-import.service';
 
@@ -10,6 +11,7 @@ export class SeedService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
     private readonly catastroImportService: CatastroImportService,
   ) {}
 
@@ -94,18 +96,26 @@ export class SeedService {
       },
     });
 
-    await this.prisma.cementerio.upsert({
+    const existingCemetery = await this.prisma.cementerio.findUnique({
       where: { id: 1 },
-      update: {},
-      create: {
-        nombre: 'Cementerio de checa',
-        direccion: 'Eloy Riera, Parroquia Checa',
-        telefono: '0987654321',
-        email: 'jpcheca0@gmail.com',
-        estado: true,
-        usuarioCreadorId: adminUserId,
-      },
+      select: { id: true },
     });
+
+    if (!existingCemetery) {
+      const cemetery = await this.prisma.cementerio.create({
+        data: {
+          nombre: 'Cementerio de checa',
+          direccion: 'Eloy Riera, Parroquia Checa',
+          telefono: '0987654321',
+          email: 'jpcheca0@gmail.com',
+          estado: true,
+        },
+      });
+
+      await this.auditService.logCreate('Cementerio', cemetery.id, adminUserId, {
+        source: 'seed',
+      });
+    }
 
     const descuentos = [
       { nombre: 'Ninguno', porcentaje: 0 },
@@ -120,15 +130,18 @@ export class SeedService {
       });
 
       if (!exists) {
-        await this.prisma.descuento.create({
+        const createdDiscount = await this.prisma.descuento.create({
           data: {
             nombre: descuento.nombre,
             descripcion: descuento.nombre,
             porcentaje: descuento.porcentaje,
             estado: true,
             fechaInicio: new Date(),
-            usuarioCreadorId: adminUserId,
           },
+        });
+
+        await this.auditService.logCreate('Descuento', createdDiscount.id, adminUserId, {
+          source: 'seed',
         });
       }
     }

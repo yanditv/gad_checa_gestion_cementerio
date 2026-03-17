@@ -1,5 +1,5 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@cementerio.com' })
@@ -12,18 +12,18 @@ export class LoginDto {
   password: string;
 }
 
-export class RegisterDto {
+export class RegisterUserDto {
   @ApiProperty({ example: '1234567890' })
   @IsString()
-  numeroIdentificacion: string;
+  identificationNumber: string;
 
-  @ApiProperty({ example: 'Juan' })
+  @ApiProperty({ example: 'John' })
   @IsString()
-  nombre: string;
+  firstName: string;
 
-  @ApiProperty({ example: 'Pérez' })
+  @ApiProperty({ example: 'Doe' })
   @IsString()
-  apellido: string;
+  lastName: string;
 
   @ApiProperty({ example: 'admin@cementerio.com' })
   @IsEmail()
@@ -34,18 +34,18 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ example: 'CED', required: false })
+  @ApiPropertyOptional({ example: 'CED' })
   @IsOptional()
   @IsString()
-  tipoIdentificacion?: string;
+  identificationType?: string;
 
-  @ApiProperty({ example: '0999999999', required: false })
+  @ApiPropertyOptional({ example: '0999999999' })
   @IsOptional()
   @IsString()
-  telefono?: string;
+  phone?: string;
 
-  @ApiProperty({ example: 'Calle Principal', required: false })
+  @ApiPropertyOptional({ example: 'Main Street' })
   @IsOptional()
   @IsString()
-  direccion?: string;
+  address?: string;
 }

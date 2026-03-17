@@ -1,40 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import { Difunto } from './difunto.entity';
+import { DifuntoRepository } from './difunto.repository';
 
 @Injectable()
 export class DifuntoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly difuntoRepository: DifuntoRepository) {}
 
-  async findAll(query: PaginationQueryDto) {
+  async list(query: PaginationQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
-    const search = query.search?.trim();
+    const search = query.search?.trim() || query.busqueda?.trim();
 
-    const where: any = {
-      estado: true,
-      ...(search
-        ? {
-            OR: [
-              { nombre: { contains: search, mode: 'insensitive' } },
-              { apellido: { contains: search, mode: 'insensitive' } },
-              { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
-              { boveda: { is: { numero: { contains: search, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
-    };
-
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.difunto.findMany({
-        where,
-        include: { boveda: { include: { bloque: { include: { cementerio: true } } } } },
-        orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.difunto.count({ where }),
-    ]);
+    const { items, total } = await this.difuntoRepository.listPaginated(search, skip, limit);
 
     return {
       items,
@@ -42,35 +20,32 @@ export class DifuntoService {
     };
   }
 
-  async findByBoveda(bovedaId: number) {
-    return this.prisma.difunto.findMany({
-      where: { bovedaId, estado: true },
-    });
+  async listByVault(vaultId: number) {
+    return this.difuntoRepository.listByVault(vaultId);
   }
 
-  async findOne(id: number) {
-    const difunto = await this.prisma.difunto.findUnique({
-      where: { id },
-      include: { 
-        boveda: { include: { bloque: { include: { cementerio: true } }, piso: true } },
-        contratos: { where: { estado: true } }
-      },
-    });
-    if (!difunto) throw new NotFoundException('Difunto no encontrado');
-    return difunto;
+  async getById(id: number) {
+    const deceased = await this.difuntoRepository.findById(id);
+    if (!deceased || deceased.estado === false) {
+      throw new NotFoundException('Deceased record not found');
+    }
+
+    return deceased;
   }
 
   async create(data: any) {
-    return this.prisma.difunto.create({ data });
+    const deceased = Difunto.create(data);
+    return this.difuntoRepository.create(deceased);
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    return this.prisma.difunto.update({ where: { id }, data });
+    await this.getById(id);
+    const deceased = Difunto.create(data);
+    return this.difuntoRepository.update(id, deceased);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.difunto.update({ where: { id }, data: { estado: false } });
+    await this.getById(id);
+    return this.difuntoRepository.update(id, Difunto.create({ estado: false }));
   }
 }

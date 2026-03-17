@@ -1,39 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import { Bloque } from './bloque.entity';
+import { BloqueRepository } from './bloque.repository';
 
 @Injectable()
 export class BloqueService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly bloqueRepository: BloqueRepository) {}
 
-  async findAll(query: PaginationQueryDto) {
+  async list(query: PaginationQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 
-    const where: any = {
-      estado: true,
-      ...(search
-        ? {
-            OR: [
-              { nombre: { contains: search, mode: 'insensitive' } },
-              { descripcion: { contains: search, mode: 'insensitive' } },
-              { cementerio: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
-    };
-
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.bloque.findMany({
-        where,
-        include: { cementerio: true, pisos: true, bovedas: { where: { estado: true } } },
-        orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.bloque.count({ where }),
-    ]);
+    const { items, total } = await this.bloqueRepository.listPaginated(search, skip, limit);
 
     return {
       items,
@@ -41,33 +19,32 @@ export class BloqueService {
     };
   }
 
-  async findByCementerio(cementerioId: number) {
-    return this.prisma.bloque.findMany({
-      where: { cementerioId, estado: true },
-      include: { pisos: true, bovedas: { where: { estado: true } } },
-    });
+  async listByCemetery(cemeteryId: number) {
+    return this.bloqueRepository.listByCemetery(cemeteryId);
   }
 
-  async findOne(id: number) {
-    const bloque = await this.prisma.bloque.findUnique({
-      where: { id },
-      include: { cementerio: true, pisos: true, bovedas: true },
-    });
-    if (!bloque) throw new NotFoundException('Bloque no encontrado');
-    return bloque;
+  async getById(id: number) {
+    const block = await this.bloqueRepository.findById(id);
+    if (!block || block.estado === false) {
+      throw new NotFoundException('Block not found');
+    }
+
+    return block;
   }
 
   async create(data: any) {
-    return this.prisma.bloque.create({ data });
+    const block = Bloque.create(data);
+    return this.bloqueRepository.create(block);
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    return this.prisma.bloque.update({ where: { id }, data });
+    await this.getById(id);
+    const block = Bloque.create(data);
+    return this.bloqueRepository.update(id, block);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.bloque.update({ where: { id }, data: { estado: false } });
+    await this.getById(id);
+    return this.bloqueRepository.update(id, Bloque.create({ estado: false }));
   }
 }

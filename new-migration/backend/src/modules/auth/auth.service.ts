@@ -1,105 +1,106 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../prisma/prisma.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { LoginDto, RegisterUserDto } from "./auth.dto";
+import { AuthUser } from "./auth-user.entity";
+import { AuthRepository } from "./auth.repository";
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly userRepository: UserRepository,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto) {
-    const existingUser = await this.prisma.usuario.findFirst({
-      where: {
-        OR: [
-          { email: dto.email },
-          { numeroIdentificacion: dto.numeroIdentificacion },
-        ],
-      },
-    });
+  async register(dto: RegisterUserDto) {
+    const existingUser = await this.userRepository.findExistingUser(
+      dto.email,
+      dto.identificationNumber,
+    );
 
     if (existingUser) {
-      throw new ConflictException('El usuario ya existe');
+      throw new ConflictException("User already exists");
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    const usuario = await this.prisma.usuario.create({
-      data: {
-        numeroIdentificacion: dto.numeroIdentificacion,
-        nombre: dto.nombre,
-        apellido: dto.apellido,
-        email: dto.email,
-        passwordHash,
-        telefono: dto.telefono,
-        direccion: dto.direccion,
-        tipoIdentificacion: dto.tipoIdentificacion || 'CED',
-      },
+    const password = await bcrypt.hash(dto.password, 10);
+    const user = User.create({
+      identificationNumber: dto.identificationNumber,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      email: dto.email,
+      password,
+      phone: dto.phone,
+      address: dto.address,
+      identificationType: dto.identificationType,
     });
 
-    const token = this.jwtService.sign({ sub: usuario.id, email: usuario.email });
+    const createdUser = await this.userRepository.createUser(user);
+
+    const token = this.jwtService.sign({
+      sub: createdUser.id,
+      email: createdUser.email,
+    });
 
     return {
       user: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        email: usuario.email,
+        id: user.id,
+        firstName: user.nombre,
+        lastName: user.apellido,
+        email: user.email,
       },
       token,
     };
   }
 
   async login(dto: LoginDto) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { email: dto.email },
-    });
+    const user = await this.userRepository.findUserByEmail(dto.email);
 
-    if (!usuario) {
-      throw new UnauthorizedException('Credenciales inválidas');
+    if (!user) {
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, usuario.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    const token = this.jwtService.sign({ sub: usuario.id, email: usuario.email });
+    const token = this.jwtService.sign({ sub: user.id, email: user.email });
 
     return {
       user: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        email: usuario.email,
+        id: user.id,
+        firstName: user.nombre,
+        lastName: user.apellido,
+        email: user.email,
       },
       token,
     };
   }
 
   async getProfile(userId: string) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        direccion: true,
-        tipoIdentificacion: true,
-        numeroIdentificacion: true,
-      },
-    });
+    const user = await this.authRepository.findProfileById(userId);
 
-    if (!usuario) {
-      throw new UnauthorizedException('Usuario no encontrado');
+    if (!user) {
+      throw new UnauthorizedException("User not found");
     }
 
-    return usuario;
+    return {
+      id: user.id,
+      firstName: user.nombre,
+      lastName: user.apellido,
+      email: user.email,
+      phone: user.telefono,
+      address: user.direccion,
+      identificationType: user.tipoIdentificacion,
+      identificationNumber: user.numeroIdentificacion,
+    };
   }
 }

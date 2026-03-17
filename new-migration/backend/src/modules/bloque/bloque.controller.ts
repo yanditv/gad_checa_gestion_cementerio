@@ -1,27 +1,26 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BloqueService } from './bloque.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
-@ApiTags('bloques')
-@Controller('bloques')
+@ApiTags('blocks')
+@Controller('blocks')
 export class BloqueController {
-  constructor(private service: BloqueService) {}
+  constructor(private readonly service: BloqueService) {}
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.service.findAll(query);
+  list(@Query() query: any) {
+    return this.service.list(query);
   }
 
-  @Get('cementerio/:cementerioId')
-  findByCementerio(@Param('cementerioId') cementerioId: string) {
-    return this.service.findByCementerio(+cementerioId);
+  @Get('cemetery/:cemeteryId')
+  listByCemetery(@Param('cemeteryId') cemeteryId: string) {
+    return this.service.listByCemetery(Number(cemeteryId));
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  getById(@Param('id') id: string) {
+    return this.service.getById(Number(id));
   }
 
   @Post()
@@ -35,13 +34,13 @@ export class BloqueController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+    return this.service.update(Number(id), data);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+    return this.service.remove(Number(id));
   }
 }

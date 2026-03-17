@@ -1,8 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { type ConfigType } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as XLSX from 'xlsx';
+import { AuditService } from '../common/services/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import appConfig from '../config/appConfig';
 
 type RegistroCatastro = {
   idExcel: string;
@@ -24,16 +27,21 @@ type RegistroCatastro = {
 export class CatastroImportService {
   private readonly logger = new Logger(CatastroImportService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+    @Inject(appConfig.KEY)
+    private readonly config: ConfigType<typeof appConfig>,
+  ) {}
 
   async run(adminUserId: string) {
-    const enabled = process.env.CATASTRO_IMPORT_ENABLED === '1';
+    const enabled = this.config.catastroImport.enabled;
     if (!enabled) {
       this.logger.log('Importación de catastro deshabilitada (CATASTRO_IMPORT_ENABLED != 1)');
       return;
     }
 
-    const configuredPath = process.env.CATASTRO_FILE_PATH;
+    const configuredPath = this.config.catastroImport.filePath;
     const defaultPath = path.resolve(process.cwd(), '../gad_checa_gestion_cementerio/CATASTRO_FINAL.xlsx');
     const excelPath = configuredPath ? path.resolve(configuredPath) : defaultPath;
 
@@ -42,7 +50,7 @@ export class CatastroImportService {
       return;
     }
 
-    const force = process.env.CATASTRO_IMPORT_FORCE === '1';
+    const force = this.config.catastroImport.force;
     const contratosCount = await this.prisma.contrato.count();
     if (contratosCount > 0 && !force) {
       this.logger.log(
@@ -199,15 +207,20 @@ export class CatastroImportService {
     });
     if (existing) return existing;
 
-    return this.prisma.bloque.create({
+    const createdBlock = await this.prisma.bloque.create({
       data: {
         nombre: nombre.trim(),
         descripcion: `Migrado de catastro: ${nombre.trim()}`,
         estado: true,
         cementerioId: cementerio.id,
-        usuarioCreadorId: adminUserId,
       },
     });
+
+    await this.auditService.logCreate('Bloque', createdBlock.id, adminUserId, {
+      source: 'catastro-import',
+    });
+
+    return createdBlock;
   }
 
   private async upsertPiso(bloqueId: number) {
@@ -233,7 +246,7 @@ export class CatastroImportService {
     });
     if (existing) return existing;
 
-    return this.prisma.boveda.create({
+    const createdVault = await this.prisma.boveda.create({
       data: {
         numero: numero.trim(),
         capacidad: 1,
@@ -244,9 +257,14 @@ export class CatastroImportService {
         precioArrendamiento: 240,
         bloqueId,
         pisoId,
-        usuarioCreadorId: adminUserId,
       },
     });
+
+    await this.auditService.logCreate('Boveda', createdVault.id, adminUserId, {
+      source: 'catastro-import',
+    });
+
+    return createdVault;
   }
 
   private async upsertDifunto(registro: RegistroCatastro, bovedaId: number, adminUserId: string) {
@@ -260,7 +278,7 @@ export class CatastroImportService {
     });
     if (existing) return existing;
 
-    return this.prisma.difunto.create({
+    const createdDeceased = await this.prisma.difunto.create({
       data: {
         nombre,
         apellido,
@@ -268,9 +286,14 @@ export class CatastroImportService {
         fechaDefuncion: registro.fechaContrato ?? new Date(),
         estado: true,
         bovedaId,
-        usuarioCreadorId: adminUserId,
       },
     });
+
+    await this.auditService.logCreate('Difunto', createdDeceased.id, adminUserId, {
+      source: 'catastro-import',
+    });
+
+    return createdDeceased;
   }
 
   private async upsertPersonaResponsable(registro: RegistroCatastro, adminUserId: string) {
@@ -284,7 +307,7 @@ export class CatastroImportService {
     });
     if (existing) return existing;
 
-    return this.prisma.persona.create({
+    const createdPerson = await this.prisma.persona.create({
       data: {
         numeroIdentificacion,
         nombre: nombre || 'SIN',
@@ -295,9 +318,14 @@ export class CatastroImportService {
         tipoIdentificacion: 'CED',
         estado: true,
         tipoPersona: 'Persona',
-        usuarioCreadorId: adminUserId,
       },
     });
+
+    await this.auditService.logCreate('Persona', createdPerson.id, adminUserId, {
+      source: 'catastro-import',
+    });
+
+    return createdPerson;
   }
 
   private async upsertPropietario(personaId: number) {
@@ -347,8 +375,11 @@ export class CatastroImportService {
         observaciones: params.observaciones,
         bovedaId: params.bovedaId,
         difuntoId: params.difuntoId,
-        usuarioCreadorId: params.adminUserId,
       },
+    });
+
+    await this.auditService.logCreate('Contrato', contrato.id, params.adminUserId, {
+      source: 'catastro-import',
     });
 
     await this.prisma.contratoResponsable.upsert({

@@ -1,36 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import { Persona } from './persona.entity';
+import { PersonaRepository } from './persona.repository';
 
 @Injectable()
 export class PersonaService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly personaRepository: PersonaRepository) {}
 
-  async findAll(query: PaginationQueryDto, tipo?: string) {
+  async list(query: PaginationQueryDto, type?: string) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
-    const search = query.search?.trim();
-    const where: any = { estado: true };
-    if (tipo) where.tipoPersona = tipo;
-    if (search) {
-      where.OR = [
-        { nombre: { contains: search, mode: 'insensitive' } },
-        { apellido: { contains: search, mode: 'insensitive' } },
-        { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+    const search = query.search?.trim() || query.busqueda?.trim();
+    const resolvedType = type || query.type || query.tipo;
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.persona.findMany({
-        where,
-        include: { propietarios: true, responsables: true },
-        orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.persona.count({ where }),
-    ]);
+    const { items, total } = await this.personaRepository.listPaginated(search, resolvedType, skip, limit);
 
     return {
       items,
@@ -38,40 +21,32 @@ export class PersonaService {
     };
   }
 
-  async findOne(id: number) {
-    const persona = await this.prisma.persona.findUnique({
-      where: { id },
-      include: { propietarios: { include: { bovedas: true } }, responsables: { include: { contratoResponsables: true, propietario: true } } },
-    });
-    if (!persona) throw new NotFoundException('Persona no encontrada');
-    return persona;
+  async search(term: string) {
+    return this.personaRepository.search(term);
   }
 
-  async create(data: any) {
-    return this.prisma.persona.create({ data });
+  async getById(id: number) {
+    const person = await this.personaRepository.findById(id);
+    if (!person || person.estado === false) {
+      throw new NotFoundException('Person not found');
+    }
+
+    return person;
+  }
+
+  async create(data: Persona) {
+    const person = Persona.create(data);
+    return this.personaRepository.create(person);
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    return this.prisma.persona.update({ where: { id }, data });
+    await this.getById(id);
+    const person = Persona.create(data);
+    return this.personaRepository.update(id, person);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.persona.update({ where: { id }, data: { estado: false } });
-  }
-
-  async search(termino: string) {
-    return this.prisma.persona.findMany({
-      where: {
-        estado: true,
-        OR: [
-          { nombre: { contains: termino, mode: 'insensitive' } },
-          { apellido: { contains: termino, mode: 'insensitive' } },
-          { numeroIdentificacion: { contains: termino, mode: 'insensitive' } },
-        ]
-      },
-      take: 20
-    });
+    await this.getById(id);
+    return this.personaRepository.update(id, Persona.create({ estado: false }));
   }
 }

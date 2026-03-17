@@ -1,29 +1,30 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { CreateRoleDto, UpdateRoleDto } from './role.dto';
 import { RolService } from './rol.service';
 
 @ApiTags('roles')
 @Controller('roles')
 export class RolController {
-  constructor(private service: RolService) {}
+  constructor(private readonly service: RolService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  list() {
+    return this.service.list();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  getById(@Param('id') id: string) {
+    return this.service.getById(id);
   }
 
   @Post()
-  create(@Body() data: any) {
+  create(@Body() data: CreateRoleDto) {
     return this.service.create(data);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: any) {
+  update(@Param('id') id: string, @Body() data: UpdateRoleDto) {
     return this.service.update(id, data);
   }
 

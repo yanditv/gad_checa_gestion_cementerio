@@ -150,9 +150,9 @@ export default function CreateContratoPage() {
       setLoading(true);
       try {
         const [createMetadata, personasResult, numeroPreview] = await Promise.all([
-          contratosApi.getCreateMetadata(),
+          contratosApi.obtenerMetadatosCreacion(),
           personasApi.findPage({ page: 1, limit: 100, search: '' }),
-          contratosApi.getNumeroSecuencial(),
+          contratosApi.obtenerNumeroSecuencial(),
         ]);
 
         setMetadata(createMetadata);
@@ -184,7 +184,7 @@ export default function CreateContratoPage() {
 
     async function loadBovedasDisponibles() {
       try {
-        const result = await contratosApi.getBovedasDisponibles({
+        const result = await contratosApi.obtenerBovedasDisponibles({
           page: bovedasPage,
           limit: 10,
           search: bovedaSearch,
@@ -253,7 +253,7 @@ export default function CreateContratoPage() {
 
   async function selectBoveda(boveda: any) {
     try {
-      const preview = await contratosApi.getNumeroSecuencial(boveda.id, false);
+      const preview = await contratosApi.obtenerNumeroSecuencial(boveda.id, false);
       setForm((prev) => ({
         ...prev,
         contrato: {

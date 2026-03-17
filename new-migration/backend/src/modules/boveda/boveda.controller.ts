@@ -1,27 +1,26 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BovedaService } from './boveda.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
-@ApiTags('bovedas')
-@Controller('bovedas')
+@ApiTags('vaults')
+@Controller('vaults')
 export class BovedaController {
-  constructor(private service: BovedaService) {}
+  constructor(private readonly service: BovedaService) {}
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.service.findAll(query);
+  list(@Query() query: any) {
+    return this.service.list(query);
   }
 
-  @Get('bloque/:bloqueId')
-  findByBloque(@Param('bloqueId') bloqueId: string) {
-    return this.service.findByBloque(+bloqueId);
+  @Get('block/:blockId')
+  listByBlock(@Param('blockId') blockId: string) {
+    return this.service.listByBlock(Number(blockId));
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  getById(@Param('id') id: string) {
+    return this.service.getById(Number(id));
   }
 
   @Post()
@@ -35,13 +34,13 @@ export class BovedaController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+    return this.service.update(Number(id), data);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+    return this.service.remove(Number(id));
   }
 }

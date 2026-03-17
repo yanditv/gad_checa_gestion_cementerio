@@ -1,70 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import { Contrato } from './contrato.entity';
+import { ContratoRepository } from './repositories/contrato.repository';
 
 @Injectable()
 export class ContratoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly contratoRepository: ContratoRepository) {}
 
-  async getCreateMetadata() {
-    const [descuentos, bancos] = await this.prisma.$transaction([
-      this.prisma.descuento.findMany({
-        where: { estado: true },
-        orderBy: { porcentaje: 'desc' },
-      }),
-      this.prisma.banco.findMany({
-        where: { estado: true },
-        orderBy: { nombre: 'asc' },
-      }),
-    ]);
+  async getCreationMetadata() {
+    const [discounts, banks] = await this.contratoRepository.getCreationMetadata();
 
     return {
-      descuentos,
-      bancos,
-      tiposPago: ['Efectivo', 'Transferencia', 'Banco'],
-      numeroDeMesesDefault: 5,
+      discounts,
+      banks,
+      paymentTypes: ['Cash', 'Transfer', 'Bank'],
+      defaultMonthCount: 5,
     };
   }
 
-  async getBovedasDisponibles(query: PaginationQueryDto, tipo?: string) {
+  async getAvailableVaults(query: PaginationQueryDto, type?: string) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
-    const search = query.search?.trim();
-    const today = new Date();
+    const search = query.search?.trim() || query.busqueda?.trim();
+    const currentDate = new Date();
 
-    const where: any = {
-      estado: true,
-      contratos: {
-        none: {
-          estado: true,
-          OR: [{ fechaFin: null }, { fechaFin: { gte: today } }],
-        },
-      },
-      ...(tipo ? { tipo: { equals: tipo, mode: 'insensitive' } } : {}),
-      ...(search
-        ? {
-            OR: [
-              { numero: { contains: search, mode: 'insensitive' } },
-              { tipo: { contains: search, mode: 'insensitive' } },
-              { bloque: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
-    };
-
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.boveda.findMany({
-        where,
-        include: {
-          bloque: { include: { cementerio: true } },
-          piso: true,
-          propietario: { include: { persona: true } },
-        },
-        orderBy: [{ numero: 'asc' }],
-        skip,
-        take: limit,
-      }),
-      this.prisma.boveda.count({ where }),
+    const [items, total] = await Promise.all([
+      this.contratoRepository.findAvailableVaults(search, type, currentDate, skip, limit),
+      this.contratoRepository.countAvailableVaults(search, type, currentDate),
     ]);
 
     return {
@@ -73,51 +35,26 @@ export class ContratoService {
     };
   }
 
-  async getNumeroSecuencialPreview(bovedaId?: number, isRenovacion = false) {
-    const numeroSecuencial = await this.generateNumeroContrato(bovedaId, isRenovacion);
-    const boveda = bovedaId
-      ? await this.prisma.boveda.findUnique({ where: { id: Number(bovedaId) } })
+  async getContractNumberPreview(vaultId?: number, isRenewal = false) {
+    const contractNumber = await this.generateContractNumber(vaultId, isRenewal);
+    const vault = vaultId
+      ? await this.contratoRepository.findVaultById(Number(vaultId))
       : null;
 
     return {
-      numeroSecuencial,
-      montoTotal: boveda ? Number(boveda.precioArrendamiento) : 0,
-      boveda,
+      sequentialNumber: contractNumber,
+      totalAmount: vault ? Number(vault.precioArrendamiento) : 0,
+      vault,
     };
   }
 
-  async findAll(query: PaginationQueryDto) {
+  async list(query: PaginationQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
-    const search = query.search?.trim();
+    const search = query.search?.trim() || query.busqueda?.trim();
 
-    const where: any = {
-      estado: true,
-      ...(search
-        ? {
-            OR: [
-              { numeroSecuencial: { contains: search, mode: 'insensitive' } },
-              { difunto: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
-              { difunto: { is: { apellido: { contains: search, mode: 'insensitive' } } } },
-              { boveda: { is: { numero: { contains: search, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
-    };
-
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.contrato.findMany({
-        where,
-        include: {
-          boveda: { include: { bloque: { include: { cementerio: true } } } },
-          difunto: true,
-          responsables: { include: { responsable: { include: { persona: true } } } },
-          cuotas: { where: { estado: true } },
-        },
-        orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.contrato.count({ where }),
+    const [items, total] = await Promise.all([
+      this.contratoRepository.findMany(search, skip, limit),
+      this.contratoRepository.count(search),
     ]);
 
     return {
@@ -126,101 +63,87 @@ export class ContratoService {
     };
   }
 
-  async findOne(id: number) {
-    const contrato = await this.prisma.contrato.findUnique({
-      where: { id },
-      include: { 
-        boveda: { include: { bloque: { include: { cementerio: true } }, piso: true } },
-        difunto: true,
-        responsables: { include: { responsable: { include: { persona: true, propietario: true } } } },
-        cuotas: { include: { pagos: { include: { pago: true } } }, orderBy: { numero: 'asc' } },
-        contratoOrigen: true,
-        contratoRelacionado: true,
-      },
-    });
-    if (!contrato) throw new NotFoundException('Contrato no encontrado');
-    return contrato;
+  async getById(id: number) {
+    const contract = await this.contratoRepository.findById(id);
+    if (!contract) throw new NotFoundException('Contract not found');
+    return contract;
   }
 
   async create(data: any) {
-    if (data?.contrato && data?.difunto && data?.responsables && data?.pago) {
-      return this.createWizard(data);
+    if (data?.contract && data?.deceased && data?.responsibles && data?.payment) {
+      return this.createFromWizard(data);
     }
 
-    const numeroSecuencial = await this.generateNumeroContrato(data.bovedaId, false);
+    if (data?.contrato && data?.difunto && data?.responsables && data?.pago) {
+      return this.createFromWizard(data);
+    }
 
-    const { responsablesIds, ...contratoData } = data;
+    const contractNumber = await this.generateContractNumber(data.vaultId ?? data.bovedaId, false);
 
-    const contrato = await this.prisma.contrato.create({
-      data: {
-        ...contratoData,
-        numeroSecuencial,
-        responsables: responsablesIds
-          ? {
-              create: responsablesIds.map((id: number) => ({ responsableId: id })),
-            }
-          : undefined,
-      },
-      include: {
-        responsables: { include: { responsable: { include: { persona: true } } } },
-      },
+    const responsibleIds = data.responsibleIds ?? data.responsablesIds;
+    const contractData = { ...data };
+    delete contractData.responsibleIds;
+    delete contractData.responsablesIds;
+
+    const contract = Contrato.create({
+      ...contractData,
+      sequentialNumber: contractNumber,
     });
 
-    return contrato;
+    const createdContract = await this.contratoRepository.create(contract, responsibleIds);
+
+    return createdContract;
   }
 
-  private async generateNumeroContrato(bovedaId?: number, isRenovacion = false): Promise<string> {
-    const year = new Date().getFullYear();
-    const boveda = bovedaId
-      ? await this.prisma.boveda.findUnique({
-          where: { id: Number(bovedaId) },
-          include: { piso: { include: { bloque: true } } },
-        })
+  private async generateContractNumber(vaultId?: number, isRenewal = false): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const vault = vaultId
+      ? await this.contratoRepository.findVaultForContractNumber(Number(vaultId))
       : null;
 
-    const tipo = (boveda?.tipo || boveda?.piso?.bloque?.nombre || 'Boveda').toLowerCase();
-    const basePrefix = tipo.includes('nicho') ? 'NCH' : tipo.includes('tumulo') || tipo.includes('tumul') ? 'TML' : 'CTR';
-    const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
+    const vaultType = (vault?.tipo || vault?.piso?.bloque?.nombre || 'Boveda').toLowerCase();
+    const basePrefix = vaultType.includes('nicho') ? 'NCH' : vaultType.includes('tumulo') || vaultType.includes('tumul') ? 'TML' : 'CTR';
+    const prefix = isRenewal ? `RNV-${basePrefix}` : basePrefix;
 
-    const lastContrato = await this.prisma.contrato.findFirst({
-      where: {
-        numeroSecuencial: { startsWith: `${prefix}-GADCHECA-${year}-` },
-      },
-      orderBy: { id: 'desc' },
-      select: { numeroSecuencial: true },
-    });
+    const lastContract = await this.contratoRepository.findLastContractByPrefix(
+      `${prefix}-GADCHECA-${currentYear}-`,
+    );
 
-    const nextNumber = lastContrato ? Number(lastContrato.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
-    return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
+    const nextNumber = lastContract ? Number(lastContract.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
+    return `${prefix}-GADCHECA-${currentYear}-${String(nextNumber).padStart(3, '0')}`;
   }
 
-  private async createWizard(payload: any) {
-    const { contrato, difunto, responsables, pago } = payload;
-    const numeroSecuencial =
-      contrato.numeroSecuencial || (await this.generateNumeroContrato(contrato.bovedaId, !!contrato.esRenovacion));
+  private async createFromWizard(payload: any) {
+    const contract = payload.contract ?? payload.contrato;
+    const deceased = payload.deceased ?? payload.difunto;
+    const responsibles = payload.responsibles ?? payload.responsables;
+    const payment = payload.payment ?? payload.pago;
+    const contractNumber =
+      contract.sequentialNumber || contract.numeroSecuencial ||
+      (await this.generateContractNumber(contract.vaultId ?? contract.bovedaId, !!(contract.isRenewal ?? contract.esRenovacion)));
 
-    return this.prisma.$transaction(async (tx) => {
-      const difuntoCreado = await tx.difunto.create({
+    return this.contratoRepository.runInTransaction(async (tx) => {
+      const createdDeceased = await tx.difunto.create({
         data: {
-          nombre: difunto.nombres,
-          apellido: difunto.apellidos,
-          numeroIdentificacion: difunto.numeroIdentificacion || null,
-          fechaNacimiento: difunto.fechaNacimiento ? new Date(difunto.fechaNacimiento) : null,
-          fechaDefuncion: difunto.fechaFallecimiento ? new Date(difunto.fechaFallecimiento) : null,
-          bovedaId: Number(contrato.bovedaId),
+          nombre: deceased.nombres,
+          apellido: deceased.apellidos,
+          numeroIdentificacion: deceased.numeroIdentificacion || null,
+          fechaNacimiento: deceased.fechaNacimiento ? new Date(deceased.fechaNacimiento) : null,
+          fechaDefuncion: deceased.fechaFallecimiento ? new Date(deceased.fechaFallecimiento) : null,
+          bovedaId: Number(contract.vaultId ?? contract.bovedaId),
           estado: true,
         },
       });
 
-      const responsablesIds: number[] = [];
-      for (const item of responsables as any[]) {
+      const responsibleIds: number[] = [];
+      for (const item of responsibles as any[]) {
         if (item.id && item.esExistente) {
-          let responsable = await tx.responsable.findFirst({
+          let responsible = await tx.responsable.findFirst({
             where: { personaId: Number(item.id) },
           });
 
-          if (!responsable) {
-            responsable = await tx.responsable.create({
+          if (!responsible) {
+            responsible = await tx.responsable.create({
               data: {
                 personaId: Number(item.id),
                 parentesco: item.parentesco || null,
@@ -229,7 +152,7 @@ export class ContratoService {
             });
           }
 
-          responsablesIds.push(responsable.id);
+          responsibleIds.push(responsible.id);
           continue;
         }
 
@@ -247,7 +170,7 @@ export class ContratoService {
           },
         });
 
-        const responsable = await tx.responsable.create({
+        const responsible = await tx.responsable.create({
           data: {
             personaId: persona.id,
             parentesco: item.parentesco || null,
@@ -255,89 +178,89 @@ export class ContratoService {
           },
         });
 
-        responsablesIds.push(responsable.id);
+        responsibleIds.push(responsible.id);
       }
 
-      const contratoCreado = await tx.contrato.create({
+      const createdContract = await tx.contrato.create({
         data: {
-          numeroSecuencial,
-          fechaInicio: new Date(contrato.fechaInicio),
-          fechaFin: contrato.fechaFin ? new Date(contrato.fechaFin) : null,
-          numeroDeMeses: Number(contrato.numeroDeMeses),
-          montoTotal: Number(contrato.montoTotal),
-          observaciones: contrato.observaciones || null,
+          numeroSecuencial: contractNumber,
+          fechaInicio: new Date(contract.startDate ?? contract.fechaInicio),
+          fechaFin: contract.endDate ?? contract.fechaFin ? new Date(contract.endDate ?? contract.fechaFin) : null,
+          numeroDeMeses: Number(contract.monthCount ?? contract.numeroDeMeses),
+          montoTotal: Number(contract.totalAmount ?? contract.montoTotal),
+          observaciones: contract.notes ?? contract.observaciones ?? null,
           estado: true,
-          esRenovacion: !!contrato.esRenovacion,
-          contratoOrigenId: contrato.contratoOrigenId || null,
-          contratoRelacionadoId: contrato.contratoRelacionadoId || null,
-          bovedaId: Number(contrato.bovedaId),
-          difuntoId: difuntoCreado.id,
+          esRenovacion: !!(contract.isRenewal ?? contract.esRenovacion),
+          contratoOrigenId: contract.sourceContractId ?? contract.contratoOrigenId ?? null,
+          contratoRelacionadoId: contract.relatedContractId ?? contract.contratoRelacionadoId ?? null,
+          bovedaId: Number(contract.vaultId ?? contract.bovedaId),
+          difuntoId: createdDeceased.id,
           responsables: {
-            create: responsablesIds.map((responsableId) => ({ responsableId })),
+            create: responsibleIds.map((responsableId) => ({ responsableId })),
           },
         },
       });
 
-      const cuotas = (contrato.cuotas || []).map((cuota: any, index: number) => ({
+      const installments = (contract.cuotas || []).map((installment: any, index: number) => ({
         numero: index + 1,
-        monto: Number(cuota.monto),
-        fechaVencimiento: new Date(cuota.fechaVencimiento),
-        pagada: !!cuota.pagada,
-        fechaPago: cuota.pagada ? new Date(pago.fechaPago || new Date()) : null,
-        contratoId: contratoCreado.id,
+        monto: Number(installment.monto),
+        fechaVencimiento: new Date(installment.fechaVencimiento),
+        pagada: !!installment.pagada,
+        fechaPago: installment.pagada ? new Date(payment.fechaPago || new Date()) : null,
+        contratoId: createdContract.id,
         estado: true,
         observaciones: null,
       }));
 
-      if (cuotas.length > 0) {
-        await tx.cuota.createMany({ data: cuotas });
+      if (installments.length > 0) {
+        await tx.cuota.createMany({ data: installments });
       }
 
-      const cuotasCreadas = await tx.cuota.findMany({
-        where: { contratoId: contratoCreado.id },
+      const createdInstallments = await tx.cuota.findMany({
+        where: { contratoId: createdContract.id },
         orderBy: { numero: 'asc' },
       });
 
-      const cuotasSeleccionadas = cuotasCreadas.filter((cuota) =>
-        (pago.cuotasSeleccionadas || []).includes(cuota.numero),
+      const selectedInstallments = createdInstallments.filter((installment) =>
+        (payment.cuotasSeleccionadas || []).includes(installment.numero),
       );
 
-      if (cuotasSeleccionadas.length > 0) {
-        const ultimoPago = await tx.pago.findFirst({ orderBy: { id: 'desc' } });
-        const nuevoNumero = ultimoPago ? ultimoPago.id + 1 : 1;
-        const numeroRecibo = `REC-${new Date().getFullYear()}-${nuevoNumero.toString().padStart(5, '0')}`;
+      if (selectedInstallments.length > 0) {
+        const lastPayment = await tx.pago.findFirst({ orderBy: { id: 'desc' } });
+        const nextReceiptNumber = lastPayment ? lastPayment.id + 1 : 1;
+        const receiptNumber = `REC-${new Date().getFullYear()}-${nextReceiptNumber.toString().padStart(5, '0')}`;
 
-        const pagoCreado = await tx.pago.create({
+        const createdPayment = await tx.pago.create({
           data: {
-            numeroRecibo,
-            monto: Number(pago.monto),
-            fechaPago: new Date(pago.fechaPago || new Date()),
-            metodoPago: pago.tipoPago,
-            referencia: pago.numeroComprobante || null,
-            observacion: pago.observacion || null,
-            bancoId: pago.bancoId || null,
+            numeroRecibo: receiptNumber,
+            monto: Number(payment.monto),
+            fechaPago: new Date(payment.fechaPago || new Date()),
+            metodoPago: payment.tipoPago,
+            referencia: payment.numeroComprobante || null,
+            observacion: payment.observacion || null,
+            bancoId: payment.bancoId || null,
             estado: true,
           },
         });
 
         await tx.cuotaPago.createMany({
-          data: cuotasSeleccionadas.map((cuota) => ({
+          data: selectedInstallments.map((cuota) => ({
             cuotaId: cuota.id,
-            pagoId: pagoCreado.id,
+            pagoId: createdPayment.id,
           })),
         });
 
         await tx.cuota.updateMany({
-          where: { id: { in: cuotasSeleccionadas.map((cuota) => cuota.id) } },
+          where: { id: { in: selectedInstallments.map((cuota) => cuota.id) } },
           data: {
             pagada: true,
-            fechaPago: new Date(pago.fechaPago || new Date()),
+            fechaPago: new Date(payment.fechaPago || new Date()),
           },
         });
       }
 
       return tx.contrato.findUnique({
-        where: { id: contratoCreado.id },
+        where: { id: createdContract.id },
         include: {
           boveda: { include: { bloque: true, piso: true } },
           difunto: true,
@@ -349,47 +272,37 @@ export class ContratoService {
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    const { responsablesIds, ...contratoData } = data;
+    await this.getById(id);
+    const responsibleIds = data.responsibleIds ?? data.responsablesIds;
+    const contractData = { ...data };
+    delete contractData.responsibleIds;
+    delete contractData.responsablesIds;
+    const contract = Contrato.create(contractData);
 
-    if (responsablesIds) {
-      await this.prisma.contratoResponsable.deleteMany({ where: { contratoId: id } });
-      await this.prisma.contratoResponsable.createMany({
-        data: responsablesIds.map((responsableId: number) => ({ contratoId: id, responsableId }))
-      });
+    if (responsibleIds) {
+      await this.contratoRepository.replaceResponsibleAssignments(id, responsibleIds);
     }
 
-    return this.prisma.contrato.update({ 
-      where: { id }, 
-      data: contratoData,
-      include: { responsables: { include: { responsable: { include: { persona: true } } } } }
-    });
+    return this.contratoRepository.update(id, contract);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.contrato.update({ where: { id }, data: { estado: false } });
+    await this.getById(id);
+    return this.contratoRepository.update(id, Contrato.create({ estado: false }));
   }
 
-  async getReportes() {
-    const contratos = await this.prisma.contrato.findMany({
-      where: { estado: true },
-      include: { 
-        boveda: { include: { bloque: { include: { cementerio: true } } } },
-        difunto: true,
-        cuotas: { include: { pagos: true } }
-      }
-    });
+  async getReports() {
+    const contracts = await this.contratoRepository.findReports();
 
     return {
-      totalContratos: contratos.length,
-      contratosActivos: contratos.filter(c => c.fechaFin && new Date(c.fechaFin) > new Date()).length,
-      contratosVencidos: contratos.filter(c => c.fechaFin && new Date(c.fechaFin) <= new Date()).length,
-      ingresosTotales: contratos.reduce((sum, c) => {
-        const pagado = c.cuotas.reduce((s, cu) => s + (cu.pagada ? Number(cu.monto) : 0), 0);
-        return sum + pagado;
+      totalContracts: contracts.length,
+      activeContracts: contracts.filter((contract) => contract.fechaFin && new Date(contract.fechaFin) > new Date()).length,
+      expiredContracts: contracts.filter((contract) => contract.fechaFin && new Date(contract.fechaFin) <= new Date()).length,
+      totalRevenue: contracts.reduce((sum, contract) => {
+        const paidAmount = contract.cuotas.reduce((installmentSum, installment) => installmentSum + (installment.pagada ? Number(installment.monto) : 0), 0);
+        return sum + paidAmount;
       }, 0),
-      contratos
+      contracts,
     };
   }
 }

@@ -8,6 +8,7 @@ import { SearchFilters } from '@/components/ui/SearchFilters';
 import { TextInput } from '@/components/ui/TextInput';
 import { Button } from '@/components/ui/Button';
 import { PaginationMeta } from '@/lib/api';
+import { listBloquesAction } from '@/app/actions/entity-actions';
 
 interface Bloque {
   id: number;
@@ -31,18 +32,13 @@ export default function BloquesPage() {
   const loadBloques = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '15',
+      const result = await listBloquesAction({
+        page,
+        limit: 15,
+        search: search.trim() || undefined,
       });
-      if (search.trim()) params.set('search', search.trim());
-
-      const response = await fetch(`/api/bloques?${params.toString()}`);
-      if (response.ok) {
-        const payload = await response.json();
-        setBloques(payload.data || []);
-        setMeta(payload.meta);
-      }
+      setBloques(result.data || []);
+      setMeta(result.meta);
     } catch (error) {
       console.log('Error loading bloques');
     } finally {

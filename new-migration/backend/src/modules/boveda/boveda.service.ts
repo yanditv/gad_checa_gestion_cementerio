@@ -1,39 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import { Boveda } from './boveda.entity';
+import { BovedaRepository } from './boveda.repository';
 
 @Injectable()
 export class BovedaService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly bovedaRepository: BovedaRepository) {}
 
-  async findAll(query: PaginationQueryDto) {
+  async list(query: PaginationQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
-    const search = query.search?.trim();
+    const search = query.search?.trim() || query.busqueda?.trim();
 
-    const where: any = {
-      estado: true,
-      ...(search
-        ? {
-            OR: [
-              { numero: { contains: search, mode: 'insensitive' } },
-              { tipo: { contains: search, mode: 'insensitive' } },
-              { bloque: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
-    };
-
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.boveda.findMany({
-        where,
-        include: { bloque: { include: { cementerio: true } }, piso: true, propietario: { include: { persona: true } } },
-        orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.boveda.count({ where }),
-    ]);
+    const { items, total } = await this.bovedaRepository.listPaginated(search, skip, limit);
 
     return {
       items,
@@ -41,39 +20,32 @@ export class BovedaService {
     };
   }
 
-  async findByBloque(bloqueId: number) {
-    return this.prisma.boveda.findMany({
-      where: { bloqueId, estado: true },
-      include: { piso: true },
-    });
+  async listByBlock(blockId: number) {
+    return this.bovedaRepository.listByBlock(blockId);
   }
 
-  async findOne(id: number) {
-    const boveda = await this.prisma.boveda.findUnique({
-      where: { id },
-      include: { 
-        bloque: { include: { cementerio: true } }, 
-        piso: true, 
-        propietario: { include: { persona: true } },
-        difuntos: { where: { estado: true } },
-        contratos: { where: { estado: true }, include: { difunto: true, responsables: { include: { responsable: { include: { persona: true } } } } } }
-      },
-    });
-    if (!boveda) throw new NotFoundException('Bóveda no encontrada');
-    return boveda;
+  async getById(id: number) {
+    const vault = await this.bovedaRepository.findById(id);
+    if (!vault || vault.estado === false) {
+      throw new NotFoundException('Vault not found');
+    }
+
+    return vault;
   }
 
   async create(data: any) {
-    return this.prisma.boveda.create({ data });
+    const vault = Boveda.create(data);
+    return this.bovedaRepository.create(vault);
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data });
+    await this.getById(id);
+    const vault = Boveda.create(data);
+    return this.bovedaRepository.update(id, vault);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data: { estado: false } });
+    await this.getById(id);
+    return this.bovedaRepository.update(id, Boveda.create({ estado: false }));
   }
 }

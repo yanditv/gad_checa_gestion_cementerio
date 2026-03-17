@@ -1,4 +1,4 @@
-import { API_URL, unwrapApiResponse } from '@/app/api/_utils';
+import { API_URL, unwrapApiResponse } from '@/lib/backend';
 
 export async function getContratoById(id: string | number) {
   const response = await fetch(`${API_URL}/contratos/${id}`, {

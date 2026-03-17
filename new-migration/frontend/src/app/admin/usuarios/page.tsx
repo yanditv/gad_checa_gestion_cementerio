@@ -26,12 +26,12 @@ export default function AdminUsuariosPage() {
   }, []);
 
   const toggleEstado = async (id: string, estado: boolean) => {
-    await usuariosApi.updateEstado(id, !estado);
+    await usuariosApi.actualizarEstado(id, !estado);
     await loadData();
   };
 
   const updateRoles = async (id: string, selected: string[]) => {
-    await usuariosApi.setRoles(id, selected);
+    await usuariosApi.asignarRoles(id, selected);
     await loadData();
   };
 

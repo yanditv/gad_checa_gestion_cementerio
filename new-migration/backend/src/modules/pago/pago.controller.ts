@@ -1,21 +1,21 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PagoService } from './pago.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@ApiTags('pagos')
-@Controller('pagos')
+@ApiTags('payments')
+@Controller('payments')
 export class PagoController {
-  constructor(private service: PagoService) {}
+  constructor(private readonly service: PagoService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  list() {
+    return this.service.list();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  getById(@Param('id') id: string) {
+    return this.service.getById(Number(id));
   }
 
   @Post()
@@ -29,13 +29,13 @@ export class PagoController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+    return this.service.update(Number(id), data);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+    return this.service.remove(Number(id));
   }
 }

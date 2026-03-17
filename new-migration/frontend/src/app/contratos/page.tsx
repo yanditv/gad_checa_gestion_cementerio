@@ -9,6 +9,7 @@ import { TextInput } from '@/components/ui/TextInput';
 import { SearchFilters } from '@/components/ui/SearchFilters';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PaginationMeta } from '@/lib/api';
+import { listContratosAction } from '@/app/actions/entity-actions';
 
 interface Contrato {
   id: number;
@@ -43,18 +44,13 @@ export default function ContratosPage() {
   const loadContratos = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '15',
+      const result = await listContratosAction({
+        page,
+        limit: 15,
+        search: searchTerm.trim() || undefined,
       });
-      if (searchTerm.trim()) params.set('search', searchTerm.trim());
-
-      const response = await fetch(`/api/contratos?${params.toString()}`);
-      if (response.ok) {
-        const payload = await response.json();
-        setContratos(payload.data || []);
-        setMeta(payload.meta);
-      }
+      setContratos(result.data || []);
+      setMeta(result.meta);
     } catch (error) {
       console.log('Error loading contratos');
     } finally {

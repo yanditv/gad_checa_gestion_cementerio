@@ -1,37 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { ServicioCrudSuave } from '../../common/services/soft-delete-crud.service';
+import { CementerioRepository } from './cementerio.repository';
 
 @Injectable()
-export class CementerioService {
-  constructor(private prisma: PrismaService) {}
-
-  async findAll() {
-    return this.prisma.cementerio.findMany({
-      where: { estado: true },
-      include: { bloques: { where: { estado: true } } },
-    });
+export class CementerioService extends ServicioCrudSuave<
+  Prisma.CementerioGetPayload<{
+    include: {
+      bloques: {
+        include: {
+          bovedas: true;
+        };
+      };
+    };
+  }>,
+  number,
+  Prisma.CementerioUncheckedCreateInput,
+  Prisma.CementerioUncheckedUpdateInput
+> {
+  constructor(private readonly cementerioRepository: CementerioRepository) {
+    super('Cementerio');
   }
 
-  async findOne(id: number) {
-    const cementerio = await this.prisma.cementerio.findUnique({
-      where: { id },
-      include: { bloques: { where: { estado: true }, include: { bovedas: true } } },
-    });
-    if (!cementerio) throw new NotFoundException('Cementerio no encontrado');
-    return cementerio;
+  protected get repositorio() {
+    return this.cementerioRepository;
+  }
+
+  protected override relacionesDetalle() {
+    return {
+      bloques: { where: { estado: true }, include: { bovedas: true } },
+    };
+  }
+
+  async list() {
+    return this.cementerioRepository.findActive();
+  }
+
+  async getById(id: number) {
+    return this.obtenerPorId(id);
   }
 
   async create(data: any) {
-    return this.prisma.cementerio.create({ data });
+    return this.crear(data);
   }
 
   async update(id: number, data: any) {
-    await this.findOne(id);
-    return this.prisma.cementerio.update({ where: { id }, data });
+    return this.actualizar(id, data);
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.cementerio.update({ where: { id }, data: { estado: false } });
+    return this.eliminar(id);
   }
 }
