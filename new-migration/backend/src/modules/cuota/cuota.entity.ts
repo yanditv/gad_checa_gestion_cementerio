@@ -1,10 +1,10 @@
 export class Cuota {
-  id?: number;
-  numero?: number;
-  monto?: number;
-  pagada?: boolean;
-  estado?: boolean;
-  contratoId?: number;
+  id?: string;
+  number?: number;
+  amount?: number;
+  paidAt?: Date | null;
+  isActive?: boolean;
+  contractId?: string;
 
   constructor(data?: Partial<Cuota>) {
     if (data) {

@@ -9,11 +9,11 @@ export class RolRepository {
   findMany() {
     return this.role.findMany({
       include: {
-        usuarios: {
-          include: { usuario: true },
+        users: {
+          include: { user: true },
         },
       },
-      orderBy: { nombre: 'asc' },
+      orderBy: { name: 'asc' },
     });
   }
 
@@ -21,8 +21,8 @@ export class RolRepository {
     return this.role.findUnique({
       where: { id },
       include: {
-        usuarios: {
-          include: { usuario: true },
+        users: {
+          include: { user: true },
         },
       },
     });
@@ -30,22 +30,22 @@ export class RolRepository {
 
   findByNormalizedName(normalizedName: string) {
     return this.role.findUnique({
-      where: { nombreNormalizado: normalizedName },
+      where: { normalizedName },
     });
   }
 
   findAnotherByNormalizedName(normalizedName: string, id: string) {
     return this.role.findFirst({
-      where: { nombreNormalizado: normalizedName, id: { not: id } },
+      where: { normalizedName, id: { not: id } },
     });
   }
 
   create(data: Role) {
     return this.role.create({
       data: {
-        nombre: data.name,
-        nombreNormalizado: data.normalizedName,
-        permisos: data.permissions || null,
+        name: data.name,
+        normalizedName: data.normalizedName,
+        permissions: data.permissions || null,
       },
     });
   }
@@ -54,13 +54,13 @@ export class RolRepository {
     return this.role.update({
       where: { id },
       data: {
-        ...(data.name !== undefined ? { nombre: data.name } : {}),
-        ...(data.normalizedName !== undefined ? { nombreNormalizado: data.normalizedName } : {}),
-        ...(data.permissions !== undefined ? { permisos: data.permissions } : {}),
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.normalizedName !== undefined ? { normalizedName: data.normalizedName } : {}),
+        ...(data.permissions !== undefined ? { permissions: data.permissions } : {}),
       },
       include: {
-        usuarios: {
-          include: { usuario: true },
+        users: {
+          include: { user: true },
         },
       },
     });
@@ -68,7 +68,7 @@ export class RolRepository {
 
   deleteUserRolesByRoleId(roleId: string) {
     return this.userRole.deleteMany({
-      where: { rolId: roleId },
+      where: { roleId },
     });
   }
 
@@ -79,10 +79,10 @@ export class RolRepository {
   }
 
   private get role() {
-    return this.prisma.rol;
+    return this.prisma.role;
   }
 
   private get userRole() {
-    return this.prisma.usuarioRol;
+    return this.prisma.userRole;
   }
 }

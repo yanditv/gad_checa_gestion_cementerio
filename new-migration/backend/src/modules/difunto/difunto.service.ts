@@ -20,13 +20,13 @@ export class DifuntoService {
     };
   }
 
-  async listByVault(vaultId: number) {
+  async listByVault(vaultId: string) {
     return this.difuntoRepository.listByVault(vaultId);
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     const deceased = await this.difuntoRepository.findById(id);
-    if (!deceased || deceased.estado === false) {
+    if (!deceased || deceased.isActive === false) {
       throw new NotFoundException('Deceased record not found');
     }
 
@@ -38,14 +38,14 @@ export class DifuntoService {
     return this.difuntoRepository.create(deceased);
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     await this.getById(id);
     const deceased = Difunto.create(data);
     return this.difuntoRepository.update(id, deceased);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.getById(id);
-    return this.difuntoRepository.update(id, Difunto.create({ estado: false }));
+    return this.difuntoRepository.update(id, Difunto.create({ isActive: false }));
   }
 }

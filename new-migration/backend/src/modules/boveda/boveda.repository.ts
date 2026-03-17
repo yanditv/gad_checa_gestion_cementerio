@@ -6,19 +6,19 @@ import { Boveda } from './boveda.entity';
 export class BovedaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: number) {
-    return this.boveda.findUnique({
+  findById(id: string) {
+    return this.vault.findUnique({
       where: { id },
       include: {
-        bloque: { include: { cementerio: true } },
-        piso: true,
-        propietario: { include: { persona: true } },
-        difuntos: { where: { estado: true } },
-        contratos: {
-          where: { estado: true },
+        block: { include: { cemetery: true } },
+        floor: true,
+        owner: { include: { person: true } },
+        deceased: { where: { isActive: true } },
+        contracts: {
+          where: { isActive: true },
           include: {
-            difunto: true,
-            responsables: { include: { responsable: { include: { persona: true } } } },
+            deceased: true,
+            assignments: { include: { responsibleParty: { include: { person: true } } } },
           },
         },
       },
@@ -26,49 +26,49 @@ export class BovedaRepository {
   }
 
   create(data: Boveda) {
-    return this.boveda.create({ data });
+    return this.vault.create({ data });
   }
 
-  update(id: number, data: Partial<Boveda>) {
-    return this.boveda.update({ where: { id }, data });
+  update(id: string, data: Partial<Boveda>) {
+    return this.vault.update({ where: { id }, data });
   }
 
   async listPaginated(search: string | undefined, skip: number, take: number) {
     const where = {
-      estado: true,
+      isActive: true,
       ...(search
         ? {
             OR: [
-              { numero: { contains: search, mode: 'insensitive' } },
-              { tipo: { contains: search, mode: 'insensitive' } },
-              { bloque: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
+              { number: { contains: search, mode: 'insensitive' } },
+              { type: { contains: search, mode: 'insensitive' } },
+              { block: { is: { name: { contains: search, mode: 'insensitive' } } } },
             ],
           }
         : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
-      this.boveda.findMany({
+      this.vault.findMany({
         where,
-        include: { bloque: { include: { cementerio: true } }, piso: true, propietario: { include: { persona: true } } },
-        orderBy: { fechaCreacion: 'desc' },
+        include: { block: { include: { cemetery: true } }, floor: true, owner: { include: { person: true } } },
+        orderBy: { createdAt: 'desc' },
         skip,
         take,
       }),
-      this.boveda.count({ where }),
+      this.vault.count({ where }),
     ]);
 
     return { items, total };
   }
 
-  listByBlock(blockId: number) {
-    return this.boveda.findMany({
-      where: { bloqueId: blockId, estado: true },
-      include: { piso: true },
+  listByBlock(blockId: string) {
+    return this.vault.findMany({
+      where: { blockId, isActive: true },
+      include: { floor: true },
     });
   }
 
-  private get boveda() {
-    return this.prisma.boveda;
+  private get vault() {
+    return this.prisma.vault;
   }
 }

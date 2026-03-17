@@ -20,13 +20,13 @@ export class BovedaService {
     };
   }
 
-  async listByBlock(blockId: number) {
+  async listByBlock(blockId: string) {
     return this.bovedaRepository.listByBlock(blockId);
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     const vault = await this.bovedaRepository.findById(id);
-    if (!vault || vault.estado === false) {
+    if (!vault || vault.isActive === false) {
       throw new NotFoundException('Vault not found');
     }
 
@@ -38,14 +38,14 @@ export class BovedaService {
     return this.bovedaRepository.create(vault);
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     await this.getById(id);
     const vault = Boveda.create(data);
     return this.bovedaRepository.update(id, vault);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.getById(id);
-    return this.bovedaRepository.update(id, Boveda.create({ estado: false }));
+    return this.bovedaRepository.update(id, Boveda.create({ isActive: false }));
   }
 }

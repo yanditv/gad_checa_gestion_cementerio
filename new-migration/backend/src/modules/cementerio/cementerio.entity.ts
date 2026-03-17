@@ -1,10 +1,11 @@
 export class Cementerio {
-  nombre?: string;
-  direccion?: string;
-  telefono?: string;
+  id?: string;
+  name?: string;
+  address?: string;
+  phone?: string;
   email?: string;
-  ruc?: string;
-  estado?: boolean;
+  taxId?: string;
+  isActive?: boolean;
 
   constructor(data?: Partial<Cementerio>) {
     if (data) {

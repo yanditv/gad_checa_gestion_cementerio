@@ -1,9 +1,9 @@
 export class Bloque {
-  id?: number;
-  nombre?: string;
-  descripcion?: string;
-  estado?: boolean;
-  cementerioId?: number;
+  id?: string;
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+  cemeteryId?: string;
 
   constructor(data?: Partial<Bloque>) {
     if (data) {

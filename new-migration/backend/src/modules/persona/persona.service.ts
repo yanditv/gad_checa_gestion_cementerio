@@ -25,9 +25,9 @@ export class PersonaService {
     return this.personaRepository.search(term);
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     const person = await this.personaRepository.findById(id);
-    if (!person || person.estado === false) {
+    if (!person || person.isActive === false) {
       throw new NotFoundException('Person not found');
     }
 
@@ -39,14 +39,14 @@ export class PersonaService {
     return this.personaRepository.create(person);
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     await this.getById(id);
     const person = Persona.create(data);
     return this.personaRepository.update(id, person);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.getById(id);
-    return this.personaRepository.update(id, Persona.create({ estado: false }));
+    return this.personaRepository.update(id, Persona.create({ isActive: false }));
   }
 }

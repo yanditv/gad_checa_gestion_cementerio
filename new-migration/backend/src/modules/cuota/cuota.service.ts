@@ -5,24 +5,24 @@ import { CuotaRepository } from './cuota.repository';
 
 @Injectable()
 export class CuotaService extends ServicioCrudSuave<
-  Prisma.CuotaGetPayload<{
+  Prisma.InstallmentGetPayload<{
     include: {
-      contrato: {
+      contract: {
         include: {
-          difunto: true;
-          boveda: true;
+          deceased: true;
+          vault: true;
         };
       };
-      pagos: {
+      installmentPayments: {
         include: {
-          pago: true;
+          payment: true;
         };
       };
     };
   }>,
   number,
-  Prisma.CuotaUncheckedCreateInput,
-  Prisma.CuotaUncheckedUpdateInput
+  Prisma.InstallmentUncheckedCreateInput,
+  Prisma.InstallmentUncheckedUpdateInput
 > {
   constructor(private readonly cuotaRepository: CuotaRepository) {
     super('Cuota');
@@ -34,8 +34,8 @@ export class CuotaService extends ServicioCrudSuave<
 
   protected override relacionesDetalle() {
     return {
-      contrato: { include: { difunto: true, boveda: true } },
-      pagos: { include: { pago: true } },
+      contract: { include: { deceased: true, vault: true } },
+      installmentPayments: { include: { payment: true } },
     };
   }
 
@@ -43,7 +43,7 @@ export class CuotaService extends ServicioCrudSuave<
     return this.cuotaRepository.findActive();
   }
 
-  async listByContract(contractId: number) {
+  async listByContract(contractId: string) {
     return this.cuotaRepository.findByContract(contractId);
   }
 
@@ -51,7 +51,7 @@ export class CuotaService extends ServicioCrudSuave<
     return this.cuotaRepository.findPending();
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     return this.obtenerPorId(id);
   }
 
@@ -59,11 +59,11 @@ export class CuotaService extends ServicioCrudSuave<
     return this.crear(data);
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     return this.actualizar(id, data);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     return this.eliminar(id);
   }
 }

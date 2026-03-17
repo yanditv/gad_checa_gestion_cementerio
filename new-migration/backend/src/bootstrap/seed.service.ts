@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
 import { AuditService } from '../common/services/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CatastroImportService } from './catastro-import.service';
@@ -25,13 +24,13 @@ export class SeedService {
     const roles = ['Admin', 'Usuario', 'Administrador'];
 
     for (const roleName of roles) {
-      await this.prisma.rol.upsert({
-        where: { nombre: roleName },
+      await this.prisma.role.upsert({
+        where: { name: roleName },
         update: {},
         create: {
-          nombre: roleName,
-          nombreNormalizado: roleName.toUpperCase(),
-          concurrencyStamp: randomUUID(),
+          name: roleName,
+          normalizedName: roleName.toUpperCase(),
+          permissions: null,
         },
       });
     }
@@ -39,41 +38,41 @@ export class SeedService {
     const passwordHash = await bcrypt.hash('Admin123!', 10);
     const adminEmail = 'admin@teobu.com';
 
-    const adminUser = await this.prisma.usuario.upsert({
+    const adminUser = await this.prisma.user.upsert({
       where: { email: adminEmail },
       update: {
-        estado: true,
+        isActive: true,
       },
       create: {
-        numeroIdentificacion: '9999999999',
-        nombre: 'Administrador',
-        apellido: 'Sistema',
+        identificationNumber: '9999999999',
+        firstName: 'Administrador',
+        lastName: 'Sistema',
         email: adminEmail,
         passwordHash,
-        telefono: '',
-        direccion: '',
-        tipoIdentificacion: 'CED',
-        estado: true,
+        phone: '',
+        address: '',
+        identificationType: 'CED',
+        isActive: true,
       },
     });
 
-    const roleAdministrador = await this.prisma.rol.findUnique({
-      where: { nombre: 'Administrador' },
+    const roleAdministrador = await this.prisma.role.findUnique({
+      where: { name: 'Administrador' },
       select: { id: true },
     });
 
     if (roleAdministrador) {
-      await this.prisma.usuarioRol.upsert({
+      await this.prisma.userRole.upsert({
         where: {
-          usuarioId_rolId: {
-            usuarioId: adminUser.id,
-            rolId: roleAdministrador.id,
+          userId_roleId: {
+            userId: adminUser.id,
+            roleId: roleAdministrador.id,
           },
         },
         update: {},
         create: {
-          usuarioId: adminUser.id,
-          rolId: roleAdministrador.id,
+          userId: adminUser.id,
+          roleId: roleAdministrador.id,
         },
       });
     }
@@ -83,65 +82,82 @@ export class SeedService {
   }
 
   private async seedInitialData(adminUserId: string) {
-    await this.prisma.gADInformacion.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        nombre: 'GAD CHECA',
-        direccion: 'Eloy Riera, Parroquia Checa',
-        telefono: '0987654321',
-        email: '',
-        ruc: '',
-        slogan: '',
-      },
+    const existingGovernmentInfo = await this.prisma.governmentInfo.findFirst({
+      where: { name: 'GAD CHECA' },
+      select: { id: true },
     });
 
-    const existingCemetery = await this.prisma.cementerio.findUnique({
-      where: { id: 1 },
+    if (!existingGovernmentInfo) {
+      await this.prisma.governmentInfo.create({
+        data: {
+          name: 'GAD CHECA',
+          address: 'Eloy Riera, Parroquia Checa',
+          phone: '0987654321',
+          email: '',
+          taxId: '',
+          slogan: '',
+        },
+      });
+    }
+
+    const existingCemetery = await this.prisma.cemetery.findFirst({
+      where: { name: 'Cementerio de checa' },
       select: { id: true },
     });
 
     if (!existingCemetery) {
-      const cemetery = await this.prisma.cementerio.create({
+      const cemetery = await this.prisma.cemetery.create({
         data: {
-          nombre: 'Cementerio de checa',
-          direccion: 'Eloy Riera, Parroquia Checa',
-          telefono: '0987654321',
+          name: 'Cementerio de checa',
+          address: 'Eloy Riera, Parroquia Checa',
+          phone: '0987654321',
           email: 'jpcheca0@gmail.com',
-          estado: true,
+          isActive: true,
         },
       });
 
-      await this.auditService.logCreate('Cementerio', cemetery.id, adminUserId, {
-        source: 'seed',
+      await this.auditService.log({
+        action: 'CREATE',
+        entityName: 'Cemetery',
+        entityId: cemetery.id,
+        actorId: adminUserId,
+        details: {
+          source: 'seed',
+        },
       });
     }
 
-    const descuentos = [
-      { nombre: 'Ninguno', porcentaje: 0 },
-      { nombre: '50%', porcentaje: 50 },
-      { nombre: '100%', porcentaje: 100 },
+    const discounts = [
+      { name: 'Ninguno', percentage: 0 },
+      { name: '50%', percentage: 50 },
+      { name: '100%', percentage: 100 },
     ];
 
-    for (const descuento of descuentos) {
-      const exists = await this.prisma.descuento.findFirst({
-        where: { nombre: descuento.nombre },
+    for (const discount of discounts) {
+      const exists = await this.prisma.discount.findFirst({
+        where: { name: discount.name },
         select: { id: true },
       });
 
       if (!exists) {
-        const createdDiscount = await this.prisma.descuento.create({
+        const createdDiscount = await this.prisma.discount.create({
           data: {
-            nombre: descuento.nombre,
-            descripcion: descuento.nombre,
-            porcentaje: descuento.porcentaje,
-            estado: true,
-            fechaInicio: new Date(),
+            name: discount.name,
+            description: discount.name,
+            percentage: discount.percentage,
+            isActive: true,
+            startDate: new Date(),
           },
         });
 
-        await this.auditService.logCreate('Descuento', createdDiscount.id, adminUserId, {
-          source: 'seed',
+        await this.auditService.log({
+          action: 'CREATE',
+          entityName: 'Discount',
+          entityId: createdDiscount.id,
+          actorId: adminUserId,
+          details: {
+            source: 'seed',
+          },
         });
       }
     }

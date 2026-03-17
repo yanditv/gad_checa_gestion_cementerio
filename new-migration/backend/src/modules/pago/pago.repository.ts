@@ -8,18 +8,18 @@ export class PagoRepository {
 
   findMany() {
     return this.payment.findMany({
-      where: { estado: true },
-      include: { banco: true, cuotas: { include: { cuota: { include: { contrato: true } } } } },
-      orderBy: { fechaPago: 'desc' },
+      where: { isActive: true },
+      include: { bank: true, installmentPayments: { include: { installment: { include: { contract: true } } } } },
+      orderBy: { paymentDate: 'desc' },
     });
   }
 
-  findById(id: number) {
+  findById(id: string) {
     return this.payment.findUnique({
       where: { id },
       include: {
-        banco: true,
-        cuotas: { include: { cuota: { include: { contrato: { include: { difunto: true, boveda: true } } } } } },
+        bank: true,
+        installmentPayments: { include: { installment: { include: { contract: { include: { deceased: true, vault: true } } } } } },
       },
     });
   }
@@ -34,49 +34,49 @@ export class PagoRepository {
     return this.payment.create({
       data: {
         ...data,
-        cuotas: cuotasIds?.length
+        installmentPayments: cuotasIds?.length
           ? {
-              create: cuotasIds.map((cuotaId) => ({ cuotaId })),
+              create: cuotasIds.map((installmentId) => ({ installmentId })),
             }
           : undefined,
       },
-      include: { cuotas: { include: { cuota: true } } },
+      include: { installmentPayments: { include: { installment: true } } },
     });
   }
 
-  update(id: number, data: Partial<Pago>) {
+  update(id: string, data: Partial<Pago>) {
     return this.payment.update({ where: { id }, data });
   }
 
   updateInstallmentsAsPaid(cuotasIds: number[], fechaPago: Date) {
     return this.installment.updateMany({
       where: { id: { in: cuotasIds } },
-      data: { pagada: true, fechaPago },
+      data: { isPaid: true, paymentDate: fechaPago },
     });
   }
 
-  deleteInstallmentPaymentsByPagoId(pagoId: number) {
+  deleteInstallmentPaymentsByPagoId(paymentId: string) {
     return this.installmentPayment.deleteMany({
-      where: { pagoId },
+      where: { paymentId },
     });
   }
 
   updateInstallmentsAsPending(cuotasIds: number[]) {
     return this.installment.updateMany({
       where: { id: { in: cuotasIds } },
-      data: { pagada: false, fechaPago: null },
+      data: { isPaid: false, paymentDate: null },
     });
   }
 
   private get payment() {
-    return this.prisma.pago;
+    return this.prisma.payment;
   }
 
   private get installment() {
-    return this.prisma.cuota;
+    return this.prisma.installment;
   }
 
   private get installmentPayment() {
-    return this.prisma.cuotaPago;
+    return this.prisma.installmentPayment;
   }
 }

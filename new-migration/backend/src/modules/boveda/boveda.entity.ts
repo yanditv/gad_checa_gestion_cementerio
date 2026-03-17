@@ -1,16 +1,16 @@
 export class Boveda {
-  id?: number;
-  numero?: string;
-  capacidad?: number;
-  tipo?: string;
-  estado?: boolean;
-  observaciones?: string;
-  ubicacion?: string;
-  precio?: number;
-  precioArrendamiento?: number;
-  bloqueId?: number;
-  pisoId?: number;
-  propietarioId?: number;
+  id?: string;
+  number?: string;
+  capacity?: number;
+  type?: string;
+  isActive?: boolean;
+  notes?: string;
+  location?: string;
+  price?: number;
+  rentalPrice?: number;
+  blockId?: string;
+  floorId?: string;
+  ownerId?: string;
 
   constructor(data?: Partial<Boveda>) {
     if (data) {

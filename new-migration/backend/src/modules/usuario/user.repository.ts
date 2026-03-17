@@ -10,11 +10,11 @@ export class UserRepository {
     return this.user.findMany({
       where: query,
       include: {
-        usuarioRols: {
-          include: { rol: true },
+        userRoles: {
+          include: { role: true },
         },
       },
-      orderBy: { fechaCreacion: "desc" },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -22,8 +22,8 @@ export class UserRepository {
     return this.user.findUnique({
       where: { id },
       include: {
-        usuarioRols: {
-          include: { rol: true },
+        userRoles: {
+          include: { role: true },
         },
       },
     });
@@ -34,8 +34,8 @@ export class UserRepository {
       where: { id },
       data,
       include: {
-        usuarioRoles: {
-          include: { rol: true },
+        userRoles: {
+          include: { role: true },
         },
       },
     });
@@ -45,15 +45,15 @@ export class UserRepository {
     return this.user.update({
       where: { id },
       data: {
-        estado: isActive,
+        isActive,
       },
     });
   }
 
-  findExistingUser(email: string, numeroIdentificacion: string) {
+  findExistingUser(email: string, identificationNumber: string) {
     return this.user.findFirst({
       where: {
-        OR: [{ email }, { numeroIdentificacion }],
+        OR: [{ email }, { identificationNumber }],
       },
     });
   }
@@ -73,18 +73,18 @@ export class UserRepository {
       where: { id: userId },
       select: {
         id: true,
-        nombre: true,
-        apellido: true,
+        firstName: true,
+        lastName: true,
         email: true,
-        telefono: true,
-        direccion: true,
-        tipoIdentificacion: true,
-        numeroIdentificacion: true,
+        phone: true,
+        address: true,
+        identificationType: true,
+        identificationNumber: true,
       },
     });
   }
 
   private get user() {
-    return this.prisma.usuario;
+    return this.prisma.user;
   }
 }

@@ -1,13 +1,13 @@
 export class Pago {
-  id?: number;
-  numeroRecibo?: string;
-  monto?: number;
-  fechaPago?: Date;
-  metodoPago?: string;
-  referencia?: string;
-  observacion?: string;
-  estado?: boolean;
-  bancoId?: number | null;
+  id?: string;
+  receiptNumber?: string;
+  amount?: number;
+  paidAt?: Date;
+  paymentMethod?: string;
+  reference?: string;
+  note?: string;
+  isActive?: boolean;
+  bankId?: string | null;
 
   constructor(data?: Partial<Pago>) {
     if (data) {

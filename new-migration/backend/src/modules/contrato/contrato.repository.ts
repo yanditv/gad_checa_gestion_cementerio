@@ -9,12 +9,12 @@ export class ContratoRepository {
   getCreationMetadata() {
     return this.prisma.$transaction([
       this.discount.findMany({
-        where: { estado: true },
-        orderBy: { porcentaje: "desc" },
+        where: { isActive: true },
+        orderBy: { percentage: "desc" },
       }),
       this.bank.findMany({
-        where: { estado: true },
-        orderBy: { nombre: "asc" },
+        where: { isActive: true },
+        orderBy: { name: "asc" },
       }),
     ]);
   }
@@ -31,11 +31,11 @@ export class ContratoRepository {
     return this.vault.findMany({
       where,
       include: {
-        bloque: { include: { cementerio: true } },
-        piso: true,
-        propietario: { include: { persona: true } },
+        block: { include: { cemetery: true } },
+        floor: true,
+        owner: { include: { person: true } },
       },
-      orderBy: [{ numero: "asc" }],
+      orderBy: [{ number: "asc" }],
       skip,
       take,
     });
@@ -47,26 +47,26 @@ export class ContratoRepository {
     return this.vault.count({ where });
   }
 
-  findVaultById(id: number) {
+  findVaultById(id: string) {
     return this.vault.findUnique({
       where: { id },
     });
   }
 
-  findVaultForContractNumber(id: number) {
+  findVaultForContractNumber(id: string) {
     return this.vault.findUnique({
       where: { id },
-      include: { piso: { include: { bloque: true } } },
+      include: { floor: { include: { block: true } } },
     });
   }
 
   findLastContractByPrefix(prefix: string) {
     return this.contract.findFirst({
       where: {
-        numeroSecuencial: { startsWith: prefix },
+        sequentialNumber: { startsWith: prefix },
       },
       orderBy: { id: "desc" },
-      select: { numeroSecuencial: true },
+      select: { sequentialNumber: true },
     });
   }
 
@@ -76,14 +76,14 @@ export class ContratoRepository {
     return this.contract.findMany({
       where,
       include: {
-        boveda: { include: { bloque: { include: { cementerio: true } } } },
-        difunto: true,
-        responsables: {
-          include: { responsable: { include: { persona: true } } },
+        vault: { include: { block: { include: { cemetery: true } } } },
+        deceased: true,
+        assignments: {
+          include: { responsibleParty: { include: { person: true } } },
         },
-        cuotas: { where: { estado: true } },
+        installments: { where: { isActive: true } },
       },
-      orderBy: { fechaCreacion: "desc" },
+      orderBy: { createdAt: "desc" },
       skip,
       take,
     });
@@ -94,65 +94,65 @@ export class ContratoRepository {
     return this.contract.count({ where });
   }
 
-  findById(id: number) {
+  findById(id: string) {
     return this.contract.findUnique({
       where: { id },
       include: {
-        boveda: {
-          include: { bloque: { include: { cementerio: true } }, piso: true },
+        vault: {
+          include: { block: { include: { cemetery: true } }, floor: true },
         },
-        difunto: true,
-        responsables: {
+        deceased: true,
+        assignments: {
           include: {
-            responsable: { include: { persona: true, propietario: true } },
+            responsibleParty: { include: { person: true, owner: true } },
           },
         },
-        cuotas: {
-          include: { pagos: { include: { pago: true } } },
-          orderBy: { numero: "asc" },
+        installments: {
+          include: { installmentPayments: { include: { payment: true } } },
+          orderBy: { number: "asc" },
         },
-        contratoOrigen: true,
-        contratoRelacionado: true,
+        sourceContract: true,
+        relatedContract: true,
       },
     });
   }
 
-  create(data: Contrato, responsibleIds: number[] = []) {
+  create(data: Contrato, responsibleIds: string[] = []) {
     return this.contract.create({
       data: {
         ...this.toPersistence(data),
-        responsables: responsibleIds.length
+        assignments: responsibleIds.length
           ? {
-              create: responsibleIds.map((responsableId) => ({
-                responsableId,
+              create: responsibleIds.map((responsiblePartyId) => ({
+                responsiblePartyId,
               })),
             }
           : undefined,
       },
       include: {
-        responsables: {
-          include: { responsable: { include: { persona: true } } },
+        assignments: {
+          include: { responsibleParty: { include: { person: true } } },
         },
       },
     });
   }
 
-  update(id: number, data: Partial<Contrato>) {
+  update(id: string, data: Partial<Contrato>) {
     return this.contract.update({
       where: { id },
       data: this.toPersistence(data),
     });
   }
 
-  replaceResponsibleAssignments(contractId: number, responsibleIds: number[]) {
+  replaceResponsibleAssignments(contractId: string, responsibleIds: string[]) {
     return this.prisma.$transaction([
       this.contractResponsible.deleteMany({
-        where: { contratoId: contractId },
+        where: { contractId },
       }),
       this.contractResponsible.createMany({
-        data: responsibleIds.map((responsableId) => ({
-          contratoId: contractId,
-          responsableId,
+        data: responsibleIds.map((responsiblePartyId) => ({
+          contractId,
+          responsiblePartyId,
         })),
       }),
     ]);
@@ -160,11 +160,11 @@ export class ContratoRepository {
 
   findReports() {
     return this.contract.findMany({
-      where: { estado: true },
+      where: { isActive: true },
       include: {
-        boveda: { include: { bloque: { include: { cementerio: true } } } },
-        difunto: true,
-        cuotas: { include: { pagos: true } },
+        vault: { include: { block: { include: { cemetery: true } } } },
+        deceased: true,
+        installments: { include: { installmentPayments: true } },
       },
     });
   }
@@ -179,22 +179,22 @@ export class ContratoRepository {
     currentDate: Date,
   ) {
     return {
-      estado: true,
-      contratos: {
+      isActive: true,
+      contracts: {
         none: {
-          estado: true,
-          OR: [{ fechaFin: null }, { fechaFin: { gte: currentDate } }],
+          isActive: true,
+          OR: [{ endDate: null }, { endDate: { gte: currentDate } }],
         },
       },
-      ...(type ? { tipo: { equals: type, mode: "insensitive" } } : {}),
+      ...(type ? { type: { equals: type, mode: "insensitive" } } : {}),
       ...(search
         ? {
             OR: [
-              { numero: { contains: search, mode: "insensitive" } },
-              { tipo: { contains: search, mode: "insensitive" } },
+              { number: { contains: search, mode: "insensitive" } },
+              { type: { contains: search, mode: "insensitive" } },
               {
-                bloque: {
-                  is: { nombre: { contains: search, mode: "insensitive" } },
+                block: {
+                  is: { name: { contains: search, mode: "insensitive" } },
                 },
               },
             ],
@@ -205,30 +205,50 @@ export class ContratoRepository {
 
   private buildContractsWhere(search: string | undefined) {
     return {
-      estado: true,
+      isActive: true,
       ...(search
         ? {
             OR: [
-              { numeroSecuencial: { contains: search, mode: "insensitive" } },
+              { sequentialNumber: { contains: search, mode: "insensitive" } },
               {
-                difunto: {
-                  is: { nombre: { contains: search, mode: "insensitive" } },
+                deceased: {
+                  is: { firstName: { contains: search, mode: "insensitive" } },
                 },
               },
               {
-                difunto: {
-                  is: { apellido: { contains: search, mode: "insensitive" } },
+                deceased: {
+                  is: { lastName: { contains: search, mode: "insensitive" } },
                 },
               },
               {
-                boveda: {
-                  is: { numero: { contains: search, mode: "insensitive" } },
+                vault: {
+                  is: { number: { contains: search, mode: "insensitive" } },
                 },
               },
             ],
           }
         : {}),
     };
+  }
+
+  private get contract() {
+    return this.prisma.contract;
+  }
+
+  private get vault() {
+    return this.prisma.vault;
+  }
+
+  private get discount() {
+    return this.prisma.discount;
+  }
+
+  private get bank() {
+    return this.prisma.bank;
+  }
+
+  private get contractResponsible() {
+    return this.prisma.contractAssignment;
   }
 
 }

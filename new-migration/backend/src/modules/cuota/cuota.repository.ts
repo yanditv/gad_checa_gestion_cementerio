@@ -6,49 +6,49 @@ import { Cuota } from './cuota.entity';
 export class CuotaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: number) {
-    return this.cuota.findUnique({
+  findById(id: string) {
+    return this.installment.findUnique({
       where: { id },
       include: {
-        contrato: { include: { difunto: true, boveda: true } },
-        pagos: { include: { pago: true } },
+        contract: { include: { deceased: true, vault: true } },
+        installmentPayments: { include: { payment: true } },
       },
     });
   }
 
   create(data: Cuota) {
-    return this.cuota.create({ data });
+    return this.installment.create({ data });
   }
 
-  update(id: number, data: Partial<Cuota>) {
-    return this.cuota.update({ where: { id }, data });
+  update(id: string, data: Partial<Cuota>) {
+    return this.installment.update({ where: { id }, data });
   }
 
   findActive() {
-    return this.cuota.findMany({
-      where: { estado: true },
-      include: { contrato: { include: { difunto: true, boveda: true } }, pagos: { include: { pago: true } } },
-      orderBy: { fechaVencimiento: 'asc' },
+    return this.installment.findMany({
+      where: { isActive: true },
+      include: { contract: { include: { deceased: true, vault: true } }, installmentPayments: { include: { payment: true } } },
+      orderBy: { dueDate: 'asc' },
     });
   }
 
-  findByContract(contractId: number) {
-    return this.cuota.findMany({
-      where: { contratoId: contractId, estado: true },
-      include: { pagos: { include: { pago: true } } },
-      orderBy: { numero: 'asc' },
+  findByContract(contractId: string) {
+    return this.installment.findMany({
+      where: { contractId, isActive: true },
+      include: { installmentPayments: { include: { payment: true } } },
+      orderBy: { number: 'asc' },
     });
   }
 
   findPending() {
-    return this.cuota.findMany({
-      where: { pagada: false, fechaVencimiento: { lte: new Date() }, estado: true },
-      include: { contrato: { include: { difunto: true, boveda: true } } },
-      orderBy: { fechaVencimiento: 'asc' },
+    return this.installment.findMany({
+      where: { isPaid: false, dueDate: { lte: new Date() }, isActive: true },
+      include: { contract: { include: { deceased: true, vault: true } } },
+      orderBy: { dueDate: 'asc' },
     });
   }
 
-  private get cuota() {
-    return this.prisma.cuota;
+  private get installment() {
+    return this.prisma.installment;
   }
 }

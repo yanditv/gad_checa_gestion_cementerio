@@ -6,60 +6,60 @@ import { Difunto } from './difunto.entity';
 export class DifuntoRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: number) {
-    return this.difunto.findUnique({
+  findById(id: string) {
+    return this.deceased.findUnique({
       where: { id },
       include: {
-        boveda: { include: { bloque: { include: { cementerio: true } }, piso: true } },
-        contratos: { where: { estado: true } },
+        vault: { include: { block: { include: { cemetery: true } }, floor: true } },
+        contracts: { where: { isActive: true } },
       },
     });
   }
 
   create(data: Difunto) {
-    return this.difunto.create({ data });
+    return this.deceased.create({ data });
   }
 
-  update(id: number, data: Partial<Difunto>) {
-    return this.difunto.update({ where: { id }, data });
+  update(id: string, data: Partial<Difunto>) {
+    return this.deceased.update({ where: { id }, data });
   }
 
   async listPaginated(search: string | undefined, skip: number, take: number) {
     const where = {
-      estado: true,
+      isActive: true,
       ...(search
         ? {
             OR: [
-              { nombre: { contains: search, mode: 'insensitive' } },
-              { apellido: { contains: search, mode: 'insensitive' } },
-              { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
-              { boveda: { is: { numero: { contains: search, mode: 'insensitive' } } } },
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { identificationNumber: { contains: search, mode: 'insensitive' } },
+              { vault: { is: { number: { contains: search, mode: 'insensitive' } } } },
             ],
           }
         : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
-      this.difunto.findMany({
+      this.deceased.findMany({
         where,
-        include: { boveda: { include: { bloque: { include: { cementerio: true } } } } },
-        orderBy: { fechaCreacion: 'desc' },
+        include: { vault: { include: { block: { include: { cemetery: true } } } } },
+        orderBy: { createdAt: 'desc' },
         skip,
         take,
       }),
-      this.difunto.count({ where }),
+      this.deceased.count({ where }),
     ]);
 
     return { items, total };
   }
 
-  listByVault(vaultId: number) {
-    return this.difunto.findMany({
-      where: { bovedaId: vaultId, estado: true },
+  listByVault(vaultId: string) {
+    return this.deceased.findMany({
+      where: { vaultId, isActive: true },
     });
   }
 
-  private get difunto() {
-    return this.prisma.difunto;
+  private get deceased() {
+    return this.prisma.deceased;
   }
 }

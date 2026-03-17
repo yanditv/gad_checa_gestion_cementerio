@@ -1,14 +1,14 @@
 export class Difunto {
-  id?: number;
-  nombre?: string;
-  apellido?: string;
-  numeroIdentificacion?: string;
-  causaMuerte?: string;
-  observaciones?: string;
-  edad?: number;
-  genero?: string;
-  estado?: boolean;
-  bovedaId?: number;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  identificationNumber?: string;
+  causeOfDeath?: string;
+  notes?: string;
+  age?: number;
+  gender?: string;
+  isActive?: boolean;
+  vaultId?: string;
 
   constructor(data?: Partial<Difunto>) {
     if (data) {

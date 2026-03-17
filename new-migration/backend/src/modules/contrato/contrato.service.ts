@@ -35,15 +35,15 @@ export class ContratoService {
     };
   }
 
-  async getContractNumberPreview(vaultId?: number, isRenewal = false) {
+  async getContractNumberPreview(vaultId?: string, isRenewal = false) {
     const contractNumber = await this.generateContractNumber(vaultId, isRenewal);
     const vault = vaultId
-      ? await this.contratoRepository.findVaultById(Number(vaultId))
+      ? await this.contratoRepository.findVaultById(vaultId)
       : null;
 
     return {
       sequentialNumber: contractNumber,
-      totalAmount: vault ? Number(vault.precioArrendamiento) : 0,
+      totalAmount: vault ? Number(vault.rentalPrice) : 0,
       vault,
     };
   }
@@ -63,7 +63,7 @@ export class ContratoService {
     };
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     const contract = await this.contratoRepository.findById(id);
     if (!contract) throw new NotFoundException('Contract not found');
     return contract;
@@ -95,13 +95,13 @@ export class ContratoService {
     return createdContract;
   }
 
-  private async generateContractNumber(vaultId?: number, isRenewal = false): Promise<string> {
+  private async generateContractNumber(vaultId?: string, isRenewal = false): Promise<string> {
     const currentYear = new Date().getFullYear();
     const vault = vaultId
-      ? await this.contratoRepository.findVaultForContractNumber(Number(vaultId))
+      ? await this.contratoRepository.findVaultForContractNumber(vaultId)
       : null;
 
-    const vaultType = (vault?.tipo || vault?.piso?.bloque?.nombre || 'Boveda').toLowerCase();
+    const vaultType = (vault?.type || vault?.floor?.block?.name || 'vault').toLowerCase();
     const basePrefix = vaultType.includes('nicho') ? 'NCH' : vaultType.includes('tumulo') || vaultType.includes('tumul') ? 'TML' : 'CTR';
     const prefix = isRenewal ? `RNV-${basePrefix}` : basePrefix;
 
@@ -109,7 +109,7 @@ export class ContratoService {
       `${prefix}-GADCHECA-${currentYear}-`,
     );
 
-    const nextNumber = lastContract ? Number(lastContract.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
+    const nextNumber = lastContract ? Number(lastContract.sequentialNumber.split('-').pop() || '0') + 1 : 1;
     return `${prefix}-GADCHECA-${currentYear}-${String(nextNumber).padStart(3, '0')}`;
   }
 
@@ -123,31 +123,31 @@ export class ContratoService {
       (await this.generateContractNumber(contract.vaultId ?? contract.bovedaId, !!(contract.isRenewal ?? contract.esRenovacion)));
 
     return this.contratoRepository.runInTransaction(async (tx) => {
-      const createdDeceased = await tx.difunto.create({
+      const createdDeceased = await tx.deceased.create({
         data: {
-          nombre: deceased.nombres,
-          apellido: deceased.apellidos,
-          numeroIdentificacion: deceased.numeroIdentificacion || null,
-          fechaNacimiento: deceased.fechaNacimiento ? new Date(deceased.fechaNacimiento) : null,
-          fechaDefuncion: deceased.fechaFallecimiento ? new Date(deceased.fechaFallecimiento) : null,
-          bovedaId: Number(contract.vaultId ?? contract.bovedaId),
-          estado: true,
+          firstName: deceased.nombres,
+          lastName: deceased.apellidos,
+          identificationNumber: deceased.numeroIdentificacion || null,
+          birthDate: deceased.fechaNacimiento ? new Date(deceased.fechaNacimiento) : null,
+          deathDate: deceased.fechaFallecimiento ? new Date(deceased.fechaFallecimiento) : null,
+          vaultId: String(contract.vaultId ?? contract.bovedaId),
+          isActive: true,
         },
       });
 
-      const responsibleIds: number[] = [];
+      const responsibleIds: string[] = [];
       for (const item of responsibles as any[]) {
         if (item.id && item.esExistente) {
-          let responsible = await tx.responsable.findFirst({
-            where: { personaId: Number(item.id) },
+          let responsible = await tx.responsibleParty.findFirst({
+            where: { personId: String(item.id) },
           });
 
           if (!responsible) {
-            responsible = await tx.responsable.create({
+            responsible = await tx.responsibleParty.create({
               data: {
-                personaId: Number(item.id),
-                parentesco: item.parentesco || null,
-                estado: true,
+                personId: String(item.id),
+                relationship: item.parentesco || null,
+                isActive: true,
               },
             });
           }
@@ -156,122 +156,119 @@ export class ContratoService {
           continue;
         }
 
-        const persona = await tx.persona.create({
+        const person = await tx.person.create({
           data: {
-            nombre: item.nombres,
-            apellido: item.apellidos,
-            numeroIdentificacion: item.numeroIdentificacion,
-            tipoIdentificacion: item.tipoIdentificacion || 'Cedula',
-            telefono: item.telefono || null,
+            firstName: item.nombres,
+            lastName: item.apellidos,
+            identificationNumber: item.numeroIdentificacion,
+            identificationType: item.tipoIdentificacion || 'Cedula',
+            phone: item.telefono || null,
             email: item.email || null,
-            direccion: item.direccion || null,
-            tipoPersona: 'Responsable',
-            estado: true,
+            address: item.direccion || null,
+            personType: 'Responsable',
+            isActive: true,
           },
         });
 
-        const responsible = await tx.responsable.create({
+        const responsible = await tx.responsibleParty.create({
           data: {
-            personaId: persona.id,
-            parentesco: item.parentesco || null,
-            estado: true,
+            personId: person.id,
+            relationship: item.parentesco || null,
+            isActive: true,
           },
         });
 
         responsibleIds.push(responsible.id);
       }
 
-      const createdContract = await tx.contrato.create({
+      const createdContract = await tx.contract.create({
         data: {
-          numeroSecuencial: contractNumber,
-          fechaInicio: new Date(contract.startDate ?? contract.fechaInicio),
-          fechaFin: contract.endDate ?? contract.fechaFin ? new Date(contract.endDate ?? contract.fechaFin) : null,
-          numeroDeMeses: Number(contract.monthCount ?? contract.numeroDeMeses),
-          montoTotal: Number(contract.totalAmount ?? contract.montoTotal),
-          observaciones: contract.notes ?? contract.observaciones ?? null,
-          estado: true,
-          esRenovacion: !!(contract.isRenewal ?? contract.esRenovacion),
-          contratoOrigenId: contract.sourceContractId ?? contract.contratoOrigenId ?? null,
-          contratoRelacionadoId: contract.relatedContractId ?? contract.contratoRelacionadoId ?? null,
-          bovedaId: Number(contract.vaultId ?? contract.bovedaId),
-          difuntoId: createdDeceased.id,
-          responsables: {
-            create: responsibleIds.map((responsableId) => ({ responsableId })),
+          sequentialNumber: contractNumber,
+          startDate: new Date(contract.startDate ?? contract.fechaInicio),
+          endDate: contract.endDate ?? contract.fechaFin ? new Date(contract.endDate ?? contract.fechaFin) : null,
+          monthCount: Number(contract.monthCount ?? contract.numeroDeMeses),
+          totalAmount: Number(contract.totalAmount ?? contract.montoTotal),
+          notes: contract.notes ?? contract.observaciones ?? null,
+          isActive: true,
+          sourceContractId: contract.sourceContractId ?? contract.contratoOrigenId ?? null,
+          relatedContractId: contract.relatedContractId ?? contract.contratoRelacionadoId ?? null,
+          vaultId: String(contract.vaultId ?? contract.bovedaId),
+          deceasedId: createdDeceased.id,
+          assignments: {
+            create: responsibleIds.map((responsiblePartyId) => ({ responsiblePartyId })),
           },
         },
       });
 
       const installments = (contract.cuotas || []).map((installment: any, index: number) => ({
-        numero: index + 1,
-        monto: Number(installment.monto),
-        fechaVencimiento: new Date(installment.fechaVencimiento),
-        pagada: !!installment.pagada,
-        fechaPago: installment.pagada ? new Date(payment.fechaPago || new Date()) : null,
-        contratoId: createdContract.id,
-        estado: true,
-        observaciones: null,
+        number: index + 1,
+        amount: Number(installment.monto),
+        dueDate: new Date(installment.fechaVencimiento),
+        paidAt: installment.pagada ? new Date(payment.fechaPago || new Date()) : null,
+        contractId: createdContract.id,
+        isActive: true,
+        notes: null,
       }));
 
       if (installments.length > 0) {
-        await tx.cuota.createMany({ data: installments });
+        await tx.installment.createMany({ data: installments });
       }
 
-      const createdInstallments = await tx.cuota.findMany({
-        where: { contratoId: createdContract.id },
-        orderBy: { numero: 'asc' },
+      const createdInstallments = await tx.installment.findMany({
+        where: { contractId: createdContract.id },
+        orderBy: { number: 'asc' },
       });
 
       const selectedInstallments = createdInstallments.filter((installment) =>
-        (payment.cuotasSeleccionadas || []).includes(installment.numero),
+        (payment.cuotasSeleccionadas || []).includes(installment.number),
       );
 
       if (selectedInstallments.length > 0) {
-        const lastPayment = await tx.pago.findFirst({ orderBy: { id: 'desc' } });
+        const lastPayment = await tx.payment.findFirst({ orderBy: { id: 'desc' } });
         const nextReceiptNumber = lastPayment ? lastPayment.id + 1 : 1;
         const receiptNumber = `REC-${new Date().getFullYear()}-${nextReceiptNumber.toString().padStart(5, '0')}`;
 
-        const createdPayment = await tx.pago.create({
+        const createdPayment = await tx.payment.create({
           data: {
-            numeroRecibo: receiptNumber,
-            monto: Number(payment.monto),
-            fechaPago: new Date(payment.fechaPago || new Date()),
-            metodoPago: payment.tipoPago,
-            referencia: payment.numeroComprobante || null,
-            observacion: payment.observacion || null,
-            bancoId: payment.bancoId || null,
-            estado: true,
+            receiptNumber,
+            amount: Number(payment.monto),
+            paidAt: new Date(payment.fechaPago || new Date()),
+            paymentMethod: payment.tipoPago,
+            reference: payment.numeroComprobante || null,
+            note: payment.observacion || null,
+            bankId: payment.bancoId || null,
+            isActive: true,
           },
         });
 
-        await tx.cuotaPago.createMany({
-          data: selectedInstallments.map((cuota) => ({
-            cuotaId: cuota.id,
-            pagoId: createdPayment.id,
+        await tx.installmentPayment.createMany({
+          data: selectedInstallments.map((installment) => ({
+            installmentId: installment.id,
+            paymentId: createdPayment.id,
           })),
         });
 
-        await tx.cuota.updateMany({
-          where: { id: { in: selectedInstallments.map((cuota) => cuota.id) } },
+        await tx.installment.updateMany({
+          where: { id: { in: selectedInstallments.map((installment) => installment.id) } },
           data: {
-            pagada: true,
-            fechaPago: new Date(payment.fechaPago || new Date()),
+            paidAt: new Date(payment.fechaPago || new Date()),
           },
         });
       }
 
-      return tx.contrato.findUnique({
+      return tx.contract.findUnique({
         where: { id: createdContract.id },
         include: {
-          boveda: { include: { bloque: true, piso: true } },
-          difunto: true,
-          responsables: { include: { responsable: { include: { persona: true } } } },
-          cuotas: { orderBy: { numero: 'asc' } },
+          vault: { include: { block: true, floor: true } },
+          deceased: true,
+          assignments: { include: { responsibleParty: { include: { person: true } } } },
+          installments: { orderBy: { number: 'asc' } },
         },
       });
     });
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     await this.getById(id);
     const responsibleIds = data.responsibleIds ?? data.responsablesIds;
     const contractData = { ...data };
@@ -286,9 +283,9 @@ export class ContratoService {
     return this.contratoRepository.update(id, contract);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.getById(id);
-    return this.contratoRepository.update(id, Contrato.create({ estado: false }));
+    return this.contratoRepository.update(id, Contrato.create({ isActive: false }));
   }
 
   async getReports() {
@@ -296,10 +293,10 @@ export class ContratoService {
 
     return {
       totalContracts: contracts.length,
-      activeContracts: contracts.filter((contract) => contract.fechaFin && new Date(contract.fechaFin) > new Date()).length,
-      expiredContracts: contracts.filter((contract) => contract.fechaFin && new Date(contract.fechaFin) <= new Date()).length,
+      activeContracts: contracts.filter((contract) => contract.endDate && new Date(contract.endDate) > new Date()).length,
+      expiredContracts: contracts.filter((contract) => contract.endDate && new Date(contract.endDate) <= new Date()).length,
       totalRevenue: contracts.reduce((sum, contract) => {
-        const paidAmount = contract.cuotas.reduce((installmentSum, installment) => installmentSum + (installment.pagada ? Number(installment.monto) : 0), 0);
+        const paidAmount = contract.installments.reduce((installmentSum, installment) => installmentSum + (installment.paidAt ? Number(installment.amount) : 0), 0);
         return sum + paidAmount;
       }, 0),
       contracts,

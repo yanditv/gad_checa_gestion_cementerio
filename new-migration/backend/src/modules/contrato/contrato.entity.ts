@@ -1,19 +1,19 @@
 export class Contrato {
-  id?: number;
+  id?: string;
   sequentialNumber?: string;
   startDate?: Date;
   endDate?: Date | null;
   monthCount?: number;
   totalAmount?: number;
-  estado?: boolean;
+  isActive?: boolean;
   notes?: string;
   isRenewal?: boolean;
   renewalCount?: number;
   signedDocumentPath?: string;
-  vaultId?: number;
-  deceasedId?: number;
-  sourceContractId?: number | null;
-  relatedContractId?: number | null;
+  vaultId?: string;
+  deceasedId?: string;
+  sourceContractId?: string | null;
+  relatedContractId?: string | null;
   createdByUserId?: string | null;
   updatedByUserId?: string | null;
   deletedByUserId?: string | null;

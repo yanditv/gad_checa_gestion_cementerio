@@ -5,18 +5,18 @@ import { CementerioRepository } from './cementerio.repository';
 
 @Injectable()
 export class CementerioService extends ServicioCrudSuave<
-  Prisma.CementerioGetPayload<{
+  Prisma.CemeteryGetPayload<{
     include: {
-      bloques: {
+      blocks: {
         include: {
-          bovedas: true;
+          vaults: true;
         };
       };
     };
   }>,
   number,
-  Prisma.CementerioUncheckedCreateInput,
-  Prisma.CementerioUncheckedUpdateInput
+  Prisma.CemeteryUncheckedCreateInput,
+  Prisma.CemeteryUncheckedUpdateInput
 > {
   constructor(private readonly cementerioRepository: CementerioRepository) {
     super('Cementerio');
@@ -28,7 +28,7 @@ export class CementerioService extends ServicioCrudSuave<
 
   protected override relacionesDetalle() {
     return {
-      bloques: { where: { estado: true }, include: { bovedas: true } },
+      blocks: { where: { isActive: true }, include: { vaults: true } },
     };
   }
 
@@ -36,7 +36,7 @@ export class CementerioService extends ServicioCrudSuave<
     return this.cementerioRepository.findActive();
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     return this.obtenerPorId(id);
   }
 
@@ -44,11 +44,11 @@ export class CementerioService extends ServicioCrudSuave<
     return this.crear(data);
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     return this.actualizar(id, data);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     return this.eliminar(id);
   }
 }

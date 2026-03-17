@@ -6,34 +6,34 @@ import { Persona } from './persona.entity';
 export class PersonaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: number) {
-    return this.persona.findUnique({
+  findById(id: string) {
+    return this.person.findUnique({
       where: { id },
       include: {
-        propietarios: { include: { bovedas: true } },
-        responsables: { include: { contratoResponsables: true, propietario: true } },
+        owners: { include: { vaults: true } },
+        responsibleParties: { include: { contractAssignments: true, owner: true } },
       },
     });
   }
 
   create(data: Persona) {
-    return this.persona.create({ data });
+    return this.person.create({ data });
   }
 
-  update(id: number, data: Partial<Persona>) {
-    return this.persona.update({ where: { id }, data });
+  update(id: string, data: Partial<Persona>) {
+    return this.person.update({ where: { id }, data });
   }
 
   async listPaginated(search: string | undefined, type: string | undefined, skip: number, take: number) {
     const where = {
-      estado: true,
-      ...(type ? { tipoPersona: type } : {}),
+      isActive: true,
+      ...(type ? { personType: type } : {}),
       ...(search
         ? {
             OR: [
-              { nombre: { contains: search, mode: 'insensitive' } },
-              { apellido: { contains: search, mode: 'insensitive' } },
-              { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { identificationNumber: { contains: search, mode: 'insensitive' } },
               { email: { contains: search, mode: 'insensitive' } },
             ],
           }
@@ -41,34 +41,34 @@ export class PersonaRepository {
     };
 
     const [items, total] = await this.prisma.$transaction([
-      this.persona.findMany({
+      this.person.findMany({
         where,
-        include: { propietarios: true, responsables: true },
-        orderBy: { fechaCreacion: 'desc' },
+        include: { owners: true, responsibleParties: true },
+        orderBy: { createdAt: 'desc' },
         skip,
         take,
       }),
-      this.persona.count({ where }),
+      this.person.count({ where }),
     ]);
 
     return { items, total };
   }
 
   search(term: string) {
-    return this.persona.findMany({
+    return this.person.findMany({
       where: {
-        estado: true,
+        isActive: true,
         OR: [
-          { nombre: { contains: term, mode: 'insensitive' } },
-          { apellido: { contains: term, mode: 'insensitive' } },
-          { numeroIdentificacion: { contains: term, mode: 'insensitive' } },
+          { firstName: { contains: term, mode: 'insensitive' } },
+          { lastName: { contains: term, mode: 'insensitive' } },
+          { identificationNumber: { contains: term, mode: 'insensitive' } },
         ],
       },
       take: 20,
     });
   }
 
-  private get persona() {
-    return this.prisma.persona;
+  private get person() {
+    return this.prisma.person;
   }
 }

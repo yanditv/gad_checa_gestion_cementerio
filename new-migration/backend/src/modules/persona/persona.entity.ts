@@ -1,15 +1,15 @@
 export class Persona {
-  id?: number;
-  numeroIdentificacion?: string;
-  nombre?: string;
-  apellido?: string;
-  telefono?: string;
+  id?: string;
+  identificationNumber?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
   email?: string;
-  direccion?: string;
-  tipoIdentificacion?: string;
-  genero?: string;
-  estado?: boolean;
-  tipoPersona?: string;
+  address?: string;
+  identificationType?: string;
+  gender?: string;
+  isActive?: boolean;
+  personType?: string;
 
   constructor(data?: Partial<Persona>) {
     if (data) {

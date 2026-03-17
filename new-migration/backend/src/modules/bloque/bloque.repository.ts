@@ -6,58 +6,58 @@ import { Bloque } from './bloque.entity';
 export class BloqueRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: number) {
-    return this.bloque.findUnique({
+  findById(id: string) {
+    return this.block.findUnique({
       where: { id },
-      include: { cementerio: true, pisos: true, bovedas: true },
+      include: { cemetery: true, floors: true, vaults: true },
     });
   }
 
   create(data: Bloque) {
     
-    return this.bloque.create({ data });
+    return this.block.create({ data });
   }
 
-  update(id: number, data: Partial<Bloque>) {
-    return this.bloque.update({ where: { id }, data });
+  update(id: string, data: Partial<Bloque>) {
+    return this.block.update({ where: { id }, data });
   }
 
   async listPaginated(search: string | undefined, skip: number, take: number) {
     const where = {
-      estado: true,
+      isActive: true,
       ...(search
         ? {
             OR: [
-              { nombre: { contains: search, mode: 'insensitive' } },
-              { descripcion: { contains: search, mode: 'insensitive' } },
-              { cementerio: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
+              { name: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+              { cemetery: { is: { name: { contains: search, mode: 'insensitive' } } } },
             ],
           }
         : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
-      this.bloque.findMany({
+      this.block.findMany({
         where,
-        include: { cementerio: true, pisos: true, bovedas: { where: { estado: true } } },
-        orderBy: { fechaCreacion: 'desc' },
+        include: { cemetery: true, floors: true, vaults: { where: { isActive: true } } },
+        orderBy: { createdAt: 'desc' },
         skip,
         take,
       }),
-      this.bloque.count({ where }),
+      this.block.count({ where }),
     ]);
 
     return { items, total };
   }
 
-  listByCemetery(cemeteryId: number) {
-    return this.bloque.findMany({
-      where: { cementerioId: cemeteryId, estado: true },
-      include: { pisos: true, bovedas: { where: { estado: true } } },
+  listByCemetery(cemeteryId: string) {
+    return this.block.findMany({
+      where: { cemeteryId, isActive: true },
+      include: { floors: true, vaults: { where: { isActive: true } } },
     });
   }
 
-  private get bloque() {
-    return this.prisma.bloque;
+  private get block() {
+    return this.prisma.block;
   }
 }

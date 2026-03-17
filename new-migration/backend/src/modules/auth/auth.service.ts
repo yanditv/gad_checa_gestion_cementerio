@@ -6,8 +6,8 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { LoginDto, RegisterUserDto } from "./auth.dto";
-import { AuthUser } from "./auth-user.entity";
-import { AuthRepository } from "./auth.repository";
+import { User } from "../usuario/user.entity";
+import { UserRepository } from "../usuario/user.repository";
 
 @Injectable()
 export class AuthService {
@@ -47,10 +47,10 @@ export class AuthService {
 
     return {
       user: {
-        id: user.id,
-        firstName: user.nombre,
-        lastName: user.apellido,
-        email: user.email,
+        id: createdUser.id,
+        firstName: createdUser.firstName,
+        lastName: createdUser.lastName,
+        email: createdUser.email,
       },
       token,
     };
@@ -77,8 +77,8 @@ export class AuthService {
     return {
       user: {
         id: user.id,
-        firstName: user.nombre,
-        lastName: user.apellido,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
       },
       token,
@@ -86,7 +86,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.authRepository.findProfileById(userId);
+    const user = await this.userRepository.findProfileById(userId);
 
     if (!user) {
       throw new UnauthorizedException("User not found");
@@ -94,13 +94,13 @@ export class AuthService {
 
     return {
       id: user.id,
-      firstName: user.nombre,
-      lastName: user.apellido,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
-      phone: user.telefono,
-      address: user.direccion,
-      identificationType: user.tipoIdentificacion,
-      identificationNumber: user.numeroIdentificacion,
+      phone: user.phone,
+      address: user.address,
+      identificationType: user.identificationType,
+      identificationNumber: user.identificationNumber,
     };
   }
 }

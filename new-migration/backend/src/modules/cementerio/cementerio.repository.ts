@@ -6,29 +6,29 @@ import { Cementerio } from './cementerio.entity';
 export class CementerioRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: number) {
-    return this.cementerio.findUnique({
+  findById(id: string) {
+    return this.cemetery.findUnique({
       where: { id },
-      include: { bloques: { where: { estado: true }, include: { bovedas: true } } },
+      include: { blocks: { where: { isActive: true }, include: { vaults: true } } },
     });
   }
 
   create(data: Cementerio) {
-    return this.cementerio.create({ data });
+    return this.cemetery.create({ data });
   }
 
-  update(id: number, data: Partial<Cementerio>) {
-    return this.cementerio.update({ where: { id }, data });
+  update(id: string, data: Partial<Cementerio>) {
+    return this.cemetery.update({ where: { id }, data });
   }
 
   findActive() {
-    return this.cementerio.findMany({
-      where: { estado: true },
-      include: { bloques: { where: { estado: true } } },
+    return this.cemetery.findMany({
+      where: { isActive: true },
+      include: { blocks: { where: { isActive: true } } },
     });
   }
 
-  private get cementerio() {
-    return this.prisma.cementerio;
+  private get cemetery() {
+    return this.prisma.cemetery;
   }
 }

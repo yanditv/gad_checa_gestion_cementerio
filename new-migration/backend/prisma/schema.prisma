@@ -6,272 +6,266 @@ datasource db {
   provider = "postgresql"
 }
 
-model Usuario {
+model User {
   id                   String    @id @default(uuid())
-  numeroIdentificacion String    @unique
-  nombre               String
-  apellido             String
+  identificationNumber String    @unique
+  firstName            String
+  lastName             String
   email                String    @unique
   passwordHash         String
-  telefono             String?
-  direccion            String?
-  tipoIdentificacion   String
-  estado               Boolean   @default(true)
-  fechaCreacion        DateTime  @default(now())
-  fechaActualizacion   DateTime? @updatedAt
+  phone                String?
+  address              String?
+  identificationType   String
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime? @updatedAt
 
-  // Relations
-  usuarioRols UsuarioRol[]
+  userRoles UserRole[]
 }
 
-model Rol {
-  id                String  @id @default(uuid())
-  nombre            String  @unique
-  nombreNormalizado String  @unique
-  concurrencyStamp  String?
-  permisos          String?
+model Role {
+  id               String  @id @default(uuid())
+  name             String  @unique
+  normalizedName   String  @unique
+  permissions      String?
 
-  usuarios UsuarioRol[]
+  users UserRole[]
 }
 
-model UsuarioRol {
-  usuarioId String
-  rolId     String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  rol       Rol     @relation(fields: [rolId], references: [id])
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
 
-  @@id([usuarioId, rolId])
+  @@id([userId, roleId])
 }
 
-model Cementerio {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  direccion     String?
-  telefono      String?
-  email         String?
-  ruc           String?
-  fechaCreacion DateTime @default(now())
-  estado        Boolean  @default(true)
+model Cemetery {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  taxId     String?
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
 
-  bloques Bloque[]
+  blocks Block[]
 }
 
-model Bloque {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  descripcion   String?
-  estado        Boolean  @default(true)
-  fechaCreacion DateTime @default(now())
+model Block {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
-  cementerioId Int
-  cementerio   Cementerio @relation(fields: [cementerioId], references: [id])
+  cemeteryId String
+  cemetery   Cemetery  @relation(fields: [cemeteryId], references: [id])
 
-  pisos   Piso[]
-  bovedas Boveda[]
+  floors Floor[]
+  vaults Vault[]
 }
 
-model Piso {
-  id          Int     @id @default(autoincrement())
-  numero      Int
-  descripcion String?
-  estado      Boolean @default(true)
+model Floor {
+  id          String  @id @default(uuid())
+  number      Int
+  description String?
+  isActive    Boolean @default(true)
 
-  bloqueId Int
-  bloque   Bloque @relation(fields: [bloqueId], references: [id])
+  blockId String
+  block   Block  @relation(fields: [blockId], references: [id])
 
-  bovedas Boveda[]
+  vaults Vault[]
 }
 
-model Boveda {
-  id                  Int      @id @default(autoincrement())
-  numero              String
-  capacidad           Int
-  tipo                String?
-  estado              Boolean  @default(true)
-  observaciones       String?
-  ubicacion           String?
-  precio              Decimal  @db.Decimal(18, 2)
-  precioArrendamiento Decimal  @db.Decimal(18, 2)
-  fechaCreacion       DateTime @default(now())
+model Vault {
+  id           String   @id @default(uuid())
+  number       String
+  capacity     Int
+  type         String?
+  isActive     Boolean  @default(true)
+  notes        String?
+  location     String?
+  price        Decimal  @db.Decimal(18, 2)
+  rentalPrice  Decimal  @db.Decimal(18, 2)
+  createdAt    DateTime @default(now())
 
-  bloqueId Int
-  bloque   Bloque @relation(fields: [bloqueId], references: [id])
-  pisoId   Int?
-  piso     Piso?  @relation(fields: [pisoId], references: [id])
+  blockId String
+  block   Block  @relation(fields: [blockId], references: [id])
+  floorId String?
+  floor   Floor? @relation(fields: [floorId], references: [id])
 
-  propietarioId Int?
-  propietario   Propietario? @relation(fields: [propietarioId], references: [id])
+  ownerId String?
+  owner   Owner? @relation(fields: [ownerId], references: [id])
 
-  contratos Contrato[]
-  difuntos  Difunto[]
+  contracts Contract[]
+  deceased  Deceased[]
 }
 
-model Persona {
-  id                   Int       @id @default(autoincrement())
-  numeroIdentificacion String
-  nombre               String
-  apellido             String
-  telefono             String?
+model Person {
+  id                   String    @id @default(uuid())
+  identificationNumber String
+  firstName            String
+  lastName             String
+  phone                String?
   email                String?
-  direccion            String?
-  tipoIdentificacion   String
-  fechaNacimiento      DateTime?
-  genero               String?
-  estado               Boolean   @default(true)
-  fechaCreacion        DateTime  @default(now())
-  tipoPersona          String    @default("Persona")
+  address              String?
+  identificationType   String
+  birthDate            DateTime?
+  gender               String?
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  personType           String    @default("Persona")
 
-  // Discriminator for inheritance
-  responsables Responsable[]
-  propietarios Propietario[]
+  responsibleParties ResponsibleParty[]
+  owners             Owner[]
 
-  @@unique([numeroIdentificacion, tipoPersona])
+  @@unique([identificationNumber, personType])
 }
 
-model Propietario {
-  id            Int      @id @default(autoincrement())
-  estado        Boolean  @default(true)
-  fechaCreacion DateTime @default(now())
+model Owner {
+  id        String   @id @default(uuid())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
-  personaId Int
-  persona   Persona @relation(fields: [personaId], references: [id])
+  personId String @unique
+  person   Person @relation(fields: [personId], references: [id])
 
-  bovedas     Boveda[]
-  responsable Responsable?
+  vaults           Vault[]
+  responsibleParty ResponsibleParty?
 }
 
-model Responsable {
-  id            Int      @id @default(autoincrement())
-  parentesco    String?
-  estado        Boolean  @default(true)
-  fechaCreacion DateTime @default(now())
+model ResponsibleParty {
+  id           String   @id @default(uuid())
+  relationship String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
-  personaId Int
-  persona   Persona @relation(fields: [personaId], references: [id])
+  personId String @unique
+  person   Person @relation(fields: [personId], references: [id])
 
-  propietarioId Int?         @unique
-  propietario   Propietario? @relation(fields: [propietarioId], references: [id])
+  ownerId String? @unique
+  owner   Owner? @relation(fields: [ownerId], references: [id])
 
-  contratoResponsables ContratoResponsable[]
+  contractAssignments ContractAssignment[]
 }
 
-model Difunto {
-  id                   Int       @id @default(autoincrement())
-  nombre               String
-  apellido             String
-  numeroIdentificacion String?
-  fechaNacimiento      DateTime?
-  fechaDefuncion       DateTime?
-  fechaInhumacion      DateTime?
-  causaMuerte          String?
-  observaciones        String?
-  edad                 Int?
-  genero               String?
-  estado               Boolean   @default(true)
-  fechaCreacion        DateTime  @default(now())
+model Deceased {
+  id                   String    @id @default(uuid())
+  firstName            String
+  lastName             String
+  identificationNumber String?
+  birthDate            DateTime?
+  deathDate            DateTime?
+  burialDate           DateTime?
+  causeOfDeath         String?
+  notes                String?
+  age                  Int?
+  gender               String?
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
 
-  bovedaId Int
-  boveda   Boveda @relation(fields: [bovedaId], references: [id])
+  vaultId String
+  vault   Vault  @relation(fields: [vaultId], references: [id])
 
-  contratos Contrato[]
+  contracts Contract[]
 }
 
-model Contrato {
-  id                   Int       @id @default(autoincrement())
-  numeroSecuencial     String    @unique
-  fechaInicio          DateTime
-  fechaFin             DateTime?
-  numeroDeMeses        Int
-  montoTotal           Decimal   @db.Decimal(18, 2)
-  estado               Boolean   @default(true)
-  observaciones        String?
-  esRenovacion         Boolean   @default(false)
-  vecesRenovado        Int       @default(0)
-  pathDocumentoFirmado String?
-  fechaCreacion        DateTime  @default(now())
-  fechaActualizacion   DateTime? @updatedAt
+model Contract {
+  id                 String    @id @default(uuid())
+  sequentialNumber   String    @unique
+  startDate          DateTime
+  endDate            DateTime?
+  monthCount         Int
+  totalAmount        Decimal   @db.Decimal(18, 2)
+  isActive           Boolean   @default(true)
+  notes              String?
+  signedDocumentPath String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime? @updatedAt
 
-  bovedaId Int
-  boveda   Boveda @relation(fields: [bovedaId], references: [id])
+  vaultId String
+  vault   Vault  @relation(fields: [vaultId], references: [id])
 
-  difuntoId Int
-  difunto   Difunto @relation(fields: [difuntoId], references: [id])
+  deceasedId String?
+  deceased   Deceased? @relation(fields: [deceasedId], references: [id])
 
-  contratoOrigenId Int?
-  contratoOrigen   Contrato?  @relation("ContratoOrigen", fields: [contratoOrigenId], references: [id])
-  contratosHijos   Contrato[] @relation("ContratoOrigen")
+  sourceContractId String?
+  sourceContract   Contract?  @relation("ContractSource", fields: [sourceContractId], references: [id])
+  childContracts   Contract[] @relation("ContractSource")
 
-  contratoRelacionadoId Int?
-  contratoRelacionado   Contrato?  @relation("ContratoRelacionado", fields: [contratoRelacionadoId], references: [id])
-  contratosRelacionados Contrato[] @relation("ContratoRelacionado")
+  relatedContractId String?
+  relatedContract   Contract?  @relation("RelatedContract", fields: [relatedContractId], references: [id])
+  relatedContracts  Contract[] @relation("RelatedContract")
 
-  responsables ContratoResponsable[]
-  cuotas       Cuota[]
+  assignments  ContractAssignment[]
+  installments Installment[]
 }
 
-model ContratoResponsable {
-  contratoId    Int
-  responsableId Int
-  contrato      Contrato    @relation(fields: [contratoId], references: [id])
-  responsable   Responsable @relation(fields: [responsableId], references: [id])
+model ContractAssignment {
+  contractId         String
+  responsiblePartyId String
+  contract           Contract         @relation(fields: [contractId], references: [id])
+  responsibleParty   ResponsibleParty @relation(fields: [responsiblePartyId], references: [id])
 
-  @@id([contratoId, responsableId])
+  @@id([contractId, responsiblePartyId])
 }
 
-model Cuota {
-  id               Int       @id @default(autoincrement())
-  numero           Int
-  monto            Decimal   @db.Decimal(18, 2)
-  fechaVencimiento DateTime
-  fechaPago        DateTime?
-  pagada           Boolean   @default(false)
-  intereses        Decimal   @default(0) @db.Decimal(18, 2)
-  estado           Boolean   @default(true)
-  observaciones    String?
+model Installment {
+  id              String    @id @default(uuid())
+  number          Int
+  amount          Decimal   @db.Decimal(18, 2)
+  dueDate         DateTime
+  paidAt          DateTime?
+  interestAmount  Decimal   @default(0) @db.Decimal(18, 2)
+  isActive        Boolean   @default(true)
+  notes           String?
 
-  contratoId Int
-  contrato   Contrato @relation(fields: [contratoId], references: [id])
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id])
 
-  pagos CuotaPago[]
+  installmentPayments InstallmentPayment[]
 }
 
-model Pago {
-  id           Int      @id @default(autoincrement())
-  numeroRecibo String   @unique
-  monto        Decimal  @db.Decimal(18, 2)
-  fechaPago    DateTime
-  metodoPago   String
-  referencia   String?
-  observacion  String?
-  estado       Boolean  @default(true)
-  bancoId      Int?
-  banco        Banco?   @relation(fields: [bancoId], references: [id])
+model Payment {
+  id            String   @id @default(uuid())
+  receiptNumber String   @unique
+  amount        Decimal  @db.Decimal(18, 2)
+  paidAt        DateTime
+  paymentMethod String
+  reference     String?
+  note          String?
+  isActive      Boolean  @default(true)
+  bankId        String?
+  bank          Bank?    @relation(fields: [bankId], references: [id])
 
-  cuotas CuotaPago[]
+  installmentPayments InstallmentPayment[]
 }
 
-model CuotaPago {
-  cuotaId Int
-  pagoId  Int
-  cuota   Cuota @relation(fields: [cuotaId], references: [id])
-  pago    Pago  @relation(fields: [pagoId], references: [id])
+model InstallmentPayment {
+  installmentId String
+  paymentId     String
+  installment   Installment @relation(fields: [installmentId], references: [id])
+  payment       Payment     @relation(fields: [paymentId], references: [id])
 
-  @@id([cuotaId, pagoId])
+  @@id([installmentId, paymentId])
 }
 
-model Descuento {
-  id            Int       @id @default(autoincrement())
-  nombre        String
-  porcentaje    Decimal   @db.Decimal(5, 2)
-  descripcion   String?
-  estado        Boolean   @default(true)
-  fechaInicio   DateTime
-  fechaFin      DateTime?
-  fechaCreacion DateTime  @default(now())
+model Discount {
+  id          String    @id @default(uuid())
+  name        String
+  percentage  Decimal   @db.Decimal(5, 2)
+  description String?
+  isActive    Boolean   @default(true)
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
 }
 
 model AuditLog {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(uuid())
   entityName String
   entityId   String
   action     String
@@ -284,22 +278,22 @@ model AuditLog {
   @@index([createdAt])
 }
 
-model Banco {
-  id     Int     @id @default(autoincrement())
-  nombre String  @unique
-  cuenta String?
-  estado Boolean @default(true)
+model Bank {
+  id       String   @id @default(uuid())
+  name     String   @unique
+  account  String?
+  isActive Boolean  @default(true)
 
-  pagos Pago[]
+  payments Payment[]
 }
 
-model GADInformacion {
-  id        Int     @id @default(autoincrement())
-  nombre    String
-  direccion String
-  telefono  String
-  email     String
-  ruc       String
-  logo      String?
-  slogan    String?
+model GovernmentInfo {
+  id      String  @id @default(uuid())
+  name    String
+  address String
+  phone   String
+  email   String
+  taxId   String
+  logo    String?
+  slogan  String?
 }

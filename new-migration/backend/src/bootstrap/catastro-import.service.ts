@@ -51,10 +51,10 @@ export class CatastroImportService {
     }
 
     const force = this.config.catastroImport.force;
-    const contratosCount = await this.prisma.contrato.count();
-    if (contratosCount > 0 && !force) {
+    const contractCount = await this.prisma.contract.count();
+    if (contractCount > 0 && !force) {
       this.logger.log(
-        `Catastro no importado: ya existen ${contratosCount} contratos. Use CATASTRO_IMPORT_FORCE=1 para forzar.`,
+        `Catastro no importado: ya existen ${contractCount} contratos. Use CATASTRO_IMPORT_FORCE=1 para forzar.`,
       );
       return;
     }
@@ -69,24 +69,24 @@ export class CatastroImportService {
   private async clearExistingData() {
     this.logger.warn('Forzando limpieza de datos para reimportar catastro...');
 
-    await this.prisma.cuotaPago.deleteMany();
-    await this.prisma.pago.deleteMany();
-    await this.prisma.cuota.deleteMany();
-    await this.prisma.contratoResponsable.deleteMany();
-    await this.prisma.contrato.deleteMany();
-    await this.prisma.difunto.deleteMany();
-    await this.prisma.responsable.deleteMany();
+    await this.prisma.installmentPayment.deleteMany();
+    await this.prisma.payment.deleteMany();
+    await this.prisma.installment.deleteMany();
+    await this.prisma.contractAssignment.deleteMany();
+    await this.prisma.contract.deleteMany();
+    await this.prisma.deceased.deleteMany();
+    await this.prisma.responsibleParty.deleteMany();
 
-    await this.prisma.boveda.updateMany({
-      data: { propietarioId: null },
+    await this.prisma.vault.updateMany({
+      data: { ownerId: null },
     });
-    await this.prisma.propietario.deleteMany();
-    await this.prisma.persona.deleteMany({
-      where: { tipoPersona: { in: ['Persona', 'Responsable', 'Propietario'] } },
+    await this.prisma.owner.deleteMany();
+    await this.prisma.person.deleteMany({
+      where: { personType: { in: ['Persona', 'Responsable', 'Propietario'] } },
     });
-    await this.prisma.boveda.deleteMany();
-    await this.prisma.piso.deleteMany();
-    await this.prisma.bloque.deleteMany();
+    await this.prisma.vault.deleteMany();
+    await this.prisma.floor.deleteMany();
+    await this.prisma.block.deleteMany();
   }
 
   private async importFromExcel(excelPath: string, adminUserId: string) {
@@ -139,9 +139,9 @@ export class CatastroImportService {
 
         const ocupada = Boolean(registro.nombreDifunto) || registro.esPropio || registro.esArrendado;
         if (!ocupada) {
-          await this.prisma.boveda.update({
+          await this.prisma.vault.update({
             where: { id: boveda.id },
-            data: { estado: true, propietarioId: null },
+            data: { isActive: true, ownerId: null },
           });
           registrosProcesados++;
           continue;
@@ -162,11 +162,11 @@ export class CatastroImportService {
           adminUserId,
         });
 
-        await this.createCuotasYPagoInicial(contrato.id, contrato.montoTotal, personaResponsable.id, contrato.fechaInicio);
+        await this.createCuotasYPagoInicial(contrato.id, contrato.totalAmount, personaResponsable.id, contrato.startDate);
 
-        await this.prisma.boveda.update({
+        await this.prisma.vault.update({
           where: { id: boveda.id },
-          data: { estado: false, propietarioId: propietario.id },
+          data: { isActive: false, ownerId: propietario.id },
         });
 
         contratosCreados++;
@@ -196,101 +196,119 @@ export class CatastroImportService {
   }
 
   private async upsertBloque(nombre: string, adminUserId: string) {
-    const cementerio = await this.prisma.cementerio.findFirst({
+    const cemetery = await this.prisma.cemetery.findFirst({
       orderBy: { id: 'asc' },
       select: { id: true },
     });
-    if (!cementerio) throw new Error('No existe cementerio para importar catastro');
+    if (!cemetery) throw new Error('No existe cementerio para importar catastro');
 
-    const existing = await this.prisma.bloque.findFirst({
-      where: { nombre: nombre.trim(), cementerioId: cementerio.id },
+    const existing = await this.prisma.block.findFirst({
+      where: { name: nombre.trim(), cemeteryId: cemetery.id },
     });
     if (existing) return existing;
 
-    const createdBlock = await this.prisma.bloque.create({
+    const createdBlock = await this.prisma.block.create({
       data: {
-        nombre: nombre.trim(),
-        descripcion: `Migrado de catastro: ${nombre.trim()}`,
-        estado: true,
-        cementerioId: cementerio.id,
+        name: nombre.trim(),
+        description: `Migrado de catastro: ${nombre.trim()}`,
+        isActive: true,
+        cemeteryId: cemetery.id,
       },
     });
 
-    await this.auditService.logCreate('Bloque', createdBlock.id, adminUserId, {
-      source: 'catastro-import',
+    await this.auditService.log({
+      action: 'CREATE',
+      entityName: 'Block',
+      entityId: createdBlock.id,
+      actorId: adminUserId,
+      details: {
+        source: 'catastro-import',
+      },
     });
 
     return createdBlock;
   }
 
-  private async upsertPiso(bloqueId: number) {
-    const existing = await this.prisma.piso.findFirst({
-      where: { bloqueId, numero: 1 },
+  private async upsertPiso(blockId: string) {
+    const existing = await this.prisma.floor.findFirst({
+      where: { blockId, number: 1 },
     });
     if (existing) return existing;
 
-    return this.prisma.piso.create({
+    return this.prisma.floor.create({
       data: {
-        bloqueId,
-        numero: 1,
-        descripcion: 'Migrado',
-        estado: true,
+        blockId,
+        number: 1,
+        description: 'Migrado',
+        isActive: true,
       },
     });
   }
 
-  private async upsertBoveda(registro: RegistroCatastro, bloqueId: number, pisoId: number, adminUserId: string) {
+  private async upsertBoveda(registro: RegistroCatastro, blockId: string, floorId: string, adminUserId: string) {
     const numero = registro.numeroBovedaRaw || registro.idExcel || `BOV-${Date.now()}`;
-    const existing = await this.prisma.boveda.findFirst({
-      where: { numero: numero.trim(), bloqueId },
+    const existing = await this.prisma.vault.findFirst({
+      where: { number: numero.trim(), blockId },
     });
     if (existing) return existing;
 
-    const createdVault = await this.prisma.boveda.create({
+    const createdVault = await this.prisma.vault.create({
       data: {
-        numero: numero.trim(),
-        capacidad: 1,
-        tipo: registro.tipo || 'Boveda',
-        estado: true,
-        observaciones: registro.observaciones || 'Migrado de catastro',
-        precio: 240,
-        precioArrendamiento: 240,
-        bloqueId,
-        pisoId,
+        number: numero.trim(),
+        capacity: 1,
+        type: registro.tipo || 'Boveda',
+        isActive: true,
+        notes: registro.observaciones || 'Migrado de catastro',
+        price: 240,
+        rentalPrice: 240,
+        blockId,
+        floorId,
       },
     });
 
-    await this.auditService.logCreate('Boveda', createdVault.id, adminUserId, {
-      source: 'catastro-import',
+    await this.auditService.log({
+      action: 'CREATE',
+      entityName: 'Vault',
+      entityId: createdVault.id,
+      actorId: adminUserId,
+      details: {
+        source: 'catastro-import',
+      },
     });
 
     return createdVault;
   }
 
-  private async upsertDifunto(registro: RegistroCatastro, bovedaId: number, adminUserId: string) {
+  private async upsertDifunto(registro: RegistroCatastro, vaultId: string, adminUserId: string) {
     const [nombre, ...resto] = (registro.nombreDifunto || 'DIFUNTO DESCONOCIDO').split(/\s+/).filter(Boolean);
     const apellido = resto.join(' ') || '(MIGRACION)';
-    const existing = await this.prisma.difunto.findFirst({
+    const existing = await this.prisma.deceased.findFirst({
       where: {
-        nombre: { equals: nombre, mode: 'insensitive' },
-        apellido: { equals: apellido, mode: 'insensitive' },
+        firstName: { equals: nombre, mode: 'insensitive' },
+        lastName: { equals: apellido, mode: 'insensitive' },
       },
     });
     if (existing) return existing;
 
-    const createdDeceased = await this.prisma.difunto.create({
+    const createdDeceased = await this.prisma.deceased.create({
       data: {
-        nombre,
-        apellido,
-        numeroIdentificacion: '9999999999',
-        fechaDefuncion: registro.fechaContrato ?? new Date(),
-        estado: true,
-        bovedaId,
+        firstName: nombre,
+        lastName: apellido,
+        identificationNumber: '9999999999',
+        deathDate: registro.fechaContrato ?? new Date(),
+        isActive: true,
+        vaultId,
       },
     });
 
-    await this.auditService.logCreate('Difunto', createdDeceased.id, adminUserId, {
-      source: 'catastro-import',
+    await this.auditService.log({
+      action: 'CREATE',
+      entityName: 'Deceased',
+      entityId: createdDeceased.id,
+      actorId: adminUserId,
+      details: {
+        source: 'catastro-import',
+      },
     });
 
     return createdDeceased;
@@ -302,57 +320,63 @@ export class CatastroImportService {
     const apellido = resto.join(' ') || '(MIGRACION)';
     const numeroIdentificacion = registro.contacto || this.makeMigrationId(`${nombre} ${apellido}`);
 
-    const existing = await this.prisma.persona.findFirst({
-      where: { numeroIdentificacion, tipoPersona: 'Persona' },
+    const existing = await this.prisma.person.findFirst({
+      where: { identificationNumber: numeroIdentificacion, personType: 'Persona' },
     });
     if (existing) return existing;
 
-    const createdPerson = await this.prisma.persona.create({
+    const createdPerson = await this.prisma.person.create({
       data: {
-        numeroIdentificacion,
-        nombre: nombre || 'SIN',
-        apellido: apellido || 'NOMBRE',
-        telefono: registro.contacto || null,
+        identificationNumber: numeroIdentificacion,
+        firstName: nombre || 'SIN',
+        lastName: apellido || 'NOMBRE',
+        phone: registro.contacto || null,
         email: registro.correo || `${numeroIdentificacion}@migracion.local`,
-        direccion: 'CEMENTERIO',
-        tipoIdentificacion: 'CED',
-        estado: true,
-        tipoPersona: 'Persona',
+        address: 'CEMENTERIO',
+        identificationType: 'CED',
+        isActive: true,
+        personType: 'Persona',
       },
     });
 
-    await this.auditService.logCreate('Persona', createdPerson.id, adminUserId, {
-      source: 'catastro-import',
+    await this.auditService.log({
+      action: 'CREATE',
+      entityName: 'Person',
+      entityId: createdPerson.id,
+      actorId: adminUserId,
+      details: {
+        source: 'catastro-import',
+      },
     });
 
     return createdPerson;
   }
 
-  private async upsertPropietario(personaId: number) {
-    const existing = await this.prisma.propietario.findFirst({ where: { personaId } });
+  private async upsertPropietario(personId: string) {
+    const existing = await this.prisma.owner.findFirst({ where: { personId } });
     if (existing) return existing;
-    return this.prisma.propietario.create({
-      data: { personaId, estado: true },
+    return this.prisma.owner.create({
+      data: { personId, isActive: true },
     });
   }
 
-  private async upsertResponsable(personaId: number, propietarioId: number) {
-    const existing = await this.prisma.responsable.findFirst({ where: { personaId } });
+  private async upsertResponsable(personId: string, ownerId: string) {
+    const existing = await this.prisma.responsibleParty.findFirst({ where: { personId } });
     if (existing) return existing;
-    return this.prisma.responsable.create({
+    return this.prisma.responsibleParty.create({
       data: {
-        personaId,
-        propietarioId,
-        parentesco: 'Representante',
-        estado: true,
+        personId,
+        ownerId,
+        relationship: 'Representante',
+        isActive: true,
       },
     });
   }
 
   private async createContrato(params: {
-    bovedaId: number;
-    difuntoId: number;
-    responsableId: number;
+    bovedaId: string;
+    difuntoId: string;
+    responsableId: string;
     inicio: Date;
     fin: Date;
     observaciones: string;
@@ -364,101 +388,106 @@ export class CatastroImportService {
       (params.fin.getFullYear() - params.inicio.getFullYear()) * 12 + (params.fin.getMonth() - params.inicio.getMonth()),
     );
 
-    const contrato = await this.prisma.contrato.create({
+    const contrato = await this.prisma.contract.create({
       data: {
-        numeroSecuencial,
-        fechaInicio: params.inicio,
-        fechaFin: params.fin,
-        numeroDeMeses,
-        montoTotal: 240,
-        estado: true,
-        observaciones: params.observaciones,
-        bovedaId: params.bovedaId,
-        difuntoId: params.difuntoId,
+        sequentialNumber: numeroSecuencial,
+        startDate: params.inicio,
+        endDate: params.fin,
+        monthCount: numeroDeMeses,
+        totalAmount: 240,
+        isActive: true,
+        notes: params.observaciones,
+        vaultId: params.bovedaId,
+        deceasedId: params.difuntoId,
       },
     });
 
-    await this.auditService.logCreate('Contrato', contrato.id, params.adminUserId, {
-      source: 'catastro-import',
+    await this.auditService.log({
+      action: 'CREATE',
+      entityName: 'Contract',
+      entityId: contrato.id,
+      actorId: params.adminUserId,
+      details: {
+        source: 'catastro-import',
+      },
     });
 
-    await this.prisma.contratoResponsable.upsert({
+    await this.prisma.contractAssignment.upsert({
       where: {
-        contratoId_responsableId: {
-          contratoId: contrato.id,
-          responsableId: params.responsableId,
+        contractId_responsiblePartyId: {
+          contractId: contrato.id,
+          responsiblePartyId: params.responsableId,
         },
       },
       update: {},
       create: {
-        contratoId: contrato.id,
-        responsableId: params.responsableId,
+        contractId: contrato.id,
+        responsiblePartyId: params.responsableId,
       },
     });
 
     return contrato;
   }
 
-  private async createCuotasYPagoInicial(contratoId: number, montoTotal: any, personaId: number, fechaInicio: Date) {
+  private async createCuotasYPagoInicial(contractId: string, montoTotal: any, personId: string, fechaInicio: Date) {
     const total = Number(montoTotal);
     const cuotaMonto = Number((total / 5).toFixed(2));
     const cuotas = [];
 
     for (let i = 1; i <= 5; i++) {
-      const cuota = await this.prisma.cuota.create({
+      const cuota = await this.prisma.installment.create({
         data: {
-          contratoId,
-          numero: i,
-          monto: cuotaMonto,
-          fechaVencimiento: this.addYears(fechaInicio, i),
-          fechaPago: new Date(),
-          pagada: true,
-          intereses: 0,
-          estado: true,
+          contractId,
+          number: i,
+          amount: cuotaMonto,
+          dueDate: this.addYears(fechaInicio, i),
+          paidAt: new Date(),
+          interestAmount: 0,
+          isActive: true,
         },
       });
       cuotas.push(cuota);
     }
 
-    const pago = await this.prisma.pago.create({
+    const pago = await this.prisma.payment.create({
       data: {
-        numeroRecibo: `MIGRACION-${contratoId}-${Date.now()}`,
-        monto: cuotas.reduce((acc, c) => acc + Number(c.monto), 0),
-        fechaPago: new Date(),
-        metodoPago: 'Efectivo',
-        referencia: `MIGRACION-${personaId}`,
-        observacion: 'Pago inicial de migración',
-        estado: true,
+        receiptNumber: `MIGRACION-${contractId}-${Date.now()}`,
+        amount: cuotas.reduce((acc, c) => acc + Number(c.amount), 0),
+        paidAt: new Date(),
+        paymentMethod: 'Efectivo',
+        reference: `MIGRACION-${personId}`,
+        note: 'Pago inicial de migración',
+        isActive: true,
       },
     });
 
-    await this.prisma.cuotaPago.createMany({
-      data: cuotas.map((c) => ({ cuotaId: c.id, pagoId: pago.id })),
+    await this.prisma.installmentPayment.createMany({
+      data: cuotas.map((c) => ({ installmentId: c.id, paymentId: pago.id })),
     });
   }
 
-  private async generateNumeroContrato(bovedaId: number, isRenovacion = false): Promise<string> {
+  private async generateNumeroContrato(bovedaId: string, isRenovacion = false): Promise<string> {
     const year = new Date().getFullYear();
-    const boveda = await this.prisma.boveda.findUnique({
+    const boveda = await this.prisma.vault.findUnique({
       where: { id: bovedaId },
-      include: { piso: { include: { bloque: true } } },
+      include: { floor: { include: { block: true } } },
     });
-    const tipo = (boveda?.tipo || boveda?.piso?.bloque?.nombre || 'Boveda').toLowerCase();
+    const tipo = (boveda?.type || boveda?.floor?.block?.name || 'Boveda').toLowerCase();
 
     const basePrefix = tipo.includes('nicho') ? 'NCH' : tipo.includes('tumulo') || tipo.includes('tumul') ? 'TML' : 'CTR';
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    const lastContrato = await this.prisma.contrato.findFirst({
+    const lastContrato = await this.prisma.contract.findFirst({
       where: {
-        numeroSecuencial: {
+        sequentialNumber: {
           startsWith: `${prefix}-GADCHECA-${year}-`,
         },
       },
       orderBy: { id: 'desc' },
-      select: { numeroSecuencial: true },
+      select: { sequentialNumber: true },
     });
 
-    const nextNumber = lastContrato ? Number(lastContrato.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
+    const nextNumber = lastContrato ? Number(lastContrato.sequentialNumber.split('-').pop() || '0') + 1 : 1;
     return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 

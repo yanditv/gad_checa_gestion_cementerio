@@ -19,13 +19,13 @@ export class BloqueService {
     };
   }
 
-  async listByCemetery(cemeteryId: number) {
+  async listByCemetery(cemeteryId: string) {
     return this.bloqueRepository.listByCemetery(cemeteryId);
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     const block = await this.bloqueRepository.findById(id);
-    if (!block || block.estado === false) {
+    if (!block || block.isActive === false) {
       throw new NotFoundException('Block not found');
     }
 
@@ -37,14 +37,14 @@ export class BloqueService {
     return this.bloqueRepository.create(block);
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     await this.getById(id);
     const block = Bloque.create(data);
     return this.bloqueRepository.update(id, block);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.getById(id);
-    return this.bloqueRepository.update(id, Bloque.create({ estado: false }));
+    return this.bloqueRepository.update(id, Bloque.create({ isActive: false }));
   }
 }
