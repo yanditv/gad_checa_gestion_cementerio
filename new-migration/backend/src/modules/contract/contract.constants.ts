@@ -8,3 +8,5 @@ export const CONTRACT_NUMBER_PREFIX = {
   tomb: 'TML',
   renewal: 'RNV',
 } as const;
+
+export type ContractTypeKey = Exclude<keyof typeof CONTRACT_NUMBER_PREFIX, 'renewal'>;

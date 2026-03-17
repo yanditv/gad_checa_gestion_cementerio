@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import type { ContractTypeKey } from '../contract/contract.constants';
 import { AvailableVaultsQueryDto } from '../contract/dto/available-vaults-query.dto';
 import { VaultRepository } from './vault.repository';
 import { CreateVaultDto } from './dto/create-vault.dto';
 import { UpdateVaultDto } from './dto/update-vault.dto';
 import { VaultListQueryDto } from './dto/vault-list-query.dto';
+
+type VaultContractContext = Awaited<ReturnType<VaultRepository['findContractContextById']>>;
 
 @Injectable()
 export class VaultService {
@@ -76,9 +79,13 @@ export class VaultService {
     return this.vaultRepository.update(id, { isActive: false });
   }
 
-  private resolveContractTypeKey(vault: string){
-    const vaultType = vault?.type.toLowerCase();
-    if(! ['niche', 'tomb'].includes(vault)) return 'default'
-    return vaultType
+  private resolveContractTypeKey(vault: VaultContractContext): ContractTypeKey {
+    const vaultType = vault?.type?.trim().toLowerCase();
+
+    if (vaultType === 'niche' || vaultType === 'tomb') {
+      return vaultType;
+    }
+
+    return 'default';
   }
 }

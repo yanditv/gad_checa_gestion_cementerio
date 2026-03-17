@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
 import { DeceasedService } from '../deceased/deceased.service';
@@ -6,10 +6,16 @@ import { InstallmentService } from '../installment/installment.service';
 import { PaymentService } from '../payment/payment.service';
 import { PersonService } from '../person/person.service';
 import { VaultService } from '../vault/vault.service';
-import { CONTRACT_CREATION_PAYMENT_TYPES, CONTRACT_NUMBER_OWNER_CODE, CONTRACT_NUMBER_PREFIX, DEFAULT_CONTRACT_MONTH_COUNT } from './contract.constants';
+import {
+  CONTRACT_CREATION_PAYMENT_TYPES,
+  CONTRACT_NUMBER_OWNER_CODE,
+  CONTRACT_NUMBER_PREFIX,
+  DEFAULT_CONTRACT_MONTH_COUNT,
+} from './contract.constants';
 import { ContractRepository } from './contract.repository';
 import { AvailableVaultsQueryDto } from './dto/available-vaults-query.dto';
 import { ContractListQueryDto } from './dto/contract-list-query.dto';
+import { CreateContractDto } from './dto/create-contract.dto';
 import { CreateContractRequestDto } from './dto/create-contract-request.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 
@@ -79,7 +85,7 @@ export class ContractService {
       return this.createFromWizard(data);
     }
 
-    const contractData = data.toContractData();
+    const contractData = this.getContractData(data);
     const contractNumber = await this.generateContractNumber(contractData.vaultId, false);
 
     return this.contractRepository.create(
@@ -168,7 +174,7 @@ export class ContractService {
       await this.contractRepository.replaceResponsibleAssignments(id, responsibleIds);
     }
 
-    return this.contractRepository.update(id, data.toContractData());
+    return this.contractRepository.update(id, this.getContractData(data));
   }
 
   async remove(id: string) {
@@ -189,5 +195,15 @@ export class ContractService {
       ),
       contracts,
     };
+  }
+
+  private getContractData(data: {
+    toContractData?: () => Partial<CreateContractDto>;
+  }): Partial<CreateContractDto> {
+    if (typeof data.toContractData !== 'function') {
+      throw new BadRequestException('Contract payload is invalid.');
+    }
+
+    return data.toContractData();
   }
 }
