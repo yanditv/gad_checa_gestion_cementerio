@@ -315,7 +315,10 @@ async Task InitializeData(WebApplication app)
         await CreateInitialData(dbContext, userManager);
 
         // Ejecutar migración del catastro si el archivo existe
-        await MigrarCatastroSiExiste(services);
+        // await MigrarCatastroSiExiste(services); // DESHABILITADO
+
+        // Resetear pagos a 0 (solo se ejecuta una vez)
+        await ResetPaymentsToZero(services);
     }
     catch (Exception ex)
     {
@@ -587,5 +590,34 @@ async Task MigrarCatastroSiExiste(IServiceProvider services)
     {
         logger.LogError(ex, "Error crítico durante la migración automática del catastro");
         // No lanzar la excepción para no interrumpir el inicio de la aplicación
+    }
+}
+
+async Task ResetPaymentsToZero(IServiceProvider services)
+{
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+
+    var resetEnabled = Environment.GetEnvironmentVariable("RESET_PAYMENTS_ON_START")?.ToLower() == "true";
+    
+    if (!resetEnabled)
+    {
+        logger.LogInformation("Reset de pagos deshabilitado. Saltando...");
+        return;
+    }
+
+    try
+    {
+        logger.LogInformation("Ejecutando reset de pagos a 0...");
+
+        await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [CuotaPago]");
+        await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM [Pago]");
+        await dbContext.Database.ExecuteSqlRawAsync("UPDATE [Cuota] SET [Pagada] = 1, [Monto] = 0");
+
+        logger.LogInformation("Reset de pagos completado exitosamente. Cuotas marcadas como pagadas con monto 0.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning($"Error al resetear pagos: {ex.Message}");
     }
 }
