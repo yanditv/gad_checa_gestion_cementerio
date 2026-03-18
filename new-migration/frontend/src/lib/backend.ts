@@ -19,7 +19,7 @@ export async function fetchWithTimeout(input: string, init: RequestInit = {}) {
 
 export function unwrapApiResponse<T>(payload: unknown): { data: T; meta?: unknown } {
   if (payload && typeof payload === 'object' && 'success' in payload) {
-    const typedPayload = payload as { data: T; meta?: unknown };
+    const typedPayload = payload as unknown as { data: T; meta?: unknown };
     return {
       data: typedPayload.data,
       meta: typedPayload.meta,

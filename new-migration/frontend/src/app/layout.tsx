@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 
 export const metadata: Metadata = {
   title: 'Gad Checa - Gestión Cementerio',
@@ -42,9 +43,11 @@ export default function RootLayout({
           </div>
         </div>
 
-        <DashboardLayout>
-          {children}
-        </DashboardLayout>
+        <QueryProvider>
+          <DashboardLayout>
+            {children}
+          </DashboardLayout>
+        </QueryProvider>
 
         <Script src="/js/plugins/popper.min.js" strategy="afterInteractive" />
         <Script src="/js/plugins/simplebar.min.js" strategy="afterInteractive" />

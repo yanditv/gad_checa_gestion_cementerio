@@ -75,6 +75,14 @@ class ApiClient {
       return payload.data as T;
     }
 
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return payload.data as T;
+    }
+
+    if (payload && typeof payload === 'object' && 'items' in payload) {
+      return payload.items as T;
+    }
+
     return payload as T;
   }
 
