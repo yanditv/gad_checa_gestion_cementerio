@@ -47,6 +47,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - DB_CONNECTION_STRING=Server=sqlserver-checa;Database=${MSSQL_DATABASE};User=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true;ConnectRetryCount=5;ConnectRetryInterval=10;
+      - RESET_PAYMENTS_ON_START=true
     depends_on:
       sqlserver-checa:
         condition: service_healthy
