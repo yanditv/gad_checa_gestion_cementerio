@@ -86,31 +86,89 @@ export class ContratoService {
     };
   }
 
-  async findAll(query: PaginationQueryDto) {
+  async findAll(query: PaginationQueryDto & { estado?: string }) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 
-    const where: any = {
-      estado: true,
-      ...(search
+    // Filtro por estado — paridad legado ContratosController.cs:86-105
+    //   activos    : estado=true && fechaFin >= hoy (o sin fecha fin)
+    //   porvencer  : estado=true && fechaFin entre hoy y hoy+30d
+    //   vencidos   : estado=true && fechaFin < hoy
+    //   inactivos  : estado=false
+    //   (vacío)    : todos los estado=true
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const en30dias = new Date(today);
+    en30dias.setDate(en30dias.getDate() + 30);
+
+    const filtroEstado: any = (() => {
+      switch ((query.estado ?? '').toLowerCase()) {
+        case 'activos':
+          return {
+            estado: true,
+            OR: [{ fechaFin: null }, { fechaFin: { gte: today } }],
+          };
+        case 'porvencer':
+          return {
+            estado: true,
+            fechaFin: { gte: today, lte: en30dias },
+          };
+        case 'vencidos':
+          return {
+            estado: true,
+            fechaFin: { lt: today },
+          };
+        case 'inactivos':
+          return { estado: false };
+        default:
+          return { estado: true };
+      }
+    })();
+
+    // Búsqueda multi-palabra — paridad legado: cada palabra debe coincidir
+    // contra al menos uno de los campos (AND palabra a palabra, OR campo a campo).
+    const palabras = search ? search.split(/\s+/).filter(Boolean) : [];
+    const filtroBusqueda =
+      palabras.length > 0
         ? {
-            OR: [
-              { numeroSecuencial: { contains: search, mode: 'insensitive' } },
-              { difunto: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
-              { difunto: { is: { apellido: { contains: search, mode: 'insensitive' } } } },
-              { boveda: { is: { numero: { contains: search, mode: 'insensitive' } } } },
-            ],
+            AND: palabras.map((palabra) => ({
+              OR: [
+                { numeroSecuencial: { contains: palabra, mode: 'insensitive' } },
+                { difunto: { is: { nombre: { contains: palabra, mode: 'insensitive' } } } },
+                { difunto: { is: { apellido: { contains: palabra, mode: 'insensitive' } } } },
+                {
+                  difunto: {
+                    is: {
+                      numeroIdentificacion: {
+                        contains: palabra,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
+                { boveda: { is: { numero: { contains: palabra, mode: 'insensitive' } } } },
+              ],
+            })),
           }
-        : {}),
-    };
+        : {};
+
+    const where: any = { ...filtroEstado, ...filtroBusqueda };
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.contrato.findMany({
         where,
         include: {
-          boveda: { include: { bloque: { include: { cementerio: true } } } },
+          boveda: {
+            include: {
+              bloque: { include: { cementerio: true } },
+              piso: true,
+              propietario: { include: { persona: true } },
+            },
+          },
           difunto: true,
-          responsables: { include: { responsable: { include: { persona: true } } } },
+          responsables: {
+            include: { responsable: { include: { persona: true } } },
+          },
           cuotas: { where: { estado: true } },
         },
         orderBy: { fechaCreacion: 'desc' },
@@ -129,13 +187,51 @@ export class ContratoService {
   async findOne(id: number) {
     const contrato = await this.prisma.contrato.findUnique({
       where: { id },
-      include: { 
-        boveda: { include: { bloque: { include: { cementerio: true } }, piso: true } },
+      include: {
+        boveda: {
+          include: {
+            bloque: { include: { cementerio: true } },
+            piso: true,
+            propietario: { include: { persona: true } },
+          },
+        },
         difunto: true,
-        responsables: { include: { responsable: { include: { persona: true, propietario: true } } } },
-        cuotas: { include: { pagos: { include: { pago: true } } }, orderBy: { numero: 'asc' } },
-        contratoOrigen: true,
-        contratoRelacionado: true,
+        responsables: {
+          include: {
+            responsable: { include: { persona: true, propietario: true } },
+          },
+        },
+        cuotas: {
+          include: { pagos: { include: { pago: { include: { banco: true } } } } },
+          orderBy: { numero: 'asc' },
+        },
+        descuento: true,
+        // Renovaciones encadenadas: contrato del que se deriva y los que se derivan de éste.
+        contratoOrigen: {
+          select: {
+            id: true,
+            numeroSecuencial: true,
+            fechaInicio: true,
+            fechaFin: true,
+          },
+        },
+        contratosHijos: {
+          where: { estado: true },
+          select: {
+            id: true,
+            numeroSecuencial: true,
+            fechaInicio: true,
+            fechaFin: true,
+          },
+          orderBy: { fechaInicio: 'asc' },
+        },
+        contratoRelacionado: {
+          select: {
+            id: true,
+            numeroSecuencial: true,
+            difunto: { select: { nombre: true, apellido: true } },
+          },
+        },
       },
     });
     if (!contrato) throw new NotFoundException('Contrato no encontrado');
