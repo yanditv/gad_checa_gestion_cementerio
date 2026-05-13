@@ -18,30 +18,50 @@ model Usuario {
   direccion            String?
   tipoIdentificacion   String
   estado               Boolean   @default(true)
+  mustChangePassword   Boolean   @default(false)
   fechaCreacion        DateTime  @default(now())
   fechaActualizacion   DateTime?
 
-  // Relations
-  personas                Persona[]
-  contratos               Contrato[]   @relation("UsuarioCreador")
-  contratosActualizados   Contrato[]   @relation("UsuarioActualizador")
-  contratosEliminados     Contrato[]   @relation("UsuarioEliminador")
-  difuntos                Difunto[]    @relation("UsuarioCreador")
-  difuntosActualizados    Difunto[]    @relation("UsuarioActualizador")
-  difuntosEliminados      Difunto[]    @relation("UsuarioEliminador")
-  descuentos              Descuento[]  @relation("UsuarioCreador")
-  descuentosActualizados  Descuento[]  @relation("UsuarioActualizador")
-  descuentosEliminados    Descuento[]  @relation("UsuarioEliminador")
-  bloques                 Bloque[]     @relation("UsuarioCreador")
-  bloquesActualizados     Bloque[]     @relation("UsuarioActualizador")
-  bloquesEliminados       Bloque[]     @relation("UsuarioEliminador")
-  cementerios             Cementerio[] @relation("UsuarioCreador")
-  cementeriosActualizados Cementerio[] @relation("UsuarioActualizador")
-  cementeriosEliminados   Cementerio[] @relation("UsuarioEliminador")
-  bovedas                 Boveda[]     @relation("UsuarioCreador")
-  bovedasActualizadas     Boveda[]     @relation("UsuarioActualizador")
-  bovedasEliminadas       Boveda[]     @relation("UsuarioEliminador")
-  usuarioRols             UsuarioRol[]
+  // Relations (paridad legada — todas las entidades auditadas referencian Usuario)
+  personasCreadas      Persona[] @relation("PersonaUsuarioCreador")
+  personasActualizadas Persona[] @relation("PersonaUsuarioActualizador")
+  personasEliminadas   Persona[] @relation("PersonaUsuarioEliminador")
+
+  difuntos             Difunto[] @relation("DifuntoUsuarioCreador")
+  difuntosActualizados Difunto[] @relation("DifuntoUsuarioActualizador")
+  difuntosEliminados   Difunto[] @relation("DifuntoUsuarioEliminador")
+
+  contratos             Contrato[] @relation("ContratoUsuarioCreador")
+  contratosActualizados Contrato[] @relation("ContratoUsuarioActualizador")
+  contratosEliminados   Contrato[] @relation("ContratoUsuarioEliminador")
+
+  descuentos             Descuento[] @relation("DescuentoUsuarioCreador")
+  descuentosActualizados Descuento[] @relation("DescuentoUsuarioActualizador")
+  descuentosEliminados   Descuento[] @relation("DescuentoUsuarioEliminador")
+
+  bloques             Bloque[] @relation("BloqueUsuarioCreador")
+  bloquesActualizados Bloque[] @relation("BloqueUsuarioActualizador")
+  bloquesEliminados   Bloque[] @relation("BloqueUsuarioEliminador")
+
+  cementerios             Cementerio[] @relation("CementerioUsuarioCreador")
+  cementeriosActualizados Cementerio[] @relation("CementerioUsuarioActualizador")
+  cementeriosEliminados   Cementerio[] @relation("CementerioUsuarioEliminador")
+
+  bovedas             Boveda[] @relation("BovedaUsuarioCreador")
+  bovedasActualizadas Boveda[] @relation("BovedaUsuarioActualizador")
+  bovedasEliminadas   Boveda[] @relation("BovedaUsuarioEliminador")
+
+  pagosCreados      Pago[] @relation("PagoUsuarioCreador")
+  pagosActualizados Pago[] @relation("PagoUsuarioActualizador")
+  pagosEliminados   Pago[] @relation("PagoUsuarioEliminador")
+
+  gadInformacionesCreadas      GADInformacion[] @relation("GADUsuarioCreador")
+  gadInformacionesActualizadas GADInformacion[] @relation("GADUsuarioActualizador")
+
+  documentosSubidos Documento[]
+  notificaciones    Notificacion[]
+
+  usuarioRols UsuarioRol[]
 }
 
 model Rol {
@@ -57,30 +77,82 @@ model Rol {
 model UsuarioRol {
   usuarioId String
   rolId     String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-  rol       Rol     @relation(fields: [rolId], references: [id])
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
 
   @@id([usuarioId, rolId])
 }
 
+// =============================================================================
+// Cementerio + parámetros operativos (paridad con CementerioModel.cs legado)
+// =============================================================================
 model Cementerio {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  direccion     String?
-  telefono      String?
-  email         String?
-  ruc           String?
-  fechaCreacion DateTime @default(now())
-  estado        Boolean  @default(true)
+  id        Int     @id @default(autoincrement())
+  nombre    String
+  direccion String?
+  telefono  String?
+  email     String?
+  ruc       String?
+
+  // Datos del representante para PDFs oficiales
+  abreviaturaTituloPresidente String? // ej. "Sr.", "Dr."
+  presidente                  String?
+
+  // Política de arriendo (años de duración por defecto y máximo de renovaciones)
+  vecesRenovacionBovedas Int @default(1)
+  vecesRenovacionNicho   Int @default(1)
+  aniosArriendoBovedas   Int @default(5)
+  aniosArriendoNicho     Int @default(5)
+
+  // Tarifas por defecto al crear contratos (sobrescribibles por bóveda)
+  tarifaArriendo      Decimal? @db.Decimal(18, 2)
+  tarifaArriendoNicho Decimal? @db.Decimal(18, 2)
+
+  // Datos para depósito/transferencia de pagos
+  entidadFinanciera       String?
+  nombreEntidadFinanciera String?
+  numeroCuenta            String?
+
+  // Mora: porcentaje diario aplicado a cuotas vencidas (mejora [M])
+  tasaMoraDiaria Decimal @default(0) @db.Decimal(5, 4)
+
+  estado             Boolean   @default(true)
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
 
   usuarioCreadorId      String?
-  usuarioCreador        Usuario? @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioCreador        Usuario? @relation("CementerioUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
-  usuarioActualizador   Usuario? @relation("UsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioActualizador   Usuario? @relation("CementerioUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
   usuarioEliminadorId   String?
-  usuarioEliminador     Usuario? @relation("UsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+  usuarioEliminador     Usuario? @relation("CementerioUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
   bloques Bloque[]
+}
+
+// Datos institucionales del GAD para encabezados de PDF y página About
+model GADInformacion {
+  id        Int     @id @default(autoincrement())
+  nombre    String
+  direccion String
+  telefono  String
+  email     String
+  ruc       String
+  logo      String?
+  logoUrl   String?
+  website   String?
+  mision    String?
+  vision    String?
+  slogan    String?
+
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("GADUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("GADUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
 }
 
 model Bloque {
@@ -94,11 +166,11 @@ model Bloque {
   cementerio   Cementerio @relation(fields: [cementerioId], references: [id])
 
   usuarioCreadorId      String?
-  usuarioCreador        Usuario? @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioCreador        Usuario? @relation("BloqueUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
-  usuarioActualizador   Usuario? @relation("UsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioActualizador   Usuario? @relation("BloqueUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
   usuarioEliminadorId   String?
-  usuarioEliminador     Usuario? @relation("UsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+  usuarioEliminador     Usuario? @relation("BloqueUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
   pisos   Piso[]
   bovedas Boveda[]
@@ -137,16 +209,19 @@ model Boveda {
   propietario   Propietario? @relation(fields: [propietarioId], references: [id])
 
   usuarioCreadorId      String?
-  usuarioCreador        Usuario? @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioCreador        Usuario? @relation("BovedaUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
-  usuarioActualizador   Usuario? @relation("UsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioActualizador   Usuario? @relation("BovedaUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
   usuarioEliminadorId   String?
-  usuarioEliminador     Usuario? @relation("UsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+  usuarioEliminador     Usuario? @relation("BovedaUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
   contratos Contrato[]
   difuntos  Difunto[]
 }
 
+// =============================================================================
+// Personas (responsables, propietarios)
+// =============================================================================
 model Persona {
   id                   Int       @id @default(autoincrement())
   numeroIdentificacion String
@@ -158,14 +233,23 @@ model Persona {
   tipoIdentificacion   String
   fechaNacimiento      DateTime?
   genero               String?
+  estadoCivil          String?
+  profesion            String?
+  nacionalidad         String?
   estado               Boolean   @default(true)
   fechaCreacion        DateTime  @default(now())
+  fechaActualizacion   DateTime?
+  fechaEliminacion     DateTime?
   tipoPersona          String    @default("Persona")
 
-  usuarioCreadorId String?
-  usuarioCreador   Usuario? @relation(fields: [usuarioCreadorId], references: [id])
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("PersonaUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("PersonaUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("PersonaUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
-  // Discriminator for inheritance
+  // Discriminator for inheritance (paridad con TipoPersona del legado)
   responsables Responsable[]
   propietarios Propietario[]
 
@@ -199,6 +283,9 @@ model Responsable {
   contratoResponsables ContratoResponsable[]
 }
 
+// =============================================================================
+// Difunto — datos vitales y certificado de defunción (paridad manual usuario §5)
+// =============================================================================
 model Difunto {
   id                   Int       @id @default(autoincrement())
   nombre               String
@@ -211,28 +298,48 @@ model Difunto {
   observaciones        String?
   edad                 Int?
   genero               String?
-  estado               Boolean   @default(true)
-  fechaCreacion        DateTime  @default(now())
+
+  // Información complementaria (manual de usuario §5)
+  nacionalidad    String?
+  estadoCivil     String?
+  lugarNacimiento String?
+  lugarDefuncion  String?
+  nombreConyuge   String?
+  nombrePadre     String?
+  nombreMadre     String?
+
+  // Certificado de defunción
+  numeroCertificadoDefuncion String?
+  entidadEmisora             String?
+  fechaEmisionCertificado    DateTime?
+
+  estado        Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
 
   bovedaId Int
   boveda   Boveda @relation(fields: [bovedaId], references: [id])
 
   usuarioCreadorId      String?
-  usuarioCreador        Usuario? @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioCreador        Usuario? @relation("DifuntoUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
-  usuarioActualizador   Usuario? @relation("UsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioActualizador   Usuario? @relation("DifuntoUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
   usuarioEliminadorId   String?
-  usuarioEliminador     Usuario? @relation("UsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+  usuarioEliminador     Usuario? @relation("DifuntoUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
   contratos Contrato[]
 }
 
+// =============================================================================
+// Contrato — corazón del dominio
+// =============================================================================
 model Contrato {
   id                   Int       @id @default(autoincrement())
   numeroSecuencial     String    @unique
   fechaInicio          DateTime
   fechaFin             DateTime?
   numeroDeMeses        Int
+  montoSubtotal        Decimal?  @db.Decimal(18, 2)
+  montoDescuento       Decimal?  @db.Decimal(18, 2)
   montoTotal           Decimal   @db.Decimal(18, 2)
   estado               Boolean   @default(true)
   observaciones        String?
@@ -241,12 +348,16 @@ model Contrato {
   pathDocumentoFirmado String?
   fechaCreacion        DateTime  @default(now())
   fechaActualizacion   DateTime?
+  fechaEliminacion     DateTime?
 
   bovedaId Int
   boveda   Boveda @relation(fields: [bovedaId], references: [id])
 
   difuntoId Int
   difunto   Difunto @relation(fields: [difuntoId], references: [id])
+
+  descuentoId Int?
+  descuento   Descuento? @relation(fields: [descuentoId], references: [id])
 
   contratoOrigenId Int?
   contratoOrigen   Contrato?  @relation("ContratoOrigen", fields: [contratoOrigenId], references: [id])
@@ -257,20 +368,21 @@ model Contrato {
   contratosRelacionados Contrato[] @relation("ContratoRelacionado")
 
   usuarioCreadorId      String?
-  usuarioCreador        Usuario? @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioCreador        Usuario? @relation("ContratoUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
-  usuarioActualizador   Usuario? @relation("UsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioActualizador   Usuario? @relation("ContratoUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
   usuarioEliminadorId   String?
-  usuarioEliminador     Usuario? @relation("UsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+  usuarioEliminador     Usuario? @relation("ContratoUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
   responsables ContratoResponsable[]
   cuotas       Cuota[]
+  documentos   Documento[]
 }
 
 model ContratoResponsable {
   contratoId    Int
   responsableId Int
-  contrato      Contrato    @relation(fields: [contratoId], references: [id])
+  contrato      Contrato    @relation(fields: [contratoId], references: [id], onDelete: Cascade)
   responsable   Responsable @relation(fields: [responsableId], references: [id])
 
   @@id([contratoId, responsableId])
@@ -293,17 +405,37 @@ model Cuota {
   pagos CuotaPago[]
 }
 
+// =============================================================================
+// Pago — recibo emitido al cobrar 1..N cuotas
+// =============================================================================
 model Pago {
-  id           Int      @id @default(autoincrement())
-  numeroRecibo String   @unique
-  monto        Decimal  @db.Decimal(18, 2)
-  fechaPago    DateTime
-  metodoPago   String
-  referencia   String?
-  observacion  String?
-  estado       Boolean  @default(true)
-  bancoId      Int?
-  banco        Banco?   @relation(fields: [bancoId], references: [id])
+  id             Int      @id @default(autoincrement())
+  numeroRecibo   String   @unique
+  monto          Decimal  @db.Decimal(18, 2)
+  montoSubtotal  Decimal? @db.Decimal(18, 2)
+  montoDescuento Decimal? @db.Decimal(18, 2)
+  fechaPago      DateTime
+  metodoPago     String
+  referencia     String?
+  observacion    String?
+  estado         Boolean  @default(true)
+
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
+
+  bancoId Int?
+  banco   Banco? @relation(fields: [bancoId], references: [id])
+
+  descuentoId Int?
+  descuento   Descuento? @relation(fields: [descuentoId], references: [id])
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("PagoUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("PagoUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("PagoUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
   cuotas CuotaPago[]
 }
@@ -312,7 +444,7 @@ model CuotaPago {
   cuotaId Int
   pagoId  Int
   cuota   Cuota @relation(fields: [cuotaId], references: [id])
-  pago    Pago  @relation(fields: [pagoId], references: [id])
+  pago    Pago  @relation(fields: [pagoId], references: [id], onDelete: Cascade)
 
   @@id([cuotaId, pagoId])
 }
@@ -323,34 +455,70 @@ model Descuento {
   porcentaje    Decimal   @db.Decimal(5, 2)
   descripcion   String?
   estado        Boolean   @default(true)
-  fechaInicio   DateTime
+  fechaInicio   DateTime  @default(now())
   fechaFin      DateTime?
   fechaCreacion DateTime  @default(now())
 
   usuarioCreadorId      String?
-  usuarioCreador        Usuario? @relation("UsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioCreador        Usuario? @relation("DescuentoUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
-  usuarioActualizador   Usuario? @relation("UsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioActualizador   Usuario? @relation("DescuentoUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
   usuarioEliminadorId   String?
-  usuarioEliminador     Usuario? @relation("UsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+  usuarioEliminador     Usuario? @relation("DescuentoUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+
+  contratos Contrato[]
+  pagos     Pago[]
 }
 
 model Banco {
-  id     Int     @id @default(autoincrement())
-  nombre String  @unique
-  cuenta String?
-  estado Boolean @default(true)
+  id            Int      @id @default(autoincrement())
+  nombre        String   @unique
+  cuenta        String?
+  estado        Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
 
   pagos Pago[]
 }
 
-model GADInformacion {
+// =============================================================================
+// Documentos firmados (PDF escaneado del contrato y otros)
+// =============================================================================
+model Documento {
+  id             Int      @id @default(autoincrement())
+  contratoId     Int
+  contrato       Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  storageKey     String // path local o key S3 (no URL pública)
+  nombreOriginal String
+  mimeType       String
+  tamanioBytes   Int
+  tipo           String   @default("ContratoFirmado") // "ContratoFirmado" | "CedulaResponsable" | "Otro"
+  estado         Boolean  @default(true)
+  fechaCreacion  DateTime @default(now())
+
+  subidoPorId String?
+  subidoPor   Usuario? @relation(fields: [subidoPorId], references: [id])
+
+  @@index([contratoId])
+}
+
+// =============================================================================
+// Notificaciones por usuario (header dropdown + página /notify + email)
+// =============================================================================
+model Notificacion {
   id        Int     @id @default(autoincrement())
-  nombre    String
-  direccion String
-  telefono  String
-  email     String
-  ruc       String
-  logo      String?
-  slogan    String?
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  tipo        String // "ContratoPorVencer" | "ContratoVencido" | "CuotaVencida" | "PagoRegistrado" | "Generico"
+  titulo      String
+  mensaje     String
+  entidadTipo String? // "Contrato" | "Cuota" | "Pago" | "Boveda" | ...
+  entidadId   Int?
+
+  leida         Boolean   @default(false)
+  fechaLectura  DateTime?
+  fechaCreacion DateTime  @default(now())
+
+  @@index([usuarioId, leida])
+  @@index([fechaCreacion])
 }

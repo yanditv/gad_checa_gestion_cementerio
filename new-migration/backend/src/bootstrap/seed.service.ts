@@ -91,9 +91,15 @@ export class SeedService {
         email: '',
         ruc: '',
         slogan: '',
+        logoUrl: '',
+        website: '',
+        mision: '',
+        vision: '',
+        usuarioCreadorId: adminUserId,
       },
     });
 
+    // Valores semilla idénticos al legado (Program.cs:461-481).
     await this.prisma.cementerio.upsert({
       where: { id: 1 },
       update: {},
@@ -102,6 +108,15 @@ export class SeedService {
         direccion: 'Eloy Riera, Parroquia Checa',
         telefono: '0987654321',
         email: 'jpcheca0@gmail.com',
+        abreviaturaTituloPresidente: 'Sr.',
+        presidente: 'Bolívar Robles Iñamagua',
+        vecesRenovacionBovedas: 1,
+        vecesRenovacionNicho: 1,
+        aniosArriendoBovedas: 5,
+        aniosArriendoNicho: 5,
+        tarifaArriendo: 240.0,
+        tarifaArriendoNicho: 240.0,
+        tasaMoraDiaria: 0,
         estado: true,
         usuarioCreadorId: adminUserId,
       },
