@@ -9,19 +9,11 @@ const nextConfig = {
       // Avoid filesystem cache corruption in local dev rebuilds.
       config.cache = false;
     }
-
     return config;
   },
-  async rewrites() {
-    return {
-      fallback: [
-        {
-          source: '/api/:path*',
-          destination: 'http://localhost:3001/:path*',
-        },
-      ],
-    };
-  },
+  // El proxy al backend ya no se hace por rewrite (saltaba la cookie httpOnly).
+  // Se hace por route handler catch-all en src/app/api/[...path]/route.ts,
+  // que adjunta `Authorization: Bearer <token>` desde la cookie cementerio_auth.
 };
 
 module.exports = nextConfig;

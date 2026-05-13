@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../../_utils';
+import { authHeaders } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
@@ -7,9 +8,7 @@ export async function GET(request: Request) {
     const response = await fetchWithTimeout(
       `${API_URL}/contratos/bovedas-disponibles${params ? `?${params}` : ''}`,
       {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: await authHeaders(),
         cache: 'no-store',
       },
     );

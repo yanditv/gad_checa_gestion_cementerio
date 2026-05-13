@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../_utils';
+import { authHeaders } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
     const params = new URL(request.url).searchParams.toString();
     const response = await fetchWithTimeout(`${API_URL}/contratos${params ? `?${params}` : ''}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await authHeaders(),
       cache: 'no-store',
     });
 
@@ -35,9 +34,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const response = await fetchWithTimeout(`${API_URL}/contratos`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await authHeaders(),
       body: JSON.stringify(body),
       cache: 'no-store',
     });

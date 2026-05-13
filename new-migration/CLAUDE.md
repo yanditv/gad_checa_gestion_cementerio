@@ -135,6 +135,17 @@ al usuario** en vez de inventar.
 6. Actualizar `REQUIREMENTS.md` §2.2 si se cierra una brecha listada.
 7. Probar `bun run start:dev` desde cero.
 
+> **Síntoma típico cuando olvidas aplicar la migración:** al arrancar el
+> servidor obtienes `PrismaClientKnownRequestError P2022: The column X does
+> not exist`. Significa que el cliente Prisma fue regenerado contra el
+> nuevo schema pero la BD aún no tiene los `ALTER TABLE`. Solución:
+> `bun prisma migrate deploy` (o `migrate dev` en local).
+>
+> **Tras `git pull`** cuando hay cambios de schema, siempre correr:
+> ```
+> cd backend && bun prisma migrate deploy && bun prisma generate
+> ```
+
 ### 3.4 Generar un PDF nuevo
 
 1. Crear `backend/src/modules/<modulo>/<modulo>.pdf.ts` o, si la generación

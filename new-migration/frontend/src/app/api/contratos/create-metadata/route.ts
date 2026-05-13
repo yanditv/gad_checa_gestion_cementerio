@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../../_utils';
+import { authHeaders } from '@/lib/auth';
 
 export async function GET() {
   try {
     const response = await fetchWithTimeout(`${API_URL}/contratos/create-metadata`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await authHeaders(),
       cache: 'no-store',
     });
 

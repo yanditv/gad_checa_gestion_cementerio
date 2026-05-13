@@ -1,7 +1,9 @@
 import { API_URL, unwrapApiResponse } from '@/app/api/_utils';
+import { authHeaders } from '@/lib/auth';
 
 export async function getContratoById(id: string | number) {
   const response = await fetch(`${API_URL}/contratos/${id}`, {
+    headers: await authHeaders(),
     cache: 'no-store',
   });
 

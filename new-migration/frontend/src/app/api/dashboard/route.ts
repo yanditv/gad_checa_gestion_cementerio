@@ -1,21 +1,14 @@
 import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../_utils';
+import { authHeaders } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const headers = await authHeaders();
     const [contratosRes, bovedasRes, difuntosRes] = await Promise.allSettled([
-      fetchWithTimeout(`${API_URL}/contratos`, {
-        headers: { 'Authorization': 'Bearer demo' },
-        cache: 'no-store',
-      }),
-      fetchWithTimeout(`${API_URL}/bovedas`, {
-        headers: { 'Authorization': 'Bearer demo' },
-        cache: 'no-store',
-      }),
-      fetchWithTimeout(`${API_URL}/difuntos`, {
-        headers: { 'Authorization': 'Bearer demo' },
-        cache: 'no-store',
-      }),
+      fetchWithTimeout(`${API_URL}/contratos`, { headers, cache: 'no-store' }),
+      fetchWithTimeout(`${API_URL}/bovedas`, { headers, cache: 'no-store' }),
+      fetchWithTimeout(`${API_URL}/difuntos`, { headers, cache: 'no-store' }),
     ]);
 
     let contratos: any[] = [];

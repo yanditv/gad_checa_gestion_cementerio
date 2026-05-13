@@ -1,4 +1,5 @@
 import { API_URL, unwrapApiResponse } from '@/app/api/_utils';
+import { authHeaders } from '@/lib/auth';
 
 export interface IngresoRow {
   id: string;
@@ -25,6 +26,7 @@ export interface CuentaPorCobrarRow {
 
 export async function getReportesData() {
   const response = await fetch(`${API_URL}/contratos/reportes`, {
+    headers: await authHeaders(),
     cache: 'no-store',
   });
 
