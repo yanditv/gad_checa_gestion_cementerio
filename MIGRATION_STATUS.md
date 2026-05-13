@@ -1,6 +1,6 @@
 # Estado de Migración
 
-> Última actualización: **2026-05-13** — cierre de **Fase 0** (esquema completo).
+> Última actualización: **2026-05-13** — cierre de **Fase 1** (auth + middleware).
 
 ## Estado real de paridad
 
@@ -9,6 +9,50 @@ La migración **no está completa al 100 %** respecto al sistema legado ASP.NET
 `new-migration/MIGRATION_PLAN.md`.
 
 ## Avances aplicados en esta iteración
+
+### 2026-05-13 — Fase 1: Autenticación completa
+
+**Backend (NestJS)**
+- Decoradores comunes: `@Public()`, `@Roles(...)`, `@CurrentUser()`
+  (`backend/src/common/decorators/`).
+- `RolesGuard` (`backend/src/common/guards/roles.guard.ts`).
+- `JwtAuthGuard` ahora respeta `@Public()` (`backend/src/modules/auth/jwt-auth.guard.ts`).
+- `JwtStrategy` extendida: `req.user` incluye `nombre`, `apellido`, `roles[]`
+  y `mustChangePassword`; rechaza tokens con `purpose != 'access'`.
+- `EmailService` con nodemailer (`backend/src/common/email/email.service.ts`)
+  configurable por SMTP_*; modo log-only si no hay host.
+- `AuthService` extendido: `logout`, `forgotPassword` (token JWT
+  `purpose=password-reset`, TTL 1h, email enviado), `resetPassword`,
+  `changePassword`, política de contraseñas (≥6, mayúscula, minúscula,
+  dígito) aplicada vía `class-validator`.
+- `AuthController`: nuevos endpoints `POST /auth/logout`,
+  `POST /auth/forgot-password`, `POST /auth/reset-password`,
+  `POST /auth/change-password`. Login marcado `@Public()`.
+- `JwtAuthGuard` y `RolesGuard` registrados como `APP_GUARD` global
+  (todos los endpoints requieren JWT salvo `@Public()`).
+- `main.ts` con `helmet`, `ValidationPipe` estricto
+  (`forbidNonWhitelisted`), implicit conversion.
+- `.env.example` con todas las variables nuevas (`JWT_EXPIRES_IN`,
+  `JWT_RESET_EXPIRES_IN`, `SMTP_*`).
+
+**Frontend (Next.js)**
+- Helpers `frontend/src/lib/auth.ts`: cookie httpOnly `cementerio_auth`,
+  `readAuthToken`, `authHeaders`, `buildAuthCookie`, `buildClearAuthCookie`.
+- Rutas BFF `/api/auth/{login,logout,me,forgot-password,reset-password,
+  change-password}` que proxyan al backend y manejan la cookie httpOnly.
+- `middleware.ts` global: redirige a `/auth/login?from=<destino>` si falta
+  cookie; APIs internas devuelven 401 JSON.
+- Páginas nuevas: `/auth/login`, `/auth/forgot-password`,
+  `/auth/reset-password`. Shell visual aislado en `AuthShell.tsx`.
+- `/cuenta` reescrita: lee perfil de `/api/auth/me`, formulario de cambio
+  de contraseña con validación.
+- `DashboardLayout` detecta rutas `/auth/*` y omite el shell con sidebar;
+  consume `/api/auth/me` para mostrar nombre y rol reales en el `Header`.
+- `Header` con logout real (`POST /api/auth/logout` + redirect).
+
+**Dependencias añadidas**
+- Backend: `nodemailer`, `@types/nodemailer`, `helmet`.
+- Frontend: ninguna (se usa `next/headers` nativo).
 
 ### 2026-05-13 — Fase 0: Estabilización del esquema
 
@@ -72,7 +116,7 @@ La migración **no está completa al 100 %** respecto al sistema legado ASP.NET
 | **Esquema de base de datos**                        | **Completo** |
 | Seed inicial (roles, admin, GAD, cementerio)        | **Completo** |
 | Importación de catastro (`CATASTRO_FINAL.xlsx`)     | Parcial |
-| Autenticación / login / recuperación                | Parcial |
+| Autenticación / login / recuperación                | **Completo** |
 | Dashboard                                           | Parcial |
 | Contratos — listado, detalle, edición básica        | Parcial |
 | Contratos — wizard multi-paso (versión inicial)     | Parcial |
@@ -93,7 +137,7 @@ La migración **no está completa al 100 %** respecto al sistema legado ASP.NET
 
 Según el plan de fases (`new-migration/MIGRATION_PLAN.md`):
 
-- **Fase 1** — Autenticación completa (`AUTH-R1..R9`).
+- ~~**Fase 1** — Autenticación completa (`AUTH-R1..R9`).~~ ✅
 - **Fase 2** — Contratos: paridad de las 39 acciones del legado, PDFs.
 - **Fase 3** — Cobros: pantalla multi-cuota, descuentos, factura PDF, anulación.
 - **Fase 4** — Bloques, bóvedas con propietario, histórico.

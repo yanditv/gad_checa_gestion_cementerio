@@ -369,5 +369,5 @@ FodyWeavers.xsd
 .idea
 .vscode
 output
-
+.playwright-cli
 gad_checa_gestion_cementerio/wwwroot/documentos/

@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
+import { EmailModule } from './common/email/email.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { CementerioModule } from './modules/cementerio/cementerio.module';
 import { BloqueModule } from './modules/bloque/bloque.module';
 import { BovedaModule } from './modules/boveda/boveda.module';
@@ -22,6 +25,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    EmailModule,
     AuthModule,
     CementerioModule,
     BloqueModule,
@@ -37,14 +41,12 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
   providers: [
     SeedService,
     CatastroImportService,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: ApiResponseInterceptor,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
-    },
+    // Auth global: cualquier ruta requiere JWT salvo que tenga @Public().
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Roles encadenado al JwtAuthGuard: respeta @Roles(...).
+    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: ApiResponseInterceptor },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })
 export class AppModule {}

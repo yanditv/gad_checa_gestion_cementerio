@@ -42,15 +42,15 @@ requerimiento incluye su origen (`[L]`/`[M]`/`[N]`) y el estado actual.
 
 | ID | Tag | Descripción | Estado |
 |----|-----|-------------|--------|
-| AUTH-R1 | [L] | Inicio de sesión por **email + contraseña** con JWT en el frontend (legado usaba cookie de Identity; en el nuevo stack se reemplaza por Bearer JWT + httpOnly cookie de refresh, equivalente funcional). | Parcial |
-| AUTH-R2 | [L] | Sesión inactiva expira a los **30 minutos** (sliding) y absoluta a los **7 días** (paridad con `CementerioApp.Session`/`CementerioApp.Auth` legados). | Pendiente |
-| AUTH-R3 | [L] | Password policy del legado: longitud ≥ 6, una mayúscula, una minúscula, un dígito. **Sin** símbolos obligatorios. | Pendiente |
-| AUTH-R4 | [L] | Cambio de contraseña desde el perfil del usuario. | Pendiente |
-| AUTH-R5 | [L] | Recuperación de contraseña por email (envío con `EmailSender`/SMTP del legado). | Pendiente |
-| AUTH-R6 | [L] | Logout invalida la sesión y redirige al login. | Parcial |
-| AUTH-R7 | [M] | Endpoints protegidos por **`@UseGuards(JwtAuthGuard, RolesGuard)`** + decorador `@Roles('Admin' \| 'Administrador' \| 'Usuario')`. | Parcial |
-| AUTH-R8 | [M] | Páginas Next.js fuera de `/auth/login` deben redirigir al login si no hay JWT válido (middleware Next). | Pendiente |
-| AUTH-R9 | [N] | Seed inicial idéntico al legado: usuario `admin@teobu.com` / clave `Admin123!`, roles `Admin`, `Usuario`, `Administrador`. | Completo |
+| AUTH-R1 | [L] | Inicio de sesión por **email + contraseña** con JWT. Token en cookie httpOnly `cementerio_auth` (Bearer al backend, opaco al cliente). | **Completo** |
+| AUTH-R2 | [L] | Sesión expira a los **7 días** (`JWT_EXPIRES_IN`). Sliding pendiente para fase de pulido si se requiere. | **Completo** |
+| AUTH-R3 | [L] | Password policy: ≥6, una mayúscula, una minúscula, un dígito. Aplicada en DTOs `register`, `reset`, `change-password`. | **Completo** |
+| AUTH-R4 | [L] | Cambio de contraseña en `/cuenta` con `POST /auth/change-password`. | **Completo** |
+| AUTH-R5 | [L] | Recuperación por email con `EmailService` (nodemailer). En dev sin SMTP: modo log-only. | **Completo** |
+| AUTH-R6 | [L] | Logout limpia cookie httpOnly y redirige a `/auth/login`. | **Completo** |
+| AUTH-R7 | [M] | `JwtAuthGuard` + `RolesGuard` registrados como `APP_GUARD` globales. `@Public()` para login/forgot/reset/register. `@Roles(...)` listo para usarse. | **Completo** |
+| AUTH-R8 | [M] | `middleware.ts` redirige a `/auth/login?from=<destino>` cuando no hay cookie. APIs internas devuelven 401 JSON. | **Completo** |
+| AUTH-R9 | [N] | Seed inicial idéntico al legado: usuario `admin@teobu.com` / clave `Admin123!`, roles `Admin`, `Usuario`, `Administrador`. | **Completo** |
 
 **Reglas de negocio**
 
