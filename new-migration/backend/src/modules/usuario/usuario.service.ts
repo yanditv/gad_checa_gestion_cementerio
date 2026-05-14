@@ -77,6 +77,9 @@ export class UsuarioService {
           include: { rol: true },
         },
       },
+      omit: {
+        passwordHash: true,
+      },
     });
 
     if (!usuario) {

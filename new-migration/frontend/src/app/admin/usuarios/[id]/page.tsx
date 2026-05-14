@@ -77,11 +77,7 @@ export default function UsuarioDetallePage({
   const [saving, setSaving] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
-
-  // Confirmaciones
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [confirmToggle, setConfirmToggle] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmingAction, setConfirmingAction] = useState<'reset' | 'toggle' | 'delete' | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
 
   const loadUsuario = async () => {
@@ -112,6 +108,7 @@ export default function UsuarioDetallePage({
   };
 
   const handleSaveRoles = async () => {
+    setError(null);
     setSaving(true);
     try {
       await usuariosApi.setRoles(id, selectedRoleIds);
@@ -125,11 +122,13 @@ export default function UsuarioDetallePage({
   };
 
   const handleResetPassword = async () => {
+    setError(null);
+    setTempPassword(null);
+    setConfirmingAction(null);
     setSaving(true);
     try {
       const result = await usuariosApi.resetPassword(id, false);
       setTempPassword(result.tempPassword);
-      setConfirmReset(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al resetear contraseña');
     } finally {
@@ -138,11 +137,13 @@ export default function UsuarioDetallePage({
   };
 
   const handleToggleEstado = async () => {
+    setError(null);
+    setTempPassword(null);
+    setConfirmingAction(null);
     setSaving(true);
     try {
       await usuariosApi.updateEstado(id, !usuario?.estado);
       await loadUsuario();
-      setConfirmToggle(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cambiar estado');
     } finally {
@@ -151,6 +152,9 @@ export default function UsuarioDetallePage({
   };
 
   const handleDelete = async () => {
+    setError(null);
+    setTempPassword(null);
+    setConfirmingAction(null);
     setSaving(true);
     try {
       await usuariosApi.remove(id);
@@ -158,7 +162,6 @@ export default function UsuarioDetallePage({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar usuario');
       setSaving(false);
-      setConfirmDelete(false);
     }
   };
 
@@ -303,7 +306,7 @@ export default function UsuarioDetallePage({
       <Card title="Acciones administrativas">
         <div className="flex flex-wrap items-center gap-3">
           {/* Reset password */}
-          {confirmReset ? (
+          {confirmingAction === 'reset' ? (
             <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
               <span className="text-xs text-amber-700">¿Resetear contraseña de {usuario.nombre}?</span>
               <button
@@ -316,7 +319,7 @@ export default function UsuarioDetallePage({
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmReset(false)}
+                onClick={() => setConfirmingAction(null)}
                 className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
               >
                 Cancelar
@@ -325,7 +328,7 @@ export default function UsuarioDetallePage({
           ) : (
             <button
               type="button"
-              onClick={() => setConfirmReset(true)}
+              onClick={() => setConfirmingAction('reset')}
               className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-50"
             >
               <i className="ti ti-key" /> Resetear contraseña
@@ -333,7 +336,7 @@ export default function UsuarioDetallePage({
           )}
 
           {/* Toggle estado */}
-          {confirmToggle ? (
+          {confirmingAction === 'toggle' ? (
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               <span className="text-xs text-slate-600">
                 ¿{usuario.estado ? 'Desactivar' : 'Activar'} a {usuario.nombre}?
@@ -350,7 +353,7 @@ export default function UsuarioDetallePage({
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmToggle(false)}
+                onClick={() => setConfirmingAction(null)}
                 className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
               >
                 Cancelar
@@ -359,7 +362,7 @@ export default function UsuarioDetallePage({
           ) : (
             <button
               type="button"
-              onClick={() => setConfirmToggle(true)}
+              onClick={() => setConfirmingAction('toggle')}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium ${
                 usuario.estado
                   ? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
@@ -372,7 +375,7 @@ export default function UsuarioDetallePage({
           )}
 
           {/* Delete */}
-          {confirmDelete ? (
+          {confirmingAction === 'delete' ? (
             <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
               <span className="text-xs text-red-700">
                 ¿Eliminar a {usuario.nombre}? Esta acción es irreversible.
@@ -387,7 +390,7 @@ export default function UsuarioDetallePage({
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmDelete(false)}
+                onClick={() => setConfirmingAction(null)}
                 className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
               >
                 Cancelar
@@ -396,7 +399,7 @@ export default function UsuarioDetallePage({
           ) : (
             <button
               type="button"
-              onClick={() => setConfirmDelete(true)}
+              onClick={() => setConfirmingAction('delete')}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
             >
               <i className="ti ti-trash" /> Eliminar usuario

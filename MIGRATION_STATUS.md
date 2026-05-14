@@ -210,28 +210,7 @@ secciones marcadas en §6.1 del plan vivo.
 | Seed inicial (roles, admin, GAD, cementerio)        | **Completo** |
 | Importación de catastro on-demand                   | **Completo** (Fase 9.2) |
 | Autenticación / login / recuperación                | **Completo** |
-| Reset de contraseña forzado + bloqueo super-admin   | **Completo** (Fase 7.3/7.4) |
-| Dashboard                                           | **Completo** |
-| Contratos — listado, detalle, edición               | **Completo** |
-| Contratos — wizard multi-paso                       | **Completo** |
-| Contratos — renovación, relación, documentos, PDF   | **Completo** |
-| Bloques con N pisos + validación delete             | **Completo** |
-| Bóvedas + propietario + histórico                   | **Completo** |
-| Personas / Propietarios / Responsables              | **Completo** |
-| Difuntos (con campos nuevos + edad + certificado)   | **Completo** |
-| Cobros multi-cuota + factura PDF + anular           | **Completo** |
-| Descuentos + Bancos (CRUD)                          | **Completo** |
-| Reportes (5 + comparativa, PDF, Excel)              | **Completo** |
-| Administración — listado de usuarios                | **Completo** (7.1) |
-| Administración — asignación de roles                | Pendiente (7.2 @Famiitry) |
-| Configuración (cementerio + GAD + descuentos)       | Parcial (9.1 @Famiitry abierta) |
-| Notificaciones (bandeja + cron + email)             | Pendiente (Fase 8) |
-| Documentos auxiliares (uploads + storage)           | **Completo** |
-| Identidad visual (Tailwind puro)                    | **Completo** |
-| Manual de usuario                                   | Pendiente (10.1 @Famiitry) |
-| Tests E2E + WCAG                                    | Pendiente (10.4/10.5 @Famiitry) |
-| Pruebas de carga                                    | Pendiente (10.3 @yanditv) |
-| Migración SQL Server → PostgreSQL (producción)      | Pendiente |
+| Administración — asignación de roles                | **Completo** (7.2) |
 
 ## Pendiente para cierre 100 %
 
