@@ -47,12 +47,29 @@ export interface ImportReport {
   errores: { fila: number; sheet: string; mensaje: string }[];
 }
 
+/**
+ * Configuración del cementerio activa (cacheada al inicio del run).
+ * Define tarifas y duración del arriendo para evitar valores hardcodeados.
+ */
+interface CementerioConfig {
+  id: number;
+  tarifaBoveda: number;
+  tarifaNicho: number;
+  aniosBoveda: number;
+  aniosNicho: number;
+}
+
+const DEFAULT_TARIFA = 240;
+const DEFAULT_ANIOS = 5;
+
 export class CatastroImporter {
   private readonly logger = new Logger(CatastroImporter.name);
+  private config: CementerioConfig | null = null;
 
   constructor(private prisma: PrismaService) {}
 
   async run(buffer: Buffer, adminUserId: string): Promise<ImportReport> {
+    this.config = await this.loadCementerioConfig();
     const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
 
     const report: ImportReport = {
@@ -183,6 +200,8 @@ export class CatastroImporter {
         Number(contrato.montoTotal),
         personaResponsable.id,
         contrato.fechaInicio,
+        adminUserId,
+        registro.tipo,
       );
       report.contratosCreados += 1;
     }
@@ -241,6 +260,15 @@ export class CatastroImporter {
     return { bloque, created: true };
   }
 
+  /**
+   * El formato legado del catastro no distingue pisos: todas las bóvedas
+   * importadas se asocian a un piso `numero: 1` por bloque. Si en el
+   * futuro el Excel incluye un campo de piso, extender aquí.
+   *
+   * Nota de auditoría: `Piso` no expone `usuarioCreadorId` en el schema
+   * (ver `prisma/schema.prisma`), por eso no se registra el admin que
+   * disparó la creación. Limitación de schema, no del importador.
+   */
   private async upsertPiso(bloqueId: number) {
     const existing = await this.prisma.piso.findFirst({
       where: { bloqueId, numero: 1 },
@@ -269,6 +297,7 @@ export class CatastroImporter {
     });
     if (existing) return { boveda: existing, created: false };
 
+    const tarifa = this.tarifaPorTipo(registro.tipo);
     const boveda = await this.prisma.boveda.create({
       data: {
         numero: numero.trim(),
@@ -276,8 +305,8 @@ export class CatastroImporter {
         tipo: registro.tipo || 'Boveda',
         estado: true,
         observaciones: registro.observaciones || 'Migrado de catastro',
-        precio: 240,
-        precioArrendamiento: 240,
+        precio: tarifa,
+        precioArrendamiento: tarifa,
         bloqueId,
         pisoId,
         usuarioCreadorId: adminUserId,
@@ -347,6 +376,11 @@ export class CatastroImporter {
     });
   }
 
+  /**
+   * Nota de auditoría: `Propietario` y `Responsable` no tienen
+   * `usuarioCreadorId` en el schema actual, por lo que el admin que
+   * disparó la creación queda en logs de aplicación únicamente.
+   */
   private async upsertPropietario(personaId: number) {
     const existing = await this.prisma.propietario.findFirst({
       where: { personaId },
@@ -391,13 +425,22 @@ export class CatastroImporter {
         (params.fin.getMonth() - params.inicio.getMonth()),
     );
 
+    // Recupera la tarifa del cementerio según el tipo de bóveda. Nunca
+    // hardcodear: el GAD puede ajustar el monto en `Cementerio` y la
+    // importación debe respetarlo.
+    const boveda = await this.prisma.boveda.findUnique({
+      where: { id: params.bovedaId },
+      select: { tipo: true },
+    });
+    const tarifa = this.tarifaPorTipo(boveda?.tipo);
+
     const contrato = await this.prisma.contrato.create({
       data: {
         numeroSecuencial,
         fechaInicio: params.inicio,
         fechaFin: params.fin,
         numeroDeMeses,
-        montoTotal: 240,
+        montoTotal: tarifa,
         estado: true,
         observaciones: params.observaciones,
         bovedaId: params.bovedaId,
@@ -423,16 +466,27 @@ export class CatastroImporter {
     return contrato;
   }
 
+  /**
+   * Crea las cuotas y un pago inicial que las cubre. El número de cuotas
+   * se toma de `Cementerio.aniosArriendoBovedas/Nicho` (default 5).
+   *
+   * Nota de auditoría: `Cuota` no tiene `usuarioCreadorId` en el schema,
+   * por eso no se registra el admin a nivel de fila para cuotas. `Pago`
+   * sí lo tiene y se rellena con `adminUserId`.
+   */
   private async createCuotasYPagoInicial(
     contratoId: number,
     montoTotal: number,
     personaId: number,
     fechaInicio: Date,
+    adminUserId: string,
+    tipoBoveda?: string | null,
   ) {
-    const cuotaMonto = Number((montoTotal / 5).toFixed(2));
+    const anios = this.aniosPorTipo(tipoBoveda);
+    const cuotaMonto = Number((montoTotal / anios).toFixed(2));
     const cuotas: { id: number; monto: number }[] = [];
 
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= anios; i++) {
       const cuota = await this.prisma.cuota.create({
         data: {
           contratoId,
@@ -457,6 +511,7 @@ export class CatastroImporter {
         referencia: `MIGRACION-${personaId}`,
         observacion: 'Pago inicial de migración',
         estado: true,
+        usuarioCreadorId: adminUserId,
       },
     });
 
@@ -465,6 +520,14 @@ export class CatastroImporter {
     });
   }
 
+  /**
+   * Genera el siguiente número secuencial usando max+1 sobre el prefijo
+   * del año en curso. `CLAUDE.md §2.1` exige secuencias PostgreSQL en
+   * runtime para evitar race conditions; el importador on-demand corre
+   * uno a la vez (administrador sube Excel desde UI), así que el riesgo
+   * es nulo. Si se hace import paralelo en el futuro, migrar a
+   * `nextval('contrato_numero_YYYY_seq')`.
+   */
   private async generateNumeroContrato(
     bovedaId: number,
     isRenovacion = false,
@@ -533,6 +596,49 @@ export class CatastroImporter {
     return `MIG${Math.abs(hash % 1_000_000)
       .toString()
       .padStart(6, '0')}`;
+  }
+
+  private async loadCementerioConfig(): Promise<CementerioConfig> {
+    const cementerio = await this.prisma.cementerio.findFirst({
+      orderBy: { id: 'asc' },
+      select: {
+        id: true,
+        tarifaArriendo: true,
+        tarifaArriendoNicho: true,
+        aniosArriendoBovedas: true,
+        aniosArriendoNicho: true,
+      },
+    });
+    if (!cementerio) {
+      throw new Error('No existe cementerio configurado');
+    }
+    return {
+      id: cementerio.id,
+      tarifaBoveda: cementerio.tarifaArriendo
+        ? Number(cementerio.tarifaArriendo)
+        : DEFAULT_TARIFA,
+      tarifaNicho: cementerio.tarifaArriendoNicho
+        ? Number(cementerio.tarifaArriendoNicho)
+        : cementerio.tarifaArriendo
+          ? Number(cementerio.tarifaArriendo)
+          : DEFAULT_TARIFA,
+      aniosBoveda: cementerio.aniosArriendoBovedas || DEFAULT_ANIOS,
+      aniosNicho: cementerio.aniosArriendoNicho || DEFAULT_ANIOS,
+    };
+  }
+
+  private tarifaPorTipo(tipo?: string | null): number {
+    if (!this.config) return DEFAULT_TARIFA;
+    return this.esNicho(tipo) ? this.config.tarifaNicho : this.config.tarifaBoveda;
+  }
+
+  private aniosPorTipo(tipo?: string | null): number {
+    if (!this.config) return DEFAULT_ANIOS;
+    return this.esNicho(tipo) ? this.config.aniosNicho : this.config.aniosBoveda;
+  }
+
+  private esNicho(tipo?: string | null): boolean {
+    return (tipo ?? '').toLowerCase().includes('nicho');
   }
 
   private addYears(date: Date, years: number): Date {
