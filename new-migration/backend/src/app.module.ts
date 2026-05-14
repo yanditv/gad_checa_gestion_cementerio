@@ -19,6 +19,7 @@ import { DescuentoModule } from './modules/descuento/descuento.module';
 import { BancoModule } from './modules/banco/banco.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { RolModule } from './modules/rol/rol.module';
+import { ReportModule } from './modules/report/report.module';
 import { SeedService } from './bootstrap/seed.service';
 import { CatastroImportService } from './bootstrap/catastro-import.service';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
@@ -43,6 +44,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     BancoModule,
     UsuarioModule,
     RolModule,
+    ReportModule,
   ],
   providers: [
     SeedService,

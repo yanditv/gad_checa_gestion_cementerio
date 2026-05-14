@@ -387,7 +387,11 @@ este archivo.
 [x] Fase 5  — Personas, difuntos, responsables             ← 2026-05-14
     [x] 5.a Detalle persona con tabs                          ← 2026-05-14
     [x] 5.b Difuntos: campos nuevos + edad + validaciones     ← 2026-05-14
-[ ] Fase 6  — Reportes (5 + comparativa)
+[x] Fase 6  — Reportes (5 + comparativa)                    ← 2026-05-14
+    [x] 6.a Backend report module + 6 endpoints JSON          ← 2026-05-14
+    [x] 6.b Frontend pantallas interactivas con filtros       ← 2026-05-14
+    [x] 6.c PDFs (pdfkit) para 4 reportes                     ← 2026-05-14
+    [x] 6.d Excel (xlsx) + comparativa mensual                ← 2026-05-14
 [ ] Fase 7  — Usuarios y roles
 [ ] Fase 8  — Notificaciones + job
 [ ] Fase 9  — Configuración + catastro on-demand

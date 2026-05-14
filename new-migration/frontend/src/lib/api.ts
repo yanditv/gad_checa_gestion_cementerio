@@ -314,3 +314,22 @@ export const rolesApi = {
   update: (id: string, data: any) => api.put<any>(`/roles/${id}`, data),
   delete: (id: string) => api.delete<any>(`/roles/${id}`),
 };
+
+function qs(params: Record<string, string | undefined>): string {
+  const entries = Object.entries(params).filter(([, v]) => v && v.length > 0);
+  if (entries.length === 0) return '';
+  const sp = new URLSearchParams(entries as [string, string][]);
+  return `?${sp.toString()}`;
+}
+
+export const reportesApi = {
+  resumen: (params: { desde?: string; hasta?: string } = {}) =>
+    api.get<any>(`/reportes/resumen${qs(params)}`),
+  ingresos: (params: { desde?: string; hasta?: string } = {}) =>
+    api.get<any>(`/reportes/ingresos${qs(params)}`),
+  cuentasPorCobrar: () => api.get<any>('/reportes/cuentas-por-cobrar'),
+  bovedas: (params: { tipo?: string; bloque?: string; estado?: string } = {}) =>
+    api.get<any>(`/reportes/bovedas${qs(params)}`),
+  bloques: () => api.get<any>('/reportes/bloques'),
+  comparativa: () => api.get<any>('/reportes/comparativa'),
+};
