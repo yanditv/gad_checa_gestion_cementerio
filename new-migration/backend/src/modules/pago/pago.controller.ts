@@ -1,9 +1,28 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  Res,
+  StreamableFile,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { PagoService } from './pago.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CobrarDto } from './dto/cobrar.dto';
+import { buildFacturaPdfBuffer } from './pago.pdf';
+import {
+  AuthUser,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator';
 
 @ApiTags('pagos')
+@ApiBearerAuth()
 @Controller('pagos')
 export class PagoController {
   constructor(private service: PagoService) {}
@@ -13,29 +32,69 @@ export class PagoController {
     return this.service.findAll();
   }
 
+  @Get('cobro-preview')
+  @ApiOperation({
+    summary: 'Preview de cobro: cuotas pendientes del contrato con mora',
+  })
+  getCobroPreview(@Query('contratoId', ParseIntPipe) contratoId: number) {
+    return this.service.getCobroPreview(contratoId);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
+  }
+
+  @Get(':id/factura.pdf')
+  @ApiOperation({ summary: 'Descargar factura PDF del pago' })
+  async factura(
+    @Param('id', ParseIntPipe) id: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const pago = await this.service.findOne(id);
+    const buffer = await buildFacturaPdfBuffer(pago);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="Recibo_${pago.numeroRecibo}.pdf"`,
+    });
+    return new StreamableFile(buffer);
+  }
+
+  @Post('cobrar')
+  @ApiOperation({ summary: 'Cobrar una o más cuotas de un contrato' })
+  cobrar(@Body() dto: CobrarDto, @CurrentUser() user: AuthUser) {
+    return this.service.cobrar(dto, user.id);
+  }
+
+  @Post(':id/anular')
+  @ApiOperation({
+    summary: 'Anular un pago (solo Administrador)',
+    description:
+      'Revierte las cuotas a pendientes y marca el pago como inactivo.',
+  })
+  anular(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.anular(id, user.id, user.roles ?? []);
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  create(@Body() data: any) {
-    return this.service.create(data);
+  @ApiOperation({ summary: 'Crear pago (legacy)' })
+  create(@Body() data: any, @CurrentUser() user: AuthUser) {
+    return this.service.create(data, user.id);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+  update(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
+    return this.service.update(id, data);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.remove(id, user.id, user.roles ?? []);
   }
 }

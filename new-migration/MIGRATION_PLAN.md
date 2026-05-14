@@ -375,7 +375,11 @@ este archivo.
     [x] Lote D Admin + Reportes                               ← 2026-05-14
     [x] Lote E Resto contratos (edit/print/renovar)           ← 2026-05-14
     [x] Eliminar wrappers components/ui/* obsoletos           ← 2026-05-14
-[ ] Fase 3  — Cobros: multi-cuota, descuentos, factura PDF, anulación
+[~] Fase 3  — Cobros, pagos y descuentos
+    [x] 3.a Backend cobrar + anular + factura PDF             ← 2026-05-14
+    [x] 3.b Pantalla /cobros/[contratoId]/cobrar              ← 2026-05-14
+    [x] 3.c Detalle de pago + anular UI                       ← 2026-05-14
+    [ ] 3.d CRUD Descuentos + Bancos en /configuracion
 [ ] Fase 4  — Bóvedas, bloques, propietarios
 [ ] Fase 5  — Personas, difuntos, responsables
 [ ] Fase 6  — Reportes (5 + comparativa)
