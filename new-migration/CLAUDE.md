@@ -93,6 +93,36 @@ al usuario** en vez de inventar.
 - **Nunca** `git push --force`, `git reset --hard`, `git checkout -- .` ni
   `--no-verify` sin permiso explícito del usuario.
 
+### 2.5 De colaboración (vigente desde 2026-05-14)
+
+El proyecto tiene dos colaboradores activos: **@yanditv** (owner) y
+**@Famiitry** (nuevo). Branch protection sobre `master` exige:
+
+- **Nadie puede pushear directo a `master`** (ni los admins; `enforce_admins=true`).
+- **Todo cambio entra vía PR** con al menos **1 approving review**.
+- `CODEOWNERS` (`.github/CODEOWNERS`) auto-asigna a ambos como revisores.
+- Cada colaborador trabaja en **su propia rama** por tarea:
+  - Nombrado: `feat/<modulo>-<corto>`, `fix/<modulo>-<corto>`,
+    `chore/<corto>`, `docs/<corto>`. Ejemplo: `feat/usuarios-listado`,
+    `chore/famiitry-workflow`.
+  - **Una rama = una tarea**. Si la tarea es Fase 7.1, la rama vive hasta
+    que esa tarea se mergea.
+  - `git pull --rebase origin master` antes de abrir el PR para que el diff
+    sea limpio.
+- **Antes de mergear un PR**, el autor debe actualizar:
+  - `MIGRATION_PLAN.md` (marcar `[x]` y fecha en la sub-tarea cerrada).
+  - `MIGRATION_STATUS.md` si la tarea cierra una brecha de paridad.
+  - `CLAUDE.md` si la tarea introduce una decisión nueva (sección §3 o §2).
+  - `REQUIREMENTS.md` si la tarea cubre un requerimiento marcado Pendiente.
+- **Decisiones de arquitectura, secretos, migraciones de datos en
+  producción** son responsabilidad exclusiva de **@yanditv**. Famiitry
+  puede prepararlas en un PR pero no puede mergear sin aprobación de
+  @yanditv.
+- **Distribución de actividades vigente**: ver `MIGRATION_PLAN.md` §5
+  "Distribución de actividades". Las tareas marcadas con `[IA]` están
+  acotadas para que Famiitry use Claude / agentes con seguridad; las
+  marcadas `[crítica]` quedan reservadas a @yanditv.
+
 ---
 
 ## 3. Cómo trabajar tareas comunes

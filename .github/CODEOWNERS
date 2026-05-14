@@ -1,0 +1,10 @@
+# CODEOWNERS — flujo de revisión obligatoria para `gad_checa_gestion_cementerio`.
+#
+# Cualquier PR contra `master` se auto-asigna a ambos como revisores. La
+# branch protection exige 1 approving review antes de merge. Ninguno de los
+# dos puede mergear su propio PR (GitHub no auto-asigna al autor); el otro
+# debe aprobar.
+#
+# Cambios en este archivo o en branch protection: PR + revisión del otro.
+
+*                          @yanditv @Famiitry

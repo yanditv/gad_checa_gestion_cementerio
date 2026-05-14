@@ -399,3 +399,63 @@ este archivo.
 ```
 
 Cada cierre actualiza `MIGRATION_STATUS.md` y este checklist.
+
+---
+
+## 6. Distribución de actividades (desde 2026-05-14)
+
+A partir del **2026-05-14** el equipo es:
+
+- **@yanditv** — owner y reviewer de áreas críticas.
+- **@Famiitry** — colaborador. Trabaja con apoyo de Claude / agentes IA en
+  las tareas marcadas `[IA]`. Sin acceso a decisiones de arquitectura,
+  migraciones de datos en producción ni cambios de seguridad/auth.
+
+**Reglas de flujo** (ver también `CLAUDE.md` §2.5):
+
+1. Cada tarea = una rama (`feat/...`, `fix/...`, `chore/...`).
+2. PR contra `master` con descripción del entregable.
+3. CODEOWNERS auto-asigna al otro colaborador como revisor.
+4. Branch protection exige 1 approving review antes de merge.
+5. Antes de mergear, el autor actualiza este archivo y `MIGRATION_STATUS.md`.
+
+### 6.1 Asignación de fases pendientes
+
+| Tarea | Asignado | Modo | Notas |
+|-------|----------|------|------|
+| **Fase 7 — Usuarios y roles** |  |  |  |
+| 7.1 Listado de usuarios con roles | @Famiitry | `[IA]` | UI simple: tabla + filtro. Endpoints `/usuarios` ya existen. |
+| 7.2 Asignar/quitar roles desde detalle | @Famiitry | `[IA]` | Endpoint `setRoles` ya existe; falta el modal de selección. |
+| 7.3 Reset de contraseña forzado | @yanditv | `[crítica]` | Toca flujo de auth y emails. |
+| 7.4 Bloqueo eliminación `admin@teobu.com` | @yanditv | `[crítica]` | Regla de seguridad: no perder al super-admin. |
+| **Fase 8 — Notificaciones** |  |  |  |
+| 8.1 `NotificacionService` (CRUD + listar) | @Famiitry | `[IA]` | Tabla ya existe en schema. CRUD estándar con auditoría. |
+| 8.2 Job diario `@nestjs/schedule` (vencimientos) | @Famiitry | `[IA]` | Cron `0 7 * * *` America/Guayaquil. Reglas en `MIGRATION_PLAN.md` §Fase 8. |
+| 8.3 Dropdown header con badge + página `/notify` | @Famiitry | `[IA]` | UI ya tiene patrón en otras pantallas. |
+| 8.4 Envío de email (si SMTP) | @yanditv | `[crítica]` | Reutilizar `EmailModule` de Fase 1. |
+| **Fase 9 — Configuración y catastro on-demand** |  |  |  |
+| 9.1 Edición de `Cementerio` y `GADInformacion` | @Famiitry | `[IA]` | Form sencillo con campos ya conocidos. |
+| 9.2 `POST /catastro/import` (multipart Excel) | @yanditv | `[crítica]` | Toca importador en producción; alto riesgo. |
+| 9.3 Vista de estado de última importación | @Famiitry | `[IA]` | Solo lectura del log que escriba 9.2. |
+| **Fase 10 — Pulido y QA** |  |  |  |
+| 10.1 Manual de usuario actualizado | @Famiitry | `[IA]` | Pura documentación. Copiar/adaptar del legado. |
+| 10.2 Validación visual vs legado (88 vistas) | @yanditv + @Famiitry | mixta | Hacer checklist y dividir. |
+| 10.3 Pruebas de carga con dataset real | @yanditv | `[crítica]` | Requiere infra y dataset de producción. |
+| 10.4 Tests E2E con Playwright (flujos clave) | @Famiitry | `[IA]` | 5–6 flujos: login, crear contrato, cobrar, renovar, listado. |
+| 10.5 Auditoría WCAG AA | @Famiitry | `[IA]` | Reporte con hallazgos; correcciones críticas las hace @yanditv. |
+| 10.6 `MIGRATION_STATUS.md` final | @yanditv | `[crítica]` | Firma de cierre. |
+
+### 6.2 Modo `[IA]` — cómo trabajar con un agente
+
+Para las tareas marcadas `[IA]`, Famiitry puede apoyarse en Claude (CLI o
+agente cloud). Reglas:
+
+1. Una rama por tarea; el agente trabaja en esa rama, **no** en `master`.
+2. El agente lee `CLAUDE.md` antes de actuar (project instructions).
+3. Después del primer commit, ejecutar `bun run lint` y `bun run build` en
+   los módulos tocados antes de empujar.
+4. El PR debe contener una descripción human-readable (el agente lo
+   propone, Famiitry lo revisa antes de pushear).
+5. Para decisiones que crucen módulos o cambien reglas de `CLAUDE.md`, el
+   agente debe **detenerse y preguntar**, no inventar.
+
