@@ -2,11 +2,13 @@
 
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AuthShell } from '../AuthShell';
 
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/';
 
@@ -30,7 +32,6 @@ function LoginForm() {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload.message || 'Credenciales inválidas');
       }
-      // Reload completo para que el middleware vea la cookie y re-render layouts.
       window.location.href = from.startsWith('/') ? from : '/';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
@@ -45,59 +46,68 @@ function LoginForm() {
       footer={
         <>
           ¿No tienes cuenta? Contacta al{' '}
-          <span className="text-primary">administrador del sistema</span>
+          <span className="text-primary-600">administrador del sistema</span>
         </>
       }
     >
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {error && (
-          <div className="alert alert-danger py-2" role="alert">
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
             {error}
           </div>
         )}
 
-        <div className="form-group mb-3">
-          <label className="form-label" htmlFor="email">
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+          >
             Correo electrónico
           </label>
           <input
             id="email"
             type="email"
-            className="form-control"
-            placeholder="admin@teobu.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@teobu.com"
             required
             autoComplete="email"
             autoFocus
+            className={INPUT_CLS}
           />
         </div>
 
-        <div className="form-group mb-2">
-          <label className="form-label" htmlFor="password">
+        <div>
+          <label
+            htmlFor="password"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+          >
             Contraseña
           </label>
           <input
             id="password"
             type="password"
-            className="form-control"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
+            className={INPUT_CLS}
           />
         </div>
 
-        <div className="d-flex justify-content-end mb-3">
-          <Link href="/auth/forgot-password" className="small text-primary">
+        <div className="flex justify-end">
+          <Link
+            href="/auth/forgot-password"
+            className="text-sm text-primary-600 hover:underline"
+          >
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
         <button
           type="submit"
-          className="btn btn-primary w-100"
           disabled={loading || !email || !password}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Ingresando…' : 'Iniciar sesión'}
         </button>
@@ -111,7 +121,9 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <AuthShell title="Iniciar sesión">
-          <div className="text-center py-3 text-muted">Cargando…</div>
+          <div className="py-3 text-center text-sm text-slate-400">
+            Cargando…
+          </div>
         </AuthShell>
       }
     >

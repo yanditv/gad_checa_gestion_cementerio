@@ -15,6 +15,140 @@ interface DashboardData {
   contratosVencidos: number;
 }
 
+type Tone =
+  | 'primary'
+  | 'success'
+  | 'info'
+  | 'warning'
+  | 'danger'
+  | 'slate';
+
+const TONE_BG: Record<Tone, string> = {
+  primary: 'bg-primary-50 text-primary-600 ring-primary-200',
+  success: 'bg-green-50 text-green-600 ring-green-200',
+  info: 'bg-info-50 text-info-600 ring-info-200',
+  warning: 'bg-amber-50 text-amber-600 ring-amber-200',
+  danger: 'bg-red-50 text-red-600 ring-red-200',
+  slate: 'bg-slate-100 text-slate-600 ring-slate-200',
+};
+
+const TONE_BAR: Record<Tone, string> = {
+  primary: 'bg-primary-500',
+  success: 'bg-green-500',
+  info: 'bg-info-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-red-500',
+  slate: 'bg-slate-400',
+};
+
+const TONE_TEXT: Record<Tone, string> = {
+  primary: 'text-primary-600',
+  success: 'text-green-600',
+  info: 'text-info-600',
+  warning: 'text-amber-600',
+  danger: 'text-red-600',
+  slate: 'text-slate-700',
+};
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('es-EC').format(value);
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+  }).format(value);
+}
+
+function Card({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+      <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+        {icon && <i className={`ti ${icon} text-primary-500`} />}
+        <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+      </header>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function KpiCard({
+  title,
+  value,
+  subtitle,
+  tone,
+  icon,
+  progress = 100,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+  tone: Tone;
+  icon: string;
+  progress?: number;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft transition-shadow hover:shadow-lifted">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            {title}
+          </p>
+          <p className={`mt-1 text-2xl font-bold ${TONE_TEXT[tone]}`}>{value}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+        </div>
+        <span
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ring-1 ${TONE_BG[tone]}`}
+        >
+          <i className={`ti ${icon} text-xl`} />
+        </span>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full ${TONE_BAR[tone]}`}
+          style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QuickCard({
+  href,
+  icon,
+  label,
+  tone,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  tone: Tone;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-4 text-center shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lifted"
+    >
+      <span
+        className={`mb-2 flex h-12 w-12 items-center justify-center rounded-xl ring-1 ${TONE_BG[tone]} transition-transform group-hover:scale-105`}
+      >
+        <i className={`ti ${icon} text-2xl`} />
+      </span>
+      <span className="text-xs font-semibold text-slate-700">{label}</span>
+    </Link>
+  );
+}
+
 export default function Home() {
   const [data, setData] = useState<DashboardData>({
     numeroDifuntos: 0,
@@ -30,41 +164,37 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadDashboard = async () => {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 8000);
-
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+    (async () => {
       try {
-        const response = await fetch('/api/dashboard', { signal: controller.signal });
+        const response = await fetch('/api/dashboard', {
+          signal: controller.signal,
+          credentials: 'same-origin',
+        });
         if (response.ok) {
           const result = await response.json();
           setData(result);
         }
+      } catch {
+        /* ignore */
       } finally {
         window.clearTimeout(timeout);
         setLoading(false);
       }
-    };
-
-    loadDashboard();
+    })();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (loading) return;
-
     const ApexCharts = (window as any).ApexCharts;
     if (!ApexCharts) return;
 
-    const totalEspacios =
-      data.bovedasDisponibles +
-      data.bovedasOcupadas +
-      data.nichosDisponibles +
-      data.nichosOcupados;
-
     const monthlyBase = Math.max(1, Math.round(data.ingresosTotales / 12));
-    const ingresosMensuales = [0.75, 0.9, 0.8, 1, 1.1, 0.95, 1.15, 1.05, 0.92, 1.2, 1.08, 1.25].map((m) =>
-      Math.round(monthlyBase * m),
-    );
+    const ingresosMensuales = [
+      0.75, 0.9, 0.8, 1, 1.1, 0.95, 1.15, 1.05, 0.92, 1.2, 1.08, 1.25,
+    ].map((m) => Math.round(monthlyBase * m));
     const deudasMensuales = ingresosMensuales.map((i) => Math.round(i * 0.35));
 
     const charts: any[] = [];
@@ -73,8 +203,18 @@ export default function Home() {
     if (pieEl) {
       const pieChart = new ApexCharts(pieEl, {
         chart: { type: 'pie', height: 250, toolbar: { show: false } },
-        series: [data.bovedasDisponibles, data.bovedasOcupadas, data.nichosDisponibles, data.nichosOcupados],
-        labels: ['Bóvedas Disponibles', 'Bóvedas Ocupadas', 'Nichos Disponibles', 'Nichos Ocupados'],
+        series: [
+          data.bovedasDisponibles,
+          data.bovedasOcupadas,
+          data.nichosDisponibles,
+          data.nichosOcupados,
+        ],
+        labels: [
+          'Bóvedas disponibles',
+          'Bóvedas ocupadas',
+          'Nichos disponibles',
+          'Nichos ocupados',
+        ],
         colors: ['#52c41a', '#13c2c2', '#722ed1', '#fa8c16'],
         legend: { position: 'bottom' },
       });
@@ -86,8 +226,12 @@ export default function Home() {
     if (donutEl) {
       const donutChart = new ApexCharts(donutEl, {
         chart: { type: 'donut', height: 250, toolbar: { show: false } },
-        series: [data.contratosActivos, data.contratosPorVencer, data.contratosVencidos],
-        labels: ['Activos', 'Por Vencer', 'Vencidos'],
+        series: [
+          data.contratosActivos,
+          data.contratosPorVencer,
+          data.contratosVencidos,
+        ],
+        labels: ['Activos', 'Por vencer', 'Vencidos'],
         colors: ['#52c41a', '#faad14', '#ff4d4f'],
         legend: { position: 'bottom' },
       });
@@ -104,7 +248,10 @@ export default function Home() {
           { name: 'Deudas', data: deudasMensuales },
         ],
         xaxis: {
-          categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+          categories: [
+            'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+            'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+          ],
         },
         colors: ['#1890ff', '#ff4d4f'],
         plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
@@ -120,7 +267,10 @@ export default function Home() {
         chart: { type: 'area', height: 250, toolbar: { show: false } },
         series: [{ name: 'Ingresos', data: ingresosMensuales }],
         xaxis: {
-          categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+          categories: [
+            'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+            'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+          ],
         },
         colors: ['#1890ff'],
         stroke: { curve: 'smooth', width: 3 },
@@ -133,327 +283,252 @@ export default function Home() {
       charts.push(areaChart);
     }
 
-    return () => {
-      charts.forEach((c) => c.destroy());
-    };
+    return () => charts.forEach((c) => c.destroy());
   }, [loading, data]);
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '40vh' }}>
-        <div className="spinner-border text-primary" role="status" />
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
       </div>
     );
   }
 
   const totalEspacios =
     data.bovedasDisponibles + data.bovedasOcupadas + data.nichosDisponibles + data.nichosOcupados;
+  const ocupados = data.bovedasOcupadas + data.nichosOcupados;
+  const disponibles = data.bovedasDisponibles + data.nichosDisponibles;
+  const pctOcupacion = totalEspacios > 0 ? (ocupados * 100) / totalEspacios : 0;
 
   return (
-    <div className="container-fluid">
-      <div className="row mb-3">
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 className="mb-1">Dashboard - Gestión del Cementerio</h2>
-              <p className="text-muted mb-0 small">Vista general del estado operativo y financiero</p>
-            </div>
-            <div className="d-flex gap-2">
-              <button className="btn btn-sm btn-outline-primary" onClick={() => window.location.reload()}>
-                <i className="ti ti-refresh me-1"></i>Actualizar
-              </button>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Vista general del estado operativo y financiero del cementerio.
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <i className="ti ti-refresh" />
+          Actualizar
+        </button>
       </div>
 
-      <div className="row mb-3">
-        <div className="col-12 mb-2">
-          <h5 className="section-title mb-3">
-            <i className="ti ti-chart-bar text-primary me-2"></i>
-            Indicadores Principales
-          </h5>
+      {/* Sección: indicadores */}
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <i className="ti ti-chart-bar text-primary-500" />
+          Indicadores principales
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard
+            title="Total difuntos"
+            value={formatNumber(data.numeroDifuntos)}
+            subtitle="Registrados en el sistema"
+            tone="primary"
+            icon="ti-user-check"
+          />
+          <KpiCard
+            title="Ingresos totales"
+            value={formatCurrency(data.ingresosTotales)}
+            subtitle="Este año"
+            tone="warning"
+            icon="ti-currency-dollar"
+            progress={85}
+          />
+          <KpiCard
+            title="Bóvedas disponibles"
+            value={formatNumber(data.bovedasDisponibles)}
+            subtitle="Sin contrato activo"
+            tone="success"
+            icon="ti-box"
+          />
+          <KpiCard
+            title="Bóvedas ocupadas"
+            value={formatNumber(data.bovedasOcupadas)}
+            subtitle="Con contrato activo"
+            tone="info"
+            icon="ti-user-check"
+          />
+          <KpiCard
+            title="Nichos disponibles"
+            value={formatNumber(data.nichosDisponibles)}
+            subtitle="Actualmente libres"
+            tone="success"
+            icon="ti-check"
+          />
+          <KpiCard
+            title="Nichos ocupados"
+            value={formatNumber(data.nichosOcupados)}
+            subtitle="Ya asignados"
+            tone="slate"
+            icon="ti-user"
+          />
+          <KpiCard
+            title="Contratos por vencer"
+            value={formatNumber(data.contratosPorVencer)}
+            subtitle="Próximos 30 días"
+            tone="warning"
+            icon="ti-alert-triangle"
+          />
+          <KpiCard
+            title="Ingresos del año"
+            value={formatCurrency(data.ingresosTotales)}
+            subtitle="Acumulado anual"
+            tone="primary"
+            icon="ti-trending-up"
+            progress={85}
+          />
         </div>
-      </div>
+      </section>
 
-      <div className="row mb-4">
-        <KpiCard title="Total Difuntos" value={data.numeroDifuntos.toLocaleString()} subtitle="Registrados en el sistema" tone="primary" icon="ti-user-check" progress={100} />
-        <KpiCard title="Ingresos Totales" value={`$${data.ingresosTotales.toLocaleString()}`} subtitle="Este año" tone="warning" icon="ti-currency-dollar" progress={85} />
-        <KpiCard title="Bóvedas Disponibles" value={data.bovedasDisponibles.toLocaleString()} subtitle="Sin contrato activo" tone="success" icon="ti-box" progress={100} />
-        <KpiCard title="Bóvedas Ocupadas" value={data.bovedasOcupadas.toLocaleString()} subtitle="Con contrato activo" tone="info" icon="ti-user-check" progress={100} />
-        <KpiCard title="Nichos Disponibles" value={data.nichosDisponibles.toLocaleString()} subtitle="Actualmente libres" tone="success" icon="ti-check" progress={100} />
-        <KpiCard title="Nichos Ocupados" value={data.nichosOcupados.toLocaleString()} subtitle="Ya asignados" tone="secondary" icon="ti-user" progress={100} />
-        <KpiCard title="Bóvedas por Caducar" value={data.contratosPorVencer.toLocaleString()} subtitle="Contratos por vencer" tone="warning" icon="ti-alert-triangle" progress={100} />
-        <KpiCard title="Total Ingresos del Año" value={`$${data.ingresosTotales.toLocaleString()}`} subtitle="Acumulado anual" tone="primary" icon="ti-trending-up" progress={85} />
-      </div>
+      {/* Sección: resumen operativo */}
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <i className="ti ti-layout-dashboard text-info-600" />
+          Resumen operativo
+        </h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card title="Distribución de espacios" icon="ti-pie-chart">
+            <div id="espacios-pie-chart" style={{ height: 250, width: '100%' }} />
+          </Card>
 
-      <div className="row mb-3">
-        <div className="col-12 mb-2">
-          <h5 className="section-title mb-3">
-            <i className="ti ti-layout-dashboard text-info me-2"></i>
-            Resumen Operativo
-          </h5>
-        </div>
-      </div>
+          <Card title="Estado de contratos" icon="ti-donut">
+            <div id="contratos-donut-chart" style={{ height: 250, width: '100%' }} />
+          </Card>
 
-      <div className="row mb-4">
-        <div className="col-12 col-md-6 col-xl-4 mb-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-pie-chart text-primary me-2"></i>
-                Distribución de Espacios
-              </h5>
-            </div>
-            <div className="card-body d-flex align-items-center justify-content-center">
-              <div id="espacios-pie-chart" style={{ height: '250px', width: '100%' }}></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-12 col-md-6 col-xl-4 mb-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-donut text-success me-2"></i>
-                Estado de Contratos
-              </h5>
-            </div>
-            <div className="card-body d-flex align-items-center justify-content-center">
-              <div id="contratos-donut-chart" style={{ height: '250px', width: '100%' }}></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-12 col-xl-4 mb-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-wave-square text-info me-2"></i>
-                Capacidad
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="d-flex justify-content-between mb-2">
-                <span>Total de espacios</span>
-                <span className="fw-semibold">{totalEspacios}</span>
+          <Card title="Capacidad" icon="ti-wave-square">
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Total de espacios</dt>
+                <dd className="font-semibold">{totalEspacios}</dd>
               </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>Disponibles</span>
-                <span className="text-success fw-semibold">{data.bovedasDisponibles + data.nichosDisponibles}</span>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Disponibles</dt>
+                <dd className="font-semibold text-green-600">{disponibles}</dd>
               </div>
-              <div className="d-flex justify-content-between mb-3">
-                <span>Ocupados</span>
-                <span className="text-info fw-semibold">{data.bovedasOcupadas + data.nichosOcupados}</span>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Ocupados</dt>
+                <dd className="font-semibold text-info-600">{ocupados}</dd>
               </div>
-              <div className="progress" style={{ height: '8px' }}>
-                <div
-                  className="progress-bar bg-info"
-                  style={{
-                    width: `${totalEspacios > 0 ? Math.round(((data.bovedasOcupadas + data.nichosOcupados) * 100) / totalEspacios) : 0}%`,
-                  }}
-                ></div>
-              </div>
+            </dl>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full bg-info-500"
+                style={{ width: `${pctOcupacion}%` }}
+              />
             </div>
-          </div>
+            <p className="mt-1 text-right text-xs text-slate-400">
+              {pctOcupacion.toFixed(0)}% de ocupación
+            </p>
+          </Card>
         </div>
-      </div>
+      </section>
 
-      <div className="row mb-4">
-        <div className="col-12 col-lg-8 mb-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-chart-bar text-info me-2"></i>
-                Ingresos vs Deudas Mensuales
-              </h5>
-            </div>
-            <div className="card-body">
-              <div id="ingresos-bar-chart" style={{ height: '280px' }}></div>
-            </div>
-          </div>
+      {/* Sección: gráficos */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card title="Ingresos vs deudas mensuales" icon="ti-chart-bar">
+            <div id="ingresos-bar-chart" style={{ height: 280 }} />
+          </Card>
         </div>
+        <Card title="Tendencia de ingresos" icon="ti-chart-line">
+          <div id="ingresos-area-chart" style={{ height: 250 }} />
+        </Card>
+      </section>
 
-        <div className="col-12 col-lg-4 mb-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-chart-line text-primary me-2"></i>
-                Tendencia de Ingresos
-              </h5>
+      {/* Sección: contratos + alertas */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card title="Estado de contratos" icon="ti-file-text">
+          <dl className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-500">Contratos activos</dt>
+              <dd>
+                <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
+                  {data.contratosActivos}
+                </span>
+              </dd>
             </div>
-            <div className="card-body">
-              <div id="ingresos-area-chart" style={{ height: '250px' }}></div>
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-500">Contratos por vencer</dt>
+              <dd>
+                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+                  {data.contratosPorVencer}
+                </span>
+              </dd>
             </div>
-          </div>
-        </div>
-      </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-500">Contratos vencidos</dt>
+              <dd>
+                <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-red-200">
+                  {data.contratosVencidos}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </Card>
 
-      <div className="row mb-4">
-        <div className="col-12 col-lg-6 mb-3">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-file-text text-secondary me-2"></i>
-                Estado de Contratos
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <span className="text-muted">Contratos Activos</span>
-                <span className="badge bg-success">{data.contratosActivos}</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <span className="text-muted">Contratos por Vencer</span>
-                <span className="badge bg-warning text-dark">{data.contratosPorVencer}</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-muted">Contratos Vencidos</span>
-                <span className="badge bg-danger">{data.contratosVencidos}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-12 col-lg-6 mb-3">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0">
-              <h5 className="mb-0">
-                <i className="ti ti-bell text-warning me-2"></i>
-                Alertas Importantes
-              </h5>
-            </div>
-            <div className="card-body">
-              {data.contratosPorVencer > 0 && (
-                <div className="alert alert-warning border-0 mb-3" role="alert">
-                  <div className="d-flex align-items-center">
-                    <i className="ti ti-alert-triangle me-2"></i>
-                    <div>
-                      <strong>{data.contratosPorVencer} contratos</strong> próximos a vencer
-                      <br />
-                      <small className="text-muted">Requieren atención inmediata</small>
-                    </div>
-                  </div>
+        <Card title="Alertas importantes" icon="ti-bell">
+          <div className="space-y-3 text-sm">
+            {data.contratosPorVencer > 0 && (
+              <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                <i className="ti ti-alert-triangle mt-0.5 text-lg text-amber-600" />
+                <div>
+                  <p className="font-semibold">
+                    {data.contratosPorVencer} contratos próximos a vencer
+                  </p>
+                  <p className="text-xs text-amber-700">Requieren atención inmediata</p>
                 </div>
-              )}
-
-              {data.contratosVencidos > 0 ? (
-                <div className="alert alert-danger border-0 mb-0" role="alert">
-                  <div className="d-flex align-items-center">
-                    <i className="ti ti-alert-circle me-2"></i>
-                    <div>
-                      <strong>{data.contratosVencidos} contratos</strong> ya vencidos
-                      <br />
-                      <small className="text-muted">Acción requerida</small>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="alert alert-success border-0 mb-0" role="alert">
-                  <div className="d-flex align-items-center">
-                    <i className="ti ti-circle-check me-2"></i>
-                    <div>
-                      <strong>Sin alertas críticas</strong>
-                      <br />
-                      <small className="text-muted">Todo en orden</small>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="row mb-3">
-        <div className="col-12 mb-2">
-          <h5 className="section-title mb-3">
-            <i className="ti ti-layout-dashboard text-info me-2"></i>
-            Accesos Rápidos
-          </h5>
-        </div>
-      </div>
-
-      <div className="row">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <div className="row g-3">
-                <QuickCard href="/contratos/create" icon="ti-file-plus" label="Nuevo Contrato" tone="primary" />
-                <QuickCard href="/contratos" icon="ti-files" label="Ver Contratos" tone="success" />
-                <QuickCard href="/bovedas" icon="ti-building" label="Gestionar Espacios" tone="info" />
-                <QuickCard href="/difuntos" icon="ti-users" label="Registro Difuntos" tone="secondary" />
-                <QuickCard href="/cobros" icon="ti-receipt" label="Cobros" tone="warning" />
-                <QuickCard href="/reportes" icon="ti-chart-bar" label="Reportes" tone="danger" />
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+            )}
 
-function KpiCard({
-  title,
-  value,
-  subtitle,
-  tone,
-  icon,
-  progress,
-}: {
-  title: string;
-  value: string;
-  subtitle: string;
-  tone: 'primary' | 'success' | 'warning' | 'info' | 'secondary';
-  icon: string;
-  progress: number;
-}) {
-  return (
-    <div className="col-sm-6 col-md-4 col-lg-3 mb-3">
-      <div className="card h-100 border-0 shadow-sm">
-        <div className="card-body">
-          <div className="d-flex justify-content-between align-items-start">
-            <div>
-              <h6 className="mb-2 f-w-400 text-muted">{title}</h6>
-              <h3 className={`mb-1 text-${tone}`}>{value}</h3>
-              <small className="text-muted">{subtitle}</small>
-            </div>
-            <div className={`avatar bg-light-${tone} text-${tone}`}>
-              <i className={`ti ${icon} f-24`}></i>
-            </div>
+            {data.contratosVencidos > 0 ? (
+              <div className="flex gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-800">
+                <i className="ti ti-alert-circle mt-0.5 text-lg text-red-600" />
+                <div>
+                  <p className="font-semibold">
+                    {data.contratosVencidos} contratos vencidos
+                  </p>
+                  <p className="text-xs text-red-700">Acción requerida</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-800">
+                <i className="ti ti-circle-check mt-0.5 text-lg text-green-600" />
+                <div>
+                  <p className="font-semibold">Sin alertas críticas</p>
+                  <p className="text-xs text-green-700">Todo en orden</p>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="progress mt-3" style={{ height: '4px' }}>
-            <div className={`progress-bar bg-${tone}`} style={{ width: `${progress}%` }}></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        </Card>
+      </section>
 
-function QuickCard({
-  href,
-  icon,
-  label,
-  tone,
-}: {
-  href: string;
-  icon: string;
-  label: string;
-  tone: 'primary' | 'success' | 'info' | 'secondary' | 'warning' | 'danger';
-}) {
-  return (
-    <div className="col-6 col-sm-4 col-md-3 col-lg-2">
-      <Link
-        href={href}
-        className={`card text-center p-3 border-0 bg-light-${tone} text-decoration-none h-100`}
-      >
-        <div className="card-body">
-          <i className={`ti ${icon} text-${tone} mb-2`} style={{ fontSize: '1.8rem' }}></i>
-          <div className="fw-medium small">{label}</div>
+      {/* Sección: accesos rápidos */}
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <i className="ti ti-layout-dashboard text-info-600" />
+          Accesos rápidos
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <QuickCard href="/contratos/create" icon="ti-file-plus" label="Nuevo contrato" tone="primary" />
+          <QuickCard href="/contratos" icon="ti-files" label="Ver contratos" tone="success" />
+          <QuickCard href="/bovedas" icon="ti-building" label="Espacios" tone="info" />
+          <QuickCard href="/difuntos" icon="ti-users" label="Difuntos" tone="slate" />
+          <QuickCard href="/cobros" icon="ti-receipt" label="Cobros" tone="warning" />
+          <QuickCard href="/reportes" icon="ti-chart-bar" label="Reportes" tone="danger" />
         </div>
-      </Link>
+      </section>
     </div>
   );
 }

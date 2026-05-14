@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AuthShell } from '../AuthShell';
 
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -35,9 +38,7 @@ function ResetPasswordForm() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(
-          payload.message || 'No se pudo restablecer la contraseña',
-        );
+        throw new Error(payload.message || 'No se pudo restablecer la contraseña');
       }
       setDone(true);
     } catch (err) {
@@ -52,62 +53,67 @@ function ResetPasswordForm() {
       title="Restablecer contraseña"
       subtitle="Define una nueva contraseña para tu cuenta."
       footer={
-        <Link href="/auth/login" className="text-primary">
-          ← Volver al inicio de sesión
+        <Link href="/auth/login" className="inline-flex items-center gap-1 text-primary-600 hover:underline">
+          <i className="ti ti-arrow-left" /> Volver al inicio de sesión
         </Link>
       }
     >
       {done ? (
-        <div className="alert alert-success border-0" role="alert">
-          <i className="ti ti-circle-check me-2"></i>
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          <i className="ti ti-circle-check mr-1 text-lg" />
           Contraseña actualizada. Ya puedes iniciar sesión.
         </div>
       ) : (
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {error && (
-            <div className="alert alert-danger py-2" role="alert">
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
               {error}
             </div>
           )}
-          <div className="form-group mb-3">
-            <label className="form-label" htmlFor="password">
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+            >
               Nueva contraseña
             </label>
             <input
               id="password"
               type="password"
-              className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
               required
               autoComplete="new-password"
               autoFocus
+              className={INPUT_CLS}
             />
-            <small className="text-muted">
-              Mínimo 6 caracteres, con una mayúscula, una minúscula y un
-              dígito.
-            </small>
+            <p className="mt-1 text-xs text-slate-500">
+              Mínimo 6 caracteres, con una mayúscula, una minúscula y un dígito.
+            </p>
           </div>
-          <div className="form-group mb-3">
-            <label className="form-label" htmlFor="confirm">
+          <div>
+            <label
+              htmlFor="confirm"
+              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+            >
               Confirmar contraseña
             </label>
             <input
               id="confirm"
               type="password"
-              className="form-control"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               minLength={6}
               required
               autoComplete="new-password"
+              className={INPUT_CLS}
             />
           </div>
           <button
             type="submit"
-            className="btn btn-primary w-100"
             disabled={loading || !password || !confirm}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Actualizando…' : 'Restablecer contraseña'}
           </button>
@@ -122,7 +128,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <AuthShell title="Restablecer contraseña">
-          <div className="text-center py-3 text-muted">Cargando…</div>
+          <div className="py-3 text-center text-sm text-slate-400">Cargando…</div>
         </AuthShell>
       }
     >
