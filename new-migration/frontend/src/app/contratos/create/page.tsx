@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { PaginationNav } from '@/components/ui/PaginationNav';
 import { contratosApi, personasApi } from '@/lib/api';
 import { clearWizard, loadWizard, saveWizard } from '@/lib/wizardStorage';
 
@@ -35,7 +33,7 @@ const stepTitles = [
   'Datos del difunto',
   'Datos de los responsables',
   'Pago',
-  'Verificacion de datos',
+  'Verificación',
 ];
 
 type ResponsableWizard = {
@@ -73,24 +71,106 @@ function addYears(dateValue: string, years: number) {
 
 function getYearDiff(fechaInicio: string, fechaFin: string) {
   if (!fechaInicio || !fechaFin) return 0;
-
   const start = new Date(fechaInicio);
   const end = new Date(fechaFin);
-
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
   if (end <= start) return 0;
-
   let years = end.getFullYear() - start.getFullYear();
   const endBeforeStartAnniversary =
     end.getMonth() < start.getMonth() ||
     (end.getMonth() === start.getMonth() && end.getDate() < start.getDate());
-
-  if (endBeforeStartAnniversary) {
-    years -= 1;
-  }
-
+  if (endBeforeStartAnniversary) years -= 1;
   return years > 0 ? years : 0;
 }
+
+// =============================================================================
+// Tailwind UI primitives (locales)
+// =============================================================================
+
+function Label({
+  htmlFor,
+  children,
+}: {
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+    >
+      {children}
+    </label>
+  );
+}
+
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-400 read-only:bg-slate-50';
+
+function Card({
+  title,
+  children,
+  className = '',
+}: {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft ${className}`}
+    >
+      {title && (
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+        </header>
+      )}
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function ModalShell({
+  title,
+  size = 'md',
+  onClose,
+  children,
+}: {
+  title: string;
+  size?: 'md' | 'lg';
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const widthClass = size === 'lg' ? 'max-w-3xl' : 'max-w-md';
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      role="dialog"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className={`w-full ${widthClass} rounded-xl bg-white shadow-lifted`}>
+        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+          <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Cerrar"
+          >
+            <i className="ti ti-x" />
+          </button>
+        </header>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Página
+// =============================================================================
 
 export default function CreateContratoPage() {
   const router = useRouter();
@@ -101,7 +181,11 @@ export default function CreateContratoPage() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [metadata, setMetadata] = useState<any>({ descuentos: [], bancos: [], tiposPago: ['Efectivo', 'Transferencia', 'Banco'] });
+  const [metadata, setMetadata] = useState<any>({
+    descuentos: [],
+    bancos: [],
+    tiposPago: ['Efectivo', 'Transferencia', 'Banco'],
+  });
   const [personas, setPersonas] = useState<any[]>([]);
   const [responsableSearch, setResponsableSearch] = useState('');
   const [showResponsableModal, setShowResponsableModal] = useState(false);
@@ -164,13 +248,17 @@ export default function CreateContratoPage() {
   });
 
   const descuentoSeleccionado =
-    metadata.descuentos?.find((item: any) => item.id === Number(form.difunto.descuentoId)) || null;
-  const descuentoPorcentaje = descuentoSeleccionado ? Number(descuentoSeleccionado.porcentaje || 0) : 0;
-  const montoDescuento = Number(form.contrato.montoTotal || 0) * (descuentoPorcentaje / 100);
-  const montoFinalConDescuento = Number(form.contrato.montoTotal || 0) - montoDescuento;
+    metadata.descuentos?.find(
+      (item: any) => item.id === Number(form.difunto.descuentoId),
+    ) || null;
+  const descuentoPorcentaje = descuentoSeleccionado
+    ? Number(descuentoSeleccionado.porcentaje || 0)
+    : 0;
+  const montoDescuento =
+    Number(form.contrato.montoTotal || 0) * (descuentoPorcentaje / 100);
+  const montoFinalConDescuento =
+    Number(form.contrato.montoTotal || 0) - montoDescuento;
 
-  // Marca cuándo el borrador ya se hidrató desde localStorage para que el
-  // auto-save no escriba antes del primer load (evita pisar el borrador).
   const hydrated = useRef(false);
 
   useEffect(() => {
@@ -186,11 +274,9 @@ export default function CreateContratoPage() {
         setMetadata(createMetadata);
         setPersonas(personasResult.data || []);
 
-        // Si hay un borrador local válido, lo restauramos como base.
         const draft = loadWizard<typeof form>(WIZARD_KEY);
         if (draft) {
           setForm(draft);
-          // Actualizamos solo el número secuencial (server canonical).
           setForm((prev) => ({
             ...prev,
             contrato: {
@@ -216,17 +302,15 @@ export default function CreateContratoPage() {
           }));
         }
       } catch (err: any) {
-        setError(err.message || 'No se pudo cargar la configuracion del formulario');
+        setError(err.message || 'No se pudo cargar la configuración del formulario');
       } finally {
         hydrated.current = true;
         setLoading(false);
       }
     }
-
     loadInitialData();
   }, []);
 
-  // Auto-save del wizard mientras el usuario edita.
   useEffect(() => {
     if (!hydrated.current) return;
     saveWizard(WIZARD_KEY, form);
@@ -234,7 +318,6 @@ export default function CreateContratoPage() {
 
   useEffect(() => {
     if (!showBovedaModal) return;
-
     async function loadBovedasDisponibles() {
       try {
         const result = await contratosApi.getBovedasDisponibles({
@@ -246,10 +329,9 @@ export default function CreateContratoPage() {
         setBovedasDisponibles(result.data || []);
         setBovedasMeta(result.meta);
       } catch (err: any) {
-        setError(err.message || 'No se pudo cargar la lista de bovedas');
+        setError(err.message || 'No se pudo cargar la lista de bóvedas');
       }
     }
-
     loadBovedasDisponibles();
   }, [showBovedaModal, bovedasPage, bovedaSearch, bovedaTipo]);
 
@@ -266,7 +348,11 @@ export default function CreateContratoPage() {
     setForm((prev) => {
       const cuotasSeleccionadasPrev = new Set(prev.pago.cuotasSeleccionadas);
       const cuotasSeleccionadas = cuotas
-        .filter((cuota) => cuotasSeleccionadasPrev.size === 0 || cuotasSeleccionadasPrev.has(cuota.numero))
+        .filter(
+          (cuota) =>
+            cuotasSeleccionadasPrev.size === 0 ||
+            cuotasSeleccionadasPrev.has(cuota.numero),
+        )
         .map((cuota) => cuota.numero);
       const monto = cuotas
         .filter((cuota) => cuotasSeleccionadas.includes(cuota.numero))
@@ -275,11 +361,7 @@ export default function CreateContratoPage() {
       return {
         ...prev,
         cuotas,
-        pago: {
-          ...prev.pago,
-          cuotasSeleccionadas,
-          monto,
-        },
+        pago: { ...prev.pago, cuotasSeleccionadas, monto },
       };
     });
   }, [
@@ -290,10 +372,6 @@ export default function CreateContratoPage() {
     form.difunto.descuentoId,
   ]);
 
-  /**
-   * Reflejo cliente de `ContratoService.generarCuotasPlan` (backend). Calcula
-   * el plan localmente para mostrar al usuario; el server recalcula al guardar.
-   */
   function generateCuotas(
     plan: PlanCuota,
     fechaInicio: string,
@@ -309,12 +387,7 @@ export default function CreateContratoPage() {
 
     if (plan === 'unico') {
       return [
-        {
-          numero: 1,
-          monto: montoFinal,
-          fechaVencimiento: fechaInicio,
-          pagada: false,
-        },
+        { numero: 1, monto: montoFinal, fechaVencimiento: fechaInicio, pagada: false },
       ];
     }
 
@@ -365,15 +438,12 @@ export default function CreateContratoPage() {
       }));
       setShowBovedaModal(false);
     } catch (err: any) {
-      setError(err.message || 'No se pudo seleccionar la boveda');
+      setError(err.message || 'No se pudo seleccionar la bóveda');
     }
   }
 
   function addExistingResponsable(persona: any) {
-    if (form.responsables.some((item) => item.id === persona.id && item.esExistente)) {
-      return;
-    }
-
+    if (form.responsables.some((item) => item.id === persona.id && item.esExistente)) return;
     setForm((prev) => ({
       ...prev,
       responsables: [
@@ -399,21 +469,16 @@ export default function CreateContratoPage() {
 
   function addNewResponsable() {
     if (!newResponsable.nombres || !newResponsable.apellidos || !newResponsable.numeroIdentificacion) {
-      setError('Complete al menos nombres, apellidos y numero de identificacion del responsable');
+      setError('Complete al menos nombres, apellidos y número de identificación del responsable');
       return;
     }
-
     setForm((prev) => ({
       ...prev,
       responsables: [
         ...prev.responsables,
-        {
-          ...newResponsable,
-          localId: `new-${Date.now()}`,
-        },
+        { ...newResponsable, localId: `new-${Date.now()}` },
       ],
     }));
-
     setNewResponsable({
       localId: '',
       esExistente: false,
@@ -455,7 +520,6 @@ export default function CreateContratoPage() {
       const monto = prev.cuotas
         .filter((cuota) => cuotasSeleccionadas.includes(cuota.numero))
         .reduce((sum, cuota) => sum + cuota.monto, 0);
-
       return {
         ...prev,
         pago: {
@@ -469,8 +533,12 @@ export default function CreateContratoPage() {
 
   function toggleAllCuotas(checked: boolean) {
     setForm((prev) => {
-      const cuotasSeleccionadas = checked ? prev.cuotas.map((cuota) => cuota.numero) : [];
-      const monto = checked ? prev.cuotas.reduce((sum, cuota) => sum + cuota.monto, 0) : 0;
+      const cuotasSeleccionadas = checked
+        ? prev.cuotas.map((cuota) => cuota.numero)
+        : [];
+      const monto = checked
+        ? prev.cuotas.reduce((sum, cuota) => sum + cuota.monto, 0)
+        : 0;
       return {
         ...prev,
         pago: {
@@ -484,33 +552,36 @@ export default function CreateContratoPage() {
 
   function validateStep(currentStep: number) {
     if (currentStep === 0) {
-      if (!form.contrato.bovedaId) return 'Debe seleccionar una boveda.';
-      if (!form.contrato.fechaInicio || !form.contrato.fechaFin) return 'Debe definir las fechas del contrato.';
-      if (new Date(form.contrato.fechaInicio) >= new Date(form.contrato.fechaFin)) return 'La fecha de inicio debe ser anterior a la fecha de fin.';
+      if (!form.contrato.bovedaId) return 'Debe seleccionar una bóveda.';
+      if (!form.contrato.fechaInicio || !form.contrato.fechaFin)
+        return 'Debe definir las fechas del contrato.';
+      if (new Date(form.contrato.fechaInicio) >= new Date(form.contrato.fechaFin))
+        return 'La fecha de inicio debe ser anterior a la fecha de fin.';
       return '';
     }
-
     if (currentStep === 1) {
-      if (!form.difunto.nombres || !form.difunto.apellidos) return 'Debe completar los datos del difunto.';
+      if (!form.difunto.nombres || !form.difunto.apellidos)
+        return 'Debe completar los datos del difunto.';
       if (form.difunto.fechaNacimiento && form.difunto.fechaFallecimiento) {
-        if (new Date(form.difunto.fechaNacimiento) >= new Date(form.difunto.fechaFallecimiento)) {
+        if (
+          new Date(form.difunto.fechaNacimiento) >=
+          new Date(form.difunto.fechaFallecimiento)
+        ) {
           return 'La fecha de fallecimiento debe ser posterior a la fecha de nacimiento.';
         }
       }
       return '';
     }
-
     if (currentStep === 2) {
       if (form.responsables.length === 0) return 'Debe agregar al menos un responsable.';
       return '';
     }
-
     if (currentStep === 3) {
       if (!form.pago.tipoPago) return 'Debe seleccionar un tipo de pago.';
-      if (form.pago.cuotasSeleccionadas.length === 0) return 'Debe seleccionar al menos una cuota.';
+      if (form.pago.cuotasSeleccionadas.length === 0)
+        return 'Debe seleccionar al menos una cuota.';
       return '';
     }
-
     return '';
   }
 
@@ -520,7 +591,6 @@ export default function CreateContratoPage() {
       setError(validationError);
       return;
     }
-
     setError('');
     setStep((prev) => Math.min(prev + 1, stepTitles.length - 1));
   }
@@ -531,15 +601,9 @@ export default function CreateContratoPage() {
       setError(validationError);
       return;
     }
-
     setSaving(true);
     setError('');
-
     try {
-      // El payload sigue el shape del DTO `CreateContratoWizardDto`:
-      //   - El server calcula montos (subtotal/descuento/total) y genera
-      //     las cuotas según `pago.plan`. No enviamos `cuotas` ni `montoTotal`.
-      //   - `descuentoId` viaja a nivel de contrato (no del difunto).
       const payload = {
         contrato: {
           bovedaId: Number(form.contrato.bovedaId),
@@ -548,9 +612,7 @@ export default function CreateContratoPage() {
           esRenovacion: !!form.contrato.esRenovacion,
           contratoOrigenId: form.contrato.contratoOrigenId ?? undefined,
           contratoRelacionadoId: form.contrato.contratoRelacionadoId ?? undefined,
-          descuentoId: form.difunto.descuentoId
-            ? Number(form.difunto.descuentoId)
-            : undefined,
+          descuentoId: form.difunto.descuentoId ? Number(form.difunto.descuentoId) : undefined,
           observaciones: form.contrato.observaciones || undefined,
         },
         difunto: {
@@ -606,669 +668,1045 @@ export default function CreateContratoPage() {
     if (descuentoPorcentaje >= 100) {
       setForm((prev) => ({
         ...prev,
-        pago: {
-          ...prev.pago,
-          numeroComprobante: 'S/N',
-        },
+        pago: { ...prev.pago, numeroComprobante: 'S/N' },
       }));
     }
   }, [descuentoPorcentaje]);
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
-    <div>
-      <div className="page-header">
-        <div className="card bg-primary shadow-sm border-0">
-          <div className="card-body d-flex flex-wrap justify-content-between align-items-center py-3 px-4">
-            <div className="d-flex align-items-center mb-2 mb-md-0">
-              <span className="me-3">
-                <i className="ti ti-file-plus text-white fs-2"></i>
-              </span>
-              <div>
-                <h2 className="h4 text-white mb-1">Contrato de Servicio de Arrendamiento de Cementerio</h2>
-                <p className="mb-0 text-white-50 small">
-                  {form.contrato.numeroSecuencial || 'Generando numero de contrato...'}
-                </p>
-              </div>
+    <div className="space-y-6">
+      {/* Banner superior */}
+      <div className="overflow-hidden rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 shadow-soft">
+        <div className="flex flex-col items-start justify-between gap-3 px-5 py-4 text-white sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20">
+              <i className="ti ti-file-plus text-2xl" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold">
+                Contrato de servicio de arrendamiento
+              </h2>
+              <p className="text-sm text-white/80">
+                {form.contrato.numeroSecuencial || 'Generando número de contrato…'}
+              </p>
             </div>
-            <Link href="/contratos" className="btn btn-outline-light">
-              <i className="ti ti-list me-1"></i> Ver todos
-            </Link>
           </div>
+          <Link
+            href="/contratos"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
+          >
+            <i className="ti ti-list" />
+            Ver todos
+          </Link>
         </div>
       </div>
 
-      <div className="card shadow-sm border-0 mb-4">
-        <div className="card-body p-4">
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-            {stepTitles.map((title, index) => (
-              <div key={title} className="d-flex align-items-center flex-fill" style={{ minWidth: 160 }}>
-                <div
-                  className={`rounded-circle d-flex align-items-center justify-content-center me-2 ${
-                    index < step ? 'bg-success text-white' : index === step ? 'bg-primary text-white' : 'bg-light text-muted'
+      {/* Stepper */}
+      <Card>
+        <ol className="flex flex-wrap gap-3">
+          {stepTitles.map((title, index) => {
+            const completed = index < step;
+            const active = index === step;
+            return (
+              <li
+                key={title}
+                className="flex min-w-[170px] flex-1 items-center gap-2"
+              >
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    completed
+                      ? 'bg-green-500 text-white'
+                      : active
+                        ? 'bg-primary-500 text-white ring-4 ring-primary-100'
+                        : 'bg-slate-100 text-slate-400 ring-1 ring-slate-200'
                   }`}
-                  style={{ width: 38, height: 38, border: '2px solid #dee2e6', fontWeight: 700 }}
                 >
-                  {index + 1}
-                </div>
-                <div className="small fw-semibold">{title}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+                  {completed ? <i className="ti ti-check" /> : index + 1}
+                </span>
+                <span
+                  className={`text-sm font-medium ${
+                    active ? 'text-slate-900' : 'text-slate-500'
+                  }`}
+                >
+                  {title}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
 
+      {/* Banner de renovación */}
       {form.contrato.esRenovacion && form.contrato.contratoOrigenId ? (
-        <div className="alert alert-primary border-0 shadow-sm mb-4">
-          <h5 className="alert-heading mb-2 text-primary">
-            <i className="ti ti-info-circle me-1"></i>
-            Este es un contrato de renovacion
-          </h5>
-          <p className="mb-0">
-            Este contrato renueva el contrato original con ID: <strong>{form.contrato.contratoOrigenId}</strong>
+        <div className="rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-800">
+          <p className="font-semibold">
+            <i className="ti ti-info-circle mr-1" /> Este es un contrato de renovación
+          </p>
+          <p className="mt-1">
+            Renueva el contrato original con ID:{' '}
+            <strong>{form.contrato.contratoOrigenId}</strong>
           </p>
         </div>
       ) : null}
 
-      {error ? <div className="alert alert-danger">{error}</div> : null}
-      {loading ? <div className="alert alert-info">Cargando configuracion del contrato...</div> : null}
-
-      <div className="card">
-        <div className="card-header">
-          <h5 className="card-title mb-0">{stepTitles[step]}</h5>
+      {/* Errores / loading */}
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          {error}
         </div>
-        <div className="card-body p-4">
-          {step === 0 ? (
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="contrato-numero-secuencial">Numero Secuencial</label>
-                <input id="contrato-numero-secuencial" className="form-control" value={form.contrato.numeroSecuencial} readOnly />
+      ) : null}
+      {loading ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-700">
+          Cargando configuración del contrato…
+        </div>
+      ) : null}
+
+      <Card title={stepTitles[step]}>
+        {step === 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-1">
+              <Label htmlFor="contrato-numero-secuencial">Número secuencial</Label>
+              <input
+                id="contrato-numero-secuencial"
+                className={INPUT_CLS}
+                value={form.contrato.numeroSecuencial}
+                readOnly
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <Label htmlFor="contrato-boveda">Bóveda</Label>
+              <div className="flex gap-2">
+                <input
+                  id="contrato-boveda"
+                  className={`${INPUT_CLS} flex-1`}
+                  value={form.contrato.bovedaLabel || 'Seleccionar bóveda'}
+                  readOnly
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowBovedaModal(true)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-100"
+                >
+                  <i className="ti ti-search" />
+                  Buscar
+                </button>
               </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="contrato-boveda">Boveda</label>
-                <div className="input-group">
-                  <input id="contrato-boveda" className="form-control" value={form.contrato.bovedaLabel || 'Seleccionar boveda'} readOnly />
-                  <button type="button" className="btn btn-outline-primary" onClick={() => setShowBovedaModal(true)}>
-                    <i className="ti ti-search me-1"></i> Buscar
-                  </button>
+            </div>
+
+            <div>
+              <Label htmlFor="contrato-fecha-inicio">Fecha de inicio</Label>
+              <input
+                id="contrato-fecha-inicio"
+                type="date"
+                className={INPUT_CLS}
+                value={form.contrato.fechaInicio}
+                onChange={(e) =>
+                  setForm((prev) => {
+                    const fechaInicio = e.target.value;
+                    return {
+                      ...prev,
+                      contrato: {
+                        ...prev.contrato,
+                        fechaInicio,
+                        numeroDeMeses: getYearDiff(fechaInicio, prev.contrato.fechaFin),
+                      },
+                    };
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="contrato-fecha-fin">Fecha de fin</Label>
+              <input
+                id="contrato-fecha-fin"
+                type="date"
+                className={INPUT_CLS}
+                value={form.contrato.fechaFin}
+                onChange={(e) =>
+                  setForm((prev) => {
+                    const fechaFin = e.target.value;
+                    return {
+                      ...prev,
+                      contrato: {
+                        ...prev.contrato,
+                        fechaFin,
+                        numeroDeMeses: getYearDiff(prev.contrato.fechaInicio, fechaFin),
+                      },
+                    };
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="contrato-numero-anos">Número de años</Label>
+              <input
+                id="contrato-numero-anos"
+                type="number"
+                className={INPUT_CLS}
+                value={form.contrato.numeroDeMeses}
+                readOnly
+              />
+            </div>
+            <div>
+              <Label htmlFor="contrato-monto-total">Monto total</Label>
+              <input
+                id="contrato-monto-total"
+                type="number"
+                step="0.01"
+                className={INPUT_CLS}
+                value={form.contrato.montoTotal}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    contrato: { ...prev.contrato, montoTotal: Number(e.target.value) },
+                  }))
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="contrato-observaciones">Observaciones</Label>
+              <textarea
+                id="contrato-observaciones"
+                className={INPUT_CLS}
+                rows={3}
+                value={form.contrato.observaciones}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    contrato: { ...prev.contrato, observaciones: e.target.value },
+                  }))
+                }
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {step === 1 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="difunto-cedula">Identificación</Label>
+              <input
+                id="difunto-cedula"
+                className={INPUT_CLS}
+                value={form.difunto.numeroIdentificacion}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    difunto: { ...prev.difunto, numeroIdentificacion: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="difunto-nombres">Nombres</Label>
+              <input
+                id="difunto-nombres"
+                className={INPUT_CLS}
+                value={form.difunto.nombres}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    difunto: { ...prev.difunto, nombres: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="difunto-apellidos">Apellidos</Label>
+              <input
+                id="difunto-apellidos"
+                className={INPUT_CLS}
+                value={form.difunto.apellidos}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    difunto: { ...prev.difunto, apellidos: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="difunto-descuento">Descuento</Label>
+              <select
+                id="difunto-descuento"
+                className={INPUT_CLS}
+                value={form.difunto.descuentoId}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    difunto: { ...prev.difunto, descuentoId: Number(e.target.value) },
+                  }))
+                }
+              >
+                <option value={0}>Sin descuento</option>
+                {metadata.descuentos?.map((item: any) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre} — {Number(item.porcentaje).toFixed(2)}%
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="difunto-fecha-nacimiento">Fecha de nacimiento</Label>
+              <input
+                id="difunto-fecha-nacimiento"
+                type="date"
+                className={INPUT_CLS}
+                value={form.difunto.fechaNacimiento}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    difunto: { ...prev.difunto, fechaNacimiento: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="difunto-fecha-defuncion">Fecha de defunción</Label>
+              <input
+                id="difunto-fecha-defuncion"
+                type="date"
+                className={INPUT_CLS}
+                value={form.difunto.fechaFallecimiento}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    difunto: { ...prev.difunto, fechaFallecimiento: e.target.value },
+                  }))
+                }
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {step === 2 ? (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  placeholder="Buscar responsable existente…"
+                  value={responsableSearch}
+                  onChange={(e) => setResponsableSearch(e.target.value)}
+                  className={`${INPUT_CLS} pl-9`}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowResponsableModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600"
+              >
+                <i className="ti ti-plus" />
+                Nuevo
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+              <div className="lg:col-span-5">
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <h4 className="mb-2 text-sm font-semibold text-slate-700">
+                    Personas existentes
+                  </h4>
+                  <div className="max-h-80 space-y-1 overflow-y-auto">
+                    {filteredPersonas.map((persona) => (
+                      <button
+                        key={persona.id}
+                        type="button"
+                        onClick={() => addExistingResponsable(persona)}
+                        className="w-full rounded-md border border-slate-200 bg-slate-50/40 px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 hover:border-primary-200"
+                      >
+                        <div className="font-medium text-slate-800">
+                          {persona.nombre} {persona.apellido}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {persona.numeroIdentificacion}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label fw-semibold" htmlFor="contrato-fecha-inicio">Fecha de Inicio</label>
-                <input
-                  id="contrato-fecha-inicio"
-                  type="date"
-                  className="form-control"
-                  value={form.contrato.fechaInicio}
-                  onChange={(e) =>
-                    setForm((prev) => {
-                      const fechaInicio = e.target.value;
-                      return {
-                        ...prev,
-                        contrato: {
-                          ...prev.contrato,
-                          fechaInicio,
-                          numeroDeMeses: getYearDiff(fechaInicio, prev.contrato.fechaFin),
-                        },
-                      };
-                    })
-                  }
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label fw-semibold" htmlFor="contrato-fecha-fin">Fecha de Fin</label>
-                <input
-                  id="contrato-fecha-fin"
-                  type="date"
-                  className="form-control"
-                  value={form.contrato.fechaFin}
-                  onChange={(e) =>
-                    setForm((prev) => {
-                      const fechaFin = e.target.value;
-                      return {
-                        ...prev,
-                        contrato: {
-                          ...prev.contrato,
-                          fechaFin,
-                          numeroDeMeses: getYearDiff(prev.contrato.fechaInicio, fechaFin),
-                        },
-                      };
-                    })
-                  }
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label fw-semibold" htmlFor="contrato-numero-anos">Numero de Anos</label>
-                <input id="contrato-numero-anos" type="number" className="form-control" value={form.contrato.numeroDeMeses} readOnly />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="contrato-monto-total">Monto Total</label>
-                <input
-                  id="contrato-monto-total"
-                  type="number"
-                  className="form-control"
-                  step="0.01"
-                  value={form.contrato.montoTotal}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      contrato: { ...prev.contrato, montoTotal: Number(e.target.value) },
-                    }))
-                  }
-                />
-              </div>
-              <div className="col-12">
-                <label className="form-label fw-semibold" htmlFor="contrato-observaciones">Observaciones</label>
-                <textarea
-                  id="contrato-observaciones"
-                  className="form-control"
-                  rows={3}
-                  value={form.contrato.observaciones}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      contrato: { ...prev.contrato, observaciones: e.target.value },
-                    }))
-                  }
-                />
+              <div className="lg:col-span-7">
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <h4 className="mb-2 text-sm font-semibold text-slate-700">
+                    Responsables agregados
+                  </h4>
+                  {form.responsables.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-slate-400">
+                      No hay responsables agregados.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {form.responsables.map((r) => (
+                        <div
+                          key={r.localId}
+                          className="rounded-lg border border-slate-200 bg-slate-50/40 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-medium text-slate-800">
+                                {r.nombres} {r.apellidos}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {r.tipoIdentificacion}: {r.numeroIdentificacion}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeResponsable(r.localId)}
+                              className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                              title="Quitar"
+                            >
+                              <i className="ti ti-trash" />
+                            </button>
+                          </div>
+                          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div>
+                              <Label>Parentesco</Label>
+                              <input
+                                className={INPUT_CLS}
+                                value={r.parentesco || ''}
+                                onChange={(e) =>
+                                  updateResponsable(
+                                    r.localId,
+                                    'parentesco',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label>Fecha inicio</Label>
+                              <input
+                                type="date"
+                                className={INPUT_CLS}
+                                value={r.fechaInicio || ''}
+                                onChange={(e) =>
+                                  updateResponsable(
+                                    r.localId,
+                                    'fechaInicio',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label>Fecha fin</Label>
+                              <input
+                                type="date"
+                                className={INPUT_CLS}
+                                value={r.fechaFin || ''}
+                                onChange={(e) =>
+                                  updateResponsable(
+                                    r.localId,
+                                    'fechaFin',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {step === 1 ? (
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="difunto-cedula">Cedula</label>
-                <input
-                  id="difunto-cedula"
-                  className="form-control"
-                  value={form.difunto.numeroIdentificacion}
-                  onChange={(e) => setForm((prev) => ({ ...prev, difunto: { ...prev.difunto, numeroIdentificacion: e.target.value } }))}
-                />
+        {step === 3 ? (
+          <div className="space-y-4">
+            {Number(form.difunto.descuentoId) > 0 ? (
+              <div className="rounded-lg border border-info-200 bg-info-50 p-3 text-sm text-info-700">
+                <div className="grid grid-cols-1 gap-1 sm:grid-cols-4">
+                  <div>
+                    <span className="block text-xs uppercase tracking-wide text-info-600/70">
+                      Descuento
+                    </span>
+                    <strong>{descuentoPorcentaje.toFixed(2)}%</strong>
+                  </div>
+                  <div>
+                    <span className="block text-xs uppercase tracking-wide text-info-600/70">
+                      Antes descuento
+                    </span>
+                    <strong>
+                      ${Number(form.contrato.montoTotal || 0).toFixed(2)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="block text-xs uppercase tracking-wide text-info-600/70">
+                      Descontado
+                    </span>
+                    <strong>${montoDescuento.toFixed(2)}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-xs uppercase tracking-wide text-info-600/70">
+                      Total a pagar
+                    </span>
+                    <strong>${montoFinalConDescuento.toFixed(2)}</strong>
+                  </div>
+                </div>
               </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="difunto-nombres">Nombres</label>
-                <input
-                  id="difunto-nombres"
-                  className="form-control"
-                  value={form.difunto.nombres}
-                  onChange={(e) => setForm((prev) => ({ ...prev, difunto: { ...prev.difunto, nombres: e.target.value } }))}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="difunto-apellidos">Apellidos</label>
-                <input
-                  id="difunto-apellidos"
-                  className="form-control"
-                  value={form.difunto.apellidos}
-                  onChange={(e) => setForm((prev) => ({ ...prev, difunto: { ...prev.difunto, apellidos: e.target.value } }))}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label fw-semibold" htmlFor="difunto-fecha-nacimiento">Fecha de Nacimiento</label>
-                <input
-                  id="difunto-fecha-nacimiento"
-                  type="date"
-                  className="form-control"
-                  value={form.difunto.fechaNacimiento}
-                  onChange={(e) => setForm((prev) => ({ ...prev, difunto: { ...prev.difunto, fechaNacimiento: e.target.value } }))}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label fw-semibold" htmlFor="difunto-fecha-defuncion">Fecha de Defuncion</label>
-                <input
-                  id="difunto-fecha-defuncion"
-                  type="date"
-                  className="form-control"
-                  value={form.difunto.fechaFallecimiento}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, difunto: { ...prev.difunto, fechaFallecimiento: e.target.value } }))
-                  }
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold" htmlFor="difunto-descuento">Descuento</label>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <Label htmlFor="pago-plan">Plan de cuotas</Label>
                 <select
-                  id="difunto-descuento"
-                  className="form-select"
-                  value={form.difunto.descuentoId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, difunto: { ...prev.difunto, descuentoId: Number(e.target.value) } }))}
+                  id="pago-plan"
+                  className={INPUT_CLS}
+                  value={form.pago.plan}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      pago: {
+                        ...prev.pago,
+                        plan: e.target.value as PlanCuota,
+                        cuotasSeleccionadas: [],
+                      },
+                    }))
+                  }
                 >
-                  <option value={0}>Sin descuento</option>
-                  {metadata.descuentos?.map((item: any) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nombre} - {Number(item.porcentaje).toFixed(2)}%
+                  {PLAN_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-400">
+                  Define cuántas cuotas se generan y su frecuencia.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="pago-tipo">Tipo de pago</Label>
+                <select
+                  id="pago-tipo"
+                  className={INPUT_CLS}
+                  value={form.pago.tipoPago}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      pago: { ...prev.pago, tipoPago: e.target.value },
+                    }))
+                  }
+                >
+                  {metadata.tiposPago?.map((tipo: string) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
                     </option>
                   ))}
                 </select>
               </div>
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div>
-              <div className="d-flex gap-2 mb-3">
+              <div>
+                <Label htmlFor="pago-comprobante">Número de comprobante</Label>
                 <input
-                  className="form-control"
-                  placeholder="Buscar responsable existente..."
-                  value={responsableSearch}
-                  onChange={(e) => setResponsableSearch(e.target.value)}
+                  id="pago-comprobante"
+                  className={INPUT_CLS}
+                  value={form.pago.numeroComprobante}
+                  readOnly={descuentoPorcentaje >= 100}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      pago: { ...prev.pago, numeroComprobante: e.target.value },
+                    }))
+                  }
                 />
-                <button type="button" className="btn btn-success" onClick={() => setShowResponsableModal(true)}>
-                  <i className="ti ti-plus"></i>
-                </button>
               </div>
-
-              <div className="row">
-                <div className="col-lg-5">
-                  <div className="border rounded p-3 h-100">
-                    <h6 className="mb-3">Personas existentes</h6>
-                    <div style={{ maxHeight: 320, overflow: 'auto' }}>
-                      {filteredPersonas.map((persona) => (
-                        <button
-                          key={persona.id}
-                          type="button"
-                          className="btn btn-light border w-100 text-start mb-2"
-                          onClick={() => addExistingResponsable(persona)}
-                        >
-                          <div className="fw-semibold">{persona.nombre} {persona.apellido}</div>
-                          <div className="small text-muted">{persona.numeroIdentificacion}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-lg-7">
-                  <div className="border rounded p-3 h-100">
-                    <h6 className="mb-3">Responsables agregados</h6>
-                    {form.responsables.length === 0 ? (
-                      <div className="text-muted">No hay responsables agregados.</div>
-                    ) : (
-                      form.responsables.map((responsable) => (
-                        <div key={responsable.localId} className="card mb-3">
-                          <div className="card-body">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <div className="fw-semibold">{responsable.nombres} {responsable.apellidos}</div>
-                                <div className="small text-muted">{responsable.tipoIdentificacion}: {responsable.numeroIdentificacion}</div>
-                              </div>
-                              <button type="button" className="btn btn-sm btn-danger" onClick={() => removeResponsable(responsable.localId)}>
-                                <i className="ti ti-trash"></i>
-                              </button>
-                            </div>
-                            <div className="row g-2 mt-2">
-                              <div className="col-md-4">
-                                <label className="form-label small">Parentesco</label>
-                                <input
-                                  className="form-control"
-                                  value={responsable.parentesco || ''}
-                                  onChange={(e) => updateResponsable(responsable.localId, 'parentesco', e.target.value)}
-                                />
-                              </div>
-                              <div className="col-md-4">
-                                <label className="form-label small">Fecha Inicio</label>
-                                <input
-                                  type="date"
-                                  className="form-control"
-                                  value={responsable.fechaInicio || ''}
-                                  onChange={(e) => updateResponsable(responsable.localId, 'fechaInicio', e.target.value)}
-                                />
-                              </div>
-                              <div className="col-md-4">
-                                <label className="form-label small">Fecha Fin</label>
-                                <input
-                                  type="date"
-                                  className="form-control"
-                                  value={responsable.fechaFin || ''}
-                                  onChange={(e) => updateResponsable(responsable.localId, 'fechaFin', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="pago-fecha">Fecha de pago</Label>
+                <input
+                  id="pago-fecha"
+                  type="date"
+                  className={INPUT_CLS}
+                  value={form.pago.fechaPago}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      pago: { ...prev.pago, fechaPago: e.target.value },
+                    }))
+                  }
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="pago-monto">Monto a cobrar (seleccionadas)</Label>
+                <input
+                  id="pago-monto"
+                  className={INPUT_CLS}
+                  value={form.pago.monto.toFixed(2)}
+                  readOnly
+                />
               </div>
             </div>
-          ) : null}
 
-          {step === 3 ? (
             <div>
-              {Number(form.difunto.descuentoId) > 0 ? (
-                <div className="alert alert-info">
-                  <strong>Descuento aplicado:</strong> {descuentoPorcentaje.toFixed(2)}%
-                  <br />
-                  <strong>Monto antes de descuento:</strong> ${Number(form.contrato.montoTotal || 0).toFixed(2)}
-                  <br />
-                  <strong>Monto descontado:</strong> ${montoDescuento.toFixed(2)}
-                  <br />
-                  <strong>Total a pagar:</strong> ${montoFinalConDescuento.toFixed(2)}
-                </div>
-              ) : null}
-              <div className="row g-3">
-                <div className="col-md-4">
-                  <label className="form-label fw-semibold" htmlFor="pago-plan">Plan de cuotas</label>
-                  <select
-                    id="pago-plan"
-                    className="form-select"
-                    value={form.pago.plan}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        pago: {
-                          ...prev.pago,
-                          plan: e.target.value as PlanCuota,
-                          // Al cambiar el plan, descartamos la selección previa
-                          // de cuotas para evitar referencias a números inexistentes.
-                          cuotasSeleccionadas: [],
-                        },
-                      }))
-                    }
-                  >
-                    {PLAN_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <small className="text-muted">
-                    Define cuántas cuotas se generan y su frecuencia.
-                  </small>
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label fw-semibold" htmlFor="pago-tipo">Tipo de Pago</label>
-                  <select
-                    id="pago-tipo"
-                    className="form-select"
-                    value={form.pago.tipoPago}
-                    onChange={(e) => setForm((prev) => ({ ...prev, pago: { ...prev.pago, tipoPago: e.target.value } }))}
-                  >
-                    {metadata.tiposPago?.map((tipo: string) => (
-                      <option key={tipo} value={tipo}>{tipo}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label fw-semibold" htmlFor="pago-comprobante">Numero de Comprobante</label>
-                  <input
-                    id="pago-comprobante"
-                    className="form-control"
-                    value={form.pago.numeroComprobante}
-                    readOnly={descuentoPorcentaje >= 100}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, pago: { ...prev.pago, numeroComprobante: e.target.value } }))
-                    }
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label fw-semibold" htmlFor="pago-fecha">Fecha de Pago</label>
-                  <input
-                    id="pago-fecha"
-                    type="date"
-                    className="form-control"
-                    value={form.pago.fechaPago}
-                    onChange={(e) => setForm((prev) => ({ ...prev, pago: { ...prev.pago, fechaPago: e.target.value } }))}
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label fw-semibold" htmlFor="pago-monto">Monto</label>
-                  <input id="pago-monto" className="form-control" value={form.pago.monto.toFixed(2)} readOnly />
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700">
+                  Cuotas por pagar
+                </h4>
+                <div className="text-sm font-semibold text-slate-700">
+                  Total: ${form.pago.monto.toFixed(2)}
                 </div>
               </div>
-
-              <div className="mt-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h6 className="mb-0">Cuotas por pagar</h6>
-                  <div className="fw-semibold">Total: ${form.pago.monto.toFixed(2)}</div>
-                </div>
-                <div className="table-responsive">
-                  <table className="table table-bordered align-middle">
-                    <thead>
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+                <table className="min-w-full divide-y divide-slate-100 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="w-12 px-3 py-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
+                          checked={
+                            form.cuotas.length > 0 &&
+                            form.pago.cuotasSeleccionadas.length === form.cuotas.length
+                          }
+                          onChange={(e) => toggleAllCuotas(e.target.checked)}
+                        />
+                      </th>
+                      <th className="px-3 py-2">Cuota</th>
+                      <th className="px-3 py-2">Fecha de vencimiento</th>
+                      <th className="px-3 py-2 text-right">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {form.cuotas.length === 0 ? (
                       <tr>
-                        <th style={{ width: 80 }}>
-                          <input
-                            type="checkbox"
-                            checked={form.cuotas.length > 0 && form.pago.cuotasSeleccionadas.length === form.cuotas.length}
-                            onChange={(e) => toggleAllCuotas(e.target.checked)}
-                          />
-                        </th>
-                        <th>Cuota</th>
-                        <th>Fecha Vencimiento</th>
-                        <th>Monto</th>
+                        <td
+                          colSpan={4}
+                          className="px-3 py-6 text-center text-sm text-slate-400"
+                        >
+                          No hay cuotas generadas. Verifica monto, fechas y plan.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {form.cuotas.map((cuota) => (
-                        <tr key={cuota.numero}>
-                          <td>
+                    ) : (
+                      form.cuotas.map((c) => (
+                        <tr key={c.numero}>
+                          <td className="px-3 py-2">
                             <input
                               type="checkbox"
-                              checked={form.pago.cuotasSeleccionadas.includes(cuota.numero)}
-                              onChange={(e) => toggleCuota(cuota.numero, e.target.checked)}
+                              className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
+                              checked={form.pago.cuotasSeleccionadas.includes(c.numero)}
+                              onChange={(e) =>
+                                toggleCuota(c.numero, e.target.checked)
+                              }
                             />
                           </td>
-                          <td>Cuota {cuota.numero}</td>
-                          <td>{cuota.fechaVencimiento}</td>
-                          <td>
-                            <span className="badge bg-primary-subtle text-primary fs-6">
-                              ${cuota.monto.toFixed(2)}
+                          <td className="px-3 py-2 font-medium text-slate-700">
+                            Cuota {c.numero}
+                          </td>
+                          <td className="px-3 py-2 text-slate-600">
+                            {c.fechaVencimiento}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+                              ${c.monto.toFixed(2)}
                             </span>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {step === 4 ? (
-            <div className="row g-4">
-              <div className="col-lg-6">
-                <div className="card h-100">
-                  <div className="card-header"><strong>Contrato</strong></div>
-                  <div className="card-body">
-                    <p><strong>Numero:</strong> {form.contrato.numeroSecuencial}</p>
-                    <p><strong>Boveda:</strong> {form.contrato.bovedaLabel}</p>
-                    <p><strong>Vigencia:</strong> {form.contrato.fechaInicio} al {form.contrato.fechaFin}</p>
-                    <p><strong>Monto:</strong> ${Number(form.contrato.montoTotal).toFixed(2)}</p>
-                    <p className="mb-0"><strong>Observaciones:</strong> {form.contrato.observaciones || '-'}</p>
-                  </div>
-                </div>
+        {step === 4 ? (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-slate-200">
+              <header className="border-b border-slate-100 px-4 py-2">
+                <strong className="text-sm text-slate-700">Contrato</strong>
+              </header>
+              <div className="space-y-1.5 p-4 text-sm">
+                <p>
+                  <strong>Número:</strong> {form.contrato.numeroSecuencial}
+                </p>
+                <p>
+                  <strong>Bóveda:</strong> {form.contrato.bovedaLabel}
+                </p>
+                <p>
+                  <strong>Vigencia:</strong> {form.contrato.fechaInicio} al{' '}
+                  {form.contrato.fechaFin}
+                </p>
+                <p>
+                  <strong>Monto:</strong> ${Number(form.contrato.montoTotal).toFixed(2)}
+                </p>
+                <p>
+                  <strong>Observaciones:</strong>{' '}
+                  {form.contrato.observaciones || '—'}
+                </p>
               </div>
-              <div className="col-lg-6">
-                <div className="card h-100">
-                  <div className="card-header"><strong>Difunto</strong></div>
-                  <div className="card-body">
-                    <p><strong>Nombre:</strong> {form.difunto.nombres} {form.difunto.apellidos}</p>
-                    <p><strong>Identificacion:</strong> {form.difunto.numeroIdentificacion || '-'}</p>
-                    <p><strong>Nacimiento:</strong> {form.difunto.fechaNacimiento || '-'}</p>
-                    <p className="mb-0"><strong>Defuncion:</strong> {form.difunto.fechaFallecimiento || '-'}</p>
-                  </div>
-                </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200">
+              <header className="border-b border-slate-100 px-4 py-2">
+                <strong className="text-sm text-slate-700">Difunto</strong>
+              </header>
+              <div className="space-y-1.5 p-4 text-sm">
+                <p>
+                  <strong>Nombre:</strong> {form.difunto.nombres}{' '}
+                  {form.difunto.apellidos}
+                </p>
+                <p>
+                  <strong>Identificación:</strong>{' '}
+                  {form.difunto.numeroIdentificacion || '—'}
+                </p>
+                <p>
+                  <strong>Nacimiento:</strong>{' '}
+                  {form.difunto.fechaNacimiento || '—'}
+                </p>
+                <p>
+                  <strong>Defunción:</strong>{' '}
+                  {form.difunto.fechaFallecimiento || '—'}
+                </p>
               </div>
-              <div className="col-lg-7">
-                <div className="card h-100">
-                  <div className="card-header"><strong>Responsables</strong></div>
-                  <div className="card-body">
-                    {form.responsables.map((responsable) => (
-                      <div key={responsable.localId} className="border rounded p-2 mb-2">
-                        <div className="fw-semibold">{responsable.nombres} {responsable.apellidos}</div>
-                        <div className="small text-muted">{responsable.numeroIdentificacion} {responsable.parentesco ? `- ${responsable.parentesco}` : ''}</div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 lg:col-span-1">
+              <header className="border-b border-slate-100 px-4 py-2">
+                <strong className="text-sm text-slate-700">Responsables</strong>
+              </header>
+              <div className="space-y-2 p-4 text-sm">
+                {form.responsables.length === 0 ? (
+                  <p className="text-slate-400">Sin responsables.</p>
+                ) : (
+                  form.responsables.map((r) => (
+                    <div
+                      key={r.localId}
+                      className="rounded border border-slate-200 bg-slate-50/40 p-2"
+                    >
+                      <div className="font-medium text-slate-800">
+                        {r.nombres} {r.apellidos}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-5">
-                <div className="card h-100">
-                  <div className="card-header"><strong>Pago</strong></div>
-                  <div className="card-body">
-                    <p><strong>Tipo:</strong> {form.pago.tipoPago}</p>
-                    <p><strong>Comprobante:</strong> {form.pago.numeroComprobante || '-'}</p>
-                    <p><strong>Fecha:</strong> {form.pago.fechaPago}</p>
-                    <p className="mb-0"><strong>Total:</strong> ${form.pago.monto.toFixed(2)}</p>
-                  </div>
-                </div>
+                      <div className="text-xs text-slate-500">
+                        {r.numeroIdentificacion}
+                        {r.parentesco ? ` · ${r.parentesco}` : ''}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          ) : null}
-        </div>
 
-        <div className="card-footer d-flex justify-content-between">
-          <button type="button" className="btn btn-outline-secondary" onClick={() => setStep((prev) => Math.max(prev - 1, 0))} disabled={step === 0 || saving}>
-            <i className="ti ti-arrow-left me-1"></i> Atras
+            <div className="rounded-lg border border-slate-200 lg:col-span-1">
+              <header className="border-b border-slate-100 px-4 py-2">
+                <strong className="text-sm text-slate-700">Pago</strong>
+              </header>
+              <div className="space-y-1.5 p-4 text-sm">
+                <p>
+                  <strong>Plan:</strong>{' '}
+                  {PLAN_OPTIONS.find((p) => p.value === form.pago.plan)?.label}
+                </p>
+                <p>
+                  <strong>Tipo:</strong> {form.pago.tipoPago}
+                </p>
+                <p>
+                  <strong>Comprobante:</strong>{' '}
+                  {form.pago.numeroComprobante || '—'}
+                </p>
+                <p>
+                  <strong>Fecha:</strong> {form.pago.fechaPago}
+                </p>
+                <p>
+                  <strong>Total cobrado:</strong> ${form.pago.monto.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Footer del card */}
+        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            onClick={() => setStep((prev) => Math.max(prev - 1, 0))}
+            disabled={step === 0 || saving}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <i className="ti ti-arrow-left" /> Atrás
           </button>
-
           {step < stepTitles.length - 1 ? (
-            <button type="button" className="btn btn-primary" onClick={handleNext} disabled={loading || saving}>
-              Siguiente <i className="ti ti-arrow-right ms-1"></i>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={loading || saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+            >
+              Siguiente <i className="ti ti-arrow-right" />
             </button>
           ) : (
-            <Button onClick={handleSave} disabled={saving} variant="primary" icon="ti-check">
-              {saving ? 'Guardando...' : 'Finalizar y Guardar'}
-            </Button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+            >
+              <i className="ti ti-check" />
+              {saving ? 'Guardando…' : 'Finalizar y guardar'}
+            </button>
           )}
         </div>
-      </div>
+      </Card>
 
+      {/* Modal: Buscar bóveda */}
       {showBovedaModal ? (
-        <div className="modal d-block" tabIndex={-1} style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Seleccionar Boveda</h5>
-                <button type="button" className="btn-close" onClick={() => setShowBovedaModal(false)}></button>
+        <ModalShell
+          title="Seleccionar bóveda"
+          size="lg"
+          onClose={() => setShowBovedaModal(false)}
+        >
+          <div className="p-5">
+            <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="sm:col-span-2">
+                <input
+                  className={INPUT_CLS}
+                  placeholder="Buscar por número…"
+                  value={bovedaSearch}
+                  onChange={(e) => {
+                    setBovedasPage(1);
+                    setBovedaSearch(e.target.value);
+                  }}
+                />
               </div>
-              <div className="modal-body">
-                <div className="row g-2 mb-3">
-                  <div className="col-md-6">
-                    <input
-                      className="form-control"
-                      placeholder="Buscar por numero"
-                      value={bovedaSearch}
-                      onChange={(e) => {
-                        setBovedasPage(1);
-                        setBovedaSearch(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <select
-                      className="form-select"
-                      value={bovedaTipo}
-                      onChange={(e) => {
-                        setBovedasPage(1);
-                        setBovedaTipo(e.target.value);
-                      }}
-                    >
-                      <option value="">Todos los tipos</option>
-                      <option value="Boveda">Boveda</option>
-                      <option value="Nicho">Nicho</option>
-                      <option value="Tumulo">Tumulo</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>Numero</th>
-                        <th>Bloque</th>
-                        <th>Tipo</th>
-                        <th>Propietario</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bovedasDisponibles.length > 0 ? (
-                        bovedasDisponibles.map((boveda) => (
-                          <tr key={boveda.id}>
-                            <td>{boveda.numero}</td>
-                            <td>{boveda.bloque?.nombre || '-'}</td>
-                            <td>{boveda.tipo || '-'}</td>
-                            <td>{boveda.propietario?.persona ? `${boveda.propietario.persona.nombre} ${boveda.propietario.persona.apellido}` : 'Sin propietario'}</td>
-                            <td className="text-end">
-                              <button type="button" className="btn btn-sm btn-success" onClick={() => selectBoveda(boveda)}>
-                                Seleccionar
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="text-center text-muted py-4">
-                            No se encontraron bovedas disponibles para los filtros aplicados.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <PaginationNav meta={bovedasMeta} onPageChange={setBovedasPage} />
+              <div>
+                <select
+                  className={INPUT_CLS}
+                  value={bovedaTipo}
+                  onChange={(e) => {
+                    setBovedasPage(1);
+                    setBovedaTipo(e.target.value);
+                  }}
+                >
+                  <option value="">Todos los tipos</option>
+                  <option value="Boveda">Bóveda</option>
+                  <option value="Nicho">Nicho</option>
+                  <option value="Tumulo">Tumulo</option>
+                </select>
               </div>
             </div>
+
+            <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-100 text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th className="px-3 py-2">Número</th>
+                    <th className="px-3 py-2">Bloque</th>
+                    <th className="px-3 py-2">Tipo</th>
+                    <th className="px-3 py-2">Propietario</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {bovedasDisponibles.length > 0 ? (
+                    bovedasDisponibles.map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-2 font-medium text-slate-700">
+                          {b.numero}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600">
+                          {b.bloque?.nombre || '—'}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600">
+                          {b.tipo || '—'}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600">
+                          {b.propietario?.persona
+                            ? `${b.propietario.persona.nombre} ${b.propietario.persona.apellido}`
+                            : 'Sin propietario'}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => selectBoveda(b)}
+                            className="rounded-md bg-green-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-600"
+                          >
+                            Seleccionar
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-3 py-6 text-center text-sm text-slate-400"
+                      >
+                        No se encontraron bóvedas disponibles.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {bovedasMeta && bovedasMeta.totalPages > 1 && (
+              <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Página <strong>{bovedasMeta.page}</strong> de{' '}
+                  <strong>{bovedasMeta.totalPages}</strong>
+                </span>
+                <div className="inline-flex gap-1">
+                  <button
+                    type="button"
+                    disabled={!bovedasMeta.hasPrevPage}
+                    onClick={() => setBovedasPage(bovedasMeta.page - 1)}
+                    className="rounded-md border border-slate-200 px-2 py-1 enabled:hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!bovedasMeta.hasNextPage}
+                    onClick={() => setBovedasPage(bovedasMeta.page + 1)}
+                    className="rounded-md border border-slate-200 px-2 py-1 enabled:hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </ModalShell>
       ) : null}
 
+      {/* Modal: Nuevo responsable */}
       {showResponsableModal ? (
-        <div className="modal d-block" tabIndex={-1} style={{ background: 'rgba(0,0,0,0.45)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Crear Nuevo Responsable</h5>
-                <button type="button" className="btn-close" onClick={() => setShowResponsableModal(false)}></button>
+        <ModalShell
+          title="Crear nuevo responsable"
+          onClose={() => setShowResponsableModal(false)}
+        >
+          <div className="p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="responsable-nombres">Nombres</Label>
+                <input
+                  id="responsable-nombres"
+                  className={INPUT_CLS}
+                  value={newResponsable.nombres}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({ ...prev, nombres: e.target.value }))
+                  }
+                />
               </div>
-              <div className="modal-body">
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label" htmlFor="responsable-nombres">Nombres</label>
-                    <input id="responsable-nombres" className="form-control" value={newResponsable.nombres} onChange={(e) => setNewResponsable((prev) => ({ ...prev, nombres: e.target.value }))} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label" htmlFor="responsable-apellidos">Apellidos</label>
-                    <input id="responsable-apellidos" className="form-control" value={newResponsable.apellidos} onChange={(e) => setNewResponsable((prev) => ({ ...prev, apellidos: e.target.value }))} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label" htmlFor="responsable-tipo-identificacion">Tipo Identificacion</label>
-                    <select id="responsable-tipo-identificacion" className="form-select" value={newResponsable.tipoIdentificacion} onChange={(e) => setNewResponsable((prev) => ({ ...prev, tipoIdentificacion: e.target.value }))}>
-                      <option value="Cedula">Cedula</option>
-                      <option value="RUC">RUC</option>
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label" htmlFor="responsable-numero-identificacion">Numero Identificacion</label>
-                    <input id="responsable-numero-identificacion" className="form-control" value={newResponsable.numeroIdentificacion} onChange={(e) => setNewResponsable((prev) => ({ ...prev, numeroIdentificacion: e.target.value }))} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label" htmlFor="responsable-telefono">Telefono</label>
-                    <input id="responsable-telefono" className="form-control" value={newResponsable.telefono} onChange={(e) => setNewResponsable((prev) => ({ ...prev, telefono: e.target.value }))} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label" htmlFor="responsable-email">Email</label>
-                    <input id="responsable-email" className="form-control" value={newResponsable.email} onChange={(e) => setNewResponsable((prev) => ({ ...prev, email: e.target.value }))} />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label" htmlFor="responsable-direccion">Direccion</label>
-                    <input id="responsable-direccion" className="form-control" value={newResponsable.direccion} onChange={(e) => setNewResponsable((prev) => ({ ...prev, direccion: e.target.value }))} />
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="responsable-apellidos">Apellidos</Label>
+                <input
+                  id="responsable-apellidos"
+                  className={INPUT_CLS}
+                  value={newResponsable.apellidos}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({
+                      ...prev,
+                      apellidos: e.target.value,
+                    }))
+                  }
+                />
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowResponsableModal(false)}>Cancelar</button>
-                <button type="button" className="btn btn-primary" onClick={addNewResponsable}>Guardar</button>
+              <div>
+                <Label htmlFor="responsable-tipo-identificacion">
+                  Tipo de identificación
+                </Label>
+                <select
+                  id="responsable-tipo-identificacion"
+                  className={INPUT_CLS}
+                  value={newResponsable.tipoIdentificacion}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({
+                      ...prev,
+                      tipoIdentificacion: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="Cedula">Cédula</option>
+                  <option value="RUC">RUC</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="responsable-numero-identificacion">
+                  Número de identificación
+                </Label>
+                <input
+                  id="responsable-numero-identificacion"
+                  className={INPUT_CLS}
+                  value={newResponsable.numeroIdentificacion}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({
+                      ...prev,
+                      numeroIdentificacion: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="responsable-telefono">Teléfono</Label>
+                <input
+                  id="responsable-telefono"
+                  className={INPUT_CLS}
+                  value={newResponsable.telefono}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({
+                      ...prev,
+                      telefono: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="responsable-email">Email</Label>
+                <input
+                  id="responsable-email"
+                  className={INPUT_CLS}
+                  value={newResponsable.email}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="responsable-direccion">Dirección</Label>
+                <input
+                  id="responsable-direccion"
+                  className={INPUT_CLS}
+                  value={newResponsable.direccion}
+                  onChange={(e) =>
+                    setNewResponsable((prev) => ({
+                      ...prev,
+                      direccion: e.target.value,
+                    }))
+                  }
+                />
               </div>
             </div>
           </div>
-        </div>
+          <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+            <button
+              type="button"
+              onClick={() => setShowResponsableModal(false)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={addNewResponsable}
+              className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            >
+              Guardar
+            </button>
+          </footer>
+        </ModalShell>
       ) : null}
     </div>
   );

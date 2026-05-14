@@ -362,12 +362,12 @@ este archivo.
     [x] 2.d Relacionar contratos                             ← 2026-05-13
     [x] 2.e Documentos firmados (upload)                     ← 2026-05-13
     [x] 2.f PDF oficial del contrato                         ← 2026-05-13
-[~] Fase 2.5 — Tailwind preparatoria + adopción de Stitch
+[x] Fase 2.5 — Tailwind + rediseño módulo contratos          ← 2026-05-14
     [x] 2.5.0 Activar Tailwind (preflight off, tokens)        ← 2026-05-14
     [x] 2.5.1 Layout global (Sidebar/Header/Footer)           ← 2026-05-14
     [x] 2.5.2 Listado de contratos                            ← 2026-05-14
     [x] 2.5.3 Detalle de contrato                             ← 2026-05-14
-    [ ] 2.5.4 Wizard de creación
+    [x] 2.5.4 Wizard de creación                              ← 2026-05-14
 [ ] Fase 3  — Cobros: multi-cuota, descuentos, factura PDF, anulación
 [ ] Fase 4  — Bóvedas, bloques, propietarios
 [ ] Fase 5  — Personas, difuntos, responsables
