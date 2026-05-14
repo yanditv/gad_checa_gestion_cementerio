@@ -19,7 +19,7 @@ export default function CreateBloquePage() {
     nombre: '',
     descripcion: '',
     cementerioId: '',
-    estado: true,
+    numeroPisos: 1,
   });
 
   useEffect(() => {
@@ -46,9 +46,9 @@ export default function CreateBloquePage() {
     try {
       await bloquesApi.create({
         nombre: formData.nombre,
-        descripcion: formData.descripcion || null,
+        descripcion: formData.descripcion || undefined,
         cementerioId: Number(formData.cementerioId),
-        estado: formData.estado,
+        numeroPisos: Number(formData.numeroPisos) || 0,
       });
       router.push('/bloques');
     } catch (err: any) {
@@ -125,16 +125,24 @@ export default function CreateBloquePage() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
-                    checked={formData.estado}
-                    onChange={(e) => setFormData({ ...formData, estado: e.target.checked })}
-                  />
-                  Bloque activo
-                </label>
+              <div>
+                <label className={LABEL_CLS}>Número de pisos</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  className={INPUT_CLS}
+                  value={formData.numeroPisos}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      numeroPisos: Number(e.target.value),
+                    })
+                  }
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Se crearán automáticamente los pisos 1…N al guardar.
+                </p>
               </div>
             </div>
 

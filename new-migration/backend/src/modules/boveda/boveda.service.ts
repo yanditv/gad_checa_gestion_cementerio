@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
 
 @Injectable()
 export class BovedaService {
@@ -18,7 +26,11 @@ export class BovedaService {
             OR: [
               { numero: { contains: search, mode: 'insensitive' } },
               { tipo: { contains: search, mode: 'insensitive' } },
-              { bloque: { is: { nombre: { contains: search, mode: 'insensitive' } } } },
+              {
+                bloque: {
+                  is: { nombre: { contains: search, mode: 'insensitive' } },
+                },
+              },
             ],
           }
         : {}),
@@ -27,7 +39,11 @@ export class BovedaService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.boveda.findMany({
         where,
-        include: { bloque: { include: { cementerio: true } }, piso: true, propietario: { include: { persona: true } } },
+        include: {
+          bloque: { include: { cementerio: true } },
+          piso: true,
+          propietario: { include: { persona: true } },
+        },
         orderBy: { fechaCreacion: 'desc' },
         skip,
         take: limit,
@@ -51,12 +67,20 @@ export class BovedaService {
   async findOne(id: number) {
     const boveda = await this.prisma.boveda.findUnique({
       where: { id },
-      include: { 
-        bloque: { include: { cementerio: true } }, 
-        piso: true, 
+      include: {
+        bloque: { include: { cementerio: true } },
+        piso: true,
         propietario: { include: { persona: true } },
         difuntos: { where: { estado: true } },
-        contratos: { where: { estado: true }, include: { difunto: true, responsables: { include: { responsable: { include: { persona: true } } } } } }
+        contratos: {
+          where: { estado: true },
+          include: {
+            difunto: true,
+            responsables: {
+              include: { responsable: { include: { persona: true } } },
+            },
+          },
+        },
       },
     });
     if (!boveda) throw new NotFoundException('Bóveda no encontrada');
@@ -74,6 +98,92 @@ export class BovedaService {
 
   async remove(id: number) {
     await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data: { estado: false } });
+    return this.prisma.boveda.update({
+      where: { id },
+      data: { estado: false },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Asignación de propietario
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Asigna o quita el propietario de una bóveda.
+   *   personaId === null  → quita el propietario actual.
+   *   personaId === number → asigna; si la persona no es Propietario aún,
+   *                          se crea la fila correspondiente.
+   */
+  async setPropietario(bovedaId: number, personaId: number | null) {
+    const boveda = await this.prisma.boveda.findUnique({
+      where: { id: bovedaId },
+    });
+    if (!boveda) throw new NotFoundException('Bóveda no encontrada');
+
+    if (personaId === null) {
+      return this.prisma.boveda.update({
+        where: { id: bovedaId },
+        data: { propietarioId: null },
+        include: { propietario: { include: { persona: true } } },
+      });
+    }
+
+    const persona = await this.prisma.persona.findUnique({
+      where: { id: personaId },
+    });
+    if (!persona || !persona.estado) {
+      throw new BadRequestException(
+        'La persona seleccionada no existe o está inactiva',
+      );
+    }
+
+    // Buscar/crear el Propietario asociado a esta persona.
+    let propietario = await this.prisma.propietario.findFirst({
+      where: { personaId },
+    });
+    if (!propietario) {
+      propietario = await this.prisma.propietario.create({
+        data: { personaId, estado: true },
+      });
+    } else if (!propietario.estado) {
+      throw new ConflictException(
+        'El propietario está inactivo. Reactívalo desde el módulo de personas primero.',
+      );
+    }
+
+    return this.prisma.boveda.update({
+      where: { id: bovedaId },
+      data: { propietarioId: propietario.id },
+      include: { propietario: { include: { persona: true } } },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Histórico de la bóveda
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Línea de tiempo de la bóveda: todos los contratos (activos e
+   * inactivos) ordenados por fechaInicio descendente. Útil para el
+   * detalle/historial.
+   */
+  async findHistorial(id: number) {
+    const boveda = await this.prisma.boveda.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!boveda) throw new NotFoundException('Bóveda no encontrada');
+
+    return this.prisma.contrato.findMany({
+      where: { bovedaId: id },
+      include: {
+        difunto: true,
+        responsables: {
+          include: { responsable: { include: { persona: true } } },
+        },
+        cuotas: true,
+      },
+      orderBy: { fechaInicio: 'desc' },
+    });
   }
 }

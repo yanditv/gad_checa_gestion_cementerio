@@ -380,7 +380,10 @@ este archivo.
     [x] 3.b Pantalla /cobros/[contratoId]/cobrar              ← 2026-05-14
     [x] 3.c Detalle de pago + anular UI                       ← 2026-05-14
     [x] 3.d CRUD Descuentos + Bancos en /configuracion        ← 2026-05-14
-[ ] Fase 4  — Bóvedas, bloques, propietarios
+[x] Fase 4  — Bóvedas, bloques, propietarios                ← 2026-05-14
+    [x] 4.a Bloques con N pisos + validación delete           ← 2026-05-14
+    [x] 4.b Modal cambio de propietario + búsqueda            ← 2026-05-14
+    [x] 4.c Histórico de bóveda                               ← 2026-05-14
 [ ] Fase 5  — Personas, difuntos, responsables
 [ ] Fase 6  — Reportes (5 + comparativa)
 [ ] Fase 7  — Usuarios y roles
