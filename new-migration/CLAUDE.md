@@ -118,7 +118,7 @@ El proyecto tiene dos colaboradores activos: **@yanditv** (owner) y
   producción** son responsabilidad exclusiva de **@yanditv**. Famiitry
   puede prepararlas en un PR pero no puede mergear sin aprobación de
   @yanditv.
-- **Distribución de actividades vigente**: ver `MIGRATION_PLAN.md` §5
+- **Distribución de actividades vigente**: ver `MIGRATION_PLAN.md` §6
   "Distribución de actividades". Las tareas marcadas con `[IA]` están
   acotadas para que Famiitry use Claude / agentes con seguridad; las
   marcadas `[crítica]` quedan reservadas a @yanditv.
@@ -227,6 +227,10 @@ bun run dev                # http://localhost:3000
 # Lint
 cd backend  && bun run lint
 cd frontend && bun run lint
+
+# Build (verificación de tipos antes de PR)
+cd backend  && bun run build   # nest build
+cd frontend && bun run build   # next build
 
 # Prisma Studio
 cd backend && bun prisma studio

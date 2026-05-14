@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Put, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UsuarioService } from './usuario.service';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 @ApiTags('usuarios')
 @Controller('usuarios')
@@ -8,8 +9,8 @@ export class UsuarioController {
   constructor(private service: UsuarioService) {}
 
   @Get()
-  findAll(@Query('q') q?: string) {
-    return this.service.findAll(q);
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.service.findAll(query);
   }
 
   @Get(':id')

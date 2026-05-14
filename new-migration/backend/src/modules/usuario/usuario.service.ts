@@ -1,31 +1,48 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
 
 @Injectable()
 export class UsuarioService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(search?: string) {
-    return this.prisma.usuario.findMany({
-      where: {
-        ...(search
-          ? {
-              OR: [
-                { nombre: { contains: search, mode: 'insensitive' } },
-                { apellido: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
-                { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        usuarioRols: {
-          include: { rol: true },
+  async findAll(query: PaginationQueryDto) {
+    const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const search = query.search?.trim();
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { nombre: { contains: search, mode: 'insensitive' } },
+        { apellido: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { numeroIdentificacion: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.usuario.findMany({
+        where,
+        include: {
+          usuarioRols: {
+            include: { rol: true },
+          },
         },
-      },
-      orderBy: { fechaCreacion: 'desc' },
-    });
+        orderBy: { fechaCreacion: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.usuario.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: buildPaginationMeta(page, limit, total),
+    };
   }
 
   async findOne(id: string) {
