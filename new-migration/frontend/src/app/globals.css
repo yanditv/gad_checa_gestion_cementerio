@@ -1,3 +1,14 @@
+/* ---------------------------------------------------------------------------
+ * Tailwind utilities y components (preflight desactivado en tailwind.config.js)
+ *
+ * Las pantallas migradas a Tailwind las usan libremente. Las pantallas que
+ * aún están en Bootstrap (Able Pro) no se ven afectadas porque no hay reset
+ * global.
+ * ------------------------------------------------------------------------- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
 
 html,

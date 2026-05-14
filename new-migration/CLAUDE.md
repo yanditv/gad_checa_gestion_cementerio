@@ -235,7 +235,11 @@ Checklist mínimo:
   El usuario final lo conoce paso a paso.
 - ❌ Cambiar tonos del sistema de diseño (los seis canónicos: `primary`,
   `success`, `info`, `warning`, `danger`, `secondary`).
-- ❌ Mezclar Tailwind y Bootstrap en el mismo componente.
+- ❌ Mezclar Tailwind y Bootstrap **dentro del mismo archivo**. Cada pantalla
+  está en uno de los dos modos:
+  - Si tiene clases `btn-*`, `card`, `form-control`, `col-md-*`, `pc-*` → Bootstrap.
+  - Si tiene `flex`, `grid`, `text-*`, `bg-*`, `rounded-*`, etc. → Tailwind.
+  Coexistencia entre archivos sí está permitida (Fase 2.5 en adelante).
 - ❌ Hardcodear textos del cementerio (presidente, dirección, etc.). Vienen
   de `Cementerio` y `GADInformacion`.
 

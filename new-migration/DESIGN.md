@@ -126,6 +126,35 @@ Convenciones tipográficas observadas en las páginas:
   - Hover de card: `box-shadow: 0 2px 8px rgba(0,0,0,0.1)` (transición 0.3s, definido en `site.css`).
   - `.hover-lift` para énfasis interactivo: `translateY(-2px)` + sombra más profunda.
 
+### 3.4 Tokens Tailwind (Fase 2.5+)
+
+Tailwind coexiste con Bootstrap durante la migración. Los tokens reflejan los
+mismos colores semánticos para que cualquier pantalla migrada se vea idéntica
+visualmente al resto.
+
+| Bootstrap | Tailwind | Hex |
+|-----------|----------|-----|
+| `primary` | `primary` (`primary-500`) | `#1890ff` |
+| `bg-light-primary` | `primary-50` | `#e8f4ff` |
+| `success` | `success` | `#1de9b6` |
+| `info` | `info` | `#13c2c2` |
+| `warning` | `warning` | `#faad14` |
+| `danger` | `danger` | `#ff4d4f` |
+| Brand wordmark base | `brand-dark` | `#1a237e` |
+| Brand wordmark acento | `brand-accent` | `#43a047` |
+| `--bs-body-bg` | `surface-DEFAULT` | `#fafafb` |
+| Sombras `shadow-sm` / hover | `shadow-soft` / `shadow-lifted` | — |
+
+Fuentes registradas:
+
+- `font-sans` → Public Sans (cuerpo).
+- `font-display` → Montserrat (marca, encabezados especiales).
+
+`preflight` está desactivado (`tailwind.config.js`): Tailwind no aplica reset
+global para no chocar con el reset de Bootstrap. Las pantallas Tailwind aplican
+normalización vía clases utilitarias (`box-border`, `m-0`, etc.) cuando hace
+falta.
+
 ---
 
 ## 4. Layout
@@ -436,7 +465,12 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 
 1. **Idioma de la UI**: español; textos en código fuente también en español (variables permanecen en español/inglés según campo de dominio).
 2. **No introducir nuevas dependencias UI** (component libraries) sin migrar el resto. La pila visible es Bootstrap + Tabler Icons + ApexCharts; añadir otra duplica criterios.
-3. **No mezclar Tailwind y Bootstrap en un mismo componente.** Hoy todo el UI activo usa Bootstrap; si se introduce Tailwind, hacerlo aislado por componente y nunca para sobreescribir Bootstrap.
+3. **Coexistencia Bootstrap ↔ Tailwind** (Fase 2.5+): cada pantalla está en **uno solo** de los dos modos. Reglas:
+   - Bootstrap (legado, Able Pro): pantallas con `btn-*`, `card`, `form-control`, `col-md-*`, `row`, `pc-*`.
+   - Tailwind (nuevo, Stitch + design system): pantallas con `flex`, `grid`, `bg-primary-500`, etc. y sin clases Bootstrap.
+   - Tailwind tiene `corePlugins.preflight = false` para no resetear lo que Bootstrap ya estiliza.
+   - Tokens compartidos en `tailwind.config.js` (primary `#1890ff` igual que Bootstrap preset-1). Si cambian aquí, sincronizar la nota en §3.1.
+   - Si necesitas usar el wrapper `<Button>` en una pantalla Tailwind, está bien — el wrapper sigue renderizando con clases Bootstrap, pero la pantalla anfitriona NO debe mezclar otras clases `btn-*` libres. Esa es la única superposición permitida.
 4. **Tonos**: usar siempre los seis tonos canónicos (`primary`, `success`, `info`, `warning`, `danger`, `secondary`). No inventar nuevos.
 5. **Cards**: por defecto `card border-0 shadow-sm`. La sombra en hover es global — no añadir sombras inline.
 6. **Iconos**: una sola familia visible en componentes propios: Tabler. Mantener el mismo icono para el mismo significado (ver tabla §5).
