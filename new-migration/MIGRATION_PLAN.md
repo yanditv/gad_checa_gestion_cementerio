@@ -384,7 +384,9 @@ este archivo.
     [x] 4.a Bloques con N pisos + validación delete           ← 2026-05-14
     [x] 4.b Modal cambio de propietario + búsqueda            ← 2026-05-14
     [x] 4.c Histórico de bóveda                               ← 2026-05-14
-[ ] Fase 5  — Personas, difuntos, responsables
+[x] Fase 5  — Personas, difuntos, responsables             ← 2026-05-14
+    [x] 5.a Detalle persona con tabs                          ← 2026-05-14
+    [x] 5.b Difuntos: campos nuevos + edad + validaciones     ← 2026-05-14
 [ ] Fase 6  — Reportes (5 + comparativa)
 [ ] Fase 7  — Usuarios y roles
 [ ] Fase 8  — Notificaciones + job

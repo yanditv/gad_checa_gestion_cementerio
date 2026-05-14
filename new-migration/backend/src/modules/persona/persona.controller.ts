@@ -1,10 +1,24 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PersonaService } from './persona.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import {
+  AuthUser,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator';
 
 @ApiTags('personas')
+@ApiBearerAuth()
 @Controller('personas')
 export class PersonaController {
   constructor(private service: PersonaService) {}
@@ -20,28 +34,29 @@ export class PersonaController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  create(@Body() data: any) {
-    return this.service.create(data);
+  create(@Body() data: any, @CurrentUser() user: AuthUser) {
+    return this.service.create(data, user.id);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: any,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.update(id, data, user.id);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.remove(id, user.id);
   }
 }

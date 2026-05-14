@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
 
 @Injectable()
 export class PersonaService {
@@ -38,27 +41,82 @@ export class PersonaService {
     };
   }
 
+  /**
+   * Detalle enriquecido con todas las relaciones útiles para mostrar en
+   * tabs:
+   *   - Bóvedas que esta persona posee como propietario.
+   *   - Contratos donde participa como responsable.
+   *   - Pagos realizados (registrados por ella como usuario) — pendiente,
+   *     no hay relación directa Persona ↔ Pago; en la UI agregamos placeholder.
+   */
   async findOne(id: number) {
     const persona = await this.prisma.persona.findUnique({
       where: { id },
-      include: { propietarios: { include: { bovedas: true } }, responsables: { include: { contratoResponsables: true, propietario: true } } },
+      include: {
+        propietarios: {
+          include: {
+            bovedas: {
+              include: {
+                bloque: { include: { cementerio: true } },
+                piso: true,
+              },
+            },
+          },
+        },
+        responsables: {
+          include: {
+            propietario: true,
+            contratoResponsables: {
+              include: {
+                contrato: {
+                  include: {
+                    difunto: true,
+                    boveda: {
+                      include: { bloque: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     if (!persona) throw new NotFoundException('Persona no encontrada');
     return persona;
   }
 
-  async create(data: any) {
-    return this.prisma.persona.create({ data });
+  async create(data: any, userId?: string) {
+    return this.prisma.persona.create({
+      data: {
+        ...data,
+        usuarioCreadorId: userId ?? null,
+      },
+    });
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, data: any, userId?: string) {
     await this.findOne(id);
-    return this.prisma.persona.update({ where: { id }, data });
+    return this.prisma.persona.update({
+      where: { id },
+      data: {
+        ...data,
+        usuarioActualizadorId: userId ?? null,
+        fechaActualizacion: new Date(),
+      },
+    });
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId?: string) {
     await this.findOne(id);
-    return this.prisma.persona.update({ where: { id }, data: { estado: false } });
+    return this.prisma.persona.update({
+      where: { id },
+      data: {
+        estado: false,
+        usuarioEliminadorId: userId ?? null,
+        fechaEliminacion: new Date(),
+      },
+    });
   }
 
   async search(termino: string) {
@@ -69,9 +127,9 @@ export class PersonaService {
           { nombre: { contains: termino, mode: 'insensitive' } },
           { apellido: { contains: termino, mode: 'insensitive' } },
           { numeroIdentificacion: { contains: termino, mode: 'insensitive' } },
-        ]
+        ],
       },
-      take: 20
+      take: 20,
     });
   }
 }

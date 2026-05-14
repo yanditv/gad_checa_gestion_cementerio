@@ -1,25 +1,219 @@
 'use client';
 
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { use } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function DifuntoDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+interface ContratoRow {
+  id: number;
+  numeroSecuencial: string;
+  fechaInicio: string;
+  fechaFin: string | null;
+  estado: boolean;
+  esRenovacion: boolean;
+  responsables?: {
+    responsable: { persona: { nombre: string; apellido: string } };
+  }[];
+}
 
-  const difunto = {
-    id: id,
-    nombre: 'Juan',
-    apellido: 'Pérez',
-    numeroIdentificacion: '1234567890',
-    fechaNacimiento: '1950-05-15',
-    fechaDefuncion: '2024-01-10',
-    fechaInhumacion: '2024-01-12',
-    causaMuerte: 'Causa Natural',
-    edad: 73,
-    genero: 'Masculino',
-    estado: true,
-    boveda: { numero: 'B001', bloque: { nombre: 'Bloque A' } },
+interface Difunto {
+  id: number;
+  nombre: string;
+  apellido: string;
+  numeroIdentificacion: string | null;
+  fechaNacimiento: string | null;
+  fechaDefuncion: string | null;
+  fechaInhumacion: string | null;
+  causaMuerte: string | null;
+  observaciones: string | null;
+  edad: number | null;
+  genero: string | null;
+  nacionalidad: string | null;
+  estadoCivil: string | null;
+  lugarNacimiento: string | null;
+  lugarDefuncion: string | null;
+  nombreConyuge: string | null;
+  nombrePadre: string | null;
+  nombreMadre: string | null;
+  numeroCertificadoDefuncion: string | null;
+  entidadEmisora: string | null;
+  fechaEmisionCertificado: string | null;
+  estado: boolean;
+  boveda: {
+    id: number;
+    numero: string;
+    tipo: string | null;
+    bloque?: { nombre: string; cementerio?: { nombre: string } };
+    piso?: { numero: number } | null;
   };
+  contratos: ContratoRow[];
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-EC');
+}
+
+function computeEdad(
+  nac: string | null | undefined,
+  def: string | null | undefined,
+): number | null {
+  if (!nac || !def) return null;
+  const n = new Date(nac);
+  const d = new Date(def);
+  if (Number.isNaN(n.getTime()) || Number.isNaN(d.getTime())) return null;
+  let years = d.getFullYear() - n.getFullYear();
+  if (
+    d.getMonth() < n.getMonth() ||
+    (d.getMonth() === n.getMonth() && d.getDate() < n.getDate())
+  ) {
+    years -= 1;
+  }
+  return years >= 0 ? years : null;
+}
+
+function Card({
+  title,
+  children,
+  className = '',
+}: {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft ${className}`}
+    >
+      {title && (
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+        </header>
+      )}
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-slate-700">
+        {value === null || value === undefined || value === '' ? '—' : value}
+      </p>
+    </div>
+  );
+}
+
+export default function DifuntoDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const router = useRouter();
+  const [difunto, setDifunto] = useState<Difunto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/difuntos/${id}`, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          throw new Error(payload.message || 'No se pudo cargar');
+        }
+        const payload = await res.json();
+        if (cancelled) return;
+        setDifunto((payload?.data ?? payload) as Difunto);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Error');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  async function handleDelete() {
+    if (!window.confirm('¿Desactivar este registro?')) return;
+    try {
+      const res = await fetch(`/api/difuntos/${id}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || 'No se pudo eliminar');
+      }
+      router.push('/difuntos');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <svg
+          className="h-6 w-6 animate-spin text-primary-500"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  if (!difunto) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold text-slate-900">Difunto</h1>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error || 'No se pudo cargar el registro.'}
+        </div>
+        <Link
+          href="/difuntos"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <i className="ti ti-arrow-left" />
+          Volver
+        </Link>
+      </div>
+    );
+  }
+
+  const edad = difunto.edad ?? computeEdad(difunto.fechaNacimiento, difunto.fechaDefuncion);
 
   return (
     <div className="space-y-6">
@@ -28,119 +222,198 @@ export default function DifuntoDetailsPage({ params }: { params: Promise<{ id: s
           <h1 className="text-2xl font-bold text-slate-900">
             {difunto.nombre} {difunto.apellido}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">Detalles del difunto.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {difunto.numeroIdentificacion ?? 'Sin identificación'}
+            {!difunto.estado && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                Inactivo
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={`/difuntos/${difunto.id}/edit`}
+            href={`/difuntos/${id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-edit" /> Editar
+            <i className="ti ti-edit" />
+            Editar
           </Link>
           <Link
             href="/difuntos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" /> Volver
+            <i className="ti ti-arrow-left" />
+            Volver
           </Link>
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-            <header className="border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">Información Personal</h2>
-            </header>
-            <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">Identificación</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                  {difunto.numeroIdentificacion || '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">Edad</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">{difunto.edad} años</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">Género</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">{difunto.genero}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">Causa de Muerte</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">{difunto.causaMuerte}</p>
-              </div>
+          <Card title="Información personal">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field label="Nombres" value={difunto.nombre} />
+              <Field label="Apellidos" value={difunto.apellido} />
+              <Field label="Identificación" value={difunto.numeroIdentificacion} />
+              <Field label="Género" value={difunto.genero} />
+              <Field label="Estado civil" value={difunto.estadoCivil} />
+              <Field label="Nacionalidad" value={difunto.nacionalidad} />
+              <Field label="Edad al fallecer" value={edad !== null ? `${edad} años` : null} />
+              <Field label="Causa de muerte" value={difunto.causaMuerte} />
             </div>
-          </section>
+          </Card>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-            <header className="border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">Fechas</h2>
-            </header>
-            <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">
-                  Fecha de Nacimiento
-                </p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                  {difunto.fechaNacimiento || '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">
-                  Fecha de Defunción
-                </p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                  {difunto.fechaDefuncion}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">
-                  Fecha de Inhumación
-                </p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                  {difunto.fechaInhumacion}
-                </p>
-              </div>
+          <Card title="Fechas">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field label="Fecha de nacimiento" value={formatDate(difunto.fechaNacimiento)} />
+              <Field label="Fecha de defunción" value={formatDate(difunto.fechaDefuncion)} />
+              <Field label="Fecha de inhumación" value={formatDate(difunto.fechaInhumacion)} />
+              <Field label="Lugar de nacimiento" value={difunto.lugarNacimiento} />
+              <Field label="Lugar de defunción" value={difunto.lugarDefuncion} />
             </div>
-          </section>
+          </Card>
+
+          <Card title="Familia">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field label="Padre" value={difunto.nombrePadre} />
+              <Field label="Madre" value={difunto.nombreMadre} />
+              <Field label="Cónyuge" value={difunto.nombreConyuge} />
+            </div>
+          </Card>
+
+          <Card title="Certificado de defunción">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field
+                label="Número"
+                value={difunto.numeroCertificadoDefuncion}
+              />
+              <Field label="Entidad emisora" value={difunto.entidadEmisora} />
+              <Field
+                label="Fecha de emisión"
+                value={formatDate(difunto.fechaEmisionCertificado)}
+              />
+            </div>
+          </Card>
+
+          {difunto.observaciones && (
+            <Card title="Observaciones">
+              <p className="text-sm text-slate-600">{difunto.observaciones}</p>
+            </Card>
+          )}
+
+          {difunto.contratos && difunto.contratos.length > 0 && (
+            <Card title={`Contratos · ${difunto.contratos.length}`}>
+              <div className="overflow-x-auto -m-5">
+                <table className="min-w-full divide-y divide-slate-100 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="px-5 py-2.5">Contrato</th>
+                      <th className="px-5 py-2.5">Vigencia</th>
+                      <th className="px-5 py-2.5">Estado</th>
+                      <th className="px-5 py-2.5 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {difunto.contratos.map((c) => (
+                      <tr key={c.id}>
+                        <td className="px-5 py-2.5 font-mono text-xs font-semibold text-slate-700">
+                          {c.numeroSecuencial}
+                          {c.esRenovacion && (
+                            <span className="ml-2 inline-flex items-center rounded-full bg-info-50 px-1.5 py-0.5 text-[10px] font-medium text-info-600 ring-1 ring-info-200">
+                              Renovación
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-2.5 text-xs text-slate-500">
+                          {formatDate(c.fechaInicio)} → {formatDate(c.fechaFin)}
+                        </td>
+                        <td className="px-5 py-2.5">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                              c.estado
+                                ? 'bg-green-50 text-green-700 ring-green-200'
+                                : 'bg-slate-100 text-slate-600 ring-slate-200'
+                            }`}
+                          >
+                            {c.estado ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-2.5 text-right">
+                          <Link
+                            href={`/contratos/${c.id}`}
+                            className="text-xs font-medium text-primary-600 hover:underline"
+                          >
+                            Ver →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-            <header className="border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">Ubicación</h2>
-            </header>
-            <div className="space-y-3 p-5">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">Bóveda</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">
+          <Card title="Ubicación">
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500">Bóveda</dt>
+                <dd className="font-mono font-medium text-slate-700">
                   {difunto.boveda.numero}
-                </p>
+                </dd>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">Bloque</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                  {difunto.boveda.bloque.nombre}
-                </p>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500">Bloque</dt>
+                <dd className="text-right text-slate-700">
+                  {difunto.boveda.bloque?.nombre ?? '—'}
+                </dd>
               </div>
-            </div>
-          </section>
+              {difunto.boveda.piso?.numero != null && (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Piso</dt>
+                  <dd className="text-slate-700">
+                    {difunto.boveda.piso.numero}
+                  </dd>
+                </div>
+              )}
+              {difunto.boveda.bloque?.cementerio?.nombre && (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Cementerio</dt>
+                  <dd className="text-right text-slate-700">
+                    {difunto.boveda.bloque.cementerio.nombre}
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <Link
+              href={`/bovedas/${difunto.boveda.id}`}
+              className="mt-3 inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
+            >
+              <i className="ti ti-arrow-up-right" />
+              Ver bóveda
+            </Link>
+          </Card>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-            <header className="border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">Acciones</h2>
-            </header>
-            <div className="p-5">
-              <button
-                type="button"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-              >
-                <i className="ti ti-trash" /> Eliminar
-              </button>
-            </div>
-          </section>
+          <Card title="Acciones">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={!difunto.estado}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <i className="ti ti-trash" />
+              Desactivar
+            </button>
+          </Card>
         </div>
       </div>
     </div>
