@@ -5,7 +5,7 @@ import { use } from 'react';
 
 export default function PersonaDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  
+
   const persona = {
     id: id,
     nombre: 'Juan',
@@ -16,92 +16,110 @@ export default function PersonaDetailsPage({ params }: { params: Promise<{ id: s
     telefono: '0999999999',
     direccion: 'Calle Principal, Ciudad',
     tipoPersona: 'Propietario',
-    estado: true
+    estado: true,
   };
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 600 }}>
-              {persona.nombre} {persona.apellido}
-            </h2>
-            <p className="text-muted mb-0 small">Detalles de la persona</p>
-          </div>
-          <div className="d-flex gap-2">
-            <Link href={`/personas/${persona.id}/edit`} className="btn btn-primary">
-              <i className="ti ti-edit me-1"></i> Editar
-            </Link>
-            <Link href="/personas" className="btn btn-secondary">
-              <i className="ti ti-arrow-left me-1"></i> Volver
-            </Link>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {persona.nombre} {persona.apellido}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">Detalles de la persona.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/personas/${persona.id}/edit`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+          >
+            <i className="ti ti-edit" /> Editar
+          </Link>
+          <Link
+            href="/personas"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <i className="ti ti-arrow-left" /> Volver
+          </Link>
         </div>
       </div>
 
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="card-title">Información Personal</h5>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+            <header className="border-b border-slate-100 px-5 py-3">
+              <h2 className="text-sm font-semibold text-slate-700">Información Personal</h2>
+            </header>
+            <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Tipo de Identificación
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-slate-700">
+                  {persona.tipoIdentificacion}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Número de Identificación
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-slate-700">
+                  {persona.numeroIdentificacion}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Email</p>
+                <p className="mt-0.5 text-sm font-medium text-slate-700">
+                  {persona.email || '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Teléfono</p>
+                <p className="mt-0.5 text-sm font-medium text-slate-700">
+                  {persona.telefono || '-'}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Dirección</p>
+                <p className="mt-0.5 text-sm font-medium text-slate-700">
+                  {persona.direccion || '-'}
+                </p>
+              </div>
             </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-6">
-                  <p className="text-muted mb-1 small">Tipo de Identificación</p>
-                  <p className="fw-semibold mb-3">{persona.tipoIdentificacion}</p>
-                </div>
-                <div className="col-md-6">
-                  <p className="text-muted mb-1 small">Número de Identificación</p>
-                  <p className="fw-semibold mb-3">{persona.numeroIdentificacion}</p>
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-md-6">
-                  <p className="text-muted mb-1 small">Email</p>
-                  <p className="fw-semibold mb-3">{persona.email || '-'}</p>
-                </div>
-                <div className="col-md-6">
-                  <p className="text-muted mb-1 small">Teléfono</p>
-                  <p className="fw-semibold mb-3">{persona.telefono || '-'}</p>
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-md-12">
-                  <p className="text-muted mb-1 small">Dirección</p>
-                  <p className="fw-semibold">{persona.direccion || '-'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
 
-        <div className="col-md-4">
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="card-title">Tipo</h5>
+        <div className="space-y-6">
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+            <header className="border-b border-slate-100 px-5 py-3">
+              <h2 className="text-sm font-semibold text-slate-700">Tipo</h2>
+            </header>
+            <div className="p-5">
+              <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+                {persona.tipoPersona}
+              </span>
             </div>
-            <div className="card-body">
-              <span className="badge badge-primary">{persona.tipoPersona}</span>
-            </div>
-          </div>
+          </section>
 
-          <div className="card">
-            <div className="card-header">
-              <h5 className="card-title">Acciones</h5>
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+            <header className="border-b border-slate-100 px-5 py-3">
+              <h2 className="text-sm font-semibold text-slate-700">Acciones</h2>
+            </header>
+            <div className="flex flex-col gap-2 p-5">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <i className="ti ti-user" /> Ver como Propietario
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                <i className="ti ti-trash" /> Eliminar
+              </button>
             </div>
-            <div className="card-body">
-              <div className="d-flex flex-column gap-2">
-                <button className="btn btn-outline-primary w-100">
-                  <i className="ti ti-user me-1"></i> Ver como Propietario
-                </button>
-                <button className="btn btn-outline-danger w-100">
-                  <i className="ti ti-trash me-1"></i> Eliminar
-                </button>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>

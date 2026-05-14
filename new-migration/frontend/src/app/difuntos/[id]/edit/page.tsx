@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { bovedasApi, difuntosApi } from '@/lib/api';
 
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+const LABEL_CLS =
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+
 export default function EditDifuntoPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -39,10 +44,16 @@ export default function EditDifuntoPage() {
           nombre: difunto.nombre || '',
           apellido: difunto.apellido || '',
           numeroIdentificacion: difunto.numeroIdentificacion || '',
-          fechaNacimiento: difunto.fechaNacimiento ? new Date(difunto.fechaNacimiento).toISOString().split('T')[0] : '',
+          fechaNacimiento: difunto.fechaNacimiento
+            ? new Date(difunto.fechaNacimiento).toISOString().split('T')[0]
+            : '',
           edad: difunto.edad?.toString() || '',
-          fechaDefuncion: difunto.fechaDefuncion ? new Date(difunto.fechaDefuncion).toISOString().split('T')[0] : '',
-          fechaInhumacion: difunto.fechaInhumacion ? new Date(difunto.fechaInhumacion).toISOString().split('T')[0] : '',
+          fechaDefuncion: difunto.fechaDefuncion
+            ? new Date(difunto.fechaDefuncion).toISOString().split('T')[0]
+            : '',
+          fechaInhumacion: difunto.fechaInhumacion
+            ? new Date(difunto.fechaInhumacion).toISOString().split('T')[0]
+            : '',
           genero: difunto.genero || '',
           causaMuerte: difunto.causaMuerte || '',
           bovedaId: difunto.bovedaId?.toString() || '',
@@ -80,181 +91,206 @@ export default function EditDifuntoPage() {
     }
   };
 
-  if (loading) return <div className="container">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <svg
+          className="h-6 w-6 animate-spin text-primary-500"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+          />
+        </svg>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 600 }}>Editar Difunto</h2>
-            <p className="text-muted mb-0 small">Actualizar datos del difunto</p>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Editar Difunto</h1>
+          <p className="mt-1 text-sm text-slate-500">Actualizar datos del difunto.</p>
+        </div>
+        <Link
+          href={`/difuntos/${params.id}`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <i className="ti ti-arrow-left" /> Volver
+        </Link>
+      </div>
+
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-slate-700">Datos del Difunto</h2>
+        </header>
+        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL_CLS}>Nombres *</label>
+              <input
+                type="text"
+                className={INPUT_CLS}
+                required
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Apellidos *</label>
+              <input
+                type="text"
+                className={INPUT_CLS}
+                required
+                value={formData.apellido}
+                onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Número de Identificación</label>
+              <input
+                type="text"
+                className={INPUT_CLS}
+                value={formData.numeroIdentificacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, numeroIdentificacion: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Bóveda *</label>
+              <select
+                className={INPUT_CLS}
+                required
+                value={formData.bovedaId}
+                onChange={(e) => setFormData({ ...formData, bovedaId: e.target.value })}
+              >
+                <option value="">Seleccionar...</option>
+                {bovedas.map((boveda) => (
+                  <option key={boveda.id} value={boveda.id}>
+                    {boveda.numero} - {boveda.bloque?.nombre || 'Sin bloque'}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <Link href={`/difuntos/${params.id}`} className="btn btn-secondary">
-            <i className="ti ti-arrow-left me-1"></i> Volver
-          </Link>
-        </div>
-      </div>
 
-      <div className="card">
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            {error && <div className="alert alert-danger">{error}</div>}
-            <div className="row">
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Nombres *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    required
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Apellidos *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    required
-                    value={formData.apellido}
-                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label className={LABEL_CLS}>Fecha de Nacimiento</label>
+              <input
+                type="date"
+                className={INPUT_CLS}
+                value={formData.fechaNacimiento}
+                onChange={(e) =>
+                  setFormData({ ...formData, fechaNacimiento: e.target.value })
+                }
+              />
             </div>
+            <div>
+              <label className={LABEL_CLS}>Fecha de Defunción</label>
+              <input
+                type="date"
+                className={INPUT_CLS}
+                value={formData.fechaDefuncion}
+                onChange={(e) =>
+                  setFormData({ ...formData, fechaDefuncion: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Fecha de Inhumación</label>
+              <input
+                type="date"
+                className={INPUT_CLS}
+                value={formData.fechaInhumacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, fechaInhumacion: e.target.value })
+                }
+              />
+            </div>
+          </div>
 
-            <div className="row">
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Número de Identificación</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.numeroIdentificacion}
-                    onChange={(e) => setFormData({ ...formData, numeroIdentificacion: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Bóveda *</label>
-                  <select
-                    className="form-select"
-                    required
-                    value={formData.bovedaId}
-                    onChange={(e) => setFormData({ ...formData, bovedaId: e.target.value })}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {bovedas.map((boveda) => (
-                      <option key={boveda.id} value={boveda.id}>
-                        {boveda.numero} - {boveda.bloque?.nombre || 'Sin bloque'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label className={LABEL_CLS}>Edad</label>
+              <input
+                type="number"
+                className={INPUT_CLS}
+                value={formData.edad}
+                onChange={(e) => setFormData({ ...formData, edad: e.target.value })}
+              />
             </div>
+            <div>
+              <label className={LABEL_CLS}>Género</label>
+              <select
+                className={INPUT_CLS}
+                value={formData.genero}
+                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+              >
+                <option value="">Seleccionar...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Causa de Muerte</label>
+              <input
+                type="text"
+                className={INPUT_CLS}
+                value={formData.causaMuerte}
+                onChange={(e) => setFormData({ ...formData, causaMuerte: e.target.value })}
+              />
+            </div>
+          </div>
 
-            <div className="row">
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Fecha de Nacimiento</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.fechaNacimiento}
-                    onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Fecha de Defunción</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.fechaDefuncion}
-                    onChange={(e) => setFormData({ ...formData, fechaDefuncion: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Fecha de Inhumación</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.fechaInhumacion}
-                    onChange={(e) => setFormData({ ...formData, fechaInhumacion: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
+          <div>
+            <label className={LABEL_CLS}>Observaciones</label>
+            <textarea
+              className={INPUT_CLS}
+              rows={3}
+              value={formData.observaciones}
+              onChange={(e) =>
+                setFormData({ ...formData, observaciones: e.target.value })
+              }
+            />
+          </div>
 
-            <div className="row">
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Edad</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.edad}
-                    onChange={(e) => setFormData({ ...formData, edad: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Género</label>
-                  <select
-                    className="form-select"
-                    value={formData.genero}
-                    onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                  </select>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Causa de Muerte</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.causaMuerte}
-                    onChange={(e) => setFormData({ ...formData, causaMuerte: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Observaciones</label>
-              <textarea
-                className="form-control"
-                rows={3}
-                value={formData.observaciones}
-                onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              ></textarea>
-            </div>
-
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Link href={`/difuntos/${params.id}`} className="btn btn-secondary">
-                Cancelar
-              </Link>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+            <Link
+              href={`/difuntos/${params.id}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? 'Guardando…' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }

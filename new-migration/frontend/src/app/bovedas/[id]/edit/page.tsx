@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { bloquesApi, bovedasApi } from '@/lib/api';
 
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+const LABEL_CLS =
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+
 export default function EditBovedaPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -75,160 +80,186 @@ export default function EditBovedaPage() {
     }
   };
 
-  if (loading) return <div className="container">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <svg
+          className="h-6 w-6 animate-spin text-primary-500"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+          />
+        </svg>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 600 }}>Editar Bóveda</h2>
-            <p className="text-muted mb-0 small">Actualizar datos de la bóveda</p>
-          </div>
-          <Link href={`/bovedas/${params.id}`} className="btn btn-secondary">
-            <i className="ti ti-arrow-left me-1"></i> Volver
-          </Link>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Editar Bóveda</h1>
+          <p className="mt-1 text-sm text-slate-500">Actualizar datos de la bóveda.</p>
         </div>
+        <Link
+          href={`/bovedas/${params.id}`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <i className="ti ti-arrow-left" /> Volver
+        </Link>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            {error && <div className="alert alert-danger">{error}</div>}
-            <div className="row">
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Número *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    required
-                    value={formData.numero}
-                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Bloque *</label>
-                  <select
-                    className="form-select"
-                    required
-                    value={formData.bloqueId}
-                    onChange={(e) => setFormData({ ...formData, bloqueId: e.target.value })}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {bloques.map((bloque) => (
-                      <option key={bloque.id} value={bloque.id}>
-                        {bloque.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-slate-700">Datos de la Bóveda</h2>
+        </header>
+        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+              {error}
             </div>
+          )}
 
-            <div className="row">
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Tipo</label>
-                  <select
-                    className="form-select"
-                    value={formData.tipo}
-                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                  >
-                    <option value="Boveda">Bóveda</option>
-                    <option value="Nicho">Nicho</option>
-                    <option value="Mausoleo">Mausoleo</option>
-                  </select>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Capacidad *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min="1"
-                    required
-                    value={formData.capacidad}
-                    onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Estado</label>
-                  <select
-                    className="form-select"
-                    value={formData.estado ? 'true' : 'false'}
-                    onChange={(e) => setFormData({ ...formData, estado: e.target.value === 'true' })}
-                  >
-                    <option value="true">Activa</option>
-                    <option value="false">Inactiva</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Precio</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="form-control"
-                    value={formData.precio}
-                    onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Precio Arrendamiento</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="form-control"
-                    value={formData.precioArrendamiento}
-                    onChange={(e) => setFormData({ ...formData, precioArrendamiento: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Ubicación</label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL_CLS}>Número *</label>
               <input
                 type="text"
-                className="form-control"
-                value={formData.ubicacion}
-                onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
+                className={INPUT_CLS}
+                required
+                value={formData.numero}
+                onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
               />
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Observaciones</label>
-              <textarea
-                className="form-control"
-                rows={3}
-                value={formData.observaciones}
-                onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              ></textarea>
+            <div>
+              <label className={LABEL_CLS}>Bloque *</label>
+              <select
+                className={INPUT_CLS}
+                required
+                value={formData.bloqueId}
+                onChange={(e) => setFormData({ ...formData, bloqueId: e.target.value })}
+              >
+                <option value="">Seleccionar...</option>
+                {bloques.map((bloque) => (
+                  <option key={bloque.id} value={bloque.id}>
+                    {bloque.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
+          </div>
 
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Link href={`/bovedas/${params.id}`} className="btn btn-secondary">
-                Cancelar
-              </Link>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label className={LABEL_CLS}>Tipo</label>
+              <select
+                className={INPUT_CLS}
+                value={formData.tipo}
+                onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+              >
+                <option value="Boveda">Bóveda</option>
+                <option value="Nicho">Nicho</option>
+                <option value="Mausoleo">Mausoleo</option>
+              </select>
             </div>
-          </form>
-        </div>
-      </div>
+            <div>
+              <label className={LABEL_CLS}>Capacidad *</label>
+              <input
+                type="number"
+                className={INPUT_CLS}
+                min="1"
+                required
+                value={formData.capacidad}
+                onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Estado</label>
+              <select
+                className={INPUT_CLS}
+                value={formData.estado ? 'true' : 'false'}
+                onChange={(e) => setFormData({ ...formData, estado: e.target.value === 'true' })}
+              >
+                <option value="true">Activa</option>
+                <option value="false">Inactiva</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL_CLS}>Precio</label>
+              <input
+                type="number"
+                step="0.01"
+                className={INPUT_CLS}
+                value={formData.precio}
+                onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Precio Arrendamiento</label>
+              <input
+                type="number"
+                step="0.01"
+                className={INPUT_CLS}
+                value={formData.precioArrendamiento}
+                onChange={(e) =>
+                  setFormData({ ...formData, precioArrendamiento: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={LABEL_CLS}>Ubicación</label>
+            <input
+              type="text"
+              className={INPUT_CLS}
+              value={formData.ubicacion}
+              onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className={LABEL_CLS}>Observaciones</label>
+            <textarea
+              className={INPUT_CLS}
+              rows={3}
+              value={formData.observaciones}
+              onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+            <Link
+              href={`/bovedas/${params.id}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? 'Guardando…' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
