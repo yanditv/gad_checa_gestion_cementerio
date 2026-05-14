@@ -15,6 +15,8 @@ import { PersonaModule } from './modules/persona/persona.module';
 import { DifuntoModule } from './modules/difunto/difunto.module';
 import { PagoModule } from './modules/pago/pago.module';
 import { CuotaModule } from './modules/cuota/cuota.module';
+import { DescuentoModule } from './modules/descuento/descuento.module';
+import { BancoModule } from './modules/banco/banco.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { RolModule } from './modules/rol/rol.module';
 import { SeedService } from './bootstrap/seed.service';
@@ -37,6 +39,8 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     DifuntoModule,
     PagoModule,
     CuotaModule,
+    DescuentoModule,
+    BancoModule,
     UsuarioModule,
     RolModule,
   ],
