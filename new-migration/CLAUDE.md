@@ -235,11 +235,14 @@ Checklist mínimo:
   El usuario final lo conoce paso a paso.
 - ❌ Cambiar tonos del sistema de diseño (los seis canónicos: `primary`,
   `success`, `info`, `warning`, `danger`, `secondary`).
-- ❌ Mezclar Tailwind y Bootstrap **dentro del mismo archivo**. Cada pantalla
-  está en uno de los dos modos:
-  - Si tiene clases `btn-*`, `card`, `form-control`, `col-md-*`, `pc-*` → Bootstrap.
-  - Si tiene `flex`, `grid`, `text-*`, `bg-*`, `rounded-*`, etc. → Tailwind.
-  Coexistencia entre archivos sí está permitida (Fase 2.5 en adelante).
+- ❌ Reintroducir clases Bootstrap (`btn`, `card`, `form-control`, `col-md-*`,
+  `row`, `pc-*`, `d-flex`, `badge bg-*`, etc.) en cualquier archivo de la
+  app. Todo el frontend está en **Tailwind puro** desde 2026-05-14. Si una
+  pantalla nueva las usa, el cambio se rechaza en revisión.
+- ❌ Importar wrappers de `components/ui/*` (Button, DataGrid, PageHeader,
+  PaginationNav, SearchFilters, SelectInput, TextInput). Esos archivos
+  **fueron eliminados**. Usa elementos Tailwind inline o crea nuevos
+  wrappers en Tailwind cuando un patrón se repita 3+ veces.
 - ❌ Hardcodear textos del cementerio (presidente, dirección, etc.). Vienen
   de `Cementerio` y `GADInformacion`.
 

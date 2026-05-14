@@ -368,6 +368,13 @@ este archivo.
     [x] 2.5.2 Listado de contratos                            ← 2026-05-14
     [x] 2.5.3 Detalle de contrato                             ← 2026-05-14
     [x] 2.5.4 Wizard de creación                              ← 2026-05-14
+[x] Fase 2.6 — Migrar resto del frontend a Tailwind            ← 2026-05-14
+    [x] Lote A Auth + Cuenta + Dashboard                      ← 2026-05-14
+    [x] Lote B CRUDs personas/bloques/bovedas/difuntos        ← 2026-05-14
+    [x] Lote C Cobros/Pagos/Configuración/Manual              ← 2026-05-14
+    [x] Lote D Admin + Reportes                               ← 2026-05-14
+    [x] Lote E Resto contratos (edit/print/renovar)           ← 2026-05-14
+    [x] Eliminar wrappers components/ui/* obsoletos           ← 2026-05-14
 [ ] Fase 3  — Cobros: multi-cuota, descuentos, factura PDF, anulación
 [ ] Fase 4  — Bóvedas, bloques, propietarios
 [ ] Fase 5  — Personas, difuntos, responsables
