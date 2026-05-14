@@ -15,6 +15,7 @@ import {
   PlanCuota,
 } from './dto/create-contrato.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
+import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 
 type Tx = Prisma.TransactionClient;
 
@@ -994,6 +995,212 @@ export class ContratoService {
         },
       });
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Relación lateral entre contratos (bóveda compartida con difuntos distintos)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Vincula dos contratos que comparten la misma bóveda. Caso típico: dos
+   * personas inhumadas juntas en la misma bóveda — cada una tiene su propio
+   * contrato y se relacionan para reflejar el vínculo histórico.
+   *
+   * Reglas:
+   *   - Ambos contratos deben existir, estar activos y vigentes.
+   *   - Deben referir a la misma bóveda.
+   *   - Deben tener difuntos distintos (no se relaciona consigo mismo ni
+   *     dos contratos del mismo difunto).
+   *   - Ninguno puede estar ya relacionado con un tercero.
+   *   - Si ya están relacionados entre sí, la operación es idempotente.
+   */
+  async relacionar(idA: number, dto: RelacionarContratosDto, userId?: string) {
+    const idB = dto.contratoIdB;
+    if (idA === idB) {
+      throw new BadRequestException('Un contrato no puede relacionarse consigo mismo');
+    }
+
+    const [a, b] = await Promise.all([
+      this.prisma.contrato.findUnique({
+        where: { id: idA },
+        select: {
+          id: true,
+          estado: true,
+          bovedaId: true,
+          difuntoId: true,
+          contratoRelacionadoId: true,
+        },
+      }),
+      this.prisma.contrato.findUnique({
+        where: { id: idB },
+        select: {
+          id: true,
+          estado: true,
+          bovedaId: true,
+          difuntoId: true,
+          contratoRelacionadoId: true,
+        },
+      }),
+    ]);
+
+    if (!a || !b) {
+      throw new NotFoundException('Uno de los contratos no existe');
+    }
+    if (!a.estado || !b.estado) {
+      throw new UnprocessableEntityException(
+        'Ambos contratos deben estar activos para relacionarse',
+      );
+    }
+    if (a.bovedaId !== b.bovedaId) {
+      throw new UnprocessableEntityException(
+        'Los contratos deben referir a la misma bóveda',
+      );
+    }
+    if (a.difuntoId === b.difuntoId) {
+      throw new UnprocessableEntityException(
+        'No se pueden relacionar dos contratos del mismo difunto',
+      );
+    }
+    // Idempotencia: si ya están relacionados entre sí, devolver tal cual.
+    const yaRelacionados =
+      a.contratoRelacionadoId === b.id && b.contratoRelacionadoId === a.id;
+    if (!yaRelacionados) {
+      if (a.contratoRelacionadoId && a.contratoRelacionadoId !== b.id) {
+        throw new ConflictException(
+          'El contrato A ya está relacionado con otro contrato. Rompe la relación previa primero.',
+        );
+      }
+      if (b.contratoRelacionadoId && b.contratoRelacionadoId !== a.id) {
+        throw new ConflictException(
+          'El contrato B ya está relacionado con otro contrato. Rompe la relación previa primero.',
+        );
+      }
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.contrato.update({
+        where: { id: a.id },
+        data: {
+          contratoRelacionadoId: b.id,
+          usuarioActualizadorId: userId ?? null,
+          fechaActualizacion: new Date(),
+        },
+      }),
+      this.prisma.contrato.update({
+        where: { id: b.id },
+        data: {
+          contratoRelacionadoId: a.id,
+          usuarioActualizadorId: userId ?? null,
+          fechaActualizacion: new Date(),
+        },
+      }),
+    ]);
+
+    return this.findOne(a.id);
+  }
+
+  /**
+   * Rompe la relación de un contrato con su par. Idempotente: si no hay
+   * relación activa, devuelve el contrato tal cual.
+   */
+  async romperRelacion(id: number, userId?: string) {
+    const contrato = await this.prisma.contrato.findUnique({
+      where: { id },
+      select: { id: true, contratoRelacionadoId: true },
+    });
+    if (!contrato) {
+      throw new NotFoundException('Contrato no encontrado');
+    }
+    if (!contrato.contratoRelacionadoId) {
+      return this.findOne(id);
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.contrato.update({
+        where: { id: contrato.id },
+        data: {
+          contratoRelacionadoId: null,
+          usuarioActualizadorId: userId ?? null,
+          fechaActualizacion: new Date(),
+        },
+      }),
+      this.prisma.contrato.update({
+        where: { id: contrato.contratoRelacionadoId },
+        data: {
+          contratoRelacionadoId: null,
+          usuarioActualizadorId: userId ?? null,
+          fechaActualizacion: new Date(),
+        },
+      }),
+    ]);
+
+    return this.findOne(id);
+  }
+
+  /**
+   * Devuelve los contratos candidatos a relacionarse con `id`: misma bóveda,
+   * difunto distinto, activos y sin relación previa con un tercero.
+   */
+  async getCandidatosRelacion(id: number, query: PaginationQueryDto) {
+    const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const base = await this.prisma.contrato.findUnique({
+      where: { id },
+      select: { bovedaId: true, difuntoId: true },
+    });
+    if (!base) {
+      throw new NotFoundException('Contrato no encontrado');
+    }
+
+    const search = query.search?.trim();
+    const where: any = {
+      id: { not: id },
+      estado: true,
+      bovedaId: base.bovedaId,
+      difuntoId: { not: base.difuntoId },
+      OR: [{ contratoRelacionadoId: null }, { contratoRelacionadoId: id }],
+      ...(search
+        ? {
+            AND: [
+              {
+                OR: [
+                  {
+                    numeroSecuencial: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    difunto: {
+                      is: { nombre: { contains: search, mode: 'insensitive' } },
+                    },
+                  },
+                  {
+                    difunto: {
+                      is: { apellido: { contains: search, mode: 'insensitive' } },
+                    },
+                  },
+                ],
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.contrato.findMany({
+        where,
+        include: {
+          difunto: true,
+          boveda: { include: { bloque: true } },
+        },
+        orderBy: { fechaCreacion: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.contrato.count({ where }),
+    ]);
+
+    return { items, meta: buildPaginationMeta(page, limit, total) };
   }
 
   async update(id: number, data: any) {

@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ContratoService } from './contrato.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
+import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import {
   AuthUser,
   CurrentUser,
@@ -82,6 +83,40 @@ export class ContratoController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.service.renovar(id, dto, user.id);
+  }
+
+  @Get(':id/candidatos-relacion')
+  @ApiOperation({
+    summary: 'Candidatos a relacionarse con este contrato',
+    description:
+      'Contratos activos en la misma bóveda, con difunto distinto y sin relación previa con un tercero.',
+  })
+  getCandidatosRelacion(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.service.getCandidatosRelacion(id, query);
+  }
+
+  @Post(':id/relacionar')
+  @ApiOperation({
+    summary: 'Relacionar dos contratos que comparten bóveda',
+  })
+  relacionar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RelacionarContratosDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.relacionar(id, dto, user.id);
+  }
+
+  @Delete(':id/relacionar')
+  @ApiOperation({ summary: 'Romper la relación lateral del contrato' })
+  romperRelacion(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.romperRelacion(id, user.id);
   }
 
   @Put(':id')

@@ -6,6 +6,7 @@ import {
   getContratoById,
   getContratoEstado,
 } from '@/lib/contratos-server';
+import { RelacionActions } from './RelacionActions';
 
 export default async function ContratoDetailsPage({
   params,
@@ -428,72 +429,57 @@ export default async function ContratoDetailsPage({
           )}
 
           {/* ----- Contratos relacionados / renovaciones ----- */}
-          {(contratoOrigen ||
-            contratoRelacionado ||
-            contratosHijos.length > 0) && (
-            <div className="card mb-4">
-              <div className="card-header">
-                <h5 className="card-title">Vínculos del contrato</h5>
-              </div>
-              <div className="card-body">
-                {contratoOrigen && (
-                  <div className="mb-2">
-                    <span className="text-muted small me-2">
-                      Renueva al contrato:
-                    </span>
-                    <Link
-                      href={`/contratos/${contratoOrigen.id}`}
-                      className="link-primary"
-                    >
-                      {contratoOrigen.numeroSecuencial}
-                    </Link>
-                  </div>
-                )}
-                {contratoRelacionado && (
-                  <div className="mb-2">
-                    <span className="text-muted small me-2">
-                      Comparte bóveda con:
-                    </span>
-                    <Link
-                      href={`/contratos/${contratoRelacionado.id}`}
-                      className="link-primary"
-                    >
-                      {contratoRelacionado.numeroSecuencial}
-                    </Link>
-                    {contratoRelacionado.difunto && (
-                      <span className="text-muted small ms-2">
-                        ({contratoRelacionado.difunto.nombre}{' '}
-                        {contratoRelacionado.difunto.apellido})
-                      </span>
-                    )}
-                  </div>
-                )}
-                {contratosHijos.length > 0 && (
-                  <div>
-                    <span className="text-muted small d-block mb-1">
-                      Renovaciones derivadas:
-                    </span>
-                    <ul className="mb-0">
-                      {contratosHijos.map((h) => (
-                        <li key={h.id}>
-                          <Link
-                            href={`/contratos/${h.id}`}
-                            className="link-primary"
-                          >
-                            {h.numeroSecuencial}
-                          </Link>{' '}
-                          <span className="text-muted small">
-                            ({formatDate(h.fechaInicio)} →{' '}
-                            {formatDate(h.fechaFin)})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+          <div className="card mb-4">
+            <div className="card-header">
+              <h5 className="card-title">Vínculos del contrato</h5>
             </div>
-          )}
+            <div className="card-body">
+              {contratoOrigen && (
+                <div className="mb-3">
+                  <span className="text-muted small me-2">
+                    Renueva al contrato:
+                  </span>
+                  <Link
+                    href={`/contratos/${contratoOrigen.id}`}
+                    className="link-primary"
+                  >
+                    {contratoOrigen.numeroSecuencial}
+                  </Link>
+                </div>
+              )}
+
+              <div className="mb-3">
+                <RelacionActions
+                  contratoId={contrato.id}
+                  relacionado={contratoRelacionado ?? null}
+                />
+              </div>
+
+              {contratosHijos.length > 0 && (
+                <div>
+                  <span className="text-muted small d-block mb-1">
+                    Renovaciones derivadas:
+                  </span>
+                  <ul className="mb-0">
+                    {contratosHijos.map((h) => (
+                      <li key={h.id}>
+                        <Link
+                          href={`/contratos/${h.id}`}
+                          className="link-primary"
+                        >
+                          {h.numeroSecuencial}
+                        </Link>{' '}
+                        <span className="text-muted small">
+                          ({formatDate(h.fechaInicio)} →{' '}
+                          {formatDate(h.fechaFin)})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ----- Lateral: resumen + acciones ----- */}
