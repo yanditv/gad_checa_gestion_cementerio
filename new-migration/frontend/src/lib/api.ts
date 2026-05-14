@@ -301,6 +301,7 @@ export const bloquesApi = {
 
 export const usuariosApi = {
   findAll: (q?: string) => api.get<any[]>(`/usuarios${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  findPage: (params?: PaginationParams) => api.getPaginated<any>('/usuarios', params),
   findOne: (id: string) => api.get<any>(`/usuarios/${id}`),
   update: (id: string, data: any) => api.put<any>(`/usuarios/${id}`, data),
   updateEstado: (id: string, estado: boolean) => api.patch<any>(`/usuarios/${id}/estado`, { estado }),
