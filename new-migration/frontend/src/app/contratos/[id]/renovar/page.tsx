@@ -3,8 +3,6 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { Button } from '@/components/ui/Button';
 
 type PlanCuota = 'unico' | 'mensual' | 'trimestral' | 'semestral' | 'anual';
 
@@ -42,7 +40,11 @@ interface OrigenResumen {
       };
     };
   };
-  difunto: { nombre: string; apellido: string; numeroIdentificacion: string | null };
+  difunto: {
+    nombre: string;
+    apellido: string;
+    numeroIdentificacion: string | null;
+  };
   responsables: {
     responsable: {
       id: number;
@@ -52,6 +54,12 @@ interface OrigenResumen {
     };
   }[];
 }
+
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+
+const LABEL_CLS =
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
 
 function toInputDate(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -66,6 +74,25 @@ function formatCurrency(value: number | string | null | undefined) {
     style: 'currency',
     currency: 'USD',
   }).format(Number(value ?? 0));
+}
+
+function Card({
+  title,
+  children,
+}: {
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+      {title && (
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+        </header>
+      )}
+      <div className="p-5">{children}</div>
+    </section>
+  );
 }
 
 export default function RenovarContratoPage({
@@ -102,7 +129,6 @@ export default function RenovarContratoPage({
     responsablesPersonaIds: [] as number[],
   });
 
-  // Carga inicial: contrato origen + metadatos.
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -125,7 +151,6 @@ export default function RenovarContratoPage({
         const origenData = (origenJson?.data ?? origenJson) as OrigenResumen;
         setOrigen(origenData);
         if (metaJson) setMetadata(metaJson);
-        // Precargar responsables del origen.
         setForm((prev) => ({
           ...prev,
           responsablesPersonaIds: origenData.responsables.map(
@@ -133,8 +158,7 @@ export default function RenovarContratoPage({
           ),
         }));
       } catch (err) {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : 'Error');
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Error');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -145,7 +169,6 @@ export default function RenovarContratoPage({
     };
   }, [id]);
 
-  // Cálculos de UI
   const maxRenovaciones = (() => {
     if (!origen) return 0;
     const tipo = (origen.boveda.tipo || '').toLowerCase();
@@ -153,9 +176,7 @@ export default function RenovarContratoPage({
       ? origen.boveda.bloque.cementerio.vecesRenovacionNicho
       : origen.boveda.bloque.cementerio.vecesRenovacionBovedas;
   })();
-  const puedeRenovar = origen
-    ? origen.vecesRenovado + 1 <= maxRenovaciones
-    : false;
+  const puedeRenovar = origen ? origen.vecesRenovado + 1 <= maxRenovaciones : false;
 
   const subtotal = Number(origen?.boveda?.precioArrendamiento ?? 0);
   const descuento =
@@ -164,17 +185,12 @@ export default function RenovarContratoPage({
   const montoDescuento = round2(subtotal * (descuentoPorcentaje / 100));
   const montoTotal = round2(subtotal - montoDescuento);
 
-  // Vista previa local del plan de cuotas
   const cuotasPreview = (() => {
     const years = Number(form.numeroDeMeses) || 0;
     if (years <= 0 || montoTotal <= 0) return [];
     if (form.plan === 'unico') {
       return [
-        {
-          numero: 1,
-          monto: montoTotal,
-          fechaVencimiento: form.fechaInicio,
-        },
+        { numero: 1, monto: montoTotal, fechaVencimiento: form.fechaInicio },
       ];
     }
     const totalCuotas =
@@ -261,20 +277,20 @@ export default function RenovarContratoPage({
 
   if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: '40vh' }}
-      >
-        <div className="spinner-border text-primary" role="status" />
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
       </div>
     );
   }
 
   if (!origen) {
     return (
-      <div>
-        <PageHeader title="Renovar contrato" />
-        <div className="alert alert-danger" role="alert">
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold text-slate-900">Renovar contrato</h1>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error || 'No se pudo cargar el contrato.'}
         </div>
       </div>
@@ -282,350 +298,351 @@ export default function RenovarContratoPage({
   }
 
   return (
-    <div>
-      <PageHeader
-        title={`Renovar contrato ${origen.numeroSecuencial}`}
-        subtitle="Crea una renovación heredando bóveda, difunto y responsables del contrato actual."
-        actions={
-          <Link href={`/contratos/${id}`} className="btn btn-secondary">
-            <i className="ti ti-arrow-left me-1"></i> Volver
-          </Link>
-        }
-      />
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Renovar contrato{' '}
+            <span className="font-mono text-primary-600">
+              {origen.numeroSecuencial}
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Crea una renovación heredando bóveda, difunto y responsables del
+            contrato actual.
+          </p>
+        </div>
+        <Link
+          href={`/contratos/${id}`}
+          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <i className="ti ti-arrow-left" />
+          Volver
+        </Link>
+      </div>
 
       {!puedeRenovar && (
-        <div className="alert alert-warning" role="alert">
-          <i className="ti ti-alert-triangle me-2"></i>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <i className="ti ti-alert-triangle mr-1" />
           Este contrato ya alcanzó el máximo de{' '}
           <strong>{maxRenovaciones}</strong> renovación(es) permitido por el
           cementerio. No se puede renovar nuevamente.
         </div>
       )}
 
-      <div className="row">
-        <div className="col-lg-7">
-          <form onSubmit={handleSubmit}>
-            <div className="card mb-4">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Datos del nuevo contrato</h5>
-              </div>
-              <div className="card-body">
-                {error && (
-                  <div className="alert alert-danger py-2" role="alert">
-                    {error}
-                  </div>
-                )}
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Fecha de inicio</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={form.fechaInicio}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, fechaInicio: e.target.value }))
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Años de duración</label>
-                    <input
-                      type="number"
-                      min={1}
-                      className="form-control"
-                      value={form.numeroDeMeses}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          numeroDeMeses: Number(e.target.value),
-                        }))
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Descuento</label>
-                    <select
-                      className="form-select"
-                      value={form.descuentoId}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          descuentoId: Number(e.target.value),
-                        }))
-                      }
-                    >
-                      <option value={0}>Sin descuento</option>
-                      {metadata.descuentos.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.nombre} — {Number(d.porcentaje)}%
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Plan de cuotas</label>
-                    <select
-                      className="form-select"
-                      value={form.plan}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          plan: e.target.value as PlanCuota,
-                        }))
-                      }
-                    >
-                      {PLAN_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Observaciones</label>
-                    <textarea
-                      className="form-control"
-                      rows={2}
-                      value={form.observaciones}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          observaciones: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Formulario */}
+        <div className="space-y-6 lg:col-span-7">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Card title="Datos del nuevo contrato">
+              {error && (
+                <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+                  {error}
                 </div>
-              </div>
-            </div>
-
-            <div className="card mb-4">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Pago</h5>
-              </div>
-              <div className="card-body">
-                <div className="form-check mb-3">
+              )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={LABEL_CLS}>Fecha de inicio</label>
                   <input
-                    id="pago-contado"
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={form.pagarAlContado}
+                    type="date"
+                    required
+                    value={form.fechaInicio}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, fechaInicio: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Años de duración</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={form.numeroDeMeses}
                     onChange={(e) =>
                       setForm((p) => ({
                         ...p,
-                        pagarAlContado: e.target.checked,
+                        numeroDeMeses: Number(e.target.value),
                       }))
                     }
+                    className={INPUT_CLS}
                   />
-                  <label className="form-check-label" htmlFor="pago-contado">
-                    Marcar todas las cuotas como pagadas al crear (cobro al
-                    contado)
-                  </label>
                 </div>
-                <div className="row g-3">
-                  <div className="col-md-4">
-                    <label className="form-label">Método</label>
+                <div>
+                  <label className={LABEL_CLS}>Descuento</label>
+                  <select
+                    value={form.descuentoId}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        descuentoId: Number(e.target.value),
+                      }))
+                    }
+                    className={INPUT_CLS}
+                  >
+                    <option value={0}>Sin descuento</option>
+                    {metadata.descuentos.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre} — {Number(d.porcentaje)}%
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Plan de cuotas</label>
+                  <select
+                    value={form.plan}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, plan: e.target.value as PlanCuota }))
+                    }
+                    className={INPUT_CLS}
+                  >
+                    {PLAN_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={LABEL_CLS}>Observaciones</label>
+                  <textarea
+                    rows={2}
+                    value={form.observaciones}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, observaciones: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Pago">
+              <label className="mb-3 flex items-start gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={form.pagarAlContado}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, pagarAlContado: e.target.checked }))
+                  }
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
+                />
+                <span>
+                  Marcar todas las cuotas como pagadas al crear (cobro al
+                  contado)
+                </span>
+              </label>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className={LABEL_CLS}>Método</label>
+                  <select
+                    value={form.tipoPago}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, tipoPago: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  >
+                    {metadata.tiposPago.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Comprobante / referencia</label>
+                  <input
+                    value={form.numeroComprobante}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        numeroComprobante: e.target.value,
+                      }))
+                    }
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Fecha de pago</label>
+                  <input
+                    type="date"
+                    value={form.fechaPago}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, fechaPago: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  />
+                </div>
+                {form.tipoPago !== 'Efectivo' && metadata.bancos.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <label className={LABEL_CLS}>Banco</label>
                     <select
-                      className="form-select"
-                      value={form.tipoPago}
+                      value={form.bancoId}
                       onChange={(e) =>
-                        setForm((p) => ({ ...p, tipoPago: e.target.value }))
+                        setForm((p) => ({ ...p, bancoId: Number(e.target.value) }))
                       }
+                      className={INPUT_CLS}
                     >
-                      {metadata.tiposPago.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
+                      <option value={0}>Seleccionar…</option>
+                      {metadata.bancos.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Comprobante / referencia</label>
-                    <input
-                      className="form-control"
-                      value={form.numeroComprobante}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          numeroComprobante: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Fecha de pago</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={form.fechaPago}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, fechaPago: e.target.value }))
-                      }
-                    />
-                  </div>
-                  {form.tipoPago !== 'Efectivo' && metadata.bancos.length > 0 && (
-                    <div className="col-md-6">
-                      <label className="form-label">Banco</label>
-                      <select
-                        className="form-select"
-                        value={form.bancoId}
-                        onChange={(e) =>
-                          setForm((p) => ({
-                            ...p,
-                            bancoId: Number(e.target.value),
-                          }))
-                        }
-                      >
-                        <option value={0}>Seleccionar…</option>
-                        {metadata.bancos.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <div className="col-12">
-                    <label className="form-label">Observación del pago</label>
-                    <input
-                      className="form-control"
-                      value={form.observacion}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, observacion: e.target.value }))
-                      }
-                    />
-                  </div>
+                )}
+                <div className="sm:col-span-3">
+                  <label className={LABEL_CLS}>Observación del pago</label>
+                  <input
+                    value={form.observacion}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, observacion: e.target.value }))
+                    }
+                    className={INPUT_CLS}
+                  />
                 </div>
               </div>
-            </div>
+            </Card>
 
-            <div className="d-flex justify-content-end gap-2 mb-4">
-              <Link href={`/contratos/${id}`} className="btn btn-secondary">
+            <div className="flex justify-end gap-2">
+              <Link
+                href={`/contratos/${id}`}
+                className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
                 Cancelar
               </Link>
-              <Button type="submit" disabled={saving || !puedeRenovar}>
+              <button
+                type="submit"
+                disabled={saving || !puedeRenovar}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <i className="ti ti-copy" />
                 {saving ? 'Renovando…' : 'Crear renovación'}
-              </Button>
+              </button>
             </div>
           </form>
         </div>
 
-        {/* Lateral: resumen del origen y plan calculado */}
-        <div className="col-lg-5">
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="card-title mb-0">Contrato a renovar</h5>
-            </div>
-            <div className="card-body">
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-muted">Número</span>
-                <strong>{origen.numeroSecuencial}</strong>
+        {/* Resumen lateral */}
+        <div className="space-y-6 lg:col-span-5">
+          <Card title="Contrato a renovar">
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Número</dt>
+                <dd className="font-mono font-semibold text-slate-700">
+                  {origen.numeroSecuencial}
+                </dd>
               </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-muted">Bóveda</span>
-                <span>
-                  {origen.boveda.numero} ·{' '}
-                  {origen.boveda.bloque.nombre}
-                </span>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Bóveda</dt>
+                <dd className="text-slate-700">
+                  {origen.boveda.numero} · {origen.boveda.bloque.nombre}
+                </dd>
               </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-muted">Tipo</span>
-                <span>{origen.boveda.tipo || 'Bóveda'}</span>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Tipo</dt>
+                <dd className="text-slate-700">
+                  {origen.boveda.tipo || 'Bóveda'}
+                </dd>
               </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-muted">Difunto</span>
-                <span>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Difunto</dt>
+                <dd className="text-slate-700">
                   {origen.difunto.nombre} {origen.difunto.apellido}
-                </span>
+                </dd>
               </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-muted">Renovaciones previas</span>
-                <span>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Renovaciones previas</dt>
+                <dd className="text-slate-700">
                   {origen.vecesRenovado} de {maxRenovaciones}
-                </span>
+                </dd>
               </div>
-              <hr />
-              <div className="d-flex justify-content-between mb-1">
-                <span className="text-muted">Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="d-flex justify-content-between mb-1">
-                <span className="text-muted">
-                  Descuento ({descuentoPorcentaje}%)
-                </span>
-                <span className="text-danger">
-                  − {formatCurrency(montoDescuento)}
-                </span>
-              </div>
-              <div className="d-flex justify-content-between fw-semibold">
-                <span>Total</span>
-                <span>{formatCurrency(montoTotal)}</span>
-              </div>
-            </div>
-          </div>
+            </dl>
 
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="card-title mb-0">Responsables heredados</h5>
-            </div>
-            <div className="card-body">
-              {origen.responsables.length === 0 ? (
-                <p className="text-muted mb-0">
-                  El contrato origen no tiene responsables registrados.
-                </p>
-              ) : (
-                <ul className="list-unstyled mb-0">
-                  {origen.responsables.map((r) => (
-                    <li key={r.responsable.id} className="mb-2">
-                      <i className="ti ti-user me-2 text-muted"></i>
-                      <strong>
+            <hr className="my-3 border-slate-100" />
+
+            <dl className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Subtotal</dt>
+                <dd>{formatCurrency(subtotal)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">
+                  Descuento ({descuentoPorcentaje}%)
+                </dt>
+                <dd className="text-red-600">−{formatCurrency(montoDescuento)}</dd>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <dt>Total</dt>
+                <dd>{formatCurrency(montoTotal)}</dd>
+              </div>
+            </dl>
+          </Card>
+
+          <Card title="Responsables heredados">
+            {origen.responsables.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                El contrato origen no tiene responsables registrados.
+              </p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {origen.responsables.map((r) => (
+                  <li key={r.responsable.id}>
+                    <div className="flex items-baseline gap-2">
+                      <i className="ti ti-user text-slate-400" />
+                      <strong className="text-slate-800">
                         {r.responsable.persona.nombre}{' '}
                         {r.responsable.persona.apellido}
                       </strong>
-                      <small className="text-muted d-block ms-4">
-                        {r.responsable.persona.numeroIdentificacion}
-                        {r.responsable.parentesco
-                          ? ` · ${r.responsable.parentesco}`
-                          : ''}
-                      </small>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+                    </div>
+                    <div className="ml-5 text-xs text-slate-500">
+                      {r.responsable.persona.numeroIdentificacion}
+                      {r.responsable.parentesco
+                        ? ` · ${r.responsable.parentesco}`
+                        : ''}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
 
           {cuotasPreview.length > 0 && (
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">
-                  Plan calculado · {cuotasPreview.length} cuota(s)
-                </h5>
-              </div>
-              <div className="card-body" style={{ padding: 0 }}>
-                <table className="table mb-0 small">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Vencimiento</th>
-                      <th className="text-end">Monto</th>
+            <Card title={`Plan calculado · ${cuotasPreview.length} cuota(s)`}>
+              <div className="overflow-x-auto -m-5">
+                <table className="min-w-full divide-y divide-slate-100 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="px-5 py-2">#</th>
+                      <th className="px-5 py-2">Vencimiento</th>
+                      <th className="px-5 py-2 text-right">Monto</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {cuotasPreview.slice(0, 12).map((c) => (
                       <tr key={c.numero}>
-                        <td>{c.numero}</td>
-                        <td>{c.fechaVencimiento}</td>
-                        <td className="text-end">
+                        <td className="px-5 py-2 font-medium text-slate-700">
+                          {c.numero}
+                        </td>
+                        <td className="px-5 py-2 text-slate-600">
+                          {c.fechaVencimiento}
+                        </td>
+                        <td className="px-5 py-2 text-right">
                           {formatCurrency(c.monto)}
                         </td>
                       </tr>
                     ))}
                     {cuotasPreview.length > 12 && (
                       <tr>
-                        <td colSpan={3} className="text-center text-muted">
+                        <td
+                          colSpan={3}
+                          className="px-5 py-2 text-center text-xs text-slate-400"
+                        >
                           … {cuotasPreview.length - 12} cuota(s) más
                         </td>
                       </tr>
@@ -633,7 +650,7 @@ export default function RenovarContratoPage({
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
           )}
         </div>
       </div>

@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { bovedasApi, contratosApi, difuntosApi } from '@/lib/api';
 
+const INPUT_CLS =
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+
+const LABEL_CLS =
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+
 export default function EditContratoPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -39,8 +45,12 @@ export default function EditContratoPage() {
         setFormData({
           bovedaId: contrato.bovedaId?.toString() || '',
           difuntoId: contrato.difuntoId?.toString() || '',
-          fechaInicio: contrato.fechaInicio ? new Date(contrato.fechaInicio).toISOString().split('T')[0] : '',
-          fechaFin: contrato.fechaFin ? new Date(contrato.fechaFin).toISOString().split('T')[0] : '',
+          fechaInicio: contrato.fechaInicio
+            ? new Date(contrato.fechaInicio).toISOString().split('T')[0]
+            : '',
+          fechaFin: contrato.fechaFin
+            ? new Date(contrato.fechaFin).toISOString().split('T')[0]
+            : '',
           numeroDeMeses: contrato.numeroDeMeses?.toString() || '12',
           montoTotal: contrato.montoTotal?.toString() || '',
           observaciones: contrato.observaciones || '',
@@ -80,150 +90,199 @@ export default function EditContratoPage() {
     }
   };
 
-  if (loading) return <div className="container">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <svg
+          className="h-6 w-6 animate-spin text-primary-500"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+          />
+        </svg>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 600 }}>Editar Contrato</h2>
-            <p className="text-muted mb-0 small">Actualizar contrato de arrendamiento</p>
-          </div>
-          <Link href={`/contratos/${params.id}`} className="btn btn-secondary">
-            <i className="ti ti-arrow-left me-1"></i> Volver
-          </Link>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Editar contrato</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Actualizar los datos del contrato de arrendamiento.
+          </p>
         </div>
+        <Link
+          href={`/contratos/${params.id}`}
+          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <i className="ti ti-arrow-left" />
+          Volver
+        </Link>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            {error && <div className="alert alert-danger">{error}</div>}
-            <div className="row">
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Bóveda *</label>
-                  <select
-                    className="form-select"
-                    required
-                    value={formData.bovedaId}
-                    onChange={(e) => setFormData({ ...formData, bovedaId: e.target.value })}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {bovedas.map((boveda) => (
-                      <option key={boveda.id} value={boveda.id}>
-                        {boveda.numero} - {boveda.bloque?.nombre || 'Sin bloque'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="form-group">
-                  <label className="form-label">Difunto *</label>
-                  <select
-                    className="form-select"
-                    required
-                    value={formData.difuntoId}
-                    onChange={(e) => setFormData({ ...formData, difuntoId: e.target.value })}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {difuntos.map((difunto) => (
-                      <option key={difunto.id} value={difunto.id}>
-                        {difunto.nombre} {difunto.apellido}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+              {error}
             </div>
+          )}
 
-            <div className="row">
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Fecha Inicio *</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    required
-                    value={formData.fechaInicio}
-                    onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Fecha Fin</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.fechaFin}
-                    onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Meses *</label>
-                  <input
-                    type="number"
-                    min="1"
-                    className="form-control"
-                    required
-                    value={formData.numeroDeMeses}
-                    onChange={(e) => setFormData({ ...formData, numeroDeMeses: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Estado</label>
-                  <select
-                    className="form-select"
-                    value={formData.estado ? 'true' : 'false'}
-                    onChange={(e) => setFormData({ ...formData, estado: e.target.value === 'true' })}
-                  >
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Monto Total *</label>
-              <input
-                type="number"
-                step="0.01"
-                className="form-control"
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL_CLS}>Bóveda *</label>
+              <select
                 required
-                value={formData.montoTotal}
-                onChange={(e) => setFormData({ ...formData, montoTotal: e.target.value })}
+                value={formData.bovedaId}
+                onChange={(e) =>
+                  setFormData({ ...formData, bovedaId: e.target.value })
+                }
+                className={INPUT_CLS}
+              >
+                <option value="">Seleccionar…</option>
+                {bovedas.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.numero} - {b.bloque?.nombre || 'Sin bloque'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Difunto *</label>
+              <select
+                required
+                value={formData.difuntoId}
+                onChange={(e) =>
+                  setFormData({ ...formData, difuntoId: e.target.value })
+                }
+                className={INPUT_CLS}
+              >
+                <option value="">Seleccionar…</option>
+                {difuntos.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} {d.apellido}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div>
+              <label className={LABEL_CLS}>Fecha inicio *</label>
+              <input
+                type="date"
+                required
+                value={formData.fechaInicio}
+                onChange={(e) =>
+                  setFormData({ ...formData, fechaInicio: e.target.value })
+                }
+                className={INPUT_CLS}
               />
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Observaciones</label>
-              <textarea
-                className="form-control"
-                rows={3}
-                value={formData.observaciones}
-                onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              ></textarea>
+            <div>
+              <label className={LABEL_CLS}>Fecha fin</label>
+              <input
+                type="date"
+                value={formData.fechaFin}
+                onChange={(e) =>
+                  setFormData({ ...formData, fechaFin: e.target.value })
+                }
+                className={INPUT_CLS}
+              />
             </div>
-
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Link href={`/contratos/${params.id}`} className="btn btn-secondary">
-                Cancelar
-              </Link>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
+            <div>
+              <label className={LABEL_CLS}>Años *</label>
+              <input
+                type="number"
+                min={1}
+                required
+                value={formData.numeroDeMeses}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    numeroDeMeses: e.target.value,
+                  })
+                }
+                className={INPUT_CLS}
+              />
             </div>
-          </form>
-        </div>
-      </div>
+            <div>
+              <label className={LABEL_CLS}>Estado</label>
+              <select
+                value={formData.estado ? 'true' : 'false'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    estado: e.target.value === 'true',
+                  })
+                }
+                className={INPUT_CLS}
+              >
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={LABEL_CLS}>Monto total *</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={formData.montoTotal}
+              onChange={(e) =>
+                setFormData({ ...formData, montoTotal: e.target.value })
+              }
+              className={INPUT_CLS}
+            />
+          </div>
+
+          <div>
+            <label className={LABEL_CLS}>Observaciones</label>
+            <textarea
+              rows={3}
+              value={formData.observaciones}
+              onChange={(e) =>
+                setFormData({ ...formData, observaciones: e.target.value })
+              }
+              className={INPUT_CLS}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+            <Link
+              href={`/contratos/${params.id}`}
+              className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            >
+              <i className="ti ti-check" />
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
