@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 
 type Tab = 'descuentos' | 'bancos';
 
@@ -41,11 +42,21 @@ export default function ConfiguracionPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Configuración</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Gestión de descuentos y bancos disponibles al cobrar.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Configuración</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Gestión de descuentos y bancos disponibles al cobrar.
+          </p>
+        </div>
+        {isAdmin && (
+          <Link
+            href="/configuracion/catastro"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-white px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50"
+          >
+            <i className="ti ti-database-import" /> Importar catastro
+          </Link>
+        )}
       </div>
 
       {!isAdmin && (
