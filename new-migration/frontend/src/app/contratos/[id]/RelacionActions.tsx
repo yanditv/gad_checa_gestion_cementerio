@@ -13,8 +13,6 @@ interface ContratoRelacionado {
 interface CandidatoContrato {
   id: number;
   numeroSecuencial: string;
-  fechaInicio: string;
-  fechaFin: string | null;
   difunto: {
     nombre: string;
     apellido: string;
@@ -40,30 +38,31 @@ export function RelacionActions({
 
   if (relacionado) {
     return (
-      <div className="d-flex align-items-center gap-3 flex-wrap">
-        <div>
-          <span className="text-muted small me-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="text-sm">
+          <span className="text-xs uppercase tracking-wide text-slate-400">
             Comparte bóveda con:
           </span>
           <Link
             href={`/contratos/${relacionado.id}`}
-            className="link-primary fw-semibold"
+            className="ml-2 font-medium text-primary-600 hover:underline"
           >
             {relacionado.numeroSecuencial}
           </Link>
           {relacionado.difunto && (
-            <span className="text-muted small ms-2">
+            <span className="ml-2 text-xs text-slate-500">
               ({relacionado.difunto.nombre} {relacionado.difunto.apellido})
             </span>
           )}
         </div>
         <button
           type="button"
-          className="btn btn-sm btn-outline-danger"
           onClick={() => setConfirmRomper(true)}
           disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
         >
-          <i className="ti ti-unlink me-1"></i> Romper relación
+          <i className="ti ti-unlink" />
+          Romper relación
         </button>
 
         {confirmRomper && (
@@ -96,9 +95,7 @@ export function RelacionActions({
                 setConfirmRomper(false);
                 router.refresh();
               } catch (err) {
-                setError(
-                  err instanceof Error ? err.message : 'Error',
-                );
+                setError(err instanceof Error ? err.message : 'Error');
               } finally {
                 setBusy(false);
               }
@@ -113,10 +110,11 @@ export function RelacionActions({
     <>
       <button
         type="button"
-        className="btn btn-sm btn-outline-primary"
         onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100"
       >
-        <i className="ti ti-link me-1"></i> Relacionar con otro contrato
+        <i className="ti ti-link" />
+        Relacionar con otro contrato
       </button>
 
       {open && (
@@ -149,28 +147,28 @@ function ConfirmRomperModal({
   return (
     <ModalShell title="Romper relación" onClose={onCancel}>
       {error && (
-        <div className="alert alert-danger py-2" role="alert">
+        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
           {error}
         </div>
       )}
-      <p>
-        ¿Confirmas que deseas romper la relación entre estos dos contratos?
-        La operación se aplica a ambos.
+      <p className="text-sm text-slate-600">
+        ¿Confirmas que deseas romper la relación entre estos dos contratos? La
+        operación se aplica a ambos.
       </p>
-      <div className="d-flex justify-content-end gap-2">
+      <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
-          className="btn btn-secondary"
           onClick={onCancel}
           disabled={busy}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           Cancelar
         </button>
         <button
           type="button"
-          className="btn btn-danger"
           onClick={onConfirm}
           disabled={busy}
+          className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
         >
           {busy ? 'Procesando…' : 'Romper relación'}
         </button>
@@ -263,72 +261,74 @@ function CandidatosModal({
       size="lg"
     >
       {error && (
-        <div className="alert alert-danger py-2" role="alert">
+        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
           {error}
         </div>
       )}
 
-      <div className="search-box mb-3">
-        <i className="ti ti-search"></i>
+      <div className="relative mb-3">
+        <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
-          type="text"
-          className="form-control"
-          placeholder="Buscar por número, nombre o apellido del difunto…"
+          type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por número, nombre o apellido del difunto…"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
           autoFocus
         />
       </div>
 
-      <div className="table-responsive" style={{ maxHeight: 360 }}>
-        <table className="table table-sm align-middle">
-          <thead>
-            <tr>
-              <th>Contrato</th>
-              <th>Difunto</th>
-              <th>Bóveda</th>
+      <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+        <table className="min-w-full divide-y divide-slate-100 text-sm">
+          <thead className="bg-slate-50">
+            <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <th className="px-3 py-2">Contrato</th>
+              <th className="px-3 py-2">Difunto</th>
+              <th className="px-3 py-2">Bóveda</th>
               <th />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr>
-                <td colSpan={4} className="text-center text-muted py-3">
+                <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
                   Cargando candidatos…
                 </td>
               </tr>
             ) : candidatos.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-center text-muted py-3">
+                <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
                   No hay contratos elegibles en esta bóveda.
                 </td>
               </tr>
             ) : (
               candidatos.map((c) => (
-                <tr key={c.id}>
-                  <td>
-                    <strong>{c.numeroSecuencial}</strong>
+                <tr key={c.id} className="hover:bg-slate-50/50">
+                  <td className="px-3 py-2 font-mono text-xs font-semibold text-slate-700">
+                    {c.numeroSecuencial}
                   </td>
-                  <td>
-                    {c.difunto.nombre} {c.difunto.apellido}
+                  <td className="px-3 py-2">
+                    <div className="text-sm text-slate-800">
+                      {c.difunto.nombre} {c.difunto.apellido}
+                    </div>
                     {c.difunto.numeroIdentificacion && (
-                      <small className="text-muted d-block">
+                      <div className="text-xs text-slate-400">
                         {c.difunto.numeroIdentificacion}
-                      </small>
+                      </div>
                     )}
                   </td>
-                  <td>
+                  <td className="px-3 py-2 text-sm text-slate-600">
                     {c.boveda?.numero}{' '}
-                    <small className="text-muted">
+                    <span className="text-xs text-slate-400">
                       ({c.boveda?.bloque?.nombre})
-                    </small>
+                    </span>
                   </td>
-                  <td className="text-end">
+                  <td className="px-3 py-2 text-right">
                     <button
                       type="button"
-                      className="btn btn-sm btn-primary"
-                      disabled={linking !== null}
                       onClick={() => relacionar(c.id)}
+                      disabled={linking !== null}
+                      className="rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600 disabled:opacity-50"
                     >
                       {linking === c.id ? 'Vinculando…' : 'Relacionar'}
                     </button>
@@ -340,12 +340,12 @@ function CandidatosModal({
         </table>
       </div>
 
-      <div className="d-flex justify-content-end mt-3">
+      <div className="mt-5 flex justify-end">
         <button
           type="button"
-          className="btn btn-secondary"
           onClick={onClose}
           disabled={linking !== null}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -369,35 +369,35 @@ function ModalShell({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const widthClass = size === 'lg' ? 'max-w-3xl' : 'max-w-md';
   return (
     <div
-      className="modal show d-block"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
       role="dialog"
-      style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`modal-dialog modal-dialog-centered ${size === 'lg' ? 'modal-lg' : ''}`}
+        className={`w-full ${widthClass} rounded-xl bg-white shadow-lifted`}
       >
-        <div className="modal-content">
-          <div className="modal-header">
-            <div>
-              <h5 className="modal-title mb-0">{title}</h5>
-              {subtitle && (
-                <small className="text-muted">{subtitle}</small>
-              )}
-            </div>
-            <button
-              type="button"
-              className="btn-close"
-              aria-label="Cerrar"
-              onClick={onClose}
-            />
+        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-3">
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+            {subtitle && (
+              <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+            )}
           </div>
-          <div className="modal-body">{children}</div>
-        </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Cerrar"
+          >
+            <i className="ti ti-x" />
+          </button>
+        </header>
+        <div className="px-5 py-4">{children}</div>
       </div>
     </div>
   );

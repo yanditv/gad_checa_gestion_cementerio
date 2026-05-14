@@ -133,28 +133,31 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
   }
 
   return (
-    <div className="card mb-4">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="card-title mb-0">Documentos adjuntos</h5>
-        <small className="text-muted">PDF · máx. 10 MB</small>
-      </div>
-      <div className="card-body">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+      <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+        <h3 className="text-sm font-semibold text-slate-700">
+          Documentos adjuntos
+        </h3>
+        <span className="text-xs text-slate-400">PDF · máx. 10 MB</span>
+      </header>
+
+      <div className="p-5">
         {error && (
-          <div className="alert alert-danger py-2" role="alert">
+          <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
             {error}
           </div>
         )}
 
-        <div className="row g-3 align-items-end mb-3">
-          <div className="col-md-5">
-            <label className="form-label small text-muted">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-12 sm:items-end">
+          <div className="sm:col-span-4">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
               Tipo de documento
             </label>
             <select
-              className="form-select"
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
               disabled={uploading}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:opacity-70"
             >
               {TIPO_OPTIONS.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -163,13 +166,14 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
               ))}
             </select>
           </div>
-          <div className="col-md-7">
+
+          <div className="sm:col-span-8">
             <div
-              className={`border rounded p-3 text-center ${dragging ? 'bg-light' : ''}`}
-              style={{
-                borderStyle: 'dashed',
-                cursor: uploading ? 'not-allowed' : 'pointer',
-              }}
+              className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
+                dragging
+                  ? 'border-primary-500 bg-primary-50/50'
+                  : 'border-slate-200 bg-slate-50/40'
+              } ${uploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-slate-50'}`}
               onClick={() => !uploading && inputRef.current?.click()}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -190,23 +194,38 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
                 ref={inputRef}
                 type="file"
                 accept="application/pdf"
-                className="d-none"
+                className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void uploadFile(file);
                 }}
               />
               {uploading ? (
-                <span>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                  />
+                <span className="inline-flex items-center gap-2 text-sm text-slate-600">
+                  <svg
+                    className="h-4 w-4 animate-spin text-primary-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
                   Subiendo…
                 </span>
               ) : (
-                <span className="text-muted">
-                  <i className="ti ti-cloud-upload me-1"></i>
+                <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+                  <i className="ti ti-cloud-upload text-lg text-primary-500" />
                   Arrastra un PDF aquí o haz clic para seleccionarlo
                 </span>
               )}
@@ -214,79 +233,96 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
           </div>
         </div>
 
-        {loading ? (
-          <div className="text-muted text-center py-3">Cargando documentos…</div>
-        ) : docs.length === 0 ? (
-          <div className="text-muted text-center py-3">
-            Aún no hay documentos adjuntos a este contrato.
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Documento</th>
-                  <th>Tipo</th>
-                  <th>Peso</th>
-                  <th>Subido</th>
-                  <th>Por</th>
-                  <th className="text-end">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {docs.map((d) => (
-                  <tr key={d.id}>
-                    <td>
-                      <i className="ti ti-file-type-pdf text-danger me-1"></i>
-                      <span className="fw-semibold">{d.nombreOriginal}</span>
-                    </td>
-                    <td>
-                      <span className="badge bg-primary-subtle text-primary">
-                        {tipoLabel(d.tipo)}
-                      </span>
-                    </td>
-                    <td>{formatBytes(d.tamanioBytes)}</td>
-                    <td>{formatDate(d.fechaCreacion)}</td>
-                    <td>
-                      {d.subidoPor
-                        ? `${d.subidoPor.nombre} ${d.subidoPor.apellido}`
-                        : '-'}
-                    </td>
-                    <td className="text-end">
-                      <a
-                        href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-sm btn-outline-primary me-1"
-                        title="Abrir"
-                      >
-                        <i className="ti ti-eye"></i>
-                      </a>
-                      <a
-                        href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
-                        download={d.nombreOriginal}
-                        className="btn btn-sm btn-outline-primary me-1"
-                        title="Descargar"
-                      >
-                        <i className="ti ti-download"></i>
-                      </a>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-danger"
-                        disabled={deletingId === d.id}
-                        onClick={() => deleteDoc(d.id)}
-                        title="Eliminar"
-                      >
-                        <i className="ti ti-trash"></i>
-                      </button>
-                    </td>
+        <div className="mt-4">
+          {loading ? (
+            <div className="py-6 text-center text-sm text-slate-400">
+              Cargando documentos…
+            </div>
+          ) : docs.length === 0 ? (
+            <div className="py-6 text-center text-sm text-slate-400">
+              <i className="ti ti-file-off text-2xl text-slate-300" />
+              <div className="mt-1">
+                Aún no hay documentos adjuntos a este contrato.
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-100 text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th className="px-3 py-2">Documento</th>
+                    <th className="px-3 py-2">Tipo</th>
+                    <th className="px-3 py-2">Peso</th>
+                    <th className="px-3 py-2">Subido</th>
+                    <th className="px-3 py-2">Por</th>
+                    <th className="px-3 py-2 text-right">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {docs.map((d) => (
+                    <tr key={d.id} className="hover:bg-slate-50/50">
+                      <td className="px-3 py-2">
+                        <span className="inline-flex items-center gap-2">
+                          <i className="ti ti-file-type-pdf text-red-500" />
+                          <span className="font-medium text-slate-700">
+                            {d.nombreOriginal}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+                          {tipoLabel(d.tipo)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {formatBytes(d.tamanioBytes)}
+                      </td>
+                      <td className="px-3 py-2 text-slate-500">
+                        {formatDate(d.fechaCreacion)}
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {d.subidoPor
+                          ? `${d.subidoPor.nombre} ${d.subidoPor.apellido}`
+                          : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <a
+                            href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                            title="Abrir"
+                          >
+                            <i className="ti ti-eye" />
+                          </a>
+                          <a
+                            href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
+                            download={d.nombreOriginal}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                            title="Descargar"
+                          >
+                            <i className="ti ti-download" />
+                          </a>
+                          <button
+                            type="button"
+                            disabled={deletingId === d.id}
+                            onClick={() => deleteDoc(d.id)}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                            title="Eliminar"
+                          >
+                            <i className="ti ti-trash" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
