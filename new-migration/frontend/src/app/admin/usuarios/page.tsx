@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { usuariosApi, rolesApi, PaginationMeta } from '@/lib/api';
 
 interface UsuarioRol {
@@ -199,6 +200,13 @@ export default function AdminUsuariosPage() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-2">
+                          <Link
+                            href={`/admin/usuarios/${usuario.id}`}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                            title="Ver detalle"
+                          >
+                            <i className="ti ti-eye" />
+                          </Link>
                           <select
                             multiple
                             value={currentRoles}
