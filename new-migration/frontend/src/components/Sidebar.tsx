@@ -2,87 +2,171 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { SessionUser } from './DashboardLayout';
 
-const navigation = [
-  { label: 'Dashboard', href: '/', icon: 'ti-dashboard' },
-  { section: 'Contratos' },
-  { label: 'Nuevo', href: '/contratos/create', icon: 'ti-folder-plus' },
-  { label: 'Listado', href: '/contratos', icon: 'ti-list-search' },
-  { section: 'Gestión' },
-  { label: 'Personas', href: '/personas', icon: 'ti-users' },
-  { label: 'Bloques', href: '/bloques', icon: 'ti-building' },
-  { label: 'Bóvedas', href: '/bovedas', icon: 'ti-box-multiple' },
-  { label: 'Cobros', href: '/cobros', icon: 'ti-coin' },
-  { label: 'Difuntos', href: '/difuntos', icon: 'ti-cloud' },
-  { section: 'Administración' },
-  { label: 'Mi Cuenta', href: '/cuenta', icon: 'ti-user' },
-  { label: 'Gestión de Usuarios', href: '/admin/usuarios', icon: 'ti-users' },
-  { label: 'Gestión de Roles', href: '/admin/roles', icon: 'ti-shield-check' },
-  { section: 'Configuración' },
-  { label: 'Ajustes', href: '/configuracion', icon: 'ti-settings' },
-  { label: 'Reportes', href: '/reportes', icon: 'ti-chart-dots' },
-  { section: 'Ayuda' },
-  { label: 'Manual de Usuario', href: '/manual', icon: 'ti-book' },
+type NavItem =
+  | { type: 'item'; label: string; href: string; icon: string; roles?: string[] }
+  | { type: 'section'; label: string };
+
+const navigation: NavItem[] = [
+  { type: 'item', label: 'Dashboard', href: '/', icon: 'ti-dashboard' },
+
+  { type: 'section', label: 'Contratos' },
+  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: 'ti-folder-plus' },
+  { type: 'item', label: 'Listado', href: '/contratos', icon: 'ti-list-search' },
+
+  { type: 'section', label: 'Gestión' },
+  { type: 'item', label: 'Personas', href: '/personas', icon: 'ti-users' },
+  { type: 'item', label: 'Bloques', href: '/bloques', icon: 'ti-building' },
+  { type: 'item', label: 'Bóvedas', href: '/bovedas', icon: 'ti-box-multiple' },
+  { type: 'item', label: 'Cobros', href: '/cobros', icon: 'ti-coin' },
+  { type: 'item', label: 'Difuntos', href: '/difuntos', icon: 'ti-cloud' },
+
+  { type: 'section', label: 'Administración' },
+  { type: 'item', label: 'Mi Cuenta', href: '/cuenta', icon: 'ti-user' },
+  {
+    type: 'item',
+    label: 'Usuarios',
+    href: '/admin/usuarios',
+    icon: 'ti-users',
+    roles: ['Admin', 'Administrador'],
+  },
+  {
+    type: 'item',
+    label: 'Roles',
+    href: '/admin/roles',
+    icon: 'ti-shield-check',
+    roles: ['Admin', 'Administrador'],
+  },
+
+  { type: 'section', label: 'Configuración' },
+  { type: 'item', label: 'Ajustes', href: '/configuracion', icon: 'ti-settings' },
+  { type: 'item', label: 'Reportes', href: '/reportes', icon: 'ti-chart-dots' },
+
+  { type: 'section', label: 'Ayuda' },
+  { type: 'item', label: 'Manual de usuario', href: '/manual', icon: 'ti-book' },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user: SessionUser | null;
+  open: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ user, open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
+    return pathname?.startsWith(href);
   };
 
+  const userRoles = user?.roles ?? [];
+
+  const visibleNav = navigation.filter((item) => {
+    if (item.type === 'section') return true;
+    if (!item.roles) return true;
+    return item.roles.some((r) => userRoles.includes(r));
+  });
+
   return (
-    <nav className="pc-sidebar">
-      <div className="navbar-wrapper">
-        <div className="m-header">
-          <Link href="/" className="b-brand text-primary d-flex align-items-center" style={{ gap: '0.1rem' }}>
+    <>
+      {/* Overlay móvil */}
+      <div
+        className={`fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm transition-opacity lg:hidden ${
+          open
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <aside
+        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+        aria-label="Menú principal"
+      >
+        {/* Branding */}
+        <div className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 px-4">
+          <Link
+            href="/"
+            className="flex items-center gap-1"
+            onClick={onClose}
+          >
             <img
               src="/logo.png"
-              className="img-fluid logo-lg"
-              width={70}
-              height={70}
-              alt="logo"
-              style={{ background: 'none', borderRadius: 0, boxShadow: 'none', objectFit: 'contain' }}
+              alt="Cementerio GAD Checa"
+              className="h-10 w-10 object-contain"
             />
-            <span
-              className="fw-bold"
-              style={{
-                fontSize: '1.4rem',
-                color: '#1a237e',
-                letterSpacing: 0,
-                fontFamily: 'Montserrat, Segoe UI, Arial, sans-serif',
-                textTransform: 'lowercase',
-              }}
-            >
-              cementer<span style={{ color: '#43a047' }}>io</span>
+            <span className="font-display text-xl font-bold lowercase tracking-tight text-brand-dark">
+              cementer<span className="text-brand-accent">io</span>
             </span>
           </Link>
         </div>
-        <div className="navbar-content">
-          <ul className="pc-navbar">
-            {navigation.map((item, index) => {
-              if ('section' in item) {
+
+        {/* Navegación */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <ul className="space-y-0.5">
+            {visibleNav.map((item, idx) => {
+              if (item.type === 'section') {
                 return (
-                  <li key={index} className="pc-item pc-caption">
-                    <label>{item.section}</label>
-                    <i className="ti ti-dashboard"></i>
+                  <li
+                    key={`s-${idx}`}
+                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 first:mt-0"
+                  >
+                    {item.label}
                   </li>
                 );
               }
+              const active = isActive(item.href);
               return (
-                <li key={index} className={`pc-item ${isActive(item.href) ? 'active' : ''}`}>
-                  <Link href={item.href} className="pc-link">
-                    <span className="pc-micon"><i className={`ti ${item.icon}`}></i></span>
-                    <span className="pc-mtext">{item.label}</span>
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      active
+                        ? 'bg-primary-50 font-semibold text-primary-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-5 w-5 items-center justify-center text-base ${
+                        active
+                          ? 'text-primary-600'
+                          : 'text-slate-400 group-hover:text-slate-600'
+                      }`}
+                    >
+                      <i className={`ti ${item.icon}`} />
+                    </span>
+                    <span className="flex-1">{item.label}</span>
+                    {active && (
+                      <span
+                        aria-hidden="true"
+                        className="h-1.5 w-1.5 rounded-full bg-primary-500"
+                      />
+                    )}
                   </Link>
                 </li>
               );
             })}
           </ul>
+        </nav>
+
+        {/* Footer del sidebar */}
+        <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-400">
+          <div className="flex items-center justify-between">
+            <span>v1.0.0</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Operativo
+            </span>
+          </div>
         </div>
-      </div>
-    </nav>
+      </aside>
+    </>
   );
 }

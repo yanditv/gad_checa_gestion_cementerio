@@ -1,19 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import type { SessionUser } from './DashboardLayout';
 
 interface HeaderProps {
-  userName?: string;
-  userRole?: string;
+  user: SessionUser | null;
+  onToggleSidebar: () => void;
 }
 
-export function Header({
-  userName = 'Usuario',
-  userRole = 'Usuario',
-}: HeaderProps) {
+export function Header({ user, onToggleSidebar }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar dropdowns al hacer click fuera.
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowNotifications(false);
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -25,157 +41,178 @@ export function Header({
         credentials: 'same-origin',
       });
     } catch {
-      // Ignoramos: aún si falla, redirigimos al login (cookie del cliente queda
-      // limpia desde el endpoint y el middleware reaccionará en la próxima request).
+      /* ignoramos */
     }
     window.location.href = '/auth/login';
   };
 
+  const displayName = user
+    ? `${user.nombre ?? ''} ${user.apellido ?? ''}`.trim() || 'Usuario'
+    : 'Usuario';
+  const initials = displayName
+    .split(/\s+/)
+    .map((p) => p.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join('');
+  const role = user?.roles?.[0] ?? '';
+
   return (
-    <header className="pc-header">
-      <div className="header-wrapper">
-        <div className="me-auto pc-mob-drp">
-          <ul className="list-unstyled mb-0 d-flex align-items-center">
-            <li className="pc-h-item pc-sidebar-collapse">
-              <a
-                href="#"
-                className="pc-head-link ms-0"
-                id="sidebar-hide"
-                aria-label="Ocultar menú"
-              >
-                <i className="ti ti-menu-2"></i>
-              </a>
-            </li>
-            <li className="pc-h-item pc-sidebar-popup">
-              <a
-                href="#"
-                className="pc-head-link ms-0"
-                id="mobile-collapse"
-                aria-label="Abrir menú móvil"
-              >
-                <i className="ti ti-menu-2"></i>
-              </a>
-            </li>
-          </ul>
+    <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-slate-200 bg-white/95 backdrop-blur lg:left-64">
+      <div className="flex h-full items-center gap-3 px-4 sm:px-6">
+        {/* Toggle sidebar móvil */}
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 lg:hidden"
+          onClick={onToggleSidebar}
+          aria-label="Abrir menú"
+        >
+          <i className="ti ti-menu-2 text-xl" />
+        </button>
+
+        {/* Buscador (placeholder global, conectaremos al backend en fase posterior) */}
+        <div className="hidden flex-1 max-w-md md:block">
+          <div className="relative">
+            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              placeholder="Buscar contratos, personas, bóvedas…"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+            />
+          </div>
         </div>
 
-        <div className="ms-auto">
-          <ul className="list-unstyled mb-0 d-flex align-items-center">
-            <li className="dropdown pc-h-item">
-              <a
-                href="#"
-                className="pc-head-link dropdown-toggle arrow-none me-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setShowNotifications(!showNotifications);
-                  setShowUserMenu(false);
-                }}
-              >
-                <i className="ti ti-mail"></i>
-              </a>
-              {showNotifications && (
-                <div className="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown show">
-                  <div className="dropdown-header d-flex align-items-center justify-content-between">
-                    <h5 className="m-0">Notificaciones</h5>
+        <div className="flex-1 md:hidden" />
+
+        <div className="flex items-center gap-1" ref={dropdownRef}>
+          {/* Notificaciones */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowNotifications((v) => !v);
+                setShowUserMenu(false);
+              }}
+              className="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+              aria-label="Notificaciones"
+            >
+              <i className="ti ti-bell text-xl" />
+              {/* Punto de notificaciones — futuro: badge dinámico */}
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger-500" />
+            </button>
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                  <span className="font-semibold text-slate-700">
+                    Notificaciones
+                  </span>
+                  <button
+                    type="button"
+                    className="text-xs text-primary-600 hover:underline"
+                    onClick={() => setShowNotifications(false)}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  <div className="px-4 py-8 text-center text-sm text-slate-400">
+                    No hay notificaciones nuevas.
+                  </div>
+                </div>
+                <Link
+                  href="/notify"
+                  className="block border-t border-slate-100 px-4 py-2 text-center text-xs font-medium text-primary-600 hover:bg-slate-50"
+                  onClick={() => setShowNotifications(false)}
+                >
+                  Ver todas
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Usuario */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowUserMenu((v) => !v);
+                setShowNotifications(false);
+              }}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-100"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+                {initials || 'U'}
+              </div>
+              <div className="hidden text-left sm:block">
+                <div className="text-sm font-semibold text-slate-700">
+                  {displayName}
+                </div>
+                {role && (
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                    {role}
+                  </div>
+                )}
+              </div>
+              <i className="ti ti-chevron-down hidden text-slate-400 sm:block" />
+            </button>
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
+                <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+                    {initials || 'U'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-slate-700">
+                      {displayName}
+                    </div>
+                    <div className="truncate text-xs text-slate-400">
+                      {user?.email ?? ''}
+                    </div>
+                  </div>
+                </div>
+                <ul className="py-1 text-sm">
+                  <li>
+                    <Link
+                      href="/cuenta"
+                      className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <i className="ti ti-user text-slate-400" /> Perfil
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/configuracion"
+                      className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <i className="ti ti-settings text-slate-400" />{' '}
+                      Configuración
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/cuenta"
+                      className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <i className="ti ti-lock text-slate-400" /> Cambiar
+                      contraseña
+                    </Link>
+                  </li>
+                  <li className="border-t border-slate-100">
                     <a
                       href="#"
-                      className="pc-head-link bg-transparent"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setShowNotifications(false);
-                      }}
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 px-4 py-2 text-danger-600 hover:bg-danger-50"
                     >
-                      <i className="ti ti-x text-danger"></i>
+                      <i className="ti ti-power" />
+                      {loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
                     </a>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <div className="dropdown-header px-0 text-wrap header-notification-scroll position-relative">
-                    <div className="list-group list-group-flush w-100">
-                      <div className="dropdown-item">
-                        No hay notificaciones nuevas
-                      </div>
-                    </div>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <div className="text-center py-2">
-                    <a href="/manual" className="link-primary">
-                      ver todos
-                    </a>
-                  </div>
-                </div>
-              )}
-            </li>
-
-            <li className="dropdown pc-h-item header-user-profile">
-              <a
-                href="#"
-                className="pc-head-link dropdown-toggle arrow-none me-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setShowUserMenu(!showUserMenu);
-                  setShowNotifications(false);
-                }}
-              >
-                <img
-                  src="/images/user/avatar-2.jpg"
-                  alt="user-image"
-                  className="user-avtar"
-                />
-                <span>{userName}</span>
-              </a>
-              {showUserMenu && (
-                <div className="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown show">
-                  <div className="dropdown-header">
-                    <div className="d-flex mb-1">
-                      <div className="flex-shrink-0">
-                        <img
-                          src="/images/user/avatar-2.jpg"
-                          alt="user-image"
-                          className="user-avtar wid-35"
-                        />
-                      </div>
-                      <div className="flex-grow-1 ms-3">
-                        <h6 className="mb-1">{userName}</h6>
-                        <span>{userRole}</span>
-                      </div>
-                      <a
-                        className="pc-head-link bg-transparent"
-                        href="#"
-                        onClick={handleLogout}
-                        aria-label="Cerrar sesión"
-                      >
-                        <i className="ti ti-power text-danger"></i>
-                      </a>
-                    </div>
-                  </div>
-                  <a href="/cuenta" className="dropdown-item">
-                    <i className="ti ti-user"></i>
-                    <span>Perfil</span>
-                  </a>
-                  <a href="/configuracion" className="dropdown-item">
-                    <i className="ti ti-settings"></i>
-                    <span>Configuración</span>
-                  </a>
-                  <a href="/cuenta" className="dropdown-item">
-                    <i className="ti ti-lock"></i>
-                    <span>Cambiar Contraseña</span>
-                  </a>
-                  <div className="dropdown-divider"></div>
-                  <a
-                    href="#"
-                    className="dropdown-item"
-                    onClick={handleLogout}
-                    style={{ color: '#ef4444' }}
-                  >
-                    <i className="ti ti-power"></i>
-                    <span>
-                      {loggingOut ? 'Cerrando sesión…' : 'Cerrar Sesión'}
-                    </span>
-                  </a>
-                </div>
-              )}
-            </li>
-          </ul>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

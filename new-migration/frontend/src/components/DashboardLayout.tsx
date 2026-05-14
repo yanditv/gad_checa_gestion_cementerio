@@ -10,7 +10,8 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-interface SessionUser {
+export interface SessionUser {
+  id: string;
   nombre: string;
   apellido: string;
   email: string;
@@ -21,7 +22,9 @@ export function DashboardLayout({ children }: LayoutProps) {
   const pathname = usePathname();
   const isAuthRoute = pathname?.startsWith('/auth/');
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Apaga el loader inicial del template Able Pro tras 500ms (paridad legado).
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const loader = document.querySelector('.loader-bg') as HTMLElement | null;
@@ -30,6 +33,7 @@ export function DashboardLayout({ children }: LayoutProps) {
     return () => window.clearTimeout(timeout);
   }, []);
 
+  // Carga datos de sesión para Header y Sidebar.
   useEffect(() => {
     if (isAuthRoute) {
       setUser(null);
@@ -48,21 +52,33 @@ export function DashboardLayout({ children }: LayoutProps) {
     };
   }, [isAuthRoute, pathname]);
 
+  // Cierra el sidebar móvil al cambiar de ruta.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   if (isAuthRoute) {
     return <>{children}</>;
   }
 
-  const displayName = user ? `${user.nombre} ${user.apellido}`.trim() : 'Usuario';
-  const role = user?.roles?.[0] ?? '';
-
   return (
-    <>
-      <Sidebar />
-      <Header userName={displayName} userRole={role} />
-      <main className="pc-container">
-        <div className="pc-content">{children}</div>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-700">
+      <Sidebar
+        user={user}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <Header
+        user={user}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+      />
+
+      <main className="lg:ml-64 pt-16">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
+        <Footer />
       </main>
-      <Footer />
-    </>
+    </div>
   );
 }
