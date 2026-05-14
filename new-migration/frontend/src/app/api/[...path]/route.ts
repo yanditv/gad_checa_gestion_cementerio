@@ -4,13 +4,18 @@
  * cookie httpOnly y lo anexa como `Authorization: Bearer <token>` antes de
  * proxyar al backend NestJS.
  *
- * Mantiene el query string, el body, el método y desempaqueta la convención
- * `{ success: true, data, meta }` del `ApiResponseInterceptor` del backend
- * para que el cliente reciba el shape esperado (`{ data, meta }`).
+ * Soporta:
+ *   - JSON (body se reenvía como texto, Content-Type queda en application/json).
+ *   - Multipart (uploads): el body se reenvía como ArrayBuffer y se respeta el
+ *     Content-Type original (incluye el `boundary=...`). No setear el JSON
+ *     header de authHeaders en este caso.
+ *
+ * Desempaqueta la convención `{ success, data, meta }` del backend solo cuando
+ * la respuesta es JSON. Streams binarios (PDF, Excel) pasan tal cual.
  */
 import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../_utils';
-import { authHeaders } from '@/lib/auth';
+import { authHeaders, readAuthToken } from '@/lib/auth';
 
 const PASSTHROUGH_METHODS = new Set([
   'GET',
@@ -36,16 +41,37 @@ async function proxy(
   }
 
   const method = request.method;
+  const incomingType = request.headers.get('content-type') ?? '';
+  const isMultipart = incomingType.includes('multipart/form-data');
+
+  const headers = new Headers();
+  if (isMultipart) {
+    // Preservar el boundary del multipart original.
+    headers.set('Content-Type', incomingType);
+  } else {
+    // authHeaders() sólo aplica el Content-Type JSON cuando no lo definimos.
+    const base = await authHeaders();
+    new Headers(base).forEach((v, k) => headers.set(k, v));
+  }
+
+  const token = await readAuthToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   const init: RequestInit = {
     method,
-    headers: await authHeaders(),
+    headers,
     cache: 'no-store',
   };
 
   if (method !== 'GET' && method !== 'HEAD') {
-    // Reenviamos el cuerpo crudo si lo hay
-    const body = await request.text();
-    if (body) init.body = body;
+    if (isMultipart) {
+      init.body = await request.arrayBuffer();
+    } else {
+      const body = await request.text();
+      if (body) init.body = body;
+    }
   }
 
   let response: Response;
@@ -62,11 +88,11 @@ async function proxy(
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
     const buffer = await response.arrayBuffer();
-    const headers = new Headers();
-    if (contentType) headers.set('Content-Type', contentType);
+    const passHeaders = new Headers();
+    if (contentType) passHeaders.set('Content-Type', contentType);
     const disp = response.headers.get('content-disposition');
-    if (disp) headers.set('Content-Disposition', disp);
-    return new Response(buffer, { status: response.status, headers });
+    if (disp) passHeaders.set('Content-Disposition', disp);
+    return new Response(buffer, { status: response.status, headers: passHeaders });
   }
 
   const payload = await response.json().catch(() => null);

@@ -7,6 +7,7 @@ import {
   getContratoEstado,
 } from '@/lib/contratos-server';
 import { RelacionActions } from './RelacionActions';
+import { DocumentosSection } from './DocumentosSection';
 
 export default async function ContratoDetailsPage({
   params,
@@ -427,6 +428,9 @@ export default async function ContratoDetailsPage({
               </div>
             </div>
           )}
+
+          {/* ----- Documentos adjuntos ----- */}
+          <DocumentosSection contratoId={contrato.id} />
 
           {/* ----- Contratos relacionados / renovaciones ----- */}
           <div className="card mb-4">

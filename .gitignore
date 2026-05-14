@@ -371,3 +371,4 @@ FodyWeavers.xsd
 output
 .playwright-cli
 gad_checa_gestion_cementerio/wwwroot/documentos/
+new-migration/backend/storage/

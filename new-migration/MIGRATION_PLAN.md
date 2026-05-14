@@ -360,7 +360,7 @@ este archivo.
     [x] 2.b Wizard validado + numeración atómica + planes    ← 2026-05-13
     [x] 2.c Renovación                                       ← 2026-05-13
     [x] 2.d Relacionar contratos                             ← 2026-05-13
-    [ ] 2.e Documentos firmados (upload)
+    [x] 2.e Documentos firmados (upload)                     ← 2026-05-13
     [ ] 2.f PDF oficial del contrato
 [ ] Fase 2  — Contratos: listado, wizard, renovación, relacionar, documentos, PDF
 [ ] Fase 3  — Cobros: multi-cuota, descuentos, factura PDF, anulación

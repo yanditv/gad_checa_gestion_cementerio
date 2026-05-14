@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,9 +9,20 @@ import {
   Post,
   Put,
   Query,
+  Res,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { ContratoService } from './contrato.service';
+import {
+  DocumentoService,
+  DocumentoTipo,
+  MAX_DOCUMENT_SIZE_BYTES,
+} from './documento.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
@@ -23,7 +35,10 @@ import {
 @ApiBearerAuth()
 @Controller('contratos')
 export class ContratoController {
-  constructor(private service: ContratoService) {}
+  constructor(
+    private service: ContratoService,
+    private documentos: DocumentoService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar contratos paginados (con filtros)' })
@@ -117,6 +132,67 @@ export class ContratoController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.service.romperRelacion(id, user.id);
+  }
+
+  // -------- Documentos firmados --------
+
+  @Get(':id/documentos')
+  @ApiOperation({ summary: 'Listar documentos adjuntos del contrato' })
+  listarDocumentos(@Param('id', ParseIntPipe) id: number) {
+    return this.documentos.listByContrato(id);
+  }
+
+  @Post(':id/documentos')
+  @ApiOperation({
+    summary: 'Subir un documento PDF adjunto al contrato',
+    description: 'Multipart/form-data. Campo "file" (PDF ≤ 10 MB).',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_DOCUMENT_SIZE_BYTES },
+    }),
+  )
+  subirDocumento(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('tipo') tipo: DocumentoTipo | undefined,
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Falta el archivo (campo "file")');
+    }
+    return this.documentos.upload({
+      contratoId: id,
+      file,
+      tipo,
+      userId: user.id,
+    });
+  }
+
+  @Get(':id/documentos/:docId/file')
+  @ApiOperation({ summary: 'Descargar el archivo del documento' })
+  async descargarDocumento(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('docId', ParseIntPipe) docId: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const { doc, stream } = await this.documentos.getForDownload(id, docId);
+    res.set({
+      'Content-Type': doc.mimeType,
+      'Content-Disposition': `inline; filename="${doc.nombreOriginal}"`,
+    });
+    return new StreamableFile(stream);
+  }
+
+  @Delete(':id/documentos/:docId')
+  @ApiOperation({ summary: 'Eliminar (lógicamente) un documento adjunto' })
+  eliminarDocumento(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('docId', ParseIntPipe) docId: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.documentos.remove(id, docId, user.id);
   }
 
   @Put(':id')
