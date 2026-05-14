@@ -58,8 +58,9 @@ model Usuario {
   gadInformacionesCreadas      GADInformacion[] @relation("GADUsuarioCreador")
   gadInformacionesActualizadas GADInformacion[] @relation("GADUsuarioActualizador")
 
-  documentosSubidos Documento[]
-  notificaciones    Notificacion[]
+  documentosSubidos   Documento[]
+  notificaciones      Notificacion[]
+  catastrosImportados CatastroImport[]
 
   usuarioRols UsuarioRol[]
 }
@@ -522,3 +523,27 @@ model Notificacion {
   @@index([usuarioId, leida])
   @@index([fechaCreacion])
 }
+
+// =============================================================================
+// Importación de catastro on-demand (Fase 9.2)
+// Log persistido por cada subida de Excel para auditoría y vista de estado.
+// =============================================================================
+model CatastroImport {
+  id                  Int      @id @default(autoincrement())
+  filename            String
+  estado              String   @default("EN_PROGRESO") // EN_PROGRESO | COMPLETADO | ERROR
+  registrosProcesados Int      @default(0)
+  bloquesCreados      Int      @default(0)
+  bovedasCreadas      Int      @default(0)
+  contratosCreados    Int      @default(0)
+  errores             String?  // JSON con la lista de errores (máx 100)
+  mensajeError        String?  // sólo si estado=ERROR (excepción global)
+  fechaInicio         DateTime @default(now())
+  fechaFin            DateTime?
+
+  adminUserId String
+  adminUser   Usuario @relation(fields: [adminUserId], references: [id])
+
+  @@index([fechaInicio])
+}
+

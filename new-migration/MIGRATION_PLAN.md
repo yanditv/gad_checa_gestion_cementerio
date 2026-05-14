@@ -399,6 +399,9 @@ este archivo.
     [x] 7.4 Bloqueo eliminación admin@teobu.com (@yanditv)    ← 2026-05-14
 [ ] Fase 8  — Notificaciones + job
 [ ] Fase 9  — Configuración + catastro on-demand
+    [ ] 9.1 Edición Cementerio + GADInformacion (@Famiitry)
+    [x] 9.2 Importador catastro on-demand (@yanditv)          ← 2026-05-14
+    [ ] 9.3 Vista de estado de última importación (@Famiitry)
 [ ] Fase 10 — Pulido / QA / entrega
 ```
 
