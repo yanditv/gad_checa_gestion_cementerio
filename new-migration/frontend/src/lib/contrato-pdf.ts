@@ -1,265 +1,482 @@
+/**
+ * Generador del PDF oficial del contrato. Paridad con el legado .NET
+ * (Controllers/Pdf/ContratoPDF.cs):
+ *   - Página A4 con logo del GAD centrado en el header.
+ *   - Título centrado.
+ *   - Preámbulo con fechas en formato "dd de MMMM del yyyy".
+ *   - 6 cláusulas (PRIMERA COMPARECIENTES, SEGUNDA ANTECEDENTE, TERCER
+ *     OBJETO, CUARTA PRECIO, QUINTA OTRA, SEXTA).
+ *   - Bloque OBSERVACIONES opcional.
+ *   - Bloque de firmas: ARRENDADOR (presidente) y ARRENDATARIO (responsable
+ *     principal con CI), ambos centrados, separados horizontalmente.
+ *   - Footer con dirección, teléfono y correo del cementerio.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import PDFDocument from 'pdfkit';
-import { formatCurrency, formatDate } from '@/lib/contratos-server';
 
-function formatLongDate(value?: string | Date | null) {
-  if (!value) return 'fecha no disponible';
+const PAGE_MARGIN_HORIZONTAL = 60;
+const PAGE_MARGIN_VERTICAL = 60;
+const HEADER_HEIGHT = 70;
+const FOOTER_HEIGHT = 36;
+
+type RichSegment = string | { text: string; bold?: boolean };
+
+function truncate(text: string | null | undefined, maxLength: number): string {
+  if (!text) return '';
+  return text.length <= maxLength
+    ? text
+    : `${text.slice(0, maxLength - 3)}...`;
+}
+
+const MESES_ES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+function parseDate(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
   const date = typeof value === 'string' ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return 'fecha no disponible';
-
-  return new Intl.DateTimeFormat('es-EC', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function addSectionTitle(doc: PDFKit.PDFDocument, title: string) {
-  doc
-    .moveDown(0.45)
-    .font('Helvetica-Bold')
-    .fontSize(11)
-    .fillColor('#1f2937')
-    .text(title)
-    .moveDown(0.08);
+function formatFechaLarga(value: string | Date | null | undefined) {
+  const date = parseDate(value);
+  if (!date) return { dia: '--', mes: '--------', anio: '----' };
+  return {
+    dia: String(date.getDate()).padStart(2, '0'),
+    mes: MESES_ES[date.getMonth()] ?? '--------',
+    anio: String(date.getFullYear()),
+  };
 }
 
-function addLabelValue(doc: PDFKit.PDFDocument, label: string, value: string) {
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(9.2)
-    .fillColor('#111827')
-    .text(`${label}: `, { continued: true })
-    .font('Helvetica')
-    .text(value)
-    .moveDown(0.02);
+function formatCurrencyUsd(value: number | string | null | undefined) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(Number(value ?? 0));
 }
 
-function addParagraph(doc: PDFKit.PDFDocument, text: string) {
-  doc
-    .font('Helvetica')
-    .fontSize(9.6)
-    .fillColor('#1f2937')
-    .text(text, { align: 'justify', lineGap: 1.5 })
-    .moveDown(0.12);
+function joinNombre(persona?: {
+  nombre?: string | null;
+  apellido?: string | null;
+} | null): string {
+  if (!persona) return '';
+  return `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim();
 }
 
-function ensureSpace(doc: PDFKit.PDFDocument, requiredHeight: number) {
-  const availableHeight = doc.page.height - doc.page.margins.bottom - doc.y;
-  if (availableHeight < requiredHeight) {
-    doc.addPage();
+function findContractLogo(): string | null {
+  const candidates = [
+    path.join(process.cwd(), 'public', 'logo.png'),
+    path.join(process.cwd(), 'public', 'images', 'logo_gad.png'),
+    path.join(process.cwd(), 'public', 'images', 'logo.png'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers de dibujo
+// ---------------------------------------------------------------------------
+
+function richParagraph(
+  doc: PDFKit.PDFDocument,
+  segments: RichSegment[],
+  contentWidth: number,
+) {
+  const normalized = segments.map<{ text: string; bold: boolean }>((s) =>
+    typeof s === 'string'
+      ? { text: s, bold: false }
+      : { text: s.text ?? '', bold: !!s.bold },
+  );
+
+  doc.fontSize(10.5).fillColor('#1f2937');
+  normalized.forEach((seg, idx) => {
+    doc.font(seg.bold ? 'Helvetica-Bold' : 'Helvetica');
+    const isLast = idx === normalized.length - 1;
+    doc.text(seg.text, {
+      align: 'justify',
+      lineGap: 2,
+      width: contentWidth,
+      continued: !isLast,
+    });
+  });
+  doc.moveDown(0.4);
+}
+
+function drawHeader(doc: PDFKit.PDFDocument, logoPath: string | null) {
+  if (!logoPath) return;
+  try {
+    const pageWidth = doc.page.width;
+    const imgWidth = 56;
+    const x = (pageWidth - imgWidth) / 2;
+    doc.image(logoPath, x, 16, { width: imgWidth, height: 56 });
+  } catch {
+    // ignorar errores de imagen
   }
 }
 
-export async function buildContratoPdfBuffer(contrato: any) {
+function drawFooter(
+  doc: PDFKit.PDFDocument,
+  cementerio: {
+    direccion?: string | null;
+    telefono?: string | null;
+    email?: string | null;
+  },
+) {
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const y = doc.page.height - FOOTER_HEIGHT + 8;
+
+  const direccion = truncate(cementerio.direccion || 'Checa, Ecuador', 60);
+  const telefono = truncate(cementerio.telefono || '02-XXXXXXX', 15);
+  const email = truncate(cementerio.email || 'checa@example.gob.ec', 40);
+
+  doc.save();
+  doc.fontSize(8.4).fillColor('#475569');
+  doc
+    .font('Helvetica-Bold')
+    .text('Dirección: ', left, y, {
+      continued: true,
+      width: right - left,
+      align: 'center',
+    })
+    .font('Helvetica')
+    .text(`${direccion}  |  `, { continued: true })
+    .font('Helvetica-Bold')
+    .text('Teléfono: ', { continued: true })
+    .font('Helvetica')
+    .text(`${telefono}  |  `, { continued: true })
+    .font('Helvetica-Bold')
+    .text('Correo: ', { continued: true })
+    .font('Helvetica')
+    .text(email);
+  doc.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Generación
+// ---------------------------------------------------------------------------
+
+export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
   return await new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
-      margin: 28,
+      margins: {
+        top: PAGE_MARGIN_VERTICAL + HEADER_HEIGHT,
+        bottom: PAGE_MARGIN_VERTICAL + FOOTER_HEIGHT,
+        left: PAGE_MARGIN_HORIZONTAL,
+        right: PAGE_MARGIN_HORIZONTAL,
+      },
       info: {
         Title: `Contrato ${contrato.numeroSecuencial || contrato.id}`,
         Author: 'GAD Parroquial de Checa',
-        Subject: 'Contrato de arrendamiento de boveda',
+        Subject: 'Contrato de arrendamiento de bóveda',
       },
     });
 
     const chunks: Buffer[] = [];
-
     doc.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const cementerio = contrato.boveda?.bloque?.cementerio;
-    const responsablePrincipal = contrato.responsables?.[0]?.responsable?.persona;
-    const cuotas = contrato.cuotas || [];
-    const logoPath = path.join(process.cwd(), 'public', 'images', 'logo.jpeg');
-    const totalContrato =
-      cuotas.length > 0
-        ? cuotas.reduce((sum: number, cuota: any) => sum + Number(cuota.monto || 0), 0)
-        : Number(contrato.montoTotal || 0);
+    // -----------------------------------------------------------------------
+    // Datos derivados
+    // -----------------------------------------------------------------------
+    const cementerio = contrato.boveda?.bloque?.cementerio ?? {};
+    const difunto = contrato.difunto ?? {};
+    const responsable = contrato.responsables?.[0]?.responsable?.persona ?? {};
+    const boveda = contrato.boveda ?? {};
+    const piso = boveda.piso ?? null;
+    const bloque = boveda.bloque ?? {};
+    const cuotas: Array<{ monto: number | string }> = contrato.cuotas ?? [];
 
-    const nombreDifunto =
-      `${contrato.difunto?.nombre || 'No especificado'} ${contrato.difunto?.apellido || ''}`.trim();
-    const nombreResponsable =
-      `${responsablePrincipal?.nombre || '________________'} ${responsablePrincipal?.apellido || ''}`.trim();
-    const presidente = cementerio?.presidente || 'Presidente del GAD Parroquial de Checa';
+    const presidente = truncate(
+      cementerio.presidente || 'Presidente del GAD Parroquial de Checa',
+      60,
+    );
+    const entidadFinanciera = cementerio.entidadFinanciera || 'BANCO';
+    const nombreEntidadFinanciera = truncate(
+      cementerio.nombreEntidadFinanciera || 'Banco del Austro',
+      40,
+    );
+    const numeroCuenta = truncate(cementerio.numeroCuenta || '2000324704', 20);
+    const abreviaturaBanco =
+      String(entidadFinanciera).toUpperCase() === 'BANCO'
+        ? 'el banco'
+        : 'la Cooperativa de Ahorro y Crédito';
+
+    const responsableNombre = truncate(
+      joinNombre(responsable) || '________________',
+      50,
+    );
+    const responsableCI = truncate(
+      responsable.numeroIdentificacion || '__________',
+      20,
+    );
+    const responsableTelefono = truncate(responsable.telefono || '__________', 15);
+    const responsableEmail = truncate(
+      responsable.email || '________________',
+      30,
+    );
+
+    const difuntoNombre = truncate(
+      joinNombre(difunto) || 'No especificado',
+      50,
+    );
+    const difuntoCI = truncate(difunto.numeroIdentificacion || '__________', 20);
+
+    const bovedaNumero = truncate(boveda.numero || '________________', 20);
+    const bloqueDescripcion = truncate(
+      bloque.descripcion || bloque.nombre || '________________',
+      30,
+    );
+
     const numeroContrato = contrato.numeroSecuencial || `CTR-${contrato.id}`;
-    const left = doc.page.margins.left;
-    const right = doc.page.width - doc.page.margins.right;
-    const contentWidth = right - left;
+    const totalCuotas = cuotas.reduce(
+      (sum, c) => sum + Number(c.monto ?? 0),
+      0,
+    );
+    const montoTotal = totalCuotas > 0 ? totalCuotas : Number(contrato.montoTotal ?? 0);
 
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, left, 26, { width: 44, height: 44 });
+    const fechaInicio = formatFechaLarga(contrato.fechaInicio);
+    const fechaFin = formatFechaLarga(contrato.fechaFin);
+    const aniosArriendo = cuotas.length || Number(contrato.numeroDeMeses) || 0;
+
+    // Observaciones: truncar a 300 chars como hace el legado.
+    let observaciones: string | null = contrato.observaciones?.trim() || null;
+    if (observaciones && observaciones.length > 300) {
+      observaciones = `${observaciones.slice(0, 297)}...`;
     }
 
+    // -----------------------------------------------------------------------
+    // Decoración por página (header + footer en cada página, incl. saltos)
+    // -----------------------------------------------------------------------
+    const logoPath = findContractLogo();
+    const decoratePage = () => {
+      drawHeader(doc, logoPath);
+      drawFooter(doc, cementerio);
+    };
+    doc.on('pageAdded', decoratePage);
+    decoratePage(); // primera página
+
+    const contentWidth =
+      doc.page.width - doc.page.margins.left - doc.page.margins.right;
+
+    // -----------------------------------------------------------------------
+    // Título
+    // -----------------------------------------------------------------------
     doc
       .font('Helvetica-Bold')
-      .fontSize(14)
+      .fontSize(13)
       .fillColor('#0f172a')
-      .text('GAD Parroquial de Checa', left + 60, 30)
-      .fontSize(9.5)
-      .font('Helvetica')
-      .fillColor('#475569')
-      .text('Sistema de Gestion de Cementerio', left + 60, 48)
-      .text(`Contrato: ${numeroContrato}`, left + 60, 62);
-
-    doc
-      .moveTo(left, 86)
-      .lineTo(right, 86)
-      .strokeColor('#cbd5e1')
-      .stroke();
-
-    doc.y = 98;
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(11.5)
-      .fillColor('#111827')
       .text(
-        `CONTRATO DE ARRIENDO DE BOVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. ${numeroContrato}`,
+        truncate(
+          `CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. ${numeroContrato}`,
+          100,
+        ),
         { align: 'center', width: contentWidth },
       );
-
-    doc.moveDown(0.45);
-
-    addParagraph(
-      doc,
-      `En la Parroquia de Checa, a los ${formatLongDate(
-        contrato.fechaInicio,
-      )}, comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador el Gobierno Parroquial de Checa, representado por ${presidente}; y por otra, ${nombreResponsable}, con identificacion ${
-        responsablePrincipal?.numeroIdentificacion || '__________'
-      }, para suscribir el presente contrato de arrendamiento de conformidad con las siguientes clausulas.`,
-    );
-
-    addParagraph(
-      doc,
-      `PRIMERA. Comparecen por una parte el Gobierno Parroquial de Checa, a quien en lo posterior se le llamara ARRENDADOR; y por otra parte ${nombreResponsable}, a quien en lo posterior se le llamara ARRENDATARIO.`,
-    );
-
-    addParagraph(
-      doc,
-      'SEGUNDA. El Gobierno Parroquial de Checa administra el Cementerio General de la Parroquia y se encuentra facultado para suscribir contratos de arrendamiento o venta de boveda del cementerio.',
-    );
-
-    addParagraph(
-      doc,
-      `TERCERA. El presente contrato otorga en arriendo la boveda numero ${
-        contrato.boveda?.numero || '________________'
-      } del bloque ${contrato.boveda?.bloque?.nombre || '________________'} para los restos de ${nombreDifunto}, con identificacion ${
-        contrato.difunto?.numeroIdentificacion || 'No especificado'
-      }.`,
-    );
-
-    addParagraph(
-      doc,
-      `CUARTA. El valor del contrato es ${formatCurrency(totalContrato)}. El pago se registra en ${
-        cementerio?.nombreEntidadFinanciera || 'Banco del Austro'
-      }, cuenta ${cementerio?.numeroCuenta || '2000324704'}.`,
-    );
-
-    addParagraph(
-      doc,
-      `QUINTA. El derecho de uso se concede desde ${formatDate(contrato.fechaInicio)} hasta ${formatDate(
-        contrato.fechaFin,
-      )}, con un plazo de ${cuotas.length || contrato.numeroDeMeses || 0} anos.`,
-    );
-
-    addParagraph(
-      doc,
-      'SEXTA. Las partes declaran conocer y aceptar el contenido del presente documento y firman para constancia.',
-    );
-
-    ensureSpace(doc, 160);
-
-    addSectionTitle(doc, 'Datos del contrato');
-    addLabelValue(doc, 'Estado', contrato.estado ? 'Activo' : 'Inactivo');
-    addLabelValue(doc, 'Tipo', contrato.esRenovacion ? 'Renovacion' : 'Nuevo');
-    addLabelValue(doc, 'Monto total', formatCurrency(contrato.montoTotal));
-    addLabelValue(doc, 'Observaciones', contrato.observaciones || 'Sin observaciones');
-
-    addSectionTitle(doc, 'Datos del difunto');
-    addLabelValue(doc, 'Nombre', nombreDifunto);
-    addLabelValue(doc, 'Identificacion', contrato.difunto?.numeroIdentificacion || '-');
-    addLabelValue(doc, 'Fecha de nacimiento', formatDate(contrato.difunto?.fechaNacimiento));
-    addLabelValue(doc, 'Fecha de defuncion', formatDate(contrato.difunto?.fechaDefuncion));
-
-    addSectionTitle(doc, 'Responsables');
-    if ((contrato.responsables || []).length === 0) {
-      addLabelValue(doc, 'Responsables', 'Sin responsables registrados');
-    } else {
-      for (const item of contrato.responsables) {
-        const persona = item.responsable?.persona;
-        addLabelValue(
-          doc,
-          `${persona?.nombre || '-'} ${persona?.apellido || ''}`.trim(),
-          [
-            persona?.numeroIdentificacion || '-',
-            item.responsable?.parentesco || 'Sin parentesco',
-            persona?.telefono || 'Sin telefono',
-            persona?.email || 'Sin correo',
-          ].join(' | '),
-        );
-      }
-    }
-
-    addSectionTitle(doc, 'Cuotas');
-    if (cuotas.length === 0) {
-      addLabelValue(doc, 'Cuotas', 'Sin cuotas registradas');
-    } else {
-      cuotas.forEach((cuota: any) => {
-        addLabelValue(
-          doc,
-          `Cuota ${cuota.numero}`,
-          `${formatCurrency(cuota.monto)} | vence ${formatDate(cuota.fechaVencimiento)} | ${
-            cuota.pagada ? 'Pagada' : 'Pendiente'
-          }`,
-        );
-      });
-    }
-
-    ensureSpace(doc, 90);
     doc.moveDown(0.8);
 
-    const signatureTop = doc.y + 8;
+    // -----------------------------------------------------------------------
+    // Preámbulo
+    // -----------------------------------------------------------------------
+    richParagraph(
+      doc,
+      [
+        'En la Parroquia de Checa, a los ',
+        { text: fechaInicio.dia, bold: true },
+        ' días del mes de ',
+        { text: fechaInicio.mes, bold: true },
+        ' del ',
+        { text: fechaInicio.anio, bold: true },
+        ', comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ',
+        { text: presidente, bold: true },
+        '; por otro lado, el/la Sr/Sra. ',
+        { text: responsableNombre, bold: true },
+        ' con número de identidad ',
+        { text: responsableCI, bold: true },
+        ', número de teléfono ',
+        { text: responsableTelefono, bold: true },
+        ', correo electrónico ',
+        { text: responsableEmail, bold: true },
+        ', los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:',
+      ],
+      contentWidth,
+    );
 
-    doc
-      .moveTo(left + 20, signatureTop)
-      .lineTo(left + 180, signatureTop)
-      .strokeColor('#94a3b8')
-      .stroke();
-    doc
-      .moveTo(right - 180, signatureTop)
-      .lineTo(right - 20, signatureTop)
-      .strokeColor('#94a3b8')
-      .stroke();
+    // -----------------------------------------------------------------------
+    // Cláusulas
+    // -----------------------------------------------------------------------
+    richParagraph(
+      doc,
+      [
+        { text: 'PRIMERA COMPARECIENTES. -', bold: true },
+        ' Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ',
+        { text: presidente, bold: true },
+        '; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ',
+        { text: responsableNombre, bold: true },
+        ' a quien en lo posterior se le llamará Arrendatario.',
+      ],
+      contentWidth,
+    );
 
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(9)
-      .fillColor('#111827')
-      .text(nombreResponsable, left + 20, signatureTop + 6, { width: 160, align: 'center' })
-      .text(presidente, right - 180, signatureTop + 6, { width: 160, align: 'center' });
+    richParagraph(
+      doc,
+      [
+        { text: 'SEGUNDA ANTECEDENTE. -', bold: true },
+        ' El Gobierno Parroquial de Checa es la Institución Pública que administra el Cementerio General de la Parroquia, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.',
+      ],
+      contentWidth,
+    );
 
-    doc
-      .font('Helvetica')
-      .fontSize(8.2)
-      .fillColor('#475569')
-      .text('ARRENDATARIO', left + 20, signatureTop + 20, { width: 160, align: 'center' })
-      .text('ARRENDADOR', right - 180, signatureTop + 20, { width: 160, align: 'center' });
+    richParagraph(
+      doc,
+      [
+        { text: 'TERCER OBJETO. -', bold: true },
+        ' El Gobierno Parroquial de Checa, en su calidad de Administrador del Cementerio General de la Parroquia, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: ',
+        { text: difuntoNombre, bold: true },
+        ' con número de cédula ',
+        { text: difuntoCI, bold: true },
+        ', restos que serán depositados en la bóveda número ',
+        { text: bovedaNumero, bold: true },
+        ' en el bloque ',
+        { text: bloqueDescripcion, bold: true },
+        piso?.numero != null
+          ? `, piso ${piso.numero}.`
+          : '.',
+      ],
+      contentWidth,
+    );
 
-    doc.y = signatureTop + 38;
-    doc.moveDown(0.8);
-    doc
-      .fontSize(7.6)
-      .text(
-        `Direccion: ${cementerio?.direccion || 'Checa, Ecuador'} | Telefono: ${
-          cementerio?.telefono || '02-XXXXXXX'
-        } | Correo: ${cementerio?.email || 'checa@example.gob.ec'}`,
-        left,
-        doc.y,
-        { width: contentWidth, align: 'center' },
+    richParagraph(
+      doc,
+      [
+        { text: 'CUARTA: PRECIO. -', bold: true },
+        ' El valor por arriendo de la Bóveda es de ',
+        { text: formatCurrencyUsd(montoTotal), bold: true },
+        `, valor que fue cancelado con depósito en ${abreviaturaBanco} del ${nombreEntidadFinanciera} cta. # `,
+        { text: numeroCuenta, bold: true },
+      ],
+      contentWidth,
+    );
+
+    richParagraph(
+      doc,
+      [
+        { text: 'QUINTA: OTRA. -', bold: true },
+        ' La parte arrendadora aclara que una vez que el Gobierno Parroquial entrega el derecho de uso por ',
+        { text: `${aniosArriendo} años`, bold: true },
+        ' a partir de la fecha del ',
+        {
+          text: `${fechaInicio.dia} de ${fechaInicio.mes} del ${fechaInicio.anio}`,
+          bold: true,
+        },
+        ', la parte arrendataria. Vence el contrato el ',
+        {
+          text: `${fechaFin.dia} de ${fechaFin.mes} del ${fechaFin.anio}`,
+          bold: true,
+        },
+        '.',
+      ],
+      contentWidth,
+    );
+
+    richParagraph(
+      doc,
+      [
+        { text: 'SEXTA: -', bold: true },
+        ' Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.',
+      ],
+      contentWidth,
+    );
+
+    if (observaciones) {
+      richParagraph(
+        doc,
+        [
+          { text: 'OBSERVACIONES: -', bold: true },
+          ` ${observaciones}`,
+        ],
+        contentWidth,
       );
+    }
+
+    // -----------------------------------------------------------------------
+    // Firmas
+    // -----------------------------------------------------------------------
+    const signatureMinHeight = 110;
+    const availableHeight =
+      doc.page.height - doc.page.margins.bottom - doc.y;
+    if (availableHeight < signatureMinHeight) {
+      doc.addPage();
+    } else {
+      doc.moveDown(1.5);
+    }
+
+    const left = doc.page.margins.left;
+    const right = doc.page.width - doc.page.margins.right;
+    const colWidth = (right - left) / 2 - 30;
+    const lineY = doc.y;
+    const leftX = left + 20;
+    const rightX = right - 20 - colWidth;
+
+    doc
+      .strokeColor('#94a3b8')
+      .moveTo(leftX, lineY)
+      .lineTo(leftX + colWidth, lineY)
+      .stroke();
+    doc
+      .moveTo(rightX, lineY)
+      .lineTo(rightX + colWidth, lineY)
+      .stroke();
+
+    const textY = lineY + 4;
+    const labelStyle = (size = 9.5, bold = true) =>
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(size).fillColor('#111827');
+
+    labelStyle().text(presidente, leftX, textY, { width: colWidth, align: 'center' });
+    labelStyle(8.6, false).text(
+      'PRESIDENTE GAD CHECA',
+      leftX,
+      textY + 14,
+      { width: colWidth, align: 'center' },
+    );
+    labelStyle(8.6, false).text('ARRENDADOR', leftX, textY + 26, {
+      width: colWidth,
+      align: 'center',
+    });
+
+    labelStyle().text(
+      truncate(`Sr/Sra. ${responsableNombre}`, 40),
+      rightX,
+      textY,
+      { width: colWidth, align: 'center' },
+    );
+    labelStyle(8.6, false).text(
+      truncate(`CI. ${responsableCI}`, 25),
+      rightX,
+      textY + 14,
+      { width: colWidth, align: 'center' },
+    );
+    labelStyle(8.6, false).text('ARRENDATARIO', rightX, textY + 26, {
+      width: colWidth,
+      align: 'center',
+    });
 
     doc.end();
   });
