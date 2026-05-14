@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
@@ -16,10 +16,12 @@ export interface SessionUser {
   apellido: string;
   email: string;
   roles: string[];
+  mustChangePassword?: boolean;
 }
 
 export function DashboardLayout({ children }: LayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isAuthRoute = pathname?.startsWith('/auth/');
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,13 +46,21 @@ export function DashboardLayout({ children }: LayoutProps) {
       .then((res) => (res.ok ? res.json() : null))
       .then((payload) => {
         if (cancelled) return;
-        if (payload?.data) setUser(payload.data as SessionUser);
+        if (payload?.data) {
+          const session = payload.data as SessionUser;
+          setUser(session);
+          // Si el admin reseteó la contraseña, fuerza el cambio antes de
+          // permitir navegar por cualquier otra ruta del sistema.
+          if (session.mustChangePassword) {
+            router.replace('/auth/change-password');
+          }
+        }
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [isAuthRoute, pathname]);
+  }, [isAuthRoute, pathname, router]);
 
   // Cierra el sidebar móvil al cambiar de ruta.
   useEffect(() => {

@@ -306,6 +306,12 @@ export const usuariosApi = {
   update: (id: string, data: any) => api.put<any>(`/usuarios/${id}`, data),
   updateEstado: (id: string, estado: boolean) => api.patch<any>(`/usuarios/${id}/estado`, { estado }),
   setRoles: (id: string, roleIds: string[]) => api.put<any>(`/usuarios/${id}/roles`, { roleIds }),
+  resetPassword: (id: string, notifyByEmail = true) =>
+    api.post<{ success: boolean; emailSent: boolean; tempPassword: string | null }>(
+      `/usuarios/${id}/reset-password`,
+      { notifyByEmail },
+    ),
+  remove: (id: string) => api.delete<any>(`/usuarios/${id}`),
 };
 
 export const rolesApi = {
