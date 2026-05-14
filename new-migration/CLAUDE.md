@@ -51,6 +51,12 @@ al usuario** en vez de inventar.
   sólo si la suma de pagos cubre `monto + intereses`.
 - **Renovaciones encadenadas**: validar `vecesRenovado <
   Cementerio.VecesRenovacion[Bovedas|Nicho]` antes de crear la renovación.
+- **Auditoría se aplica vía helper**: `applyAuditCreate(data, ctx)`,
+  `applyAuditUpdate(data, ctx)` y `applyAuditDelete(ctx)` viven en
+  `common/audit/`. **No** copiar manualmente `usuarioCreadorId` /
+  `usuarioActualizadorId` / `usuarioEliminadorId` en cada `.create({ data })`
+  o `.update({ data })`. El contexto `ctx: AuditContext` lo provee
+  `AuditContextInterceptor` desde `req.auditContext`.
 
 ### 2.2 De código
 
@@ -58,15 +64,42 @@ al usuario** en vez de inventar.
   tipos; en ese caso encapsula y tipa el wrapper.
 - **DTOs validados**: `class-validator` en backend, `zod` en frontend en la
   frontera HTTP. Rechaza propiedades no declaradas.
+- **Nunca `@Body() x: any`** en controllers. Toda entrada HTTP tiene un DTO
+  en `dto/request/` con `class-validator`. Verificable en code review con
+  `grep -rn '@Body() .*: any' backend/src/modules`.
+- **Nunca retornar entidades Prisma desde controllers**. Toda respuesta
+  pasa por un `<feature>.mapper.ts` que produce un DTO en `dto/response/`.
+  Especialmente crítico para `Usuario` (no exponer `passwordHash`).
 - **Sin lógica de dominio en controllers**. Los controllers orquestan; la
   lógica vive en services.
+- **Controllers no acceden a `prisma.*` directamente**. Solo via service.
+- **Repository pattern es opcional**: solo se crea `<feature>.repository.ts`
+  cuando el service supera ~300 LOC o tiene ≥3 queries con `where` no
+  triviales. Para CRUDs estables (Banco, Descuento, Rol, Cementerio) el
+  service usa `prisma` directo. **No** introducir un repository por simetría.
 - **Multi-tabla = transacción**: cualquier operación que escriba en ≥ 2
   tablas usa `prisma.$transaction`.
 - **Sin SQL crudo** salvo (a) secuencias `nextval`, (b) `EXTENSION` /
   `CREATE SEQUENCE` idempotentes. Cualquier `$queryRawUnsafe` o
   `$executeRawUnsafe` debe ser revisado en PR.
+- **Numeración secuencial** se obtiene siempre vía
+  `YearSequenceService.next(prefix, year)` en `common/sequences/`.
+  Prohibido `prisma.<X>.aggregate({ _max })` + `+1` para campos de numeración.
+- **Endpoints destructivos y financieros** llevan `@Roles('Administrador')`
+  u `@AdminOnly()` sin excepción: `DELETE /*`, `POST /pagos/:id/anular`,
+  `POST /catastro/import`, `PUT /cementerio`, `PUT /gad-informacion`, todos
+  los `PUT/PATCH /usuarios/*`.
+- **`JwtAuthGuard` es global** (registrado en `app.module.ts` vía
+  `APP_GUARD`). No repetir `@UseGuards(JwtAuthGuard)` en controllers; usar
+  `@Public()` para excepciones.
+- **Configuración** se lee vía `ConfigService` tipado (`ConfigType<typeof
+  authConfig>`). Prohibido `process.env.X` directo en código de aplicación.
+  `JWT_SECRET` no tiene fallback: si falta, el servidor no arranca.
 - **Errores con mensajes en español** dirigidos al usuario final, no stack
-  traces ni nombres de columna.
+  traces ni nombres de columna. `AllExceptionsFilter` preserva `errors[]`
+  cuando vienen de `ValidationPipe` (no se reduce a string).
+- **Logging**: usar `Logger` de Nest (`new Logger('Contexto').log(...)`).
+  `console.log` está prohibido en código de producción.
 - **Paginación obligatoria** en cualquier listado de dominio. Default `limit=15`,
   cap `limit=100`. Ver `common/dto/pagination.dto.ts`.
 
@@ -130,16 +163,26 @@ El proyecto tiene dos colaboradores activos: **@yanditv** (owner) y
 ### 3.1 Añadir un nuevo endpoint backend
 
 1. Identifica el módulo (`backend/src/modules/<X>/`). Si no existe, créalo
-   con `nest g module/controller/service` (o a mano).
-2. Define el DTO de entrada en `dto/` con `class-validator` y `@ApiProperty`.
-3. Implementa la lógica en el service. Si toca ≥ 2 tablas, transacción.
-4. Expón en el controller con guards (`JwtAuthGuard`, `@Roles(...)` si
-   aplica) y decoradores Swagger.
-5. Si devuelve listado, recibe `PaginationDto` (o subclase).
-6. Si registra escritura, rellena auditoría con el `req.user.id`.
-7. Si el endpoint es público (login, health), marca `@Public()`.
-8. **No** te olvides de exportar el módulo en `app.module.ts` cuando sea
-   nuevo.
+   siguiendo §3.6 (estructura canónica con DTOs `request/`+`response/` y
+   `mapper.ts`).
+2. Define el DTO de entrada en `dto/request/` con `class-validator` y
+   `@ApiProperty`. Si es listado, extiende `PaginationQueryDto`.
+3. Define el DTO de salida en `dto/response/` con `@Expose`/`@Exclude` +
+   `@ApiProperty`. **Nunca devuelvas la entidad Prisma cruda** — pásala
+   por `<feature>.mapper.ts`.
+4. Implementa la lógica en el service. Si toca ≥ 2 tablas, transacción.
+   Para escrituras usa `applyAuditCreate` / `applyAuditUpdate` /
+   `applyAuditDelete` desde `common/audit/`.
+5. Expón en el controller. Decoradores requeridos:
+   - `@ApiTags`, `@ApiOperation`, `@ApiResponse({ type: <Response>Dto })`.
+   - `@Roles('Administrador')` u `@AdminOnly()` si es destructivo o
+     financiero (`DELETE`, `*/anular`, `catastro/import`, etc.).
+   - `@Public()` si es endpoint público (login, health).
+   - **No** repitas `@UseGuards(JwtAuthGuard)` — es global.
+6. Si registra escritura, recibe `@CurrentUser() user: AuthUser` y pásalo al
+   service como `ctx`. Sin contexto de usuario, no inventes uno: pide
+   aclarar.
+7. Si el módulo es nuevo, regístralo en `app.module.ts`.
 
 ### 3.2 Añadir una pantalla frontend
 
@@ -204,6 +247,42 @@ El proyecto tiene dos colaboradores activos: **@yanditv** (owner) y
 5. Reemplazar Razor helpers (`@Html.ActionLink`, `@Html.DropDownList`) por
    `<Link>`, `<SelectInput>`, etc.
 6. Confirmar paridad visual con la vista legada (mismo template Able Pro).
+
+### 3.6 Crear un módulo nuevo en el backend
+
+Estructura canónica (ver `ARCHITECTURE.md` §3.1):
+
+```
+backend/src/modules/<feature>/
+├── <feature>.module.ts
+├── <feature>.controller.ts
+├── <feature>.service.ts
+├── <feature>.repository.ts        ← OPCIONAL (solo si service >300 LOC o
+│                                     ≥3 queries con where no triviales)
+├── <feature>.mapper.ts            ← Prisma → ResponseDto (oculta sensibles)
+├── <feature>.pdf.ts               ← OPCIONAL (si genera PDF)
+└── dto/
+    ├── request/
+    │   ├── create-<feature>.dto.ts
+    │   ├── update-<feature>.dto.ts
+    │   └── query-<feature>.dto.ts
+    └── response/
+        ├── <feature>.response.dto.ts
+        └── <feature>-list-item.response.dto.ts (si difiere del detalle)
+```
+
+Pasos:
+
+1. `nest g module/controller/service modules/<feature>` (o crear a mano).
+2. Crear DTOs en `dto/request/` y `dto/response/`.
+3. Crear `<feature>.mapper.ts` con `toResponse(entity): <Feature>ResponseDto`
+   y `toListItem(entity)` cuando difiera.
+4. Implementar service con `applyAuditCreate/Update/Delete`.
+5. Si requiere configuración por env, añadir el namespace en `config/`.
+6. Si crece (>300 LOC o ≥3 queries complejas), extraer
+   `<feature>.repository.ts`. **No** hacerlo por anticipado.
+7. Registrar el módulo en `app.module.ts`.
+8. Documentar las rutas nuevas en `ARCHITECTURE.md` §6.1.
 
 ---
 
