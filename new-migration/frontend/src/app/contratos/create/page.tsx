@@ -1,11 +1,34 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { PaginationNav } from '@/components/ui/PaginationNav';
 import { contratosApi, personasApi } from '@/lib/api';
+import { clearWizard, loadWizard, saveWizard } from '@/lib/wizardStorage';
+
+const WIZARD_KEY = 'contrato:v1';
+
+type PlanCuota = 'unico' | 'mensual' | 'trimestral' | 'semestral' | 'anual';
+
+const PLAN_OPTIONS: { value: PlanCuota; label: string }[] = [
+  { value: 'unico', label: 'Pago único (al contado)' },
+  { value: 'mensual', label: 'Mensual' },
+  { value: 'trimestral', label: 'Trimestral' },
+  { value: 'semestral', label: 'Semestral' },
+  { value: 'anual', label: 'Anual (paridad legado)' },
+];
+
+function addMonths(dateValue: string, months: number): string {
+  const date = new Date(dateValue);
+  date.setMonth(date.getMonth() + months);
+  return date.toISOString().slice(0, 10);
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
 const stepTitles = [
   'Datos del contrato',
@@ -128,6 +151,7 @@ export default function CreateContratoPage() {
     },
     responsables: [] as ResponsableWizard[],
     pago: {
+      plan: 'anual' as PlanCuota,
       tipoPago: 'Efectivo',
       numeroComprobante: '',
       monto: 0,
@@ -145,6 +169,10 @@ export default function CreateContratoPage() {
   const montoDescuento = Number(form.contrato.montoTotal || 0) * (descuentoPorcentaje / 100);
   const montoFinalConDescuento = Number(form.contrato.montoTotal || 0) - montoDescuento;
 
+  // Marca cuándo el borrador ya se hidrató desde localStorage para que el
+  // auto-save no escriba antes del primer load (evita pisar el borrador).
+  const hydrated = useRef(false);
+
   useEffect(() => {
     async function loadInitialData() {
       setLoading(true);
@@ -157,27 +185,52 @@ export default function CreateContratoPage() {
 
         setMetadata(createMetadata);
         setPersonas(personasResult.data || []);
-        setForm((prev) => ({
-          ...prev,
-          contrato: {
-            ...prev.contrato,
-            numeroSecuencial: numeroPreview.numeroSecuencial || '',
-            numeroDeMeses: Number(createMetadata.numeroDeMesesDefault || prev.contrato.numeroDeMeses || 5),
-            fechaFin: addYears(
-              prev.contrato.fechaInicio,
-              Number(createMetadata.numeroDeMesesDefault || prev.contrato.numeroDeMeses || 5),
-            ),
-          },
-        }));
+
+        // Si hay un borrador local válido, lo restauramos como base.
+        const draft = loadWizard<typeof form>(WIZARD_KEY);
+        if (draft) {
+          setForm(draft);
+          // Actualizamos solo el número secuencial (server canonical).
+          setForm((prev) => ({
+            ...prev,
+            contrato: {
+              ...prev.contrato,
+              numeroSecuencial:
+                numeroPreview.numeroSecuencial || prev.contrato.numeroSecuencial,
+            },
+          }));
+        } else {
+          setForm((prev) => ({
+            ...prev,
+            contrato: {
+              ...prev.contrato,
+              numeroSecuencial: numeroPreview.numeroSecuencial || '',
+              numeroDeMeses: Number(
+                createMetadata.numeroDeMesesDefault || prev.contrato.numeroDeMeses || 5,
+              ),
+              fechaFin: addYears(
+                prev.contrato.fechaInicio,
+                Number(createMetadata.numeroDeMesesDefault || prev.contrato.numeroDeMeses || 5),
+              ),
+            },
+          }));
+        }
       } catch (err: any) {
         setError(err.message || 'No se pudo cargar la configuracion del formulario');
       } finally {
+        hydrated.current = true;
         setLoading(false);
       }
     }
 
     loadInitialData();
   }, []);
+
+  // Auto-save del wizard mientras el usuario edita.
+  useEffect(() => {
+    if (!hydrated.current) return;
+    saveWizard(WIZARD_KEY, form);
+  }, [form]);
 
   useEffect(() => {
     if (!showBovedaModal) return;
@@ -203,6 +256,7 @@ export default function CreateContratoPage() {
   useEffect(() => {
     const years = Number(form.contrato.numeroDeMeses) || 0;
     const cuotas = generateCuotas(
+      form.pago.plan,
       form.contrato.fechaInicio,
       years,
       Number(form.contrato.montoTotal),
@@ -228,24 +282,69 @@ export default function CreateContratoPage() {
         },
       };
     });
-  }, [form.contrato.fechaInicio, form.contrato.numeroDeMeses, form.contrato.montoTotal, form.difunto.descuentoId]);
+  }, [
+    form.pago.plan,
+    form.contrato.fechaInicio,
+    form.contrato.numeroDeMeses,
+    form.contrato.montoTotal,
+    form.difunto.descuentoId,
+  ]);
 
-  function generateCuotas(fechaInicio: string, years: number, montoTotal: number, descuentoId: number) {
+  /**
+   * Reflejo cliente de `ContratoService.generarCuotasPlan` (backend). Calcula
+   * el plan localmente para mostrar al usuario; el server recalcula al guardar.
+   */
+  function generateCuotas(
+    plan: PlanCuota,
+    fechaInicio: string,
+    years: number,
+    montoTotal: number,
+    descuentoId: number,
+  ): CuotaWizard[] {
     if (!fechaInicio || years <= 0 || montoTotal <= 0) return [];
 
     const descuento = metadata.descuentos?.find((item: any) => item.id === descuentoId);
     const porcentaje = descuento ? Number(descuento.porcentaje) : 0;
-    const montoFinal = montoTotal - montoTotal * (porcentaje / 100);
-    const montoCuota = years > 0 ? montoFinal / years : 0;
-    const fechaBase = new Date(fechaInicio);
+    const montoFinal = round2(montoTotal - montoTotal * (porcentaje / 100));
 
-    return Array.from({ length: years }, (_, index) => {
-      const vencimiento = new Date(fechaBase);
-      vencimiento.setFullYear(vencimiento.getFullYear() + index + 1);
+    if (plan === 'unico') {
+      return [
+        {
+          numero: 1,
+          monto: montoFinal,
+          fechaVencimiento: fechaInicio,
+          pagada: false,
+        },
+      ];
+    }
+
+    const totalCuotas =
+      plan === 'mensual'
+        ? years * 12
+        : plan === 'trimestral'
+          ? years * 4
+          : plan === 'semestral'
+            ? years * 2
+            : years;
+    const mesesEntreCuotas =
+      plan === 'mensual'
+        ? 1
+        : plan === 'trimestral'
+          ? 3
+          : plan === 'semestral'
+            ? 6
+            : 12;
+
+    const cuotaBase = round2(montoFinal / totalCuotas);
+    let acumulado = 0;
+    return Array.from({ length: totalCuotas }, (_, index) => {
+      const isUltima = index === totalCuotas - 1;
+      const monto = isUltima ? round2(montoFinal - acumulado) : cuotaBase;
+      acumulado += monto;
       return {
         numero: index + 1,
-        monto: Number(montoCuota.toFixed(2)),
-        fechaVencimiento: toInputDate(vencimiento),
+        monto,
+        fechaVencimiento: addMonths(fechaInicio, (index + 1) * mesesEntreCuotas),
         pagada: false,
       };
     });
@@ -437,18 +536,55 @@ export default function CreateContratoPage() {
     setError('');
 
     try {
-      const result = await contratosApi.create({
+      // El payload sigue el shape del DTO `CreateContratoWizardDto`:
+      //   - El server calcula montos (subtotal/descuento/total) y genera
+      //     las cuotas según `pago.plan`. No enviamos `cuotas` ni `montoTotal`.
+      //   - `descuentoId` viaja a nivel de contrato (no del difunto).
+      const payload = {
         contrato: {
-          ...form.contrato,
-          cuotas: form.cuotas.map((cuota) => ({
-            ...cuota,
-            pagada: form.pago.cuotasSeleccionadas.includes(cuota.numero),
-          })),
+          bovedaId: Number(form.contrato.bovedaId),
+          fechaInicio: form.contrato.fechaInicio,
+          numeroDeMeses: Number(form.contrato.numeroDeMeses),
+          esRenovacion: !!form.contrato.esRenovacion,
+          contratoOrigenId: form.contrato.contratoOrigenId ?? undefined,
+          contratoRelacionadoId: form.contrato.contratoRelacionadoId ?? undefined,
+          descuentoId: form.difunto.descuentoId
+            ? Number(form.difunto.descuentoId)
+            : undefined,
+          observaciones: form.contrato.observaciones || undefined,
         },
-        difunto: form.difunto,
-        responsables: form.responsables,
-        pago: form.pago,
-      });
+        difunto: {
+          nombres: form.difunto.nombres,
+          apellidos: form.difunto.apellidos,
+          numeroIdentificacion: form.difunto.numeroIdentificacion || undefined,
+          fechaNacimiento: form.difunto.fechaNacimiento || undefined,
+          fechaFallecimiento: form.difunto.fechaFallecimiento || undefined,
+        },
+        responsables: form.responsables.map((r) => ({
+          id: r.esExistente ? r.id : undefined,
+          esExistente: r.esExistente,
+          nombres: r.nombres,
+          apellidos: r.apellidos,
+          tipoIdentificacion: r.tipoIdentificacion,
+          numeroIdentificacion: r.numeroIdentificacion,
+          telefono: r.telefono || undefined,
+          email: r.email || undefined,
+          direccion: r.direccion || undefined,
+          parentesco: r.parentesco || undefined,
+        })),
+        pago: {
+          plan: form.pago.plan,
+          tipoPago: form.pago.tipoPago,
+          bancoId: form.pago.bancoId ? Number(form.pago.bancoId) : undefined,
+          numeroComprobante: form.pago.numeroComprobante || undefined,
+          observacion: form.pago.observacion || undefined,
+          cuotasSeleccionadas: form.pago.cuotasSeleccionadas,
+          fechaPago: form.pago.fechaPago,
+        },
+      };
+
+      const result = await contratosApi.create(payload);
+      clearWizard(WIZARD_KEY);
       router.push(`/contratos/${result.id}`);
     } catch (err: any) {
       setError(err.message || 'No se pudo guardar el contrato');
@@ -814,6 +950,35 @@ export default function CreateContratoPage() {
                 </div>
               ) : null}
               <div className="row g-3">
+                <div className="col-md-4">
+                  <label className="form-label fw-semibold" htmlFor="pago-plan">Plan de cuotas</label>
+                  <select
+                    id="pago-plan"
+                    className="form-select"
+                    value={form.pago.plan}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        pago: {
+                          ...prev.pago,
+                          plan: e.target.value as PlanCuota,
+                          // Al cambiar el plan, descartamos la selección previa
+                          // de cuotas para evitar referencias a números inexistentes.
+                          cuotasSeleccionadas: [],
+                        },
+                      }))
+                    }
+                  >
+                    {PLAN_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <small className="text-muted">
+                    Define cuántas cuotas se generan y su frecuencia.
+                  </small>
+                </div>
                 <div className="col-md-4">
                   <label className="form-label fw-semibold" htmlFor="pago-tipo">Tipo de Pago</label>
                   <select

@@ -1,7 +1,44 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { buildPaginationMeta, normalizePagination } from '../../common/pagination';
+import {
+  CreateContratoSimpleDto,
+  CreateContratoWizardDto,
+  PlanCuota,
+} from './dto/create-contrato.dto';
+
+type Tx = Prisma.TransactionClient;
+
+interface CuotaPlanRow {
+  numero: number;
+  monto: number;
+  fechaVencimiento: Date;
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function addYears(date: Date, years: number): Date {
+  const d = new Date(date);
+  d.setFullYear(d.getFullYear() + years);
+  return d;
+}
+
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date);
+  const desiredMonth = d.getMonth() + months;
+  d.setMonth(desiredMonth);
+  return d;
+}
 
 @Injectable()
 export class ContratoService {
@@ -74,7 +111,7 @@ export class ContratoService {
   }
 
   async getNumeroSecuencialPreview(bovedaId?: number, isRenovacion = false) {
-    const numeroSecuencial = await this.generateNumeroContrato(bovedaId, isRenovacion);
+    const numeroSecuencial = await this.previewNumeroContrato(bovedaId, isRenovacion);
     const boveda = bovedaId
       ? await this.prisma.boveda.findUnique({ where: { id: Number(bovedaId) } })
       : null;
@@ -238,34 +275,70 @@ export class ContratoService {
     return contrato;
   }
 
-  async create(data: any) {
+  /**
+   * Entry point del controller. Acepta dos shapes:
+   *   - Wizard completo (`contrato + difunto + responsables + pago`).
+   *   - Simple (campos del contrato + responsablesIds).
+   * El controller pasa `any` porque la validación de DTO ocurre aquí
+   * según el shape detectado (class-validator no soporta polimorfismo).
+   */
+  async create(data: any, userId?: string) {
     if (data?.contrato && data?.difunto && data?.responsables && data?.pago) {
-      return this.createWizard(data);
+      return this.createWizard(data as CreateContratoWizardDto, userId);
     }
-
-    const numeroSecuencial = await this.generateNumeroContrato(data.bovedaId, false);
-
-    const { responsablesIds, ...contratoData } = data;
-
-    const contrato = await this.prisma.contrato.create({
-      data: {
-        ...contratoData,
-        numeroSecuencial,
-        responsables: responsablesIds
-          ? {
-              create: responsablesIds.map((id: number) => ({ responsableId: id })),
-            }
-          : undefined,
-      },
-      include: {
-        responsables: { include: { responsable: { include: { persona: true } } } },
-      },
-    });
-
-    return contrato;
+    return this.createSimple(data as CreateContratoSimpleDto, userId);
   }
 
-  private async generateNumeroContrato(bovedaId?: number, isRenovacion = false): Promise<string> {
+  private async createSimple(data: CreateContratoSimpleDto, userId?: string) {
+    const { responsablesIds, ...contratoData } = data;
+
+    return this.prisma.$transaction(async (tx) => {
+      const numeroSecuencial = await this.generateNumeroContratoAtomic(
+        tx,
+        contratoData.bovedaId,
+        false,
+      );
+
+      return tx.contrato.create({
+        data: {
+          ...contratoData,
+          fechaInicio: new Date(contratoData.fechaInicio),
+          numeroSecuencial,
+          usuarioCreadorId: userId ?? null,
+          responsables: responsablesIds?.length
+            ? {
+                create: responsablesIds.map((id) => ({ responsableId: id })),
+              }
+            : undefined,
+        },
+        include: {
+          responsables: {
+            include: { responsable: { include: { persona: true } } },
+          },
+        },
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Numeración secuencial
+  //
+  // El legado calcula el siguiente número con `max(numero) + 1`, lo que crea
+  // race conditions si dos operadores guardan un contrato a la vez. Aquí
+  // serializamos el cálculo con `pg_advisory_xact_lock` dentro de la
+  // transacción del create, de modo que el lock se libera automáticamente
+  // al commit/rollback.
+  //
+  //   preview*  → fuera de transacción; usado solo para mostrar el número
+  //               en la UI antes de guardar. Puede quedar desactualizado
+  //               si entre el preview y el guardado se creó otro contrato.
+  //   atomic*   → dentro de transacción; garantiza unicidad.
+  // ---------------------------------------------------------------------------
+
+  private async resolveNumberPrefix(
+    bovedaId?: number,
+    isRenovacion = false,
+  ): Promise<{ prefix: string; year: number; pattern: string }> {
     const year = new Date().getFullYear();
     const boveda = bovedaId
       ? await this.prisma.boveda.findUnique({
@@ -274,59 +347,244 @@ export class ContratoService {
         })
       : null;
 
-    const tipo = (boveda?.tipo || boveda?.piso?.bloque?.nombre || 'Boveda').toLowerCase();
-    const basePrefix = tipo.includes('nicho') ? 'NCH' : tipo.includes('tumulo') || tipo.includes('tumul') ? 'TML' : 'CTR';
+    const tipo = (
+      boveda?.tipo ||
+      boveda?.piso?.bloque?.nombre ||
+      'Boveda'
+    ).toLowerCase();
+    const basePrefix = tipo.includes('nicho')
+      ? 'NCH'
+      : tipo.includes('tumulo') || tipo.includes('tumul')
+        ? 'TML'
+        : 'CTR';
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    const lastContrato = await this.prisma.contrato.findFirst({
-      where: {
-        numeroSecuencial: { startsWith: `${prefix}-GADCHECA-${year}-` },
-      },
-      orderBy: { id: 'desc' },
+    return { prefix, year, pattern: `${prefix}-GADCHECA-${year}-` };
+  }
+
+  /** Hash determinista a int32 para clave de advisory lock. */
+  private advisoryLockKey(key: string): number {
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = ((hash << 5) - hash + key.charCodeAt(i)) | 0;
+    }
+    return hash;
+  }
+
+  private async previewNumeroContrato(
+    bovedaId?: number,
+    isRenovacion = false,
+  ): Promise<string> {
+    const { prefix, year, pattern } = await this.resolveNumberPrefix(
+      bovedaId,
+      isRenovacion,
+    );
+
+    const last = await this.prisma.contrato.findFirst({
+      where: { numeroSecuencial: { startsWith: pattern } },
+      orderBy: { numeroSecuencial: 'desc' },
       select: { numeroSecuencial: true },
     });
 
-    const nextNumber = lastContrato ? Number(lastContrato.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
+    const nextNumber = last
+      ? Number(last.numeroSecuencial.split('-').pop() || '0') + 1
+      : 1;
     return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 
-  private async createWizard(payload: any) {
-    const { contrato, difunto, responsables, pago } = payload;
-    const numeroSecuencial =
-      contrato.numeroSecuencial || (await this.generateNumeroContrato(contrato.bovedaId, !!contrato.esRenovacion));
+  private async generateNumeroContratoAtomic(
+    tx: Tx,
+    bovedaId?: number,
+    isRenovacion = false,
+  ): Promise<string> {
+    const { prefix, year, pattern } = await this.resolveNumberPrefix(
+      bovedaId,
+      isRenovacion,
+    );
 
+    const lockKey = this.advisoryLockKey(`contrato:${prefix}:${year}`);
+    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${lockKey})`);
+
+    const last = await tx.contrato.findFirst({
+      where: { numeroSecuencial: { startsWith: pattern } },
+      orderBy: { numeroSecuencial: 'desc' },
+      select: { numeroSecuencial: true },
+    });
+
+    const nextNumber = last
+      ? Number(last.numeroSecuencial.split('-').pop() || '0') + 1
+      : 1;
+    return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
+  }
+
+  /**
+   * Crea el contrato completo (wizard de 5 pasos) en una sola transacción:
+   *
+   *   1. Valida bóveda disponible (sin contrato vigente que la ocupe, salvo
+   *      contratoRelacionado explícito).
+   *   2. Valida fechas del difunto (nacimiento < defunción).
+   *   3. Si es renovación, valida que el contrato origen no haya superado el
+   *      máximo de renovaciones configurado en `Cementerio.vecesRenovacion*`.
+   *   4. Calcula subtotal/descuento/total server-side a partir de la bóveda
+   *      y el descuento elegido — el cliente NO controla el monto.
+   *   5. Genera N cuotas según el plan elegido.
+   *   6. Persiste difunto, responsables (existentes o nuevos), contrato,
+   *      cuotas, y opcionalmente el pago inicial cubriendo las cuotas
+   *      marcadas como pagadas.
+   *   7. Numera contrato y recibo con advisory locks (atómico bajo concurrencia).
+   */
+  private async createWizard(dto: CreateContratoWizardDto, userId?: string) {
+    const { contrato, difunto, responsables, pago } = dto;
+
+    // -- Validaciones de dominio (no dependen de la transacción).
+    if (responsables.length === 0) {
+      throw new BadRequestException('Debe registrar al menos un responsable');
+    }
+
+    if (difunto.fechaNacimiento && difunto.fechaFallecimiento) {
+      const nac = new Date(difunto.fechaNacimiento);
+      const def = new Date(difunto.fechaFallecimiento);
+      if (def < nac) {
+        throw new UnprocessableEntityException(
+          'La fecha de fallecimiento no puede ser anterior a la fecha de nacimiento',
+        );
+      }
+    }
+
+    const boveda = await this.prisma.boveda.findUnique({
+      where: { id: Number(contrato.bovedaId) },
+      include: { bloque: { include: { cementerio: true } } },
+    });
+    if (!boveda || !boveda.estado) {
+      throw new BadRequestException('La bóveda seleccionada no existe o está inactiva');
+    }
+
+    // Sólo se permite reutilizar bóveda si esta nueva contrato apunta a un
+    // contratoRelacionado explícito o si es una renovación.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const conflictos = await this.prisma.contrato.count({
+      where: {
+        bovedaId: boveda.id,
+        estado: true,
+        OR: [{ fechaFin: null }, { fechaFin: { gte: today } }],
+      },
+    });
+    if (
+      conflictos > 0 &&
+      !contrato.contratoRelacionadoId &&
+      !contrato.esRenovacion
+    ) {
+      throw new ConflictException(
+        'La bóveda ya tiene un contrato vigente. Use "renovar" o "relacionar contratos" si corresponde.',
+      );
+    }
+
+    // Validación de renovación contra el cementerio.
+    if (contrato.esRenovacion && contrato.contratoOrigenId) {
+      const origen = await this.prisma.contrato.findUnique({
+        where: { id: contrato.contratoOrigenId },
+        select: { vecesRenovado: true },
+      });
+      if (!origen) {
+        throw new BadRequestException('El contrato origen no existe');
+      }
+      const cementerio = boveda.bloque.cementerio;
+      const maxRenovaciones =
+        (boveda.tipo || '').toLowerCase().includes('nicho')
+          ? cementerio.vecesRenovacionNicho
+          : cementerio.vecesRenovacionBovedas;
+      if (origen.vecesRenovado + 1 > maxRenovaciones) {
+        throw new UnprocessableEntityException(
+          `El contrato no puede renovarse más de ${maxRenovaciones} vez(ces) (límite del cementerio).`,
+        );
+      }
+    }
+
+    // -- Cálculo de montos server-side: el subtotal es el precio de
+    // arrendamiento de la bóveda. El cliente no puede manipularlo.
+    const montoSubtotal = Number(boveda.precioArrendamiento);
+    let descuentoPorcentaje = 0;
+    if (contrato.descuentoId) {
+      const descuento = await this.prisma.descuento.findUnique({
+        where: { id: contrato.descuentoId },
+      });
+      if (!descuento || !descuento.estado) {
+        throw new BadRequestException(
+          'El descuento seleccionado no existe o está inactivo',
+        );
+      }
+      descuentoPorcentaje = Number(descuento.porcentaje);
+    }
+    const montoDescuento = round2(
+      montoSubtotal * (descuentoPorcentaje / 100),
+    );
+    const montoTotal = round2(montoSubtotal - montoDescuento);
+
+    // -- Generación de cuotas según el plan.
+    const fechaInicio = new Date(contrato.fechaInicio);
+    const fechaFin = addYears(fechaInicio, contrato.numeroDeMeses);
+    const cuotasPlan = this.generarCuotasPlan(
+      pago.plan,
+      fechaInicio,
+      contrato.numeroDeMeses,
+      montoTotal,
+    );
+
+    // Validar que cuotasSeleccionadas sean un subconjunto válido.
+    const numerosValidos = new Set(cuotasPlan.map((c) => c.numero));
+    const seleccionadas = (pago.cuotasSeleccionadas ?? []).filter((n) =>
+      numerosValidos.has(n),
+    );
+
+    // -- Persistencia transaccional.
     return this.prisma.$transaction(async (tx) => {
+      const numeroSecuencial = await this.generateNumeroContratoAtomic(
+        tx,
+        boveda.id,
+        !!contrato.esRenovacion,
+      );
+
       const difuntoCreado = await tx.difunto.create({
         data: {
           nombre: difunto.nombres,
           apellido: difunto.apellidos,
           numeroIdentificacion: difunto.numeroIdentificacion || null,
-          fechaNacimiento: difunto.fechaNacimiento ? new Date(difunto.fechaNacimiento) : null,
-          fechaDefuncion: difunto.fechaFallecimiento ? new Date(difunto.fechaFallecimiento) : null,
-          bovedaId: Number(contrato.bovedaId),
+          fechaNacimiento: difunto.fechaNacimiento
+            ? new Date(difunto.fechaNacimiento)
+            : null,
+          fechaDefuncion: difunto.fechaFallecimiento
+            ? new Date(difunto.fechaFallecimiento)
+            : null,
+          bovedaId: boveda.id,
           estado: true,
+          usuarioCreadorId: userId ?? null,
         },
       });
 
       const responsablesIds: number[] = [];
-      for (const item of responsables as any[]) {
-        if (item.id && item.esExistente) {
+      for (const item of responsables) {
+        if (item.esExistente && item.id) {
           let responsable = await tx.responsable.findFirst({
-            where: { personaId: Number(item.id) },
+            where: { personaId: item.id },
           });
-
           if (!responsable) {
             responsable = await tx.responsable.create({
               data: {
-                personaId: Number(item.id),
+                personaId: item.id,
                 parentesco: item.parentesco || null,
                 estado: true,
               },
             });
           }
-
           responsablesIds.push(responsable.id);
           continue;
+        }
+
+        if (!item.nombres || !item.apellidos || !item.numeroIdentificacion) {
+          throw new BadRequestException(
+            'Los responsables nuevos requieren nombres, apellidos e identificación',
+          );
         }
 
         const persona = await tx.persona.create({
@@ -334,15 +592,15 @@ export class ContratoService {
             nombre: item.nombres,
             apellido: item.apellidos,
             numeroIdentificacion: item.numeroIdentificacion,
-            tipoIdentificacion: item.tipoIdentificacion || 'Cedula',
+            tipoIdentificacion: item.tipoIdentificacion || 'CED',
             telefono: item.telefono || null,
             email: item.email || null,
             direccion: item.direccion || null,
             tipoPersona: 'Responsable',
             estado: true,
+            usuarioCreadorId: userId ?? null,
           },
         });
-
         const responsable = await tx.responsable.create({
           data: {
             personaId: persona.id,
@@ -350,85 +608,93 @@ export class ContratoService {
             estado: true,
           },
         });
-
         responsablesIds.push(responsable.id);
       }
 
       const contratoCreado = await tx.contrato.create({
         data: {
           numeroSecuencial,
-          fechaInicio: new Date(contrato.fechaInicio),
-          fechaFin: contrato.fechaFin ? new Date(contrato.fechaFin) : null,
-          numeroDeMeses: Number(contrato.numeroDeMeses),
-          montoTotal: Number(contrato.montoTotal),
+          fechaInicio,
+          fechaFin,
+          numeroDeMeses: contrato.numeroDeMeses,
+          montoSubtotal: new Prisma.Decimal(montoSubtotal),
+          montoDescuento: new Prisma.Decimal(montoDescuento),
+          montoTotal: new Prisma.Decimal(montoTotal),
           observaciones: contrato.observaciones || null,
           estado: true,
           esRenovacion: !!contrato.esRenovacion,
-          contratoOrigenId: contrato.contratoOrigenId || null,
-          contratoRelacionadoId: contrato.contratoRelacionadoId || null,
-          bovedaId: Number(contrato.bovedaId),
+          vecesRenovado: 0,
+          descuentoId: contrato.descuentoId ?? null,
+          contratoOrigenId: contrato.contratoOrigenId ?? null,
+          contratoRelacionadoId: contrato.contratoRelacionadoId ?? null,
+          bovedaId: boveda.id,
           difuntoId: difuntoCreado.id,
+          usuarioCreadorId: userId ?? null,
           responsables: {
-            create: responsablesIds.map((responsableId) => ({ responsableId })),
+            create: responsablesIds.map((id) => ({ responsableId: id })),
           },
         },
       });
 
-      const cuotas = (contrato.cuotas || []).map((cuota: any, index: number) => ({
-        numero: index + 1,
-        monto: Number(cuota.monto),
-        fechaVencimiento: new Date(cuota.fechaVencimiento),
-        pagada: !!cuota.pagada,
-        fechaPago: cuota.pagada ? new Date(pago.fechaPago || new Date()) : null,
-        contratoId: contratoCreado.id,
-        estado: true,
-        observaciones: null,
-      }));
-
-      if (cuotas.length > 0) {
-        await tx.cuota.createMany({ data: cuotas });
+      // Si es renovación, incrementar contador del contrato origen.
+      if (contrato.esRenovacion && contrato.contratoOrigenId) {
+        await tx.contrato.update({
+          where: { id: contrato.contratoOrigenId },
+          data: { vecesRenovado: { increment: 1 } },
+        });
       }
 
-      const cuotasCreadas = await tx.cuota.findMany({
-        where: { contratoId: contratoCreado.id },
-        orderBy: { numero: 'asc' },
-      });
+      if (cuotasPlan.length > 0) {
+        await tx.cuota.createMany({
+          data: cuotasPlan.map((c) => ({
+            numero: c.numero,
+            monto: new Prisma.Decimal(c.monto),
+            fechaVencimiento: c.fechaVencimiento,
+            contratoId: contratoCreado.id,
+            estado: true,
+          })),
+        });
+      }
 
-      const cuotasSeleccionadas = cuotasCreadas.filter((cuota) =>
-        (pago.cuotasSeleccionadas || []).includes(cuota.numero),
-      );
+      // Pago inicial si hay cuotas seleccionadas.
+      if (seleccionadas.length > 0) {
+        const cuotasCreadas = await tx.cuota.findMany({
+          where: {
+            contratoId: contratoCreado.id,
+            numero: { in: seleccionadas },
+          },
+        });
+        const montoPago = cuotasCreadas.reduce(
+          (sum, c) => sum + Number(c.monto),
+          0,
+        );
 
-      if (cuotasSeleccionadas.length > 0) {
-        const ultimoPago = await tx.pago.findFirst({ orderBy: { id: 'desc' } });
-        const nuevoNumero = ultimoPago ? ultimoPago.id + 1 : 1;
-        const numeroRecibo = `REC-${new Date().getFullYear()}-${nuevoNumero.toString().padStart(5, '0')}`;
-
+        const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
+        const fechaPago = pago.fechaPago ? new Date(pago.fechaPago) : new Date();
         const pagoCreado = await tx.pago.create({
           data: {
             numeroRecibo,
-            monto: Number(pago.monto),
-            fechaPago: new Date(pago.fechaPago || new Date()),
+            monto: new Prisma.Decimal(round2(montoPago)),
+            fechaPago,
             metodoPago: pago.tipoPago,
             referencia: pago.numeroComprobante || null,
             observacion: pago.observacion || null,
-            bancoId: pago.bancoId || null,
+            bancoId: pago.bancoId ?? null,
+            descuentoId: contrato.descuentoId ?? null,
             estado: true,
+            usuarioCreadorId: userId ?? null,
           },
         });
 
         await tx.cuotaPago.createMany({
-          data: cuotasSeleccionadas.map((cuota) => ({
-            cuotaId: cuota.id,
+          data: cuotasCreadas.map((c) => ({
+            cuotaId: c.id,
             pagoId: pagoCreado.id,
           })),
         });
-
         await tx.cuota.updateMany({
-          where: { id: { in: cuotasSeleccionadas.map((cuota) => cuota.id) } },
-          data: {
-            pagada: true,
-            fechaPago: new Date(pago.fechaPago || new Date()),
-          },
+          where: { id: { in: cuotasCreadas.map((c) => c.id) } },
+          data: { pagada: true, fechaPago },
         });
       }
 
@@ -437,11 +703,91 @@ export class ContratoService {
         include: {
           boveda: { include: { bloque: true, piso: true } },
           difunto: true,
-          responsables: { include: { responsable: { include: { persona: true } } } },
-          cuotas: { orderBy: { numero: 'asc' } },
+          responsables: {
+            include: { responsable: { include: { persona: true } } },
+          },
+          cuotas: {
+            orderBy: { numero: 'asc' },
+            include: { pagos: { include: { pago: true } } },
+          },
         },
       });
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Distribuye `montoTotal` en cuotas según el plan elegido. Todas las cuotas
+   * tienen el mismo monto excepto la última, que absorbe el redondeo para
+   * que la suma cierre exactamente al total.
+   */
+  private generarCuotasPlan(
+    plan: PlanCuota,
+    fechaInicio: Date,
+    years: number,
+    montoTotal: number,
+  ): CuotaPlanRow[] {
+    if (years <= 0 || montoTotal <= 0) return [];
+
+    if (plan === 'unico') {
+      return [
+        {
+          numero: 1,
+          monto: round2(montoTotal),
+          fechaVencimiento: fechaInicio,
+        },
+      ];
+    }
+
+    const totalCuotas =
+      plan === 'mensual'
+        ? years * 12
+        : plan === 'trimestral'
+          ? years * 4
+          : plan === 'semestral'
+            ? years * 2
+            : years; // anual
+
+    const mesesEntreCuotas =
+      plan === 'mensual'
+        ? 1
+        : plan === 'trimestral'
+          ? 3
+          : plan === 'semestral'
+            ? 6
+            : 12;
+
+    const cuotaBase = round2(montoTotal / totalCuotas);
+    const cuotas: CuotaPlanRow[] = [];
+    let acumulado = 0;
+    for (let i = 0; i < totalCuotas; i++) {
+      const isUltima = i === totalCuotas - 1;
+      const monto = isUltima ? round2(montoTotal - acumulado) : cuotaBase;
+      acumulado += monto;
+      const venc = addMonths(fechaInicio, (i + 1) * mesesEntreCuotas);
+      cuotas.push({ numero: i + 1, monto, fechaVencimiento: venc });
+    }
+    return cuotas;
+  }
+
+  private async generateNumeroReciboAtomic(tx: Tx): Promise<string> {
+    const year = new Date().getFullYear();
+    const pattern = `REC-${year}-`;
+    const lockKey = this.advisoryLockKey(`recibo:${year}`);
+    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${lockKey})`);
+
+    const last = await tx.pago.findFirst({
+      where: { numeroRecibo: { startsWith: pattern } },
+      orderBy: { numeroRecibo: 'desc' },
+      select: { numeroRecibo: true },
+    });
+    const next = last
+      ? Number(last.numeroRecibo.split('-').pop() || '0') + 1
+      : 1;
+    return `${pattern}${String(next).padStart(5, '0')}`;
   }
 
   async update(id: number, data: any) {

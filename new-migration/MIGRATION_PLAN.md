@@ -355,6 +355,13 @@ este archivo.
 ```
 [x] Fase 0  — Esquema completo + seed actualizado            ← 2026-05-13
 [x] Fase 1  — Auth + middleware                              ← 2026-05-13
+[~] Fase 2  — Contratos
+    [x] 2.a Listado con filtros y detalle completo           ← 2026-05-13
+    [x] 2.b Wizard validado + numeración atómica + planes    ← 2026-05-13
+    [ ] 2.c Renovación
+    [ ] 2.d Relacionar contratos
+    [ ] 2.e Documentos firmados (upload)
+    [ ] 2.f PDF oficial del contrato
 [ ] Fase 2  — Contratos: listado, wizard, renovación, relacionar, documentos, PDF
 [ ] Fase 3  — Cobros: multi-cuota, descuentos, factura PDF, anulación
 [ ] Fase 4  — Bóvedas, bloques, propietarios
