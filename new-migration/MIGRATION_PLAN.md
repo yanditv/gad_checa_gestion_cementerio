@@ -358,7 +358,7 @@ este archivo.
 [~] Fase 2  — Contratos
     [x] 2.a Listado con filtros y detalle completo           ← 2026-05-13
     [x] 2.b Wizard validado + numeración atómica + planes    ← 2026-05-13
-    [ ] 2.c Renovación
+    [x] 2.c Renovación                                       ← 2026-05-13
     [ ] 2.d Relacionar contratos
     [ ] 2.e Documentos firmados (upload)
     [ ] 2.f PDF oficial del contrato

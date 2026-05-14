@@ -14,6 +14,7 @@ import {
   CreateContratoWizardDto,
   PlanCuota,
 } from './dto/create-contrato.dto';
+import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 
 type Tx = Prisma.TransactionClient;
 
@@ -788,6 +789,211 @@ export class ContratoService {
       ? Number(last.numeroRecibo.split('-').pop() || '0') + 1
       : 1;
     return `${pattern}${String(next).padStart(5, '0')}`;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Renovación
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Crea una renovación a partir de un contrato origen. Hereda bóveda y
+   * difunto del origen, valida límite de renovaciones del cementerio,
+   * y aplica las mismas reglas de cálculo de montos y plan de cuotas que
+   * `createWizard`. La validación de unicidad de bóveda no aplica (sí hay
+   * un contrato vigente — es el que estamos renovando).
+   *
+   *   incrementa origen.vecesRenovado
+   *   nuevo.contratoOrigenId = origen.id
+   *   nuevo.esRenovacion = true
+   */
+  async renovar(origenId: number, dto: RenovarContratoDto, userId?: string) {
+    const origen = await this.prisma.contrato.findUnique({
+      where: { id: origenId },
+      include: {
+        boveda: { include: { bloque: { include: { cementerio: true } } } },
+        difunto: true,
+        responsables: { select: { responsable: { select: { personaId: true } } } },
+      },
+    });
+    if (!origen || !origen.estado) {
+      throw new NotFoundException(
+        'El contrato a renovar no existe o está inactivo',
+      );
+    }
+
+    const cementerio = origen.boveda.bloque.cementerio;
+    const maxRenovaciones = (origen.boveda.tipo || '')
+      .toLowerCase()
+      .includes('nicho')
+      ? cementerio.vecesRenovacionNicho
+      : cementerio.vecesRenovacionBovedas;
+    if (origen.vecesRenovado + 1 > maxRenovaciones) {
+      throw new UnprocessableEntityException(
+        `Este contrato ya alcanzó el máximo de ${maxRenovaciones} renovación(es) permitido por el cementerio.`,
+      );
+    }
+
+    // Cálculo de montos server-side.
+    const montoSubtotal = Number(origen.boveda.precioArrendamiento);
+    let descuentoPorcentaje = 0;
+    if (dto.descuentoId) {
+      const descuento = await this.prisma.descuento.findUnique({
+        where: { id: dto.descuentoId },
+      });
+      if (!descuento || !descuento.estado) {
+        throw new BadRequestException(
+          'El descuento seleccionado no existe o está inactivo',
+        );
+      }
+      descuentoPorcentaje = Number(descuento.porcentaje);
+    }
+    const montoDescuento = round2(
+      montoSubtotal * (descuentoPorcentaje / 100),
+    );
+    const montoTotal = round2(montoSubtotal - montoDescuento);
+
+    const fechaInicio = new Date(dto.fechaInicio);
+    const fechaFin = addYears(fechaInicio, dto.numeroDeMeses);
+    const cuotasPlan = this.generarCuotasPlan(
+      dto.pago.plan,
+      fechaInicio,
+      dto.numeroDeMeses,
+      montoTotal,
+    );
+    const numerosValidos = new Set(cuotasPlan.map((c) => c.numero));
+    const seleccionadas = (dto.pago.cuotasSeleccionadas ?? []).filter((n) =>
+      numerosValidos.has(n),
+    );
+
+    // Resolver IDs de Responsable a vincular.
+    return this.prisma.$transaction(async (tx) => {
+      const numeroSecuencial = await this.generateNumeroContratoAtomic(
+        tx,
+        origen.boveda.id,
+        true,
+      );
+
+      const responsableIds: number[] = [];
+      const personaIds =
+        dto.responsablesPersonaIds && dto.responsablesPersonaIds.length > 0
+          ? dto.responsablesPersonaIds
+          : origen.responsables.map((r) => r.responsable.personaId);
+
+      if (personaIds.length === 0) {
+        throw new BadRequestException(
+          'El contrato debe tener al menos un responsable',
+        );
+      }
+
+      for (const personaId of personaIds) {
+        let responsable = await tx.responsable.findFirst({
+          where: { personaId },
+        });
+        if (!responsable) {
+          responsable = await tx.responsable.create({
+            data: { personaId, estado: true },
+          });
+        }
+        responsableIds.push(responsable.id);
+      }
+
+      const nuevo = await tx.contrato.create({
+        data: {
+          numeroSecuencial,
+          fechaInicio,
+          fechaFin,
+          numeroDeMeses: dto.numeroDeMeses,
+          montoSubtotal: new Prisma.Decimal(montoSubtotal),
+          montoDescuento: new Prisma.Decimal(montoDescuento),
+          montoTotal: new Prisma.Decimal(montoTotal),
+          observaciones: dto.observaciones || null,
+          estado: true,
+          esRenovacion: true,
+          vecesRenovado: 0,
+          descuentoId: dto.descuentoId ?? null,
+          contratoOrigenId: origen.id,
+          bovedaId: origen.boveda.id,
+          difuntoId: origen.difuntoId,
+          usuarioCreadorId: userId ?? null,
+          responsables: {
+            create: responsableIds.map((id) => ({ responsableId: id })),
+          },
+        },
+      });
+
+      await tx.contrato.update({
+        where: { id: origen.id },
+        data: { vecesRenovado: { increment: 1 } },
+      });
+
+      if (cuotasPlan.length > 0) {
+        await tx.cuota.createMany({
+          data: cuotasPlan.map((c) => ({
+            numero: c.numero,
+            monto: new Prisma.Decimal(c.monto),
+            fechaVencimiento: c.fechaVencimiento,
+            contratoId: nuevo.id,
+            estado: true,
+          })),
+        });
+      }
+
+      if (seleccionadas.length > 0) {
+        const cuotasCreadas = await tx.cuota.findMany({
+          where: { contratoId: nuevo.id, numero: { in: seleccionadas } },
+        });
+        const montoPago = cuotasCreadas.reduce(
+          (sum, c) => sum + Number(c.monto),
+          0,
+        );
+        const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
+        const fechaPago = dto.pago.fechaPago
+          ? new Date(dto.pago.fechaPago)
+          : new Date();
+        const pagoCreado = await tx.pago.create({
+          data: {
+            numeroRecibo,
+            monto: new Prisma.Decimal(round2(montoPago)),
+            fechaPago,
+            metodoPago: dto.pago.tipoPago,
+            referencia: dto.pago.numeroComprobante || null,
+            observacion: dto.pago.observacion || null,
+            bancoId: dto.pago.bancoId ?? null,
+            descuentoId: dto.descuentoId ?? null,
+            estado: true,
+            usuarioCreadorId: userId ?? null,
+          },
+        });
+        await tx.cuotaPago.createMany({
+          data: cuotasCreadas.map((c) => ({
+            cuotaId: c.id,
+            pagoId: pagoCreado.id,
+          })),
+        });
+        await tx.cuota.updateMany({
+          where: { id: { in: cuotasCreadas.map((c) => c.id) } },
+          data: { pagada: true, fechaPago },
+        });
+      }
+
+      return tx.contrato.findUnique({
+        where: { id: nuevo.id },
+        include: {
+          boveda: { include: { bloque: true, piso: true } },
+          difunto: true,
+          responsables: {
+            include: { responsable: { include: { persona: true } } },
+          },
+          cuotas: {
+            orderBy: { numero: 'asc' },
+            include: { pagos: { include: { pago: true } } },
+          },
+          contratoOrigen: {
+            select: { id: true, numeroSecuencial: true },
+          },
+        },
+      });
+    });
   }
 
   async update(id: number, data: any) {

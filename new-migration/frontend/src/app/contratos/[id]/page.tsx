@@ -565,7 +565,7 @@ export default async function ContratoDetailsPage({
                   <i className="ti ti-edit me-1"></i> Editar contrato
                 </Link>
                 <Link
-                  href={`/contratos/create?contratoOrigenId=${id}`}
+                  href={`/contratos/${id}/renovar`}
                   className="btn btn-outline-primary w-100"
                 >
                   <i className="ti ti-copy me-1"></i> Renovar contrato

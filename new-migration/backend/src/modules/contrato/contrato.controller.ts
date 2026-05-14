@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -11,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ContratoService } from './contrato.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import {
   AuthUser,
   CurrentUser,
@@ -66,6 +68,20 @@ export class ContratoController {
   @ApiOperation({ summary: 'Crear contrato (wizard o simple)' })
   create(@Body() data: any, @CurrentUser() user: AuthUser) {
     return this.service.create(data, user.id);
+  }
+
+  @Post(':id/renovar')
+  @ApiOperation({
+    summary: 'Renovar un contrato existente',
+    description:
+      'Crea una renovación a partir del contrato indicado. Hereda bóveda y difunto del origen.',
+  })
+  renovar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RenovarContratoDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.renovar(id, dto, user.id);
   }
 
   @Put(':id')
