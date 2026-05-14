@@ -3,6 +3,19 @@
 import { useEffect, useState } from 'react';
 import { cuotasApi, pagosApi } from '@/lib/api';
 
+function formatCurrency(value: number | string | null | undefined) {
+  return new Intl.NumberFormat('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(Number(value ?? 0));
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return '-';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-EC');
+}
+
 export default function CobrosPage() {
   const [loading, setLoading] = useState(true);
   const [pendientes, setPendientes] = useState<any[]>([]);
@@ -25,63 +38,131 @@ export default function CobrosPage() {
     loadData();
   }, []);
 
-  if (loading) return <div className="container">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-slate-400">
+        <div className="inline-flex items-center gap-2">
+          <svg
+            className="h-4 w-4 animate-spin text-primary-500"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          <span className="text-sm">Cargando…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="page-header">
-        <h2 style={{ marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 600 }}>Cobros</h2>
-        <p className="text-muted mb-0 small">Cuotas pendientes y últimos pagos registrados</p>
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Cobros</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Cuotas pendientes y últimos pagos registrados.
+          </p>
+        </div>
       </div>
 
-      <div className="row">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="card-title">Cuotas Pendientes</h5>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Cuotas pendientes */}
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <i className="ti ti-clock-exclamation text-amber-500" />
+              <h3 className="text-sm font-semibold text-slate-700">Cuotas Pendientes</h3>
             </div>
-            <div className="card-body" style={{ maxHeight: 420, overflowY: 'auto' }}>
-              {pendientes.length === 0 && <p className="text-muted">No hay cuotas vencidas pendientes.</p>}
-              {pendientes.map((cuota) => (
-                <div key={cuota.id} className="mb-3 pb-3 border-bottom">
-                  <div className="d-flex justify-content-between">
-                    <strong>Cuota #{cuota.numero}</strong>
-                    <span>${Number(cuota.monto).toFixed(2)}</span>
-                  </div>
-                  <small className="text-muted d-block">
-                    {cuota.contrato?.difunto?.nombre} {cuota.contrato?.difunto?.apellido}
-                  </small>
-                  <small className="text-muted d-block">
-                    Vence: {cuota.fechaVencimiento ? new Date(cuota.fechaVencimiento).toLocaleDateString() : '-'}
-                  </small>
-                </div>
-              ))}
-            </div>
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+              {pendientes.length}
+            </span>
+          </header>
+          <div className="max-h-[420px] overflow-y-auto p-5">
+            {pendientes.length === 0 ? (
+              <div className="py-10 text-center text-slate-400">
+                <i className="ti ti-check text-3xl text-slate-300" />
+                <div className="mt-2 text-sm">No hay cuotas vencidas pendientes.</div>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {pendientes.map((cuota) => (
+                  <li key={cuota.id} className="py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <strong className="text-sm font-semibold text-slate-800">
+                        Cuota #{cuota.numero}
+                      </strong>
+                      <span className="text-sm font-medium text-slate-700">
+                        {formatCurrency(cuota.monto)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {cuota.contrato?.difunto?.nombre} {cuota.contrato?.difunto?.apellido}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Vence: {formatDate(cuota.fechaVencimiento)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </div>
+        </section>
 
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="card-title">Últimos Pagos</h5>
+        {/* Últimos pagos */}
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <i className="ti ti-receipt text-primary-500" />
+              <h3 className="text-sm font-semibold text-slate-700">Últimos Pagos</h3>
             </div>
-            <div className="card-body" style={{ maxHeight: 420, overflowY: 'auto' }}>
-              {pagos.length === 0 && <p className="text-muted">No hay pagos registrados.</p>}
-              {pagos.slice(0, 20).map((pago) => (
-                <div key={pago.id} className="mb-3 pb-3 border-bottom">
-                  <div className="d-flex justify-content-between">
-                    <strong>{pago.numeroRecibo}</strong>
-                    <span>${Number(pago.monto).toFixed(2)}</span>
-                  </div>
-                  <small className="text-muted d-block">
-                    {pago.fechaPago ? new Date(pago.fechaPago).toLocaleDateString() : '-'} - {pago.metodoPago}
-                  </small>
-                  <small className="text-muted d-block">{pago.referencia || 'Sin referencia'}</small>
-                </div>
-              ))}
-            </div>
+            <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+              {pagos.length}
+            </span>
+          </header>
+          <div className="max-h-[420px] overflow-y-auto p-5">
+            {pagos.length === 0 ? (
+              <div className="py-10 text-center text-slate-400">
+                <i className="ti ti-folder-x text-3xl text-slate-300" />
+                <div className="mt-2 text-sm">No hay pagos registrados.</div>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {pagos.slice(0, 20).map((pago) => (
+                  <li key={pago.id} className="py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <strong className="font-mono text-xs font-semibold text-slate-800">
+                        {pago.numeroRecibo}
+                      </strong>
+                      <span className="text-sm font-medium text-slate-700">
+                        {formatCurrency(pago.monto)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {formatDate(pago.fechaPago)} · {pago.metodoPago}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {pago.referencia || 'Sin referencia'}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
