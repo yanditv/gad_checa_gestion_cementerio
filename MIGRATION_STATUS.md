@@ -1,14 +1,107 @@
 # Estado de Migración
 
-> Última actualización: **2026-05-13** — cierre de **Fase 1** (auth + middleware).
+> Última actualización: **2026-05-14** — cierre de **Fase 9.2** (importador
+> de catastro on-demand). 9 de 10 fases mayoritariamente cerradas; quedan
+> tareas atómicas de Famiitry (7.2, 8.1–8.3, 9.1, 9.3, 10.1, 10.4, 10.5) y
+> de yanditv (8.4 email, 10.3 carga, 10.6 cierre).
 
 ## Estado real de paridad
 
-La migración **no está completa al 100 %** respecto al sistema legado ASP.NET
-(`gad_checa_gestion_cementerio/`). Las fases del plan vivo están en
-`new-migration/MIGRATION_PLAN.md`.
+La migración avanza alineada con `new-migration/MIGRATION_PLAN.md`. Las
+fases 0 a 6 están **completas**; la Fase 7 está parcial (7.1 + 7.3 + 7.4
+cerradas); la Fase 9 está parcial (9.2 cerrada). Quedan abiertas las
+secciones marcadas en §6.1 del plan vivo.
 
 ## Avances aplicados en esta iteración
+
+### 2026-05-14 — Fase 9.2: Importador de catastro on-demand
+
+- Nuevo modelo Prisma `CatastroImport` (log de cada importación: estado,
+  conteos, errores, ref. admin).
+- Migración `20260514213713_add_catastro_import`.
+- Módulo `modules/catastro/` con:
+  - `CatastroImporter` reusable que parsea Buffer de Excel y hace upsert
+    idempotente (nunca borra).
+  - `CatastroService.runImport` con tracking de log y manejo de errores
+    por fila (hasta 100).
+  - `POST /catastro/import` multipart 10 MB, rol Administrador.
+  - `GET /catastro/imports` paginado + `GET /catastro/imports/:id`.
+- Frontend: `/configuracion/catastro` con dropzone, reporte inmediato y
+  tabla de historial; botón "Importar catastro" desde `/configuracion`.
+- Tarifas leídas de `Cementerio.tarifaArriendo` / `tarifaArriendoNicho` y
+  años de arriendo configurables (no hardcoded).
+
+### 2026-05-14 — Fase 7.3 + 7.4: Reset forzado y bloqueo super-admin
+
+- `POST /usuarios/:id/reset-password` (rol Administrador): genera
+  contraseña temporal segura, marca `mustChangePassword=true`, envía email
+  si SMTP está configurado o devuelve la temporal para entrega manual.
+- `DELETE /usuarios/:id` y `PATCH /usuarios/:id/estado=false` bloquean a
+  `admin@teobu.com` y al usuario actual.
+- `update()` también protege identidad/desactivación del super-admin.
+- Frontend `/auth/change-password` con copia diferenciada para cambio
+  forzado vs voluntario.
+- `DashboardLayout` redirige automáticamente cuando
+  `session.mustChangePassword=true`.
+
+### 2026-05-14 — Fase 7.1: Listado de usuarios (Famiitry)
+
+- `GET /usuarios` paginado con búsqueda multi-campo.
+- `/admin/usuarios` con roles renderizados como badges y paginación.
+
+### 2026-05-14 — Fase 6: Reportes (5 + comparativa, PDF, Excel)
+
+- Backend `modules/report/` con 6 endpoints JSON: resumen, ingresos,
+  cuentas-por-cobrar, bóvedas, bloques, comparativa mensual.
+- 4 endpoints PDF (A4 horizontal con `pdfkit`) + 4 endpoints Excel (`xlsx`).
+- 5 pantallas frontend con filtros sincronizados al query string.
+- Comparativa mensual con barras CSS: año actual vs. anterior + variación %.
+
+### 2026-05-14 — Fase 5: Personas, difuntos, responsables
+
+- Endpoint `GET /personas/:id` enriquecido (bóvedas como propietario,
+  contratos como responsable).
+- Pantalla `/personas/:id` con tabs (datos, bóvedas, contratos).
+- Difuntos con campos nuevos: nacionalidad, estado civil, lugar
+  nacimiento/defunción, padres, cónyuge, certificado de defunción.
+- Cálculo automático de edad al fallecer.
+- Validación de fechas (`def < nac` → error) y existencia de bóveda.
+
+### 2026-05-14 — Fase 4: Bóvedas, bloques, propietarios
+
+- Bloques con N pisos generados automáticamente + validación de delete
+  con bóvedas activas.
+- Modal de cambio de propietario con búsqueda de personas.
+- Endpoint y UI para histórico de bóveda (contratos pasados y actual).
+
+### 2026-05-14 — Fase 3: Cobros, pagos, descuentos, bancos
+
+- Backend cobrar multi-cuota con interés/mora y descuento; anular pago;
+  factura PDF con `pdfkit`.
+- Pantalla `/cobros/[contratoId]/cobrar`.
+- Detalle de pago + anular UI.
+- CRUD de Descuentos y Bancos en `/configuracion`.
+
+### 2026-05-14 — Fase 2.6: Migración frontend a Tailwind puro
+
+- 5 lotes que migraron todo el frontend a Tailwind.
+- Wrappers Bootstrap (`components/ui/*`) eliminados.
+- `corePlugins.preflight: false` ya no necesario; Tailwind dominante.
+
+### 2026-05-14 — Fase 2.5: Tailwind + rediseño módulo contratos
+
+- Tailwind activado con tokens `primary-500`, `brand-dark`, `brand-accent`,
+  `shadow-soft`, `shadow-lifted`.
+- Sidebar, Header, Footer y `DashboardLayout` reescritos en Tailwind.
+- Listado, detalle y wizard de contratos migrados.
+
+### 2026-05-13 — Fase 2: Contratos completos
+
+- Listado con filtros, detalle, wizard multi-paso (paridad con legado).
+- Renovación con `vecesRenovado` y bloqueo cuando se excede el máximo.
+- Relacionar contratos (`contratoRelacionadoId`).
+- Upload de documentos firmados (`Documento` model + StorageService local/S3).
+- PDF oficial del contrato con `pdfkit` (cabecera GAD, cláusulas, firmas).
 
 ### 2026-05-13 — Fase 1: Autenticación completa
 
@@ -115,35 +208,76 @@ La migración **no está completa al 100 %** respecto al sistema legado ASP.NET
 |-----------------------------------------------------|--------|
 | **Esquema de base de datos**                        | **Completo** |
 | Seed inicial (roles, admin, GAD, cementerio)        | **Completo** |
-| Importación de catastro (`CATASTRO_FINAL.xlsx`)     | Parcial |
+| Importación de catastro on-demand                   | **Completo** (Fase 9.2) |
 | Autenticación / login / recuperación                | **Completo** |
-| Dashboard                                           | Parcial |
-| Contratos — listado, detalle, edición básica        | Parcial |
-| Contratos — wizard multi-paso (versión inicial)     | Parcial |
-| Contratos — renovación, relación, documentos firmados, PDF | Pendiente |
-| Bloques                                             | Parcial |
-| Bóvedas                                             | Parcial |
-| Personas / Propietarios / Responsables              | Parcial |
-| Difuntos                                            | Parcial |
-| Cobros / Pagos / Facturas                           | Pendiente |
-| Reportes (5 + comparativa, PDF, Excel)              | Pendiente |
-| Administración (usuarios y roles)                   | Parcial |
-| Configuración (cementerio + GAD + descuentos + bancos) | Pendiente |
-| Notificaciones (bandeja + cron + email)             | Pendiente |
-| Documentos auxiliares (uploads + storage)           | Pendiente |
-| Identidad visual (paridad con Razor + Able Pro)     | Parcial |
+| Reset de contraseña forzado + bloqueo super-admin   | **Completo** (Fase 7.3/7.4) |
+| Dashboard                                           | **Completo** |
+| Contratos — listado, detalle, edición               | **Completo** |
+| Contratos — wizard multi-paso                       | **Completo** |
+| Contratos — renovación, relación, documentos, PDF   | **Completo** |
+| Bloques con N pisos + validación delete             | **Completo** |
+| Bóvedas + propietario + histórico                   | **Completo** |
+| Personas / Propietarios / Responsables              | **Completo** |
+| Difuntos (con campos nuevos + edad + certificado)   | **Completo** |
+| Cobros multi-cuota + factura PDF + anular           | **Completo** |
+| Descuentos + Bancos (CRUD)                          | **Completo** |
+| Reportes (5 + comparativa, PDF, Excel)              | **Completo** |
+| Administración — listado de usuarios                | **Completo** (7.1) |
+| Administración — asignación de roles                | Pendiente (7.2 @Famiitry) |
+| Configuración (cementerio + GAD + descuentos)       | Parcial (9.1 @Famiitry abierta) |
+| Notificaciones (bandeja + cron + email)             | Pendiente (Fase 8) |
+| Documentos auxiliares (uploads + storage)           | **Completo** |
+| Identidad visual (Tailwind puro)                    | **Completo** |
+| Manual de usuario                                   | Pendiente (10.1 @Famiitry) |
+| Tests E2E + WCAG                                    | Pendiente (10.4/10.5 @Famiitry) |
+| Pruebas de carga                                    | Pendiente (10.3 @yanditv) |
+| Migración SQL Server → PostgreSQL (producción)      | Pendiente |
 
 ## Pendiente para cierre 100 %
 
-Según el plan de fases (`new-migration/MIGRATION_PLAN.md`):
+Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
 
-- ~~**Fase 1** — Autenticación completa (`AUTH-R1..R9`).~~ ✅
-- **Fase 2** — Contratos: paridad de las 39 acciones del legado, PDFs.
-- **Fase 3** — Cobros: pantalla multi-cuota, descuentos, factura PDF, anulación.
-- **Fase 4** — Bloques, bóvedas con propietario, histórico.
-- **Fase 5** — Personas, difuntos, responsables, autocompletado.
-- **Fase 6** — 5 reportes con PDF y export Excel.
-- **Fase 7** — CRUD completo de usuarios y roles + reset forzado.
-- **Fase 8** — Notificaciones + job programado + email opt-in.
-- **Fase 9** — Configuración + importación de catastro on-demand.
-- **Fase 10** — Pulido, QA, paridad visual 100 %.
+- ~~**Fase 0** — Esquema completo + seed.~~ ✅
+- ~~**Fase 1** — Autenticación completa.~~ ✅
+- ~~**Fase 2** — Contratos completos (listado, wizard, renovación,
+  relación, documentos, PDF).~~ ✅
+- ~~**Fase 2.5 / 2.6** — Migración completa a Tailwind.~~ ✅
+- ~~**Fase 3** — Cobros, pagos, descuentos, bancos.~~ ✅
+- ~~**Fase 4** — Bóvedas, bloques, propietarios, histórico.~~ ✅
+- ~~**Fase 5** — Personas, difuntos, responsables.~~ ✅
+- ~~**Fase 6** — 5 reportes con PDF y Excel + comparativa mensual.~~ ✅
+- **Fase 7** — Usuarios y roles
+  - ~~7.1 Listado (Famiitry)~~ ✅
+  - **7.2 Asignar/quitar roles desde detalle** — @Famiitry
+  - ~~7.3 Reset de contraseña forzado~~ ✅
+  - ~~7.4 Bloqueo eliminación admin@teobu.com~~ ✅
+- **Fase 8** — Notificaciones
+  - **8.1 NotificacionService (CRUD)** — @Famiitry
+  - **8.2 Job diario `@nestjs/schedule`** — @Famiitry
+  - **8.3 Dropdown header + página `/notify`** — @Famiitry
+  - **8.4 Envío de email (si SMTP)** — @yanditv (bloqueado por 8.1)
+- **Fase 9** — Configuración + catastro on-demand
+  - **9.1 Edición Cementerio + GADInformacion** — @Famiitry
+  - ~~9.2 Importador catastro on-demand~~ ✅
+  - **9.3 Vista de estado de última importación** — @Famiitry
+- **Fase 10** — Pulido y QA
+  - **10.1 Manual de usuario** — @Famiitry
+  - **10.2 Validación visual contra legado (88 vistas)** — mixto
+  - **10.3 Pruebas de carga con dataset real (~5000 contratos)** — @yanditv
+  - **10.4 Tests E2E con Playwright** — @Famiitry
+  - **10.5 Auditoría WCAG AA** — @Famiitry
+  - **10.6 Cierre `MIGRATION_STATUS.md` final** — @yanditv
+
+## Brechas técnicas residuales
+
+Estas no son features pero quedan en el radar para fases futuras:
+
+- Auditoría granular en `Piso`, `Propietario`, `Responsable`, `Cuota`
+  (modelos sin `usuarioCreadorId`). Aceptable hoy: la trazabilidad vive
+  en logs de aplicación. Requiere extensión de schema.
+- Numeración secuencial en el importador de catastro usa `max+1`. El
+  caso de uso (admin sube Excel desde UI) corre de a uno, así que no hay
+  race. Si se hace importación paralela en el futuro, migrar a secuencia
+  PostgreSQL.
+- `Notificacion` ya tiene tabla en schema desde Fase 0, pero no hay
+  service ni job (Fase 8 abierta).
