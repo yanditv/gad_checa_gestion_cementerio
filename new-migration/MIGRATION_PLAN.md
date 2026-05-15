@@ -393,8 +393,8 @@ este archivo.
     [x] 6.c PDFs (pdfkit) para 4 reportes                     ← 2026-05-14
     [x] 6.d Excel (xlsx) + comparativa mensual                ← 2026-05-14
 [ ] Fase 7  — Usuarios y roles
-    [ ] 7.1 Listado de usuarios con roles (@Famiitry)
-    [ ] 7.2 Asignar/quitar roles desde detalle (@Famiitry)
+    [x] 7.1 Listado de usuarios con roles (@Famiitry)        ← 2026-05-14
+    [x] 7.2 Asignar/quitar roles desde detalle (@Famiitry)    ← 2026-05-14
     [x] 7.3 Reset de contraseña forzado (@yanditv)            ← 2026-05-14
     [x] 7.4 Bloqueo eliminación admin@teobu.com (@yanditv)    ← 2026-05-14
 [ ] Fase 8  — Notificaciones + job
