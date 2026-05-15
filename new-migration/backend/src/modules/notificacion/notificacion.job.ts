@@ -1,43 +1,63 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { NotificacionService } from './notificacion.service';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class NotificacionJob {
   private readonly logger = new Logger(NotificacionJob.name);
 
-  constructor(
-    private prisma: PrismaService,
-    private notifService: NotificacionService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Diario a las 7:00 AM (America/Guayaquil = UTC-5).
    * Genera notificaciones para:
-   *   - Contratos que vencen en exactamente 30 días.
+   *   - Contratos que vencen en los próximos 30 días (inclusive hoy).
    *   - Cuotas vencidas y no pagadas.
+   *
+   * Idempotente: verifica existencia previa con mismo tipo + entidadTipo +
+   * entidadId + usuarioId antes de insertar. Si el servidor no corre un día,
+   * la ventana amplia (≥ hoy) recupera los contratos pendientes.
    */
   @Cron('0 7 * * *', { timeZone: 'America/Guayaquil' })
   async handleDailyNotifications() {
     this.logger.log('Iniciando job diario de notificaciones');
-    await this.notifyContratosPorVencer();
-    await this.notifyCuotasVencidas();
+
+    // Carga única de administradores activos antes de los bucles (evita N+1).
+    const admins = await this.getAdmins();
+
+    try {
+      await this.notifyContratosPorVencer(admins);
+    } catch (err) {
+      this.logger.error(
+        `Error en notifyContratosPorVencer: ${(err as Error).message}`,
+      );
+    }
+
+    try {
+      await this.notifyCuotasVencidas(admins);
+    } catch (err) {
+      this.logger.error(
+        `Error en notifyCuotasVencidas: ${(err as Error).message}`,
+      );
+    }
+
     this.logger.log('Job diario de notificaciones completado');
   }
 
-  private async notifyContratosPorVencer() {
+  private async notifyContratosPorVencer(admins: { id: string }[]) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const en30Dias = new Date(hoy);
     en30Dias.setDate(en30Dias.getDate() + 30);
+    en30Dias.setHours(23, 59, 59, 999);
 
     const contratos = await this.prisma.contrato.findMany({
       where: {
         estado: true,
         fechaFin: {
-          gte: en30Dias,
-          lt: new Date(en30Dias.getTime() + 24 * 60 * 60 * 1000),
+          gte: hoy,
+          lte: en30Dias,
         },
       },
       include: {
@@ -51,34 +71,45 @@ export class NotificacionJob {
       },
     });
 
+    let creadas = 0;
     for (const c of contratos) {
-      const usuarios = await this.getUsuariosANotificar();
-      for (const u of usuarios) {
+      for (const u of admins) {
+        const existe = await this.prisma.notificacion.findFirst({
+          where: {
+            tipo: 'ContratoPorVencer',
+            entidadTipo: 'Contrato',
+            entidadId: c.id,
+            usuarioId: u.id,
+          },
+        });
+        if (existe) continue;
+
         const difuntoNombre =
           [c.difunto?.nombre, c.difunto?.apellido].filter(Boolean).join(' ') ||
           'N/A';
-        await this.notifService.create({
-          tipo: 'ContratoPorVencer',
-          titulo: 'Contrato por vencer',
-          mensaje:
-            `El contrato ${c.numeroSecuencial} (${difuntoNombre}, ` +
-            `bóveda ${c.boveda?.numero ?? 'N/A'} / ${c.boveda?.bloque?.nombre ?? 'N/A'}) ` +
-            `vence el ${c.fechaFin ? new Date(c.fechaFin).toLocaleDateString('es-EC') : 'N/A'}.`,
-          usuarioId: u.id,
-          entidadTipo: 'Contrato',
-          entidadId: c.id,
+        await this.prisma.notificacion.create({
+          data: {
+            tipo: 'ContratoPorVencer',
+            titulo: 'Contrato por vencer',
+            mensaje:
+              `El contrato ${c.numeroSecuencial} (${difuntoNombre}, ` +
+              `bóveda ${c.boveda?.numero ?? 'N/A'} / ${c.boveda?.bloque?.nombre ?? 'N/A'}) ` +
+              `vence el ${c.fechaFin ? new Date(c.fechaFin).toLocaleDateString('es-EC') : 'N/A'}.`,
+            usuarioId: u.id,
+            entidadTipo: 'Contrato',
+            entidadId: c.id,
+          },
         });
+        creadas += 1;
       }
     }
 
-    if (contratos.length > 0) {
-      this.logger.log(
-        `Generadas notificaciones para ${contratos.length} contratos por vencer`,
-      );
+    if (creadas > 0) {
+      this.logger.log(`Generadas ${creadas} notificaciones de contratos por vencer`);
     }
   }
 
-  private async notifyCuotasVencidas() {
+  private async notifyCuotasVencidas(admins: { id: string }[]) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
@@ -98,49 +129,58 @@ export class NotificacionJob {
       },
     });
 
+    let creadas = 0;
     for (const c of cuotas) {
-      const usuarios = await this.getUsuariosANotificar();
-      for (const u of usuarios) {
+      for (const u of admins) {
+        const existe = await this.prisma.notificacion.findFirst({
+          where: {
+            tipo: 'CuotaVencida',
+            entidadTipo: 'Cuota',
+            entidadId: c.id,
+            usuarioId: u.id,
+          },
+        });
+        if (existe) continue;
+
         const difuntoNombre =
           [c.contrato?.difunto?.nombre, c.contrato?.difunto?.apellido]
             .filter(Boolean)
             .join(' ') || 'N/A';
-        await this.notifService.create({
-          tipo: 'CuotaVencida',
-          titulo: 'Cuota vencida',
-          mensaje:
-            `La cuota #${c.numero} del contrato ${c.contrato?.numeroSecuencial ?? 'N/A'} ` +
-            `(${difuntoNombre}) venció el ${new Date(c.fechaVencimiento).toLocaleDateString('es-EC')} ` +
-            `y no ha sido pagada.`,
-          usuarioId: u.id,
-          entidadTipo: 'Cuota',
-          entidadId: c.id,
+        await this.prisma.notificacion.create({
+          data: {
+            tipo: 'CuotaVencida',
+            titulo: 'Cuota vencida',
+            mensaje:
+              `La cuota #${c.numero} del contrato ${c.contrato?.numeroSecuencial ?? 'N/A'} ` +
+              `(${difuntoNombre}) venció el ${new Date(c.fechaVencimiento).toLocaleDateString('es-EC')} ` +
+              `y no ha sido pagada.`,
+            usuarioId: u.id,
+            entidadTipo: 'Cuota',
+            entidadId: c.id,
+          },
         });
+        creadas += 1;
       }
     }
 
-    if (cuotas.length > 0) {
-      this.logger.log(
-        `Generadas notificaciones para ${cuotas.length} cuotas vencidas`,
-      );
+    if (creadas > 0) {
+      this.logger.log(`Generadas ${creadas} notificaciones de cuotas vencidas`);
     }
   }
 
   /**
-   * Obtiene los usuarios con rol Administrador o Admin para notificar.
+   * Obtiene los usuarios con rol Administrador activos para notificar.
    * En una fase posterior se puede refinar para notificar al responsable
    * directo del contrato (requiere mapeo Persona ↔ Usuario).
    */
-  private async getUsuariosANotificar() {
+  private async getAdmins() {
     return this.prisma.usuario.findMany({
       where: {
         estado: true,
         usuarioRols: {
           some: {
             rol: {
-              nombreNormalizado: {
-                in: ['administrador', 'admin'],
-              },
+              nombreNormalizado: 'administrador',
             },
           },
         },
