@@ -4,17 +4,60 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { SessionUser } from './DashboardLayout';
 
+interface NotificacionItem {
+  id: number;
+  tipo: string;
+  titulo: string;
+  mensaje: string;
+  leida: boolean;
+  fechaCreacion: string;
+  entidadTipo?: string;
+  entidadId?: number;
+}
+
 interface HeaderProps {
   user: SessionUser | null;
   onToggleSidebar: () => void;
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Ahora';
+  if (mins < 60) return `Hace ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Hace ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  return `Hace ${days} d`;
 }
 
 export function Header({ user, onToggleSidebar }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [notificaciones, setNotificaciones] = useState<NotificacionItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cargar notificaciones no leídas para el badge
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/notificaciones?leida=false&limit=5', {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload) return;
+        setNotificaciones(payload.data ?? []);
+        setUnreadCount(payload.meta?.total ?? 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Cerrar dropdowns al hacer click fuera.
   useEffect(() => {
@@ -30,6 +73,19 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
+
+  const handleMarkRead = async (id: number) => {
+    try {
+      await fetch(`/api/notificaciones/${id}/leida`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+      });
+      setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+      setUnreadCount((c) => Math.max(0, c - 1));
+    } catch {
+      // ignorar
+    }
+  };
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -96,14 +152,22 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               aria-label="Notificaciones"
             >
               <i className="ti ti-bell text-xl" />
-              {/* Punto de notificaciones — futuro: badge dinámico */}
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger-500" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
                 <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                   <span className="font-semibold text-slate-700">
                     Notificaciones
+                    {unreadCount > 0 && (
+                      <span className="ml-1.5 text-xs font-normal text-slate-400">
+                        ({unreadCount} sin leer)
+                      </span>
+                    )}
                   </span>
                   <button
                     type="button"
@@ -114,9 +178,49 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                   </button>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
-                  <div className="px-4 py-8 text-center text-sm text-slate-400">
-                    No hay notificaciones nuevas.
-                  </div>
+                  {notificaciones.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-slate-400">
+                      No hay notificaciones nuevas.
+                    </div>
+                  ) : (
+                    <ul>
+                      {notificaciones.map((n) => (
+                        <li
+                          key={n.id}
+                          className={`border-b border-slate-50 px-4 py-2.5 ${
+                            !n.leida ? 'bg-primary-50/30' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-slate-700 truncate">
+                                {n.titulo}
+                              </p>
+                              <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                                {n.mensaje}
+                              </p>
+                              <p className="mt-1 text-[10px] text-slate-400">
+                                {timeAgo(n.fechaCreacion)}
+                              </p>
+                            </div>
+                            {!n.leida && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkRead(n.id);
+                                }}
+                                className="shrink-0 rounded-full p-1 text-primary-500 hover:bg-primary-50"
+                                title="Marcar como leída"
+                              >
+                                <i className="ti ti-check text-xs" />
+                              </button>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <Link
                   href="/notify"
