@@ -56,6 +56,9 @@ export class UsuarioService {
             include: { rol: true },
           },
         },
+        omit: {
+          passwordHash: true,
+        },
         orderBy: { fechaCreacion: 'desc' },
         skip,
         take: limit,
@@ -121,6 +124,9 @@ export class UsuarioService {
           include: { rol: true },
         },
       },
+      omit: {
+        passwordHash: true,
+      },
     });
   }
 
@@ -137,6 +143,9 @@ export class UsuarioService {
     return this.prisma.usuario.update({
       where: { id },
       data: { estado },
+      omit: {
+        passwordHash: true,
+      },
     });
   }
 

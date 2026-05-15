@@ -36,16 +36,19 @@ export class UsuarioController {
   }
 
   @Put(':id')
+  @Roles('Administrador')
   update(@Param('id') id: string, @Body() data: any) {
     return this.service.update(id, data);
   }
 
   @Patch(':id/estado')
+  @Roles('Administrador')
   updateEstado(@Param('id') id: string, @Body('estado') estado: boolean) {
     return this.service.updateEstado(id, !!estado);
   }
 
   @Put(':id/roles')
+  @Roles('Administrador')
   setRoles(@Param('id') id: string, @Body('roleIds') roleIds: string[] = []) {
     return this.service.setRoles(id, roleIds);
   }
