@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateNotificacionDto,
@@ -9,17 +10,31 @@ import {
   normalizePagination,
 } from '../../common/pagination';
 
+/**
+ * Servicio de notificaciones.
+ *
+ * Nota de auditoría: el modelo `Notificacion` no tiene campos de auditoría
+ * (`usuarioCreadorId`, `usuarioActualizadorId`, `estado`, `fechaEliminacion`).
+ * Es una tabla de eventos inmutables (log) — las notificaciones se crean por
+ * sistema (job diario) o admin y se marcan como leídas, no se editan ni se
+ * eliminan. La trazabilidad de quién disparó el evento está implícita en el
+ * tipo de notificación y la entidad referenciada. Excepción documentada en
+ * `MIGRATION_PLAN.md` §3.
+ */
 @Injectable()
 export class NotificacionService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: ListNotificacionesDto) {
+  /**
+   * Lista notificaciones del usuario autenticado. El `usuarioId` se deriva
+   * del token, no del query — no se puede listar notificaciones ajenas.
+   */
+  async findAll(query: ListNotificacionesDto, userId: string) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
 
-    const where: any = {};
-    if (query.usuarioId) {
-      where.usuarioId = query.usuarioId;
-    }
+    const where: Prisma.NotificacionWhereInput = {
+      usuarioId: userId,
+    };
     if (query.leida !== undefined) {
       where.leida = query.leida;
     }
@@ -45,7 +60,10 @@ export class NotificacionService {
     };
   }
 
-  async findOne(id: number) {
+  /**
+   * Detalle de notificación con validación de pertenencia.
+   */
+  async findOne(id: number, userId: string) {
     const notif = await this.prisma.notificacion.findUnique({
       where: { id },
       include: {
@@ -56,6 +74,9 @@ export class NotificacionService {
     });
     if (!notif) {
       throw new NotFoundException('Notificación no encontrada');
+    }
+    if (notif.usuarioId !== userId) {
+      throw new ForbiddenException('No tienes permiso para ver esta notificación');
     }
     return notif;
   }
@@ -73,12 +94,18 @@ export class NotificacionService {
     });
   }
 
-  async markRead(id: number) {
+  /**
+   * Marca una notificación como leída con validación de pertenencia.
+   */
+  async markRead(id: number, userId: string) {
     const notif = await this.prisma.notificacion.findUnique({
       where: { id },
     });
     if (!notif) {
       throw new NotFoundException('Notificación no encontrada');
+    }
+    if (notif.usuarioId !== userId) {
+      throw new ForbiddenException('No tienes permiso para modificar esta notificación');
     }
     return this.prisma.notificacion.update({
       where: { id },
