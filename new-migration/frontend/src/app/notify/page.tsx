@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { notificacionesApi, PaginationMeta } from '@/lib/api';
+import { timeAgo } from '@/lib/timeago';
 
 interface Notificacion {
   id: number;
@@ -25,22 +26,11 @@ const TIPO_ICON: Record<string, string> = {
 
 const TIPO_TONE: Record<string, string> = {
   ContratoPorVencer: 'bg-amber-50 text-amber-700 ring-amber-200',
-  ContratoVencido: 'bg-red-50 text-red-700 ring-red-200',
-  CuotaVencida: 'bg-red-50 text-red-700 ring-red-200',
-  PagoRegistrado: 'bg-green-50 text-green-700 ring-green-200',
+  ContratoVencido: 'bg-danger-50 text-danger-700 ring-danger-200',
+  CuotaVencida: 'bg-danger-50 text-danger-700 ring-danger-200',
+  PagoRegistrado: 'bg-success-50 text-success-700 ring-success-200',
   Generico: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Ahora mismo';
-  if (mins < 60) return `Hace ${mins} minuto${mins > 1 ? 's' : ''}`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `Hace ${hrs} hora${hrs > 1 ? 's' : ''}`;
-  const days = Math.floor(hrs / 24);
-  return `Hace ${days} día${days > 1 ? 's' : ''}`;
-}
 
 export default function NotifyPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
