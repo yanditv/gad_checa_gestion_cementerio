@@ -231,8 +231,8 @@ Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
   - ~~7.3 Reset de contraseña forzado~~ ✅
   - ~~7.4 Bloqueo eliminación admin@teobu.com~~ ✅
 - **Fase 8** — Notificaciones
-  - **8.1 NotificacionService (CRUD)** — @Famiitry
-  - **8.2 Job diario `@nestjs/schedule`** — @Famiitry
+  - ~~8.1 NotificacionService (CRUD) — @Famiitry~~ ✅
+  - ~~8.2 Job diario `@nestjs/schedule` — @Famiitry~~ ✅
   - **8.3 Dropdown header + página `/notify`** — @Famiitry
   - **8.4 Envío de email (si SMTP)** — @yanditv (bloqueado por 8.1)
 - **Fase 9** — Configuración + catastro on-demand
