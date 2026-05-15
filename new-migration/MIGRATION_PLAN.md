@@ -313,6 +313,60 @@ Tareas:
 4. Verificación de SEO/meta de Next (no es público, pero `<title>` correcto).
 5. Actualizar `MIGRATION_STATUS.md` con todos los módulos en `Completo`.
 
+### Fase 11 — Refactor de arquitectura backend
+
+**Entregable:** backend conforme a `ARCHITECTURE.md` §3 actualizado: DTOs de
+respuesta sin fugas, autorización consistente, configuración validada,
+numeración por secuencias PostgreSQL, auditoría centralizada y rate limiting
+en auth.
+
+**Detonante:** auditoría 2026-05-14 detectó 16 hallazgos (fuga de
+`passwordHash`, `@Body() data: any` en 9 controllers, `JWT_SECRET` con
+fallback hardcodeado, `max+1` en numeración secuencial, autorización
+inconsistente, etc.).
+
+Sub-fases (cada una un PR mergeable independiente, en este orden para
+evitar conflictos):
+
+1. **11.0** Limpieza estructural — borrar `backend/src/app/` (scaffolding
+   Next.js fósil), `backend/src/modules/boveda/dto/` vacío, eliminar
+   `console.log` en `main.ts`, quitar `@UseGuards(JwtAuthGuard)` redundantes.
+2. **11.1** `ConfigModule` con `validationSchema` (Joi) — namespaces en
+   `config/`, eliminar fallback `'cementerio-secret-key'` en `JWT_SECRET`.
+3. **11.2** DTOs de respuesta + mappers — corta fuga `passwordHash` en
+   `findOne/findAll/setRoles` de `usuario.service.ts`. Activar
+   `ClassSerializerInterceptor`. **Bloquea 11.4.**
+4. **11.3** Validación HTTP estricta — eliminar `@Body() data: any` en los
+   9 controllers (contrato, pago, persona, boveda, rol, cementerio, cuota,
+   usuario, etc.).
+5. **11.4** Autorización consistente con `@Roles('Administrador')` /
+   `@AdminOnly()` en endpoints destructivos y financieros.
+6. **11.5** Auditoría centralizada — `AuditContextInterceptor` +
+   `applyAuditCreate/Update/Delete` en `common/audit/`. Cubre brecha de
+   `Piso/Propietario/Responsable/Cuota` y los `update` que no setean
+   `usuarioActualizadorId`.
+7. **11.6** Numeración secuencial vía `YearSequenceService` en
+   `common/sequences/` (cierra deuda CLAUDE.md §2.1: prohibido `max+1`).
+8. **11.7** Calidad transversal — paginación en `GET /pagos`, rate limiting
+   en `/auth/*` con `@nestjs/throttler`, streaming de PDFs grandes,
+   `AllExceptionsFilter` preservando `errors[]`, `ApiResponseInterceptor`
+   con `@Paginated()` explícito.
+9. **11.8** Repository pattern selectivo — solo `ContratoRepository` y
+   `PagoRepository` (criterio: service >300 LOC o ≥3 queries complejas).
+10. **11.9** Layout final `dto/{request,response}/` en módulos restantes.
+
+**Definition of done:**
+- `grep -rn '@Body() .*: any' backend/src/modules` → 0 resultados.
+- `grep -rn 'passwordHash' backend/src/modules` → solo en `auth.service.ts`.
+- `JWT_SECRET` faltante → backend no arranca (Joi valida).
+- 5 logins consecutivos fallidos en `/auth/login` → 429.
+- Dos requests concurrentes a `POST /contratos` → números secuenciales
+  distintos.
+
+**Asignación:**
+- `[crítica]` @yanditv: 11.0, 11.1, 11.2, 11.5, 11.6, 11.8.
+- `[IA]` @Famiitry: 11.3, 11.4, 11.7, 11.9.
+
 ---
 
 ## 3. Decisiones técnicas vigentes
@@ -333,6 +387,12 @@ este archivo.
 | Numeración anual | Secuencias PostgreSQL `contrato_numero_YYYY_seq` y `pago_numero_YYYY_seq` creadas perezosamente. Alternativa rechazada: contar `max()` (race condition). |
 | Cliente HTTP frontend | `fetch` nativo + `@tanstack/react-query` para caché. **No** axios (ya está en `package.json`; remover en limpieza posterior si no se usa). |
 | Validación formularios | `zod` en frontend (ya en `package.json`), `class-validator` en backend. |
+| Repository pattern (backend) | **Opcional/selectivo**. Solo en `ContratoRepository` y `PagoRepository` (services con ≥300 LOC o ≥3 queries complejas). Razón: skill `nestjs-best-practices §arch-use-repository-pattern` solo lo recomienda para queries complejas; CRUDs estables (Banco, Descuento, Rol) no lo necesitan. |
+| Arquitectura hexagonal/Clean | **Descartada**. La paridad 1:1 con SQL Server / EF exige queries directas; abstraer `Prisma.TransactionClient` detrás de un puerto duplica tipos sin reducir riesgo. |
+| Auditoría | **Helper `applyAudit*` invocado explícitamente** en services, no `BaseService` con herencia. Razón: mantener call sites grep-ables. Contexto provisto por `AuditContextInterceptor`. |
+| DTOs de respuesta | **Obligatorios** en cualquier endpoint que retorne entidades con campos sensibles. `Usuario` nunca se serializa cruda (oculta `passwordHash`). Mapper en `<feature>.mapper.ts`. |
+| Rate limiting | `@nestjs/throttler` en `/auth/login`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/register`: 5 req/min por IP. |
+| Configuración | `@nestjs/config` con `registerAs` y `validationSchema` (Joi). `JWT_SECRET` requerido (≥32 chars), sin fallback. Servidor falla al boot si una env requerida falta. |
 
 ---
 
@@ -397,6 +457,17 @@ este archivo.
     [x] 7.2 Asignar/quitar roles desde detalle (@Famiitry)    ← 2026-05-14
     [x] 7.3 Reset de contraseña forzado (@yanditv)            ← 2026-05-14
     [x] 7.4 Bloqueo eliminación admin@teobu.com (@yanditv)    ← 2026-05-14
+[ ] Fase 11 — Refactor de arquitectura backend
+    [ ] 11.0 Limpieza estructural
+    [ ] 11.1 ConfigModule + validationSchema (Joi)
+    [ ] 11.2 DTOs de respuesta + mappers (corta fuga passwordHash)
+    [ ] 11.3 Validación HTTP estricta (elimina `@Body() data: any`)
+    [ ] 11.4 Autorización consistente con `@Roles('Administrador')`
+    [ ] 11.5 Auditoría centralizada (interceptor + helper)
+    [ ] 11.6 Numeración secuencial vía YearSequenceService
+    [ ] 11.7 Calidad transversal (paginación pagos, rate limit, stream PDFs)
+    [ ] 11.8 Repository pattern selectivo (Contrato, Pago)
+    [ ] 11.9 Layout final dto/{request,response}/
 [ ] Fase 8  — Notificaciones + job
 [ ] Fase 9  — Configuración + catastro on-demand
     [ ] 9.1 Edición Cementerio + GADInformacion (@Famiitry)

@@ -372,3 +372,12 @@ output
 .playwright-cli
 gad_checa_gestion_cementerio/wwwroot/documentos/
 new-migration/backend/storage/
+
+# Skills locales (autoskills, midudev) — instalación por desarrollador,
+# no se trackea en repo.
+**/.agents/
+**/.cline/
+**/.continue/
+**/.kiro/
+**/.claude/skills/
+**/skills-lock.json

@@ -67,16 +67,28 @@ new-migration/
 │   │   ├── schema.prisma      ← fuente única del modelo
 │   │   └── migrations/
 │   ├── src/
-│   │   ├── main.ts            ← bootstrap, CORS, Swagger, seed
-│   │   ├── app.module.ts
+│   │   ├── main.ts            ← bootstrap, helmet, CORS, Swagger, Logger
+│   │   ├── app.module.ts      ← imports + APP_GUARD/FILTER/INTERCEPTOR globales
+│   │   ├── config/            ← @nestjs/config con registerAs + validationSchema
+│   │   │   ├── app.config.ts          ← port, env, frontendUrl, tz
+│   │   │   ├── auth.config.ts         ← jwtSecret (≥32 chars), expiraciones
+│   │   │   ├── database.config.ts     ← databaseUrl
+│   │   │   ├── smtp.config.ts         ← host, port, user, pass, from
+│   │   │   ├── storage.config.ts      ← driver (local|s3) + parámetros
+│   │   │   └── validation.schema.ts   ← Joi: falla al boot si falta una env
 │   │   ├── prisma/            ← PrismaService, PrismaModule
 │   │   ├── common/
-│   │   │   ├── interceptors/  ← ApiResponseInterceptor, AuditInterceptor
+│   │   │   ├── audit/         ← applyAuditCreate / applyAuditUpdate helpers
+│   │   │   ├── decorators/    ← @Roles, @CurrentUser, @Public, @AdminOnly, @Paginated
+│   │   │   ├── dto/           ← PaginationDto, IdParamDto, ApiResponseDto
+│   │   │   ├── email/         ← EmailService (nodemailer)
 │   │   │   ├── filters/       ← AllExceptionsFilter
-│   │   │   ├── guards/        ← JwtAuthGuard, RolesGuard
-│   │   │   ├── decorators/    ← @Roles, @CurrentUser, @Public
-│   │   │   ├── dto/           ← PaginationDto, ApiResponse<T>
-│   │   │   └── pdf/           ← helpers compartidos para pdfkit
+│   │   │   ├── guards/        ← JwtAuthGuard, RolesGuard, ThrottlerGuard
+│   │   │   ├── interceptors/  ← ApiResponseInterceptor, AuditContextInterceptor
+│   │   │   ├── interfaces/    ← AuditContext, PaginatedResult
+│   │   │   ├── pdf/           ← helpers compartidos para pdfkit
+│   │   │   ├── sequences/     ← YearSequenceService (CREATE SEQUENCE + nextval)
+│   │   │   └── storage/       ← StorageService + LocalStorage / S3Storage
 │   │   ├── bootstrap/
 │   │   │   ├── seed.service.ts
 │   │   │   └── catastro-import.service.ts
@@ -85,8 +97,8 @@ new-migration/
 │   │       ├── usuario/
 │   │       ├── rol/
 │   │       ├── cementerio/    ← Cementerio + GADInformacion
-│   │       ├── descuento/     ← (pendiente)
-│   │       ├── banco/         ← (pendiente)
+│   │       ├── descuento/
+│   │       ├── banco/
 │   │       ├── bloque/
 │   │       ├── boveda/
 │   │       ├── persona/       ← Persona + Propietario + Responsable
@@ -94,9 +106,9 @@ new-migration/
 │   │       ├── contrato/
 │   │       ├── cuota/
 │   │       ├── pago/
-│   │       ├── reporte/       ← (pendiente)
-│   │       ├── notificacion/  ← (pendiente)
-│   │       └── catastro/      ← (pendiente)
+│   │       ├── report/        ← reportes PDF + Excel
+│   │       ├── notificacion/  ← (pendiente Fase 8)
+│   │       └── catastro/
 │   └── package.json
 │
 └── frontend/                  ← cementerio-frontend (Next.js 15)
@@ -141,37 +153,73 @@ new-migration/
 
 ### 3.1 Convenciones de módulo
 
-Cada módulo de dominio expone **un** controlador, **un** servicio y **DTOs**.
-La regla general es:
+Cada módulo de dominio expone **un** controlador, **un** servicio, **DTOs**
+de entrada y salida, y un **mapper** que traduce entidad Prisma → DTO de
+respuesta. La regla general es:
 
 ```
 modules/<nombre>/
 ├── <nombre>.module.ts
 ├── <nombre>.controller.ts
 ├── <nombre>.service.ts
-├── dto/
-│   ├── create-<nombre>.dto.ts
-│   ├── update-<nombre>.dto.ts
-│   └── query-<nombre>.dto.ts
-└── <nombre>.pdf.ts       (opcional, si genera PDF)
+├── <nombre>.repository.ts        (OPCIONAL — ver criterio abajo)
+├── <nombre>.mapper.ts            ← entidad Prisma → ResponseDto. Único lugar
+│                                   autorizado para excluir campos sensibles
+│                                   (passwordHash, tokens, etc.).
+├── <nombre>.pdf.ts               (opcional, si genera PDF)
+└── dto/
+    ├── request/
+    │   ├── create-<nombre>.dto.ts
+    │   ├── update-<nombre>.dto.ts
+    │   └── query-<nombre>.dto.ts (extiende PaginationDto cuando aplique)
+    └── response/
+        ├── <nombre>.response.dto.ts
+        └── <nombre>-list-item.response.dto.ts (cuando difiere del detalle)
 ```
+
+**Repository selectivo**: `<nombre>.repository.ts` se crea **solo cuando** el
+service supera ~300 LOC o tiene ≥3 queries con `where` no triviales (ej:
+`ContratoService`, `PagoService`). CRUDs estables (`Banco`, `Descuento`,
+`Rol`) **no** lo necesitan — duplicar capas en CRUDs simples viola
+single-responsibility por inflación inversa. Decisión documentada en
+`MIGRATION_PLAN.md` §3.
+
+**Hexagonal/Clean queda descartada** (decisión cerrada): la paridad 1:1 con
+SQL Server / EF exige queries directas; abstraer `Prisma.TransactionClient`
+detrás de un puerto duplica tipos sin reducir riesgo.
 
 ### 3.2 Capas
 
 1. **Controller**
    - Sólo orquesta: valida DTO (Pipes), llama servicio, devuelve resultado.
    - Decorado con `@ApiTags`, `@ApiOperation`, `@ApiResponse` para Swagger.
-   - Aplica `@UseGuards(JwtAuthGuard)` por defecto, `@Public()` para excepciones.
-   - Aplica `@Roles('Administrador', ...)` cuando aplica.
+   - `JwtAuthGuard` está registrado **global** vía `APP_GUARD`. No repetir
+     `@UseGuards(JwtAuthGuard)` en controllers — solo `@Public()` para
+     excepciones.
+   - `@Roles('Administrador', ...)` u `@AdminOnly()` en endpoints
+     destructivos / financieros (ver §3.6).
+   - **Nunca acceder a `prisma` directamente** desde el controller.
 2. **Service**
    - Toda la lógica de negocio.
-   - Recibe `PrismaService` por DI.
+   - Recibe `PrismaService` por DI (o `<X>Repository` si se extrajo).
    - No conoce HTTP (`Request`/`Response`).
    - Las operaciones que tocan ≥ 2 tablas usan `prisma.$transaction`.
-3. **DTO**
-   - `class-validator` para validación.
-   - `class-transformer` para deserialización tipada (`@Type`, `@Transform`).
-   - Decorados con `@ApiProperty` para Swagger.
+   - Para auditoría usa `applyAuditCreate(data, ctx)` /
+     `applyAuditUpdate(data, ctx)` de `common/audit/` (ver §3.5). Nunca
+     copiar manualmente `usuarioCreadorId` en cada `.create({ data })`.
+3. **Repository** (opcional)
+   - Encapsula queries Prisma complejas con tipos `Prisma.<X>GetPayload`.
+   - Sin lógica de dominio; solo lectura/escritura de datos.
+4. **Mapper**
+   - Convierte `Prisma.<Entidad>` → `<Feature>ResponseDto`.
+   - **Único lugar autorizado** para excluir `passwordHash` y campos sensibles.
+   - **Nunca** retornar la entidad Prisma desnuda desde un controller.
+5. **DTO**
+   - `dto/request/`: `class-validator` + `@Type` + `@ApiProperty`. Rechaza
+     propiedades no declaradas (`forbidNonWhitelisted: true` global).
+   - `dto/response/`: `class-transformer` con `@Expose`/`@Exclude` +
+     `@ApiProperty`. Decorado con `@SerializeOptions({ strategy: 'excludeAll' })`
+     en el controller cuando aplique.
 
 ### 3.3 Respuesta unificada
 
@@ -203,6 +251,16 @@ Todas las respuestas pasan por `ApiResponseInterceptor`:
 
 El frontend (`lib/api.ts`) **desenvuelve** automáticamente la propiedad `data`.
 
+`AllExceptionsFilter` preserva `errors[]` cuando la excepción viene de
+`ValidationPipe` (no se reduce a string) y mapea
+`PrismaClientKnownRequestError P2002 → 409 ConflictException`,
+`P2025 → 404 NotFoundException`. Para 5xx loguea stack y devuelve mensaje
+genérico.
+
+`ApiResponseInterceptor` reconoce payload paginado vía decorador explícito
+`@Paginated()` (no por duck-typing). Compatibilidad: detecta también el
+shape `{ items, meta }` durante la migración.
+
 ### 3.4 Paginación estándar
 
 DTO base (`common/dto/pagination.dto.ts`):
@@ -221,22 +279,34 @@ Cualquier endpoint de listado recibe este DTO (o uno que lo extienda).
 
 ### 3.5 Auditoría
 
-Interceptor `AuditInterceptor` (a crear):
+Patrón: **interceptor que provee contexto + helper que los services invocan
+explícitamente**. Se evita una `BaseService` con herencia para mantener cada
+call site grep-able.
+
+`AuditContextInterceptor` (en `common/interceptors/`):
 
 - Para métodos `POST`/`PUT`/`PATCH`/`DELETE`, lee el `req.user.id` (JwtAuthGuard
-  lo deposita) y lo inyecta en `req.auditContext`.
-- Los servicios consultan `req.auditContext.userId` y rellenan los campos
-  `usuarioCreadorId`/`usuarioActualizadorId`/`usuarioEliminadorId`
-  apropiados al persistir.
-- Para `DELETE` lógico, el patrón estándar es:
+  lo deposita) y deposita `req.auditContext = { userId, roles }`.
 
-  ```ts
-  await prisma.contrato.update({
-    where: { id },
-    data: { estado: false, usuarioEliminadorId: userId,
-            fechaEliminacion: new Date() },
-  });
-  ```
+`common/audit/apply-audit.ts`:
+
+```ts
+applyAuditCreate(data, ctx)  // → { ...data, usuarioCreadorId: ctx.userId }
+applyAuditUpdate(data, ctx)  // → { ...data, usuarioActualizadorId: ctx.userId,
+                             //          fechaActualizacion: new Date() }
+applyAuditDelete(ctx)        // → { estado: false,
+                             //     usuarioEliminadorId: ctx.userId,
+                             //     fechaEliminacion: new Date() }
+```
+
+Los servicios reciben `ctx: AuditContext` (de `@CurrentUser()` o pasado
+desde controller) y aplican el helper:
+
+```ts
+await prisma.contrato.create({ data: applyAuditCreate(input, ctx) });
+await prisma.contrato.update({ where: { id }, data: applyAuditUpdate(input, ctx) });
+await prisma.contrato.update({ where: { id }, data: applyAuditDelete(ctx) });
+```
 
 ### 3.6 Errores
 
@@ -252,22 +322,29 @@ Mensajes **en español** dirigidos al usuario final.
 ### 3.7 Numeración anual
 
 Para contratos y pagos se usa una secuencia PostgreSQL por año, creada
-perezosamente:
+perezosamente. La lógica vive en `common/sequences/year-sequence.service.ts`:
 
 ```ts
-// pseudo
-const year = new Date().getFullYear();
-const seqName = `contrato_numero_${year}_seq`;
-await prisma.$executeRawUnsafe(
-  `CREATE SEQUENCE IF NOT EXISTS "${seqName}" START 1`
-);
-const [{ nextval }] = await prisma.$queryRawUnsafe<[{nextval: bigint}]>(
-  `SELECT nextval('"${seqName}"') AS nextval`
-);
-const numero = `${year}-${String(nextval).padStart(4, '0')}`;
+@Injectable()
+export class YearSequenceService {
+  constructor(private prisma: PrismaService) {}
+
+  async next(prefix: string, year = new Date().getFullYear()): Promise<bigint> {
+    const seqName = `${prefix}_numero_${year}_seq`;
+    await this.prisma.$executeRawUnsafe(
+      `CREATE SEQUENCE IF NOT EXISTS "${seqName}" START 1`
+    );
+    const [{ nextval }] = await this.prisma.$queryRawUnsafe<[{ nextval: bigint }]>(
+      `SELECT nextval('"${seqName}"') AS nextval`
+    );
+    return nextval;
+  }
+}
 ```
 
-Atómico, evita carreras.
+Los servicios consumen `seqService.next('contrato', year)`; **prohibido
+duplicar el `CREATE SEQUENCE`** o usar `prisma.<X>.aggregate({ _max })+1`
+(viola CLAUDE.md §2.1). Atómico, evita carreras.
 
 ### 3.8 Storage (PDFs firmados)
 
@@ -493,10 +570,15 @@ Variables esperadas (consolidar en un `.env.example` por servicio).
 
 ### 7.1 Backend
 
+Validadas con Joi en `config/validation.schema.ts`. **El servidor falla al
+arrancar** si una env requerida falta o `JWT_SECRET` tiene <32 caracteres.
+Sin fallback hardcodeado.
+
 ```
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cementerio
-JWT_SECRET=cementerio-secret-key-change-in-production
+JWT_SECRET=<obligatorio, ≥32 chars, sin fallback>
 JWT_EXPIRES_IN=7d
+JWT_RESET_EXPIRES_IN=30m
 FRONTEND_URL=http://localhost:3000
 PORT=3001
 
@@ -564,24 +646,37 @@ cd frontend && bun install && bun run dev
 ## 9. Observabilidad
 
 - Logs JSON estructurados (pino o `nestjs-pino`). Campos mínimos: `level`,
-  `time`, `module`, `userId`, `traceId`.
+  `time`, `module`, `userId`, `traceId`. Mientras se migra, usar `Logger` de
+  Nest (`new Logger('Bootstrap').log(...)`) — `console.log` está prohibido.
 - Métricas mínimas en `/health`: uptime, db latency, memoria.
 - Errores 5xx → log con stack y `traceId` referenciable.
 - Auditoría escrita ya queda en BD (campos `usuarioCreadorId` etc.). Para una
   auditoría más rica considerar tabla `AuditLog` en una fase posterior (no
   está en alcance inicial).
+- **Rate limiting** con `@nestjs/throttler` en endpoints de auth: 5 req/min
+  por IP en `/auth/login`, `/auth/forgot-password`, `/auth/reset-password`,
+  `/auth/register`. Mitiga fuerza bruta y abuso de SMTP.
 
 ---
 
 ## 10. Reglas inflexibles
 
 - **No** se borra físicamente; siempre `estado=false` + auditoría.
-- **No** se rompe la unicidad por número secuencial (usar secuencias PG).
+- **No** se rompe la unicidad por número secuencial (usar secuencias PG via
+  `YearSequenceService`).
 - **No** se exponen endpoints sin paginación para listados de dominio.
 - **No** se mezclan responsabilidades: las migraciones de datos viven en
   `bootstrap/` o `scripts/`, no en módulos de dominio.
 - **No** se duplica lógica entre frontend y backend; el cliente confía en el
   cálculo del servidor (ej: totales de cuota, descuentos, mora).
 - **No** se inyectan strings al usuario sin pasar por `class-validator` o `zod`.
+- **No** se retornan entidades Prisma directamente desde controllers. Toda
+  respuesta pasa por su `*.response.dto.ts` vía `<feature>.mapper.ts`.
+  Especialmente crítico para `Usuario` (ocultar `passwordHash`).
+- **No** `@Body() x: any` en controllers. Toda entrada HTTP tiene un DTO en
+  `dto/request/` con `class-validator`.
+- **No** `@UseGuards(JwtAuthGuard)` repetido — está registrado global vía
+  `APP_GUARD`. Solo `@Public()` para excepciones.
+- **No** `console.log` en código de producción — usar `Logger` de Nest.
 - **Sí** se mantiene paridad con la UI legada hasta firmar la entrega. Las
   mejoras visuales sólo después del go-live.

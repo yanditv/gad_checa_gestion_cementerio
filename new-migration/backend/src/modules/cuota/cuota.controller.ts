@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CuotaService } from './cuota.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('cuotas')
+@ApiBearerAuth()
 @Controller('cuotas')
 export class CuotaController {
   constructor(private service: CuotaService) {}
@@ -29,22 +29,16 @@ export class CuotaController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   create(@Body() data: any) {
     return this.service.create(data);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   update(@Param('id') id: string, @Body() data: any) {
     return this.service.update(+id, data);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   remove(@Param('id') id: string) {
     return this.service.remove(+id);
   }
