@@ -469,6 +469,8 @@ este archivo.
     [ ] 11.8 Repository pattern selectivo (Contrato, Pago)
     [ ] 11.9 Layout final dto/{request,response}/
 [ ] Fase 8  — Notificaciones + job
+    [x] 8.1 NotificacionService (CRUD + listar) (@Famiitry)  ← 2026-05-15
+    [ ] 8.2 Job diario @nestjs/schedule (@Famiitry)
 [ ] Fase 9  — Configuración + catastro on-demand
     [ ] 9.1 Edición Cementerio + GADInformacion (@Famiitry)
     [x] 9.2 Importador catastro on-demand (@yanditv)          ← 2026-05-14
