@@ -398,6 +398,8 @@ este archivo.
     [x] 7.3 Reset de contraseña forzado (@yanditv)            ← 2026-05-14
     [x] 7.4 Bloqueo eliminación admin@teobu.com (@yanditv)    ← 2026-05-14
 [ ] Fase 8  — Notificaciones + job
+    [x] 8.1 NotificacionService (CRUD + listar) (@Famiitry)  ← 2026-05-15
+    [ ] 8.2 Job diario @nestjs/schedule (@Famiitry)
 [ ] Fase 9  — Configuración + catastro on-demand
     [ ] 9.1 Edición Cementerio + GADInformacion (@Famiitry)
     [x] 9.2 Importador catastro on-demand (@yanditv)          ← 2026-05-14

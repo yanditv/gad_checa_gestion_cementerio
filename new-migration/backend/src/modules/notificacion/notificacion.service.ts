@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateNotificacionDto,
@@ -16,7 +17,7 @@ export class NotificacionService {
   async findAll(query: ListNotificacionesDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
 
-    const where: any = {};
+    const where: Prisma.NotificacionWhereInput = {};
     if (query.usuarioId) {
       where.usuarioId = query.usuarioId;
     }

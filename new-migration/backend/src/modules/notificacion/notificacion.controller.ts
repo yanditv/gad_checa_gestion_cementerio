@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { NotificacionService } from './notificacion.service';
+import { Roles } from '../../common/decorators/roles.decorator';
 import {
   CreateNotificacionDto,
   ListNotificacionesDto,
@@ -34,6 +35,7 @@ export class NotificacionController {
   }
 
   @Post()
+  @Roles('Administrador')
   @ApiOperation({ summary: 'Crear notificación (para jobs y sistema)' })
   create(@Body() dto: CreateNotificacionDto) {
     return this.service.create(dto);
