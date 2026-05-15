@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { notificacionesApi, PaginationMeta } from '@/lib/api';
 
 interface Notificacion {
   id: number;
@@ -12,15 +13,6 @@ interface Notificacion {
   fechaLectura: string | null;
   entidadTipo: string | null;
   entidadId: number | null;
-}
-
-interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
 }
 
 const TIPO_ICON: Record<string, string> = {
@@ -54,29 +46,20 @@ export default function NotifyPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<'todas' | 'no-leidas' | 'leidas'>('todas');
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '20',
-      });
-      if (filter === 'no-leidas') params.set('leida', 'false');
-      if (filter === 'leidas') params.set('leida', 'true');
-
-      const res = await fetch(`/api/notificaciones?${params.toString()}`, {
-        cache: 'no-store',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) throw new Error('Error al cargar notificaciones');
-      const payload = await res.json();
-      setNotificaciones((payload?.data ?? []) as Notificacion[]);
-      setMeta((payload?.meta ?? null) as PaginationMeta | null);
+      const leidaParam = filter === 'no-leidas' ? false : filter === 'leidas' ? true : undefined;
+      const result = await notificacionesApi.findPage({ page, limit: 20, leida: leidaParam });
+      setNotificaciones(result.data ?? []);
+      setMeta(result.meta ?? null);
     } catch {
-      setNotificaciones([]);
+      setError('No se pudieron cargar las notificaciones');
     } finally {
       setLoading(false);
     }
@@ -88,10 +71,7 @@ export default function NotifyPage() {
 
   const handleMarkRead = async (id: number) => {
     try {
-      await fetch(`/api/notificaciones/${id}/leida`, {
-        method: 'PATCH',
-        credentials: 'same-origin',
-      });
+      await notificacionesApi.markRead(id);
       setNotificaciones((prev) =>
         prev.map((n) => (n.id === id ? { ...n, leida: true, fechaLectura: new Date().toISOString() } : n)),
       );
@@ -101,18 +81,8 @@ export default function NotifyPage() {
   };
 
   const handleMarkAllRead = async () => {
-    for (const n of notificaciones) {
-      if (!n.leida) {
-        try {
-          await fetch(`/api/notificaciones/${n.id}/leida`, {
-            method: 'PATCH',
-            credentials: 'same-origin',
-          });
-        } catch {
-          // continuar
-        }
-      }
-    }
+    const pendientes = notificaciones.filter((n) => !n.leida);
+    await Promise.all(pendientes.map((n) => notificacionesApi.markRead(n.id)));
     load();
   };
 

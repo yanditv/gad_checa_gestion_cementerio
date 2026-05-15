@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { SessionUser } from './DashboardLayout';
+import { notificacionesApi } from '@/lib/api';
 
 interface NotificacionItem {
   id: number;
@@ -43,20 +44,14 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
   // Cargar notificaciones no leídas para el badge
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/notificaciones?leida=false&limit=5', {
-      cache: 'no-store',
-      credentials: 'same-origin',
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((payload) => {
-        if (cancelled || !payload) return;
-        setNotificaciones(payload.data ?? []);
-        setUnreadCount(payload.meta?.total ?? 0);
+    notificacionesApi.findPage({ limit: 5, leida: false })
+      .then((result) => {
+        if (cancelled) return;
+        setNotificaciones(result.data ?? []);
+        setUnreadCount(result.meta?.total ?? 0);
       })
       .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   // Cerrar dropdowns al hacer click fuera.
@@ -76,10 +71,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
 
   const handleMarkRead = async (id: number) => {
     try {
-      await fetch(`/api/notificaciones/${id}/leida`, {
-        method: 'PATCH',
-        credentials: 'same-origin',
-      });
+      await notificacionesApi.markRead(id);
       setNotificaciones((prev) => prev.filter((n) => n.id !== id));
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch {
