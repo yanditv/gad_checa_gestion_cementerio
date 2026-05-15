@@ -9,11 +9,6 @@ import { Transform } from 'class-transformer';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class ListNotificacionesDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ description: 'Filtrar por usuario' })
-  @IsOptional()
-  @IsString()
-  usuarioId?: string;
-
   @ApiPropertyOptional({ description: 'true = solo no leídas, false = solo leídas' })
   @IsOptional()
   @Transform(({ value }) => value === 'true' ? true : value === 'false' ? false : undefined)

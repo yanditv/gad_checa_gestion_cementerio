@@ -471,6 +471,7 @@ este archivo.
 [ ] Fase 8  — Notificaciones + job
     [x] 8.1 NotificacionService (CRUD + listar) (@Famiitry)  ← 2026-05-15
     [x] 8.2 Job diario @nestjs/schedule (@Famiitry)          ← 2026-05-15
+    [x] 8.3 Dropdown header + pagina /notify (@Famiitry)     ← 2026-05-15
 [ ] Fase 9  — Configuración + catastro on-demand
     [ ] 9.1 Edición Cementerio + GADInformacion (@Famiitry)
     [x] 9.2 Importador catastro on-demand (@yanditv)          ← 2026-05-14
