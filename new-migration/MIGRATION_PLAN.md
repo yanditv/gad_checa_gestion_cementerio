@@ -389,7 +389,6 @@ este archivo.
 | Validación formularios | `zod` en frontend (ya en `package.json`), `class-validator` en backend. |
 | Repository pattern (backend) | **Opcional/selectivo**. Solo en `ContratoRepository` y `PagoRepository` (services con ≥300 LOC o ≥3 queries complejas). Razón: skill `nestjs-best-practices §arch-use-repository-pattern` solo lo recomienda para queries complejas; CRUDs estables (Banco, Descuento, Rol) no lo necesitan. |
 | Arquitectura hexagonal/Clean | **Descartada**. La paridad 1:1 con SQL Server / EF exige queries directas; abstraer `Prisma.TransactionClient` detrás de un puerto duplica tipos sin reducir riesgo. |
-| `POST /contratos` DTO polimórfico | **Excepción consciente a §2.2**. El controller recibe `Record<string, unknown>` porque el endpoint rutea internamente a `createWizard` o `createSimple` según la forma del payload (wizard tiene `contrato`+`difunto`+`responsables`+`pago` anidados). Ambos caminos están validados con DTOs específicos (`CreateContratoWizardDto`, `CreateContratoSimpleDto`) dentro del service. `class-validator` no soporta DTOs polimórficos en un mismo endpoint; esta es la alternativa más limpia. |
 | Auditoría | **Helper `applyAudit*` invocado explícitamente** en services, no `BaseService` con herencia. Razón: mantener call sites grep-ables. Contexto provisto por `AuditContextInterceptor`. |
 | DTOs de respuesta | **Obligatorios** en cualquier endpoint que retorne entidades con campos sensibles. `Usuario` nunca se serializa cruda (oculta `passwordHash`). Mapper en `<feature>.mapper.ts`. |
 | Rate limiting | `@nestjs/throttler` en `/auth/login`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/register`: 5 req/min por IP. |
@@ -462,8 +461,8 @@ este archivo.
     [ ] 11.0 Limpieza estructural
     [ ] 11.1 ConfigModule + validationSchema (Joi)
     [ ] 11.2 DTOs de respuesta + mappers (corta fuga passwordHash)
-    [x] 11.3 Validación HTTP estricta (elimina `@Body() data: any`) ← 2026-05-16
-    [ ] 11.4 Autorización consistente con `@Roles('Administrador')`
+    [ ] 11.3 Validación HTTP estricta (elimina `@Body() data: any`)
+    [x] 11.4 Autorización consistente con `@Roles('Administrador')` ← 2026-05-16
     [ ] 11.5 Auditoría centralizada (interceptor + helper)
     [ ] 11.6 Numeración secuencial vía YearSequenceService
     [ ] 11.7 Calidad transversal (paginación pagos, rate limit, stream PDFs)

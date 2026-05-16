@@ -54,6 +54,7 @@ export class PersonaController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: AuthUser,

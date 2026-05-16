@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CuotaService } from './cuota.service';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateCuotaDto } from './dto/request/update-cuota.dto';
 
 @ApiTags('cuotas')
@@ -40,6 +41,7 @@ export class CuotaController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   remove(@Param('id') id: string) {
     return this.service.remove(+id);
   }

@@ -13,6 +13,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BovedaService } from './boveda.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateBovedaDto } from './dto/request/update-boveda.dto';
 
 class SetPropietarioDto {
@@ -75,6 +76,7 @@ export class BovedaController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);
   }

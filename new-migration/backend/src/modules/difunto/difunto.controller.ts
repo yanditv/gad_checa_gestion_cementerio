@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { DifuntoService } from './difunto.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { CreateDifuntoDto, UpdateDifuntoDto } from './dto/difunto.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AuthUser,
   CurrentUser,
@@ -41,11 +42,13 @@ export class DifuntoController {
   }
 
   @Post()
+  @Roles('Administrador')
   create(@Body() dto: CreateDifuntoDto, @CurrentUser() user: AuthUser) {
     return this.service.create(dto, user.id);
   }
 
   @Put(':id')
+  @Roles('Administrador')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDifuntoDto,
@@ -55,6 +58,7 @@ export class DifuntoController {
   }
 
   @Patch(':id')
+  @Roles('Administrador')
   patch(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDifuntoDto,
@@ -64,6 +68,8 @@ export class DifuntoController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
+  @Roles('Administrador')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: AuthUser,

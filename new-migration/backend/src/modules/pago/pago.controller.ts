@@ -68,6 +68,7 @@ export class PagoController {
   }
 
   @Post(':id/anular')
+  @Roles('Administrador')
   @ApiOperation({
     summary: 'Anular un pago (solo Administrador)',
     description:
@@ -92,6 +93,7 @@ export class PagoController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: AuthUser,

@@ -26,6 +26,7 @@ import {
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
 import {
   AuthUser,
@@ -127,6 +128,7 @@ export class ContratoController {
   }
 
   @Delete(':id/relacionar')
+  @Roles('Administrador')
   @ApiOperation({ summary: 'Romper la relación lateral del contrato' })
   romperRelacion(
     @Param('id', ParseIntPipe) id: number,
@@ -187,6 +189,7 @@ export class ContratoController {
   }
 
   @Delete(':id/documentos/:docId')
+  @Roles('Administrador')
   @ApiOperation({ summary: 'Eliminar (lógicamente) un documento adjunto' })
   eliminarDocumento(
     @Param('id', ParseIntPipe) id: number,
@@ -202,6 +205,7 @@ export class ContratoController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   remove(@Param('id') id: string) {
     return this.service.remove(+id);
   }
