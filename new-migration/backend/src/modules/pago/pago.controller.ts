@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PagoService } from './pago.service';
 import { CobrarDto } from './dto/cobrar.dto';
+import { CreatePagoDto } from './dto/request/create-pago.dto';
 import { buildFacturaPdfBuffer } from './pago.pdf';
 import {
   AuthUser,
@@ -81,13 +82,13 @@ export class PagoController {
 
   @Post()
   @ApiOperation({ summary: 'Crear pago (legacy)' })
-  create(@Body() data: any, @CurrentUser() user: AuthUser) {
-    return this.service.create(data, user.id);
+  create(@Body() dto: CreatePagoDto, @CurrentUser() user: AuthUser) {
+    return this.service.create(dto, user.id);
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
-    return this.service.update(id, data);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: CreatePagoDto) {
+    return this.service.update(id, dto);
   }
 
   @Delete(':id')

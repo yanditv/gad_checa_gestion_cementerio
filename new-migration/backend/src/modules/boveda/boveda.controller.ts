@@ -13,6 +13,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BovedaService } from './boveda.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { UpdateBovedaDto } from './dto/request/update-boveda.dto';
 
 class SetPropietarioDto {
   personaId!: number | null;
@@ -48,13 +49,13 @@ export class BovedaController {
   }
 
   @Post()
-  create(@Body() data: any) {
-    return this.service.create(data);
+  create(@Body() dto: UpdateBovedaDto) {
+    return this.service.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
-    return this.service.update(id, data);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBovedaDto) {
+    return this.service.update(id, dto);
   }
 
   @Patch(':id/propietario')

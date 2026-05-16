@@ -4,12 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
+import { UpdateBovedaDto } from './dto/request/update-boveda.dto';
 
 @Injectable()
 export class BovedaService {
@@ -87,13 +89,13 @@ export class BovedaService {
     return boveda;
   }
 
-  async create(data: any) {
-    return this.prisma.boveda.create({ data });
+  async create(dto: UpdateBovedaDto) {
+    return this.prisma.boveda.create({ data: dto as Prisma.BovedaUncheckedCreateInput });
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, dto: UpdateBovedaDto) {
     await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data });
+    return this.prisma.boveda.update({ where: { id }, data: dto as Prisma.BovedaUncheckedUpdateInput });
   }
 
   async remove(id: number) {

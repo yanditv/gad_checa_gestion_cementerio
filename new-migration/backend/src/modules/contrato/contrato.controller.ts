@@ -26,6 +26,7 @@ import {
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
+import { UpdateContratoDto } from './dto/request/update-contrato.dto';
 import {
   AuthUser,
   CurrentUser,
@@ -82,7 +83,7 @@ export class ContratoController {
 
   @Post()
   @ApiOperation({ summary: 'Crear contrato (wizard o simple)' })
-  create(@Body() data: any, @CurrentUser() user: AuthUser) {
+  create(@Body() data: Record<string, unknown>, @CurrentUser() user: AuthUser) {
     return this.service.create(data, user.id);
   }
 
@@ -196,8 +197,8 @@ export class ContratoController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+  update(@Param('id') id: string, @Body() dto: UpdateContratoDto) {
+    return this.service.update(+id, dto);
   }
 
   @Delete(':id')

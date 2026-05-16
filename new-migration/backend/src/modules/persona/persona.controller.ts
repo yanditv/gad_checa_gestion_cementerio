@@ -16,6 +16,7 @@ import {
   AuthUser,
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
+import { UpdatePersonaDto } from './dto/request/update-persona.dto';
 
 @ApiTags('personas')
 @ApiBearerAuth()
@@ -39,17 +40,17 @@ export class PersonaController {
   }
 
   @Post()
-  create(@Body() data: any, @CurrentUser() user: AuthUser) {
-    return this.service.create(data, user.id);
+  create(@Body() dto: UpdatePersonaDto, @CurrentUser() user: AuthUser) {
+    return this.service.create(dto, user.id);
   }
 
   @Put(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: any,
+    @Body() dto: UpdatePersonaDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.service.update(id, data, user.id);
+    return this.service.update(id, dto, user.id);
   }
 
   @Delete(':id')

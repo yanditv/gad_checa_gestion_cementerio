@@ -16,6 +16,7 @@ import {
 } from './dto/create-contrato.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
+import { UpdateContratoDto } from './dto/request/update-contrato.dto';
 
 type Tx = Prisma.TransactionClient;
 
@@ -1203,9 +1204,9 @@ export class ContratoService {
     return { items, meta: buildPaginationMeta(page, limit, total) };
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, dto: UpdateContratoDto) {
     await this.findOne(id);
-    const { responsablesIds, ...contratoData } = data;
+    const { responsablesIds, ...contratoData } = dto;
 
     if (responsablesIds) {
       await this.prisma.contratoResponsable.deleteMany({ where: { contratoId: id } });

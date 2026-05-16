@@ -13,6 +13,7 @@ import {
   normalizePagination,
 } from '../../common/pagination';
 import { EmailService } from '../../common/email/email.service';
+import { UpdateUsuarioDto } from './dto/request/update-usuario.dto';
 
 /**
  * Email del super-administrador. Este usuario no se puede desactivar ni
@@ -92,7 +93,7 @@ export class UsuarioService {
     return usuario;
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: UpdateUsuarioDto) {
     const usuario = await this.findOne(id);
 
     const { id: _, passwordHash, ...safeData } = data || {};

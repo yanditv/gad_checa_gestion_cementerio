@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CobrarDto } from './dto/cobrar.dto';
+import { CreatePagoDto } from './dto/request/create-pago.dto';
 
 type Tx = Prisma.TransactionClient;
 
@@ -334,9 +335,9 @@ export class PagoService {
   // CRUD legacy (compat)
   // ---------------------------------------------------------------------------
 
-  async create(data: any, userId?: string) {
+  async create(dto: CreatePagoDto, userId?: string) {
     // Mantenido por compat: usar `cobrar()` para nuevos cobros.
-    const { cuotasIds, ...pagoData } = data;
+    const { cuotasIds, ...pagoData } = dto;
     return this.prisma.$transaction(async (tx) => {
       const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
       const pago = await tx.pago.create({
@@ -344,7 +345,7 @@ export class PagoService {
           ...pagoData,
           numeroRecibo,
           usuarioCreadorId: userId ?? null,
-          cuotas: cuotasIds
+          cuotas: cuotasIds?.length
             ? {
                 create: cuotasIds.map((cuotaId: number) => ({ cuotaId })),
               }
@@ -362,9 +363,9 @@ export class PagoService {
     });
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, dto: CreatePagoDto) {
     await this.findOne(id);
-    return this.prisma.pago.update({ where: { id }, data });
+    return this.prisma.pago.update({ where: { id }, data: dto as Prisma.PagoUncheckedUpdateInput });
   }
 
   async remove(id: number, userId?: string, roles: string[] = []) {

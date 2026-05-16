@@ -18,6 +18,7 @@ import {
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUsuarioDto } from './dto/request/update-usuario.dto';
 
 @ApiTags('usuarios')
 @ApiBearerAuth()
@@ -37,8 +38,8 @@ export class UsuarioController {
 
   @Put(':id')
   @Roles('Administrador')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(id, data);
+  update(@Param('id') id: string, @Body() dto: UpdateUsuarioDto) {
+    return this.service.update(id, dto);
   }
 
   @Patch(':id/estado')

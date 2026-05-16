@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UpdateRolDto } from './dto/request/update-rol.dto';
 
 function normalizeRoleName(nombre: string): string {
   return nombre.trim().toUpperCase();
@@ -37,8 +38,8 @@ export class RolService {
     return rol;
   }
 
-  async create(data: any) {
-    const nombre = (data?.nombre || '').trim();
+  async create(dto: UpdateRolDto) {
+    const nombre = (dto?.nombre || '').trim();
     if (!nombre) {
       throw new ConflictException('El nombre del rol es obligatorio');
     }
@@ -53,15 +54,15 @@ export class RolService {
       data: {
         nombre,
         nombreNormalizado,
-        permisos: data?.permisos || null,
+        permisos: dto?.permisos || null,
       },
     });
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, dto: UpdateRolDto) {
     await this.findOne(id);
 
-    const nombre = (data?.nombre || '').trim();
+    const nombre = (dto?.nombre || '').trim();
     const nombreNormalizado = nombre ? normalizeRoleName(nombre) : undefined;
 
     if (nombreNormalizado) {
@@ -77,7 +78,7 @@ export class RolService {
       where: { id },
       data: {
         ...(nombre ? { nombre, nombreNormalizado } : {}),
-        ...(data?.permisos !== undefined ? { permisos: data.permisos } : {}),
+        ...(dto?.permisos !== undefined ? { permisos: dto.permisos } : {}),
       },
       include: {
         usuarios: {

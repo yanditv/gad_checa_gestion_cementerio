@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
+import { UpdatePersonaDto } from './dto/request/update-persona.dto';
 
 @Injectable()
 export class PersonaService {
@@ -86,21 +88,21 @@ export class PersonaService {
     return persona;
   }
 
-  async create(data: any, userId?: string) {
+  async create(dto: UpdatePersonaDto, userId?: string) {
     return this.prisma.persona.create({
       data: {
-        ...data,
+        ...(dto as Prisma.PersonaUncheckedCreateInput),
         usuarioCreadorId: userId ?? null,
       },
     });
   }
 
-  async update(id: number, data: any, userId?: string) {
+  async update(id: number, dto: UpdatePersonaDto, userId?: string) {
     await this.findOne(id);
     return this.prisma.persona.update({
       where: { id },
       data: {
-        ...data,
+        ...(dto as Prisma.PersonaUncheckedUpdateInput),
         usuarioActualizadorId: userId ?? null,
         fechaActualizacion: new Date(),
       },
