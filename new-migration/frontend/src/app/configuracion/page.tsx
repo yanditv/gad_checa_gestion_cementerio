@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { cementeriosApi, gadInformacionApi, catastroApi } from '@/lib/api'; (feat(catastro): Fase 9.3 — vista de estado de última importación de catastro)
+import { cementeriosApi, gadInformacionApi, catastroApi } from '@/lib/api';
 
 type Tab = 'descuentos' | 'bancos' | 'cementerio';
 
