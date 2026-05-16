@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { catastroApi } from '@/lib/api';
 
 interface CatastroImport {
   id: number;
@@ -15,7 +16,13 @@ interface CatastroImport {
   mensajeError: string | null;
   fechaInicio: string;
   fechaFin: string | null;
-  adminUser?: { nombre: string; apellido: string; email: string };
+  adminUser?: { id: string; nombre: string; apellido: string; email: string };
+}
+
+interface ImportError {
+  fila: number;
+  sheet: string;
+  mensaje: string;
 }
 
 interface ImportResult {
@@ -25,7 +32,7 @@ interface ImportResult {
   bloquesCreados: number;
   bovedasCreadas: number;
   contratosCreados: number;
-  errores: { fila: number; sheet: string; mensaje: string }[];
+  errores: ImportError[];
 }
 
 function formatDateTime(v?: string | null) {
@@ -40,26 +47,28 @@ const ESTADO_TONE: Record<string, string> = {
   ERROR: 'bg-red-50 text-red-700 ring-red-200',
 };
 
+const ESTADO_LABEL: Record<string, string> = {
+  EN_PROGRESO: 'En progreso',
+  COMPLETADO: 'Completado',
+  ERROR: 'Error',
+};
+
 export default function CatastroImportPage() {
   const [history, setHistory] = useState<CatastroImport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<CatastroImport | null>(null);
+  const [detailErrors, setDetailErrors] = useState<ImportError[]>([]);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loadHistory = async () => {
     setLoadingHistory(true);
     try {
-      const res = await fetch('/api/catastro/imports?limit=20', {
-        cache: 'no-store',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        throw new Error('No se pudo cargar el historial de importaciones');
-      }
-      const payload = await res.json();
-      setHistory((payload?.data ?? []) as CatastroImport[]);
+      const res = await catastroApi.list({ limit: 20 });
+      setHistory((res?.data ?? []) as CatastroImport[]);
     } catch (err: any) {
       setError(err.message || 'Error cargando historial');
     } finally {
@@ -70,6 +79,36 @@ export default function CatastroImportPage() {
   useEffect(() => {
     loadHistory();
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selected) setSelected(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected]);
+
+  const openDetail = async (row: CatastroImport) => {
+    setSelected(row);
+    setDetailErrors([]);
+    if (row.errores) {
+      try {
+        const parsed = typeof row.errores === 'string' ? JSON.parse(row.errores) : row.errores;
+        if (Array.isArray(parsed)) setDetailErrors(parsed as ImportError[]);
+      } catch { /* no parseable */ }
+    } else {
+      setLoadingDetail(true);
+      try {
+        const res = await catastroApi.detail(row.id);
+        const data = (res as any)?.data ?? res;
+        if (data?.errores) {
+          const parsed = typeof data.errores === 'string' ? JSON.parse(data.errores) : data.errores;
+          if (Array.isArray(parsed)) setDetailErrors(parsed as ImportError[]);
+        }
+      } catch { /* no detail available */ }
+      setLoadingDetail(false);
+    }
+  };
 
   const handleFileSelected = async (file: File) => {
     setError('');
@@ -258,7 +297,11 @@ export default function CatastroImportPage() {
                   </tr>
                 ) : (
                   history.map((h) => (
-                    <tr key={h.id}>
+                    <tr
+                      key={h.id}
+                      onClick={() => openDetail(h)}
+                      className="cursor-pointer transition-colors hover:bg-primary-50/60"
+                    >
                       <td className="px-5 py-2.5 font-mono text-xs text-slate-700">
                         {h.filename}
                       </td>
@@ -303,6 +346,124 @@ export default function CatastroImportPage() {
           </div>
         )}
       </section>
+
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Detalle de importación #${selected.id}`}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+              <h2 className="text-sm font-semibold text-slate-700">
+                Detalle de importación #{selected.id}
+              </h2>
+              <button
+                onClick={() => setSelected(null)}
+                aria-label="Cerrar"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <i className="ti ti-x text-lg" />
+              </button>
+            </header>
+            <div className="space-y-4 p-5">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
+                <Field label="Archivo" value={selected.filename} />
+                <Field label="Inicio" value={formatDateTime(selected.fechaInicio)} />
+                <Field label="Fin" value={formatDateTime(selected.fechaFin)} />
+                <Field label="Estado" value={ESTADO_LABEL[selected.estado] ?? selected.estado} />
+                <Field label="Registros" value={String(selected.registrosProcesados)} />
+                <Field label="Bloques" value={String(selected.bloquesCreados)} />
+                <Field label="Bóvedas" value={String(selected.bovedasCreadas)} />
+                <Field label="Contratos" value={String(selected.contratosCreados)} />
+                <Field
+                  label="Operador"
+                  value={
+                    selected.adminUser
+                      ? `${selected.adminUser.nombre} ${selected.adminUser.apellido}`
+                      : '—'
+                  }
+                />
+              </div>
+
+              {selected.estado === 'ERROR' && selected.mensajeError && (
+                <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+                  <strong>Error:</strong> {selected.mensajeError}
+                </div>
+              )}
+
+              {loadingDetail ? (
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                  Cargando errores…
+                </div>
+              ) : detailErrors.length > 0 ? (
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-slate-700">
+                    {detailErrors.length} errores por fila:
+                  </p>
+                  <div className="max-h-64 overflow-auto rounded-lg border border-slate-200">
+                    <table className="min-w-full divide-y divide-slate-100 text-xs">
+                      <thead className="bg-slate-50">
+                        <tr className="text-left font-semibold text-slate-600">
+                          <th className="px-3 py-1.5">Hoja</th>
+                          <th className="px-3 py-1.5">Fila</th>
+                          <th className="px-3 py-1.5">Error</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {detailErrors.map((e, i) => (
+                          <tr key={i} className="odd:bg-white even:bg-slate-50/50">
+                            <td className="px-3 py-1.5 font-mono text-slate-500">
+                              {e.sheet}
+                            </td>
+                            <td className="px-3 py-1.5 text-slate-600">{e.fila}</td>
+                            <td className="px-3 py-1.5 text-red-600">{e.mensaje}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : selected.estado === 'COMPLETADO' ? (
+                <p className="text-sm text-green-600">Importación completada sin errores.</p>
+              ) : null}
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setSelected(null)}
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -312,6 +473,15 @@ function Stat({ label, value }: { label: string; value: number }) {
     <div>
       <p className="text-xs uppercase tracking-wide text-green-700">{label}</p>
       <p className="mt-0.5 text-2xl font-bold text-green-800">{value}</p>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-sm text-slate-700">{value}</p>
     </div>
   );
 }

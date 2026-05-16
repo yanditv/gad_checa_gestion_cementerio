@@ -295,13 +295,6 @@ export const gadInformacionApi = {
   update: (data: any) => api.put<any>('/cementerios/gad-informacion', data),
 };
 
-export const notificacionesApi = {
-  findPage: (params?: PaginationParams & { leida?: boolean }) =>
-    api.getPaginated<any>('/notificaciones', params),
-  findOne: (id: number) => api.get<any>(`/notificaciones/${id}`),
-  markRead: (id: number) => api.patch<any>(`/notificaciones/${id}/leida`),
-};
-
 export const bloquesApi = {
   findAll: () => api.get<any[]>('/bloques'),
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/bloques', params),
@@ -351,4 +344,16 @@ export const reportesApi = {
     api.get<any>(`/reportes/bovedas${qs(params)}`),
   bloques: () => api.get<any>('/reportes/bloques'),
   comparativa: () => api.get<any>('/reportes/comparativa'),
+};
+export const notificacionesApi = {
+  findPage: (params?: PaginationParams & { leida?: boolean }) =>
+    api.getPaginated<any>('/notificaciones', params),
+  findOne: (id: number) => api.get<any>(`/notificaciones/${id}`),
+  markRead: (id: number) => api.patch<any>(`/notificaciones/${id}/leida`),
+};
+
+export const catastroApi = {
+  list: (params?: PaginationParams) =>
+    api.getPaginated<any>('/catastro/imports', params),
+  detail: (id: number) => api.get<any>(`/catastro/imports/${id}`),
 };
