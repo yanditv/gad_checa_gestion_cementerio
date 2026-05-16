@@ -461,7 +461,7 @@ este archivo.
     [ ] 11.0 Limpieza estructural
     [ ] 11.1 ConfigModule + validationSchema (Joi)
     [ ] 11.2 DTOs de respuesta + mappers (corta fuga passwordHash)
-    [ ] 11.3 Validación HTTP estricta (elimina `@Body() data: any`)
+    [x] 11.3 Validación HTTP estricta (elimina `@Body() data: any`) ← 2026-05-16
     [ ] 11.4 Autorización consistente con `@Roles('Administrador')`
     [ ] 11.5 Auditoría centralizada (interceptor + helper)
     [ ] 11.6 Numeración secuencial vía YearSequenceService

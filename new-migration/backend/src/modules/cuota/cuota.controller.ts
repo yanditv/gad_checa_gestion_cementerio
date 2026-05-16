@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CuotaService } from './cuota.service';
+import { UpdateCuotaDto } from './dto/request/update-cuota.dto';
 
 @ApiTags('cuotas')
 @ApiBearerAuth()
@@ -29,13 +30,13 @@ export class CuotaController {
   }
 
   @Post()
-  create(@Body() data: any) {
-    return this.service.create(data);
+  create(@Body() dto: UpdateCuotaDto) {
+    return this.service.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.service.update(+id, data);
+  update(@Param('id') id: string, @Body() dto: UpdateCuotaDto) {
+    return this.service.update(+id, dto);
   }
 
   @Delete(':id')

@@ -5,6 +5,7 @@ import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
+import { UpdatePersonaDto } from './dto/request/update-persona.dto';
 
 @Injectable()
 export class PersonaService {
@@ -86,21 +87,21 @@ export class PersonaService {
     return persona;
   }
 
-  async create(data: any, userId?: string) {
+  async create(dto: UpdatePersonaDto, userId?: string) {
     return this.prisma.persona.create({
       data: {
-        ...data,
+        ...(dto as any),
         usuarioCreadorId: userId ?? null,
       },
     });
   }
 
-  async update(id: number, data: any, userId?: string) {
+  async update(id: number, dto: UpdatePersonaDto, userId?: string) {
     await this.findOne(id);
     return this.prisma.persona.update({
       where: { id },
       data: {
-        ...data,
+        ...(dto as any),
         usuarioActualizadorId: userId ?? null,
         fechaActualizacion: new Date(),
       },

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UpdateCuotaDto } from './dto/request/update-cuota.dto';
 
 @Injectable()
 export class CuotaService {
@@ -33,13 +34,13 @@ export class CuotaService {
     return cuota;
   }
 
-  async create(data: any) {
-    return this.prisma.cuota.create({ data });
+  async create(dto: UpdateCuotaDto) {
+    return this.prisma.cuota.create({ data: dto as any });
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, dto: UpdateCuotaDto) {
     await this.findOne(id);
-    return this.prisma.cuota.update({ where: { id }, data });
+    return this.prisma.cuota.update({ where: { id }, data: dto as any });
   }
 
   async remove(id: number) {

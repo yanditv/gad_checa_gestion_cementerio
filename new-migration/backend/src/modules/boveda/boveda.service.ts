@@ -10,6 +10,7 @@ import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
+import { UpdateBovedaDto } from './dto/request/update-boveda.dto';
 
 @Injectable()
 export class BovedaService {
@@ -87,13 +88,13 @@ export class BovedaService {
     return boveda;
   }
 
-  async create(data: any) {
-    return this.prisma.boveda.create({ data });
+  async create(dto: UpdateBovedaDto) {
+    return this.prisma.boveda.create({ data: dto as any });
   }
 
-  async update(id: number, data: any) {
+  async update(id: number, dto: UpdateBovedaDto) {
     await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data });
+    return this.prisma.boveda.update({ where: { id }, data: dto as any });
   }
 
   async remove(id: number) {
