@@ -47,6 +47,12 @@ const ESTADO_TONE: Record<string, string> = {
   ERROR: 'bg-red-50 text-red-700 ring-red-200',
 };
 
+const ESTADO_LABEL: Record<string, string> = {
+  EN_PROGRESO: 'En progreso',
+  COMPLETADO: 'Completado',
+  ERROR: 'Error',
+};
+
 export default function CatastroImportPage() {
   const [history, setHistory] = useState<CatastroImport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -73,6 +79,14 @@ export default function CatastroImportPage() {
   useEffect(() => {
     loadHistory();
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selected) setSelected(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected]);
 
   const openDetail = async (row: CatastroImport) => {
     setSelected(row);
@@ -337,6 +351,9 @@ export default function CatastroImportPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
           onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Detalle de importación #${selected.id}`}
         >
           <div
             className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl"
@@ -348,6 +365,7 @@ export default function CatastroImportPage() {
               </h2>
               <button
                 onClick={() => setSelected(null)}
+                aria-label="Cerrar"
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               >
                 <i className="ti ti-x text-lg" />
@@ -358,7 +376,7 @@ export default function CatastroImportPage() {
                 <Field label="Archivo" value={selected.filename} />
                 <Field label="Inicio" value={formatDateTime(selected.fechaInicio)} />
                 <Field label="Fin" value={formatDateTime(selected.fechaFin)} />
-                <Field label="Estado" value={selected.estado} />
+                <Field label="Estado" value={ESTADO_LABEL[selected.estado] ?? selected.estado} />
                 <Field label="Registros" value={String(selected.registrosProcesados)} />
                 <Field label="Bloques" value={String(selected.bloquesCreados)} />
                 <Field label="Bóvedas" value={String(selected.bovedasCreadas)} />
