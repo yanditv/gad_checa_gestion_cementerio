@@ -361,7 +361,7 @@ export default function CatastroImportPage() {
                 <Field label="Estado" value={selected.estado} />
                 <Field label="Registros" value={String(selected.registrosProcesados)} />
                 <Field label="Bloques" value={String(selected.bloquesCreados)} />
-                <Field label="Bóvedas" value={String(selected.bovedasCreados)} />
+                <Field label="Bóvedas" value={String(selected.bovedasCreadas)} />
                 <Field label="Contratos" value={String(selected.contratosCreados)} />
                 <Field
                   label="Operador"
