@@ -290,6 +290,18 @@ export const cementeriosApi = {
   delete: (id: number) => api.delete<any>(`/cementerios/${id}`),
 };
 
+export const gadInformacionApi = {
+  get: () => api.get<any>('/cementerios/gad-informacion'),
+  update: (data: any) => api.put<any>('/cementerios/gad-informacion', data),
+};
+
+export const notificacionesApi = {
+  findPage: (params?: PaginationParams & { leida?: boolean }) =>
+    api.getPaginated<any>('/notificaciones', params),
+  findOne: (id: number) => api.get<any>(`/notificaciones/${id}`),
+  markRead: (id: number) => api.patch<any>(`/notificaciones/${id}/leida`),
+};
+
 export const bloquesApi = {
   findAll: () => api.get<any[]>('/bloques'),
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/bloques', params),
@@ -339,11 +351,4 @@ export const reportesApi = {
     api.get<any>(`/reportes/bovedas${qs(params)}`),
   bloques: () => api.get<any>('/reportes/bloques'),
   comparativa: () => api.get<any>('/reportes/comparativa'),
-};
-
-export const notificacionesApi = {
-  findPage: (params?: PaginationParams & { leida?: boolean }) =>
-    api.getPaginated<any>('/notificaciones', params),
-  findOne: (id: number) => api.get<any>(`/notificaciones/${id}`),
-  markRead: (id: number) => api.patch<any>(`/notificaciones/${id}/leida`),
 };

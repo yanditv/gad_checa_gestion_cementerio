@@ -236,7 +236,7 @@ Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
   - **8.3 Dropdown header + página `/notify`** — @Famiitry
   - **8.4 Envío de email (si SMTP)** — @yanditv (bloqueado por 8.1)
 - **Fase 9** — Configuración + catastro on-demand
-  - **9.1 Edición Cementerio + GADInformacion** — @Famiitry
+  - ~~9.1 Edición Cementerio + GADInformacion~~ ✅
   - ~~9.2 Importador catastro on-demand~~ ✅
   - **9.3 Vista de estado de última importación** — @Famiitry
 - **Fase 10** — Pulido y QA
