@@ -365,7 +365,7 @@ export class PagoService {
 
   async update(id: number, dto: CreatePagoDto) {
     await this.findOne(id);
-    return this.prisma.pago.update({ where: { id }, data: dto as any });
+    return this.prisma.pago.update({ where: { id }, data: dto as Prisma.PagoUncheckedUpdateInput });
   }
 
   async remove(id: number, userId?: string, roles: string[] = []) {

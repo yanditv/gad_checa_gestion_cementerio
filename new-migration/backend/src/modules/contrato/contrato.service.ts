@@ -1206,7 +1206,7 @@ export class ContratoService {
 
   async update(id: number, dto: UpdateContratoDto) {
     await this.findOne(id);
-    const { responsablesIds, ...contratoData } = dto as any;
+    const { responsablesIds, ...contratoData } = dto;
 
     if (responsablesIds) {
       await this.prisma.contratoResponsable.deleteMany({ where: { contratoId: id } });
