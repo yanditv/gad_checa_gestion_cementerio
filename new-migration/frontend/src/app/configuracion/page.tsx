@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { cementeriosApi, gadInformacionApi } from '@/lib/api';
 
-type Tab = 'descuentos' | 'bancos';
+type Tab = 'descuentos' | 'bancos' | 'cementerio';
 
 interface Descuento {
   id: number;
@@ -81,13 +82,21 @@ export default function ConfiguracionPage() {
             icon="ti-building-bank"
             label="Bancos"
           />
+          <TabButton
+            active={tab === 'cementerio'}
+            onClick={() => setTab('cementerio')}
+            icon="ti-building-community"
+            label="Cementerio"
+          />
         </nav>
       </div>
 
       {tab === 'descuentos' ? (
         <DescuentosPanel canEdit={isAdmin} />
-      ) : (
+      ) : tab === 'bancos' ? (
         <BancosPanel canEdit={isAdmin} />
+      ) : (
+        <CementerioPanel canEdit={isAdmin} />
       )}
     </div>
   );
@@ -702,6 +711,196 @@ function BancoModal({
         </div>
       </form>
     </ModalShell>
+  );
+}
+
+// =============================================================================
+// Cementerio + GADInformacion
+// =============================================================================
+function CementerioPanel({ canEdit }: { canEdit: boolean }) {
+  const [cementerio, setCementerio] = useState<any>(null);
+  const [gad, setGad] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [cemList, gadData] = await Promise.all([
+        cementeriosApi.findAll(),
+        gadInformacionApi.get(),
+      ]) as [any, any];
+      const list = Array.isArray(cemList) ? cemList : cemList?.data ?? [];
+      setCementerio(Array.isArray(list) ? list[0] : list);
+      setGad((gadData as any)?.data ?? gadData);
+    } catch (err) {
+      setError('No se pudieron cargar los datos de configuración');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleSaveCementerio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cementerio?.id) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await cementeriosApi.update(cementerio.id, cementerio);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveGAD = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gad) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await gadInformacionApi.update(gad);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[20vh] items-center justify-center">
+        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  const setField = (key: string, value: any) => {
+    setCementerio((prev: any) => (prev ? { ...prev, [key]: value } : prev));
+  };
+
+  const setGadField = (key: string, value: any) => {
+    setGad((prev: any) => (prev ? { ...prev, [key]: value } : prev));
+  };
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>
+      )}
+      {saved && (
+        <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 ring-1 ring-green-200">Guardado correctamente.</div>
+      )}
+
+      {/* Cementerio */}
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-slate-700">Datos del cementerio</h2>
+        </header>
+        <form onSubmit={handleSaveCementerio} className="p-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nombre" value={cementerio?.nombre ?? ''} onChange={(v) => setField('nombre', v)} disabled={!canEdit} />
+            <Field label="Dirección" value={cementerio?.direccion ?? ''} onChange={(v) => setField('direccion', v)} disabled={!canEdit} />
+            <Field label="Teléfono" value={cementerio?.telefono ?? ''} onChange={(v) => setField('telefono', v)} disabled={!canEdit} />
+            <Field label="Email" value={cementerio?.email ?? ''} onChange={(v) => setField('email', v)} disabled={!canEdit} />
+            <Field label="RUC" value={cementerio?.ruc ?? ''} onChange={(v) => setField('ruc', v)} disabled={!canEdit} />
+            <Field label="Título presidente" value={cementerio?.abreviaturaTituloPresidente ?? ''} onChange={(v) => setField('abreviaturaTituloPresidente', v)} disabled={!canEdit} />
+            <Field label="Presidente" value={cementerio?.presidente ?? ''} onChange={(v) => setField('presidente', v)} disabled={!canEdit} />
+          </div>
+          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Tarifas y arriendos</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Tarifa arriendo bóveda" value={cementerio?.tarifaArriendo ?? ''} onChange={(v) => setField('tarifaArriendo', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+            <Field label="Tarifa arriendo nicho" value={cementerio?.tarifaArriendoNicho ?? ''} onChange={(v) => setField('tarifaArriendoNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+            <Field label="Años arriendo bóveda" value={cementerio?.aniosArriendoBovedas ?? ''} onChange={(v) => setField('aniosArriendoBovedas', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+            <Field label="Años arriendo nicho" value={cementerio?.aniosArriendoNicho ?? ''} onChange={(v) => setField('aniosArriendoNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+            <Field label="Veces renovación bóveda" value={cementerio?.vecesRenovacionBovedas ?? ''} onChange={(v) => setField('vecesRenovacionBovedas', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+            <Field label="Veces renovación nicho" value={cementerio?.vecesRenovacionNicho ?? ''} onChange={(v) => setField('vecesRenovacionNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+            <Field label="Tasa mora diaria (%)" value={cementerio?.tasaMoraDiaria ?? ''} onChange={(v) => setField('tasaMoraDiaria', v ? Number(v) : null)} type="number" disabled={!canEdit} />
+          </div>
+          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Datos bancarios</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Entidad financiera" value={cementerio?.entidadFinanciera ?? ''} onChange={(v) => setField('entidadFinanciera', v)} disabled={!canEdit} />
+            <Field label="Nombre entidad" value={cementerio?.nombreEntidadFinanciera ?? ''} onChange={(v) => setField('nombreEntidadFinanciera', v)} disabled={!canEdit} />
+            <Field label="Número de cuenta" value={cementerio?.numeroCuenta ?? ''} onChange={(v) => setField('numeroCuenta', v)} disabled={!canEdit} />
+          </div>
+          {canEdit && (
+            <div className="mt-4 flex justify-end">
+              <button type="submit" disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60">
+                {saving ? 'Guardando…' : 'Guardar cementerio'}
+              </button>
+            </div>
+          )}
+        </form>
+      </section>
+
+      {/* GAD Informacion */}
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <header className="border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-slate-700">Información del GAD</h2>
+        </header>
+        <form onSubmit={handleSaveGAD} className="p-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nombre" value={gad?.nombre ?? ''} onChange={(v) => setGadField('nombre', v)} disabled={!canEdit} />
+            <Field label="Dirección" value={gad?.direccion ?? ''} onChange={(v) => setGadField('direccion', v)} disabled={!canEdit} />
+            <Field label="Teléfono" value={gad?.telefono ?? ''} onChange={(v) => setGadField('telefono', v)} disabled={!canEdit} />
+            <Field label="Email" value={gad?.email ?? ''} onChange={(v) => setGadField('email', v)} disabled={!canEdit} />
+            <Field label="RUC" value={gad?.ruc ?? ''} onChange={(v) => setGadField('ruc', v)} disabled={!canEdit} />
+            <Field label="Sitio web" value={gad?.website ?? ''} onChange={(v) => setGadField('website', v)} disabled={!canEdit} />
+            <Field label="Logo URL" value={gad?.logoUrl ?? ''} onChange={(v) => setGadField('logoUrl', v)} disabled={!canEdit} />
+            <Field label="Eslogan" value={gad?.slogan ?? ''} onChange={(v) => setGadField('slogan', v)} disabled={!canEdit} />
+          </div>
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className={LABEL_CLS}>Misión</label>
+              <textarea value={gad?.mision ?? ''} onChange={(e) => setGadField('mision', e.target.value)}
+                disabled={!canEdit} rows={3}
+                className={INPUT_CLS} />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Visión</label>
+              <textarea value={gad?.vision ?? ''} onChange={(e) => setGadField('vision', e.target.value)}
+                disabled={!canEdit} rows={3}
+                className={INPUT_CLS} />
+            </div>
+          </div>
+          {canEdit && (
+            <div className="mt-4 flex justify-end">
+              <button type="submit" disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60">
+                {saving ? 'Guardando…' : 'Guardar GAD'}
+              </button>
+            </div>
+          )}
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange, disabled, type = 'text' }: {
+  label: string; value: string; onChange: (v: string) => void; disabled?: boolean; type?: string;
+}) {
+  return (
+    <div>
+      <label className={LABEL_CLS}>{label}</label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+        disabled={disabled} step={type === 'number' ? '0.01' : undefined}
+        className={`${INPUT_CLS} ${disabled ? 'bg-slate-50 text-slate-500' : ''}`} />
+    </div>
   );
 }
 

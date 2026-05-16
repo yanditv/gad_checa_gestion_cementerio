@@ -209,8 +209,8 @@ Cinco reportes principales en el legado (`ReportesController.cs`), todos con UI 
 
 | ID | Tag | Descripción | Estado |
 |----|-----|-------------|--------|
-| CFG-R1 | [L] | Pantalla `/cementerio` o `/configuracion`: edita la fila de `Cementerio` (sólo hay una). Campos: nombre, dirección, email, teléfono, abreviatura del título del presidente, presidente, `VecesRenovacionBovedas`, `VecesRenovacionNicho`, `AniosArriendoBovedas`, `AniosArriendoNicho`, `tarifa_arriendo`, `tarifa_arriendo_nicho`, `EntidadFinanciera`, `NombreEntidadFinanciera`, `NumeroCuenta`. | Pendiente |
-| CFG-R2 | [L] | Pantalla **GAD**: edita la fila de `GADInformacion` (nombre, dirección, teléfono, email, `LogoUrl`, `Website`, `Mision`, `Vision`). | Pendiente |
+| CFG-R1 | [L] | Pantalla `/cementerio` o `/configuracion`: edita la fila de `Cementerio` (sólo hay una). Campos: nombre, dirección, email, teléfono, abreviatura del título del presidente, presidente, `VecesRenovacionBovedas`, `VecesRenovacionNicho`, `AniosArriendoBovedas`, `AniosArriendoNicho`, `tarifa_arriendo`, `tarifa_arriendo_nicho`, `EntidadFinanciera`, `NombreEntidadFinanciera`, `NumeroCuenta`. | **Completo** |
+| CFG-R2 | [L] | Pantalla **GAD**: edita la fila de `GADInformacion` (nombre, dirección, teléfono, email, `LogoUrl`, `Website`, `Mision`, `Vision`). | **Completo** |
 | CFG-R3 | [L] | CRUD de **Descuentos**. | Pendiente |
 | CFG-R4 | [L] | CRUD de **Bancos**. | Pendiente |
 | CFG-R5 | [M] | Campos del cementerio agregados al esquema y seed: `tarifaArriendo`, `tarifaArriendoNicho`, `vecesRenovacionBovedas`, `vecesRenovacionNicho`, `aniosArriendoBovedas`, `aniosArriendoNicho`, `entidadFinanciera`, `nombreEntidadFinanciera`, `numeroCuenta`, `abreviaturaTituloPresidente`, `presidente`, `tasaMoraDiaria`. Migración: `20260513172915_completar_modelo_legado`. | **Completo** |
