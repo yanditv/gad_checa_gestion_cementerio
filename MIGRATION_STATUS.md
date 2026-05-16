@@ -233,12 +233,12 @@ Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
 - **Fase 8** — Notificaciones
   - ~~8.1 NotificacionService (CRUD) — @Famiitry~~ ✅
   - ~~8.2 Job diario `@nestjs/schedule` — @Famiitry~~ ✅
-  - **8.3 Dropdown header + página `/notify`** — @Famiitry
+  - ~~8.3 Dropdown header + página `/notify` — @Famiitry~~ ✅
   - **8.4 Envío de email (si SMTP)** — @yanditv (bloqueado por 8.1)
 - **Fase 9** — Configuración + catastro on-demand
   - ~~9.1 Edición Cementerio + GADInformacion~~ ✅
   - ~~9.2 Importador catastro on-demand~~ ✅
-  - **9.3 Vista de estado de última importación** — @Famiitry
+  - ~~9.3 Vista de estado de última importación~~ ✅
 - **Fase 10** — Pulido y QA
   - **10.1 Manual de usuario** — @Famiitry
   - **10.2 Validación visual contra legado (88 vistas)** — mixto

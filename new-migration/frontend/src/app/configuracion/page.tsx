@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { cementeriosApi, gadInformacionApi } from '@/lib/api';
+import { cementeriosApi, gadInformacionApi, catastroApi } from '@/lib/api'; (feat(catastro): Fase 9.3 — vista de estado de última importación de catastro)
 
 type Tab = 'descuentos' | 'bancos' | 'cementerio';
 
@@ -29,6 +29,17 @@ const LABEL_CLS =
 export default function ConfiguracionPage() {
   const [tab, setTab] = useState<Tab>('descuentos');
   const [roles, setRoles] = useState<string[]>([]);
+  const [lastImport, setLastImport] = useState<{
+    id: number;
+    filename: string;
+    estado: string;
+    fechaInicio: string;
+    registrosProcesados: number;
+    bloquesCreados: number;
+    bovedasCreadas: number;
+    contratosCreados: number;
+    errores: string | null;
+  } | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' })
@@ -37,6 +48,17 @@ export default function ConfiguracionPage() {
         if (payload?.data?.roles) setRoles(payload.data.roles);
       })
       .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    catastroApi.list({ limit: 1 })
+      .then((res: any) => {
+        const items = res?.data ?? res?.items ?? [];
+        if (Array.isArray(items) && items.length > 0) {
+          setLastImport(items[0]);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const isAdmin = roles.includes('Administrador') || roles.includes('Admin');
@@ -66,6 +88,49 @@ export default function ConfiguracionPage() {
           Solo lectura. Para modificar la configuración se requiere rol{' '}
           <strong>Administrador</strong>.
         </div>
+      )}
+
+      {isAdmin && lastImport && (
+        <Link
+          href="/configuracion/catastro"
+          className="block rounded-xl border border-slate-200 bg-white p-4 shadow-soft transition-colors hover:border-primary-200 hover:bg-primary-50/20"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
+                <i className="ti ti-database-import text-lg" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-700">
+                  Última importación de catastro
+                </p>
+                <p className="text-xs text-slate-500">
+                  {lastImport.filename} · {new Date(lastImport.fechaInicio).toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold text-slate-700">{lastImport.registrosProcesados} registros</p>
+                <p className="text-xs text-slate-400">
+                  {lastImport.bloquesCreados} bloques · {lastImport.bovedasCreadas} bóvedas · {lastImport.contratosCreados} contratos
+                </p>
+              </div>
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${
+                  lastImport.estado === 'COMPLETADO'
+                    ? 'bg-green-50 text-green-700 ring-green-200'
+                    : lastImport.estado === 'ERROR'
+                      ? 'bg-red-50 text-red-700 ring-red-200'
+                      : 'bg-amber-50 text-amber-700 ring-amber-200'
+                }`}
+              >
+                {lastImport.estado === 'EN_PROGRESO' ? 'En progreso' : lastImport.estado === 'COMPLETADO' ? 'Completado' : 'Error'}
+              </span>
+              <i className="ti ti-chevron-right text-slate-300" />
+            </div>
+          </div>
+        </Link>
       )}
 
       <div className="border-b border-slate-200">

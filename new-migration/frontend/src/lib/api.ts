@@ -352,3 +352,15 @@ export const reportesApi = {
   bloques: () => api.get<any>('/reportes/bloques'),
   comparativa: () => api.get<any>('/reportes/comparativa'),
 };
+export const notificacionesApi = {
+  findPage: (params?: PaginationParams & { leida?: boolean }) =>
+    api.getPaginated<any>('/notificaciones', params),
+  findOne: (id: number) => api.get<any>(`/notificaciones/${id}`),
+  markRead: (id: number) => api.patch<any>(`/notificaciones/${id}/leida`),
+};
+
+export const catastroApi = {
+  list: (params?: PaginationParams) =>
+    api.getPaginated<any>('/catastro/imports', params),
+  detail: (id: number) => api.get<any>(`/catastro/imports/${id}`),
+}; (feat(catastro): Fase 9.3 — vista de estado de última importación de catastro)

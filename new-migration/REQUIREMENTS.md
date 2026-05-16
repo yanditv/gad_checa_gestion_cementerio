@@ -238,8 +238,8 @@ Cinco reportes principales en el legado (`ReportesController.cs`), todos con UI 
 | MIG-R1 | [L] | El backend Nest debe ejecutar la **migración del catastro** desde `CATASTRO_FINAL.xlsx` (existe `CatastroMigrationService.cs` legado, 681 LOC). El nuevo equivalente es `backend/src/bootstrap/catastro-import.service.ts`. | Parcial |
 | MIG-R2 | [L] | El proceso debe ser idempotente: si el archivo ya fue migrado (renombrado con timestamp), no re-importar. | Parcial |
 | MIG-R3 | [L] | El proceso crea: Bloques → Pisos → Bóvedas → Personas (propietarios + responsables) → Difuntos → Contratos → Cuotas iniciales. | Parcial |
-| MIG-R4 | [L] | Reporte de la importación: total de cada entidad creada, errores por fila. | Pendiente |
-| MIG-R5 | [M] | Importación on-demand desde el menú **Configuración → Importar catastro** (sólo `Administrador`). Permite cargar Excel desde la UI sin reiniciar el servidor. | Pendiente |
+| MIG-R4 | [L] | Reporte de la importación: total de cada entidad creada, errores por fila. | **Completo** |
+| MIG-R5 | [M] | Importación on-demand desde el menú **Configuración → Importar catastro** (sólo `Administrador`). Permite cargar Excel desde la UI sin reiniciar el servidor. | **Completo** |
 | MIG-R6 | [N] | **Migración de datos desde SQL Server (legado en producción)** a PostgreSQL. Producir un script `scripts/migrate-sqlserver-to-postgres.ts` que:<br>1. Lee la BD de origen (cadena configurable).<br>2. Mapea las tablas (incluye renombres `tarifa_arriendo` → `tarifaArriendo`, etc.).<br>3. Inserta en orden topológico respetando FKs.<br>4. Genera un reporte con conteos antes/después. | Pendiente |
 
 ---

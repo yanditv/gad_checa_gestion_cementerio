@@ -475,7 +475,7 @@ este archivo.
 [ ] Fase 9  — Configuración + catastro on-demand
     [x] 9.1 Edición Cementerio + GADInformacion (@Famiitry)   ← 2026-05-15
     [x] 9.2 Importador catastro on-demand (@yanditv)          ← 2026-05-14
-    [ ] 9.3 Vista de estado de última importación (@Famiitry)
+    [x] 9.3 Vista de estado de última importación (@Famiitry)   ← 2026-05-16
 [ ] Fase 10 — Pulido / QA / entrega
 ```
 
