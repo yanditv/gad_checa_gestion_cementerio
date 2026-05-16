@@ -1,46 +1,58 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsArray, IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class UpdateContratoDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Transform(({ value }) => Number(value))
   bovedaId?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Transform(({ value }) => Number(value))
   difuntoId?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsDateString()
   fechaInicio?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsDateString()
   fechaFin?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Transform(({ value }) => Number(value))
-  aniosArriendo?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  tipoArriendo?: string;
+  numeroDeMeses?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => Number(value))
-  tarifaArriendo?: number;
+  montoSubtotal?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  montoDescuento?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  montoTotal?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  estado?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -50,10 +62,29 @@ export class UpdateContratoDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  estado?: boolean;
+  esRenovacion?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Transform(({ value }) => Number(value))
+  vecesRenovado?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  pathDocumentoFirmado?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Transform(({ value }) => Number(value))
+  descuentoId?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
+  @IsInt({ each: true })
+  @Type(() => Number)
   responsablesIds?: number[];
 }

@@ -337,7 +337,7 @@ export class PagoService {
 
   async create(dto: CreatePagoDto, userId?: string) {
     // Mantenido por compat: usar `cobrar()` para nuevos cobros.
-    const { cuotasIds, ...pagoData } = dto as any;
+    const { cuotasIds, ...pagoData } = dto;
     return this.prisma.$transaction(async (tx) => {
       const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
       const pago = await tx.pago.create({
@@ -345,7 +345,7 @@ export class PagoService {
           ...pagoData,
           numeroRecibo,
           usuarioCreadorId: userId ?? null,
-          cuotas: cuotasIds
+          cuotas: cuotasIds?.length
             ? {
                 create: cuotasIds.map((cuotaId: number) => ({ cuotaId })),
               }

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
@@ -89,12 +90,12 @@ export class BovedaService {
   }
 
   async create(dto: UpdateBovedaDto) {
-    return this.prisma.boveda.create({ data: dto as any });
+    return this.prisma.boveda.create({ data: dto as Prisma.BovedaUncheckedCreateInput });
   }
 
   async update(id: number, dto: UpdateBovedaDto) {
     await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data: dto as any });
+    return this.prisma.boveda.update({ where: { id }, data: dto as Prisma.BovedaUncheckedUpdateInput });
   }
 
   async remove(id: number) {
