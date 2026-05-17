@@ -126,6 +126,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                   <Link
                     href={item.href}
                     onClick={onClose}
+                    {...(active ? { 'aria-current': 'page' as const } : {})}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                       active
                         ? 'bg-primary-50 font-semibold text-primary-700'

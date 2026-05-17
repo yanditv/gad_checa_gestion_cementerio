@@ -118,6 +118,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
             <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
+              aria-label="Buscar contratos, personas y bóvedas"
               placeholder="Buscar contratos, personas, bóvedas…"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />

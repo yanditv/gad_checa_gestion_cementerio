@@ -261,7 +261,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
           {error}
         </div>
       )}
@@ -271,11 +271,11 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3 text-right">Porcentaje</th>
-                <th className="px-4 py-3">Descripción</th>
-                <th className="px-4 py-3">Estado</th>
-                {canEdit && <th className="px-4 py-3 text-right">Acciones</th>}
+                <th scope="col" className="px-4 py-3">Nombre</th>
+                <th scope="col" className="px-4 py-3 text-right">Porcentaje</th>
+                <th scope="col" className="px-4 py-3">Descripción</th>
+                <th scope="col" className="px-4 py-3">Estado</th>
+                {canEdit && <th scope="col" className="px-4 py-3 text-right">Acciones</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -431,7 +431,7 @@ function DescuentoModal({
         className="space-y-4 p-5"
       >
         {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
             {error}
           </div>
         )}
@@ -565,7 +565,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
           {error}
         </div>
       )}
@@ -575,10 +575,10 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Cuenta</th>
-                <th className="px-4 py-3">Estado</th>
-                {canEdit && <th className="px-4 py-3 text-right">Acciones</th>}
+                <th scope="col" className="px-4 py-3">Nombre</th>
+                <th scope="col" className="px-4 py-3">Cuenta</th>
+                <th scope="col" className="px-4 py-3">Estado</th>
+                {canEdit && <th scope="col" className="px-4 py-3 text-right">Acciones</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -725,7 +725,7 @@ function BancoModal({
         className="space-y-4 p-5"
       >
         {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
             {error}
           </div>
         )}
@@ -864,10 +864,10 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>
-      )}
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>
+
       {saved && (
-        <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 ring-1 ring-green-200">Guardado correctamente.</div>
+        <div role="status" className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 ring-1 ring-green-200">Guardado correctamente.</div>
       )}
 
       {/* Cementerio */}
@@ -959,10 +959,11 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
 function Field({ label, value, onChange, disabled, type = 'text' }: {
   label: string; value: string; onChange: (v: string) => void; disabled?: boolean; type?: string;
 }) {
+  const id = `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
     <div>
-      <label className={LABEL_CLS}>{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+      <label htmlFor={id} className={LABEL_CLS}>{label}</label>
+      <input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)}
         disabled={disabled} step={type === 'number' ? '0.01' : undefined}
         className={`${INPUT_CLS} ${disabled ? 'bg-slate-50 text-slate-500' : ''}`} />
     </div>
@@ -985,6 +986,8 @@ function ModalShell({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
       role="dialog"
+      aria-modal="true"
+      aria-label={title}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
