@@ -477,6 +477,12 @@ este archivo.
     [x] 9.2 Importador catastro on-demand (@yanditv)          ← 2026-05-14
     [x] 9.3 Vista de estado de última importación (@Famiitry)   ← 2026-05-16
 [ ] Fase 10 — Pulido / QA / entrega
+    [x] 10.1 Manual de usuario (@Famiitry) ← 2026-05-17
+    [ ] 10.2 Validación visual contra legado (mixto)
+    [ ] 10.3 Pruebas de carga (@yanditv)
+    [ ] 10.4 Tests E2E Playwright (@Famiitry)
+    [ ] 10.5 Auditoría WCAG AA (@Famiitry)
+    [ ] 10.6 Cierre MIGRATION_STATUS.md (@yanditv)
 ```
 
 Cada cierre actualiza `MIGRATION_STATUS.md` y este checklist.

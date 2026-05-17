@@ -240,7 +240,7 @@ Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
   - ~~9.2 Importador catastro on-demand~~ ✅
   - ~~9.3 Vista de estado de última importación~~ ✅
 - **Fase 10** — Pulido y QA
-  - **10.1 Manual de usuario** — @Famiitry
+  - ~~10.1 Manual de usuario~~ ✅
   - **10.2 Validación visual contra legado (88 vistas)** — mixto
   - **10.3 Pruebas de carga con dataset real (~5000 contratos)** — @yanditv
   - **10.4 Tests E2E con Playwright** — @Famiitry
