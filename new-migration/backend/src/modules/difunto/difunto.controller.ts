@@ -13,7 +13,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { DifuntoService } from './difunto.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { CreateDifuntoDto, UpdateDifuntoDto } from './dto/difunto.dto';
+import { CreateDifuntoDto, UpdateDifuntoDto } from './dto/request/difunto.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AuthUser,

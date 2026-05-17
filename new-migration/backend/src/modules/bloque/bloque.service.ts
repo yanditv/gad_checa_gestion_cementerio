@@ -9,7 +9,7 @@ import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
-import { CreateBloqueDto, UpdateBloqueDto } from './dto/bloque.dto';
+import { CreateBloqueDto, UpdateBloqueDto } from './dto/request/bloque.dto';
 
 @Injectable()
 export class BloqueService {

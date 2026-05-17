@@ -5,7 +5,7 @@ import { ReportService } from './report.service';
 import {
   BovedasFilterDto,
   DateRangeDto,
-} from './dto/report-filters.dto';
+} from './dto/request/report-filters.dto';
 import { buildIngresosPdf } from './pdf/ingresos.pdf';
 import { buildCuentasPorCobrarPdf } from './pdf/cuentas.pdf';
 import { buildBovedasPdf } from './pdf/bovedas.pdf';

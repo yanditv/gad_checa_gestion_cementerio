@@ -12,7 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BloqueService } from './bloque.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { CreateBloqueDto, UpdateBloqueDto } from './dto/bloque.dto';
+import { CreateBloqueDto, UpdateBloqueDto } from './dto/request/bloque.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AuthUser,

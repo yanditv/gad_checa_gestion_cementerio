@@ -14,7 +14,7 @@ import { DescuentoService } from './descuento.service';
 import {
   CreateDescuentoDto,
   UpdateDescuentoDto,
-} from './dto/descuento.dto';
+} from './dto/request/descuento.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AuthUser,

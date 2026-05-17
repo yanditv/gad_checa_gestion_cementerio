@@ -10,7 +10,7 @@ import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
-import { CreateDifuntoDto, UpdateDifuntoDto } from './dto/difunto.dto';
+import { CreateDifuntoDto, UpdateDifuntoDto } from './dto/request/difunto.dto';
 
 @Injectable()
 export class DifuntoService {

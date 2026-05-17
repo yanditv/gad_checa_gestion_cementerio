@@ -14,7 +14,7 @@ import {
   LoginDto,
   RegisterDto,
   ResetPasswordDto,
-} from './dto/auth.dto';
+} from './dto/request/auth.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Throttle } from '@nestjs/throttler';
 import {

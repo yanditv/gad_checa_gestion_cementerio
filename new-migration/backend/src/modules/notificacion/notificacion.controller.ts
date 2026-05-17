@@ -18,7 +18,7 @@ import {
 import {
   CreateNotificacionDto,
   ListNotificacionesDto,
-} from './dto/notificacion.dto';
+} from './dto/request/notificacion.dto';
 
 @ApiTags('notificaciones')
 @ApiBearerAuth()

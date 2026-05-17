@@ -24,8 +24,8 @@ import {
   MAX_DOCUMENT_SIZE_BYTES,
 } from './documento.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { RenovarContratoDto } from './dto/renovar-contrato.dto';
-import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
+import { RenovarContratoDto } from './dto/request/renovar-contrato.dto';
+import { RelacionarContratosDto } from './dto/request/relacionar-contratos.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
 import {

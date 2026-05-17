@@ -14,7 +14,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PagoService } from './pago.service';
-import { CobrarDto } from './dto/cobrar.dto';
+import { CobrarDto } from './dto/request/cobrar.dto';
 import { CreatePagoDto } from './dto/request/create-pago.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { buildFacturaPdfBuffer } from './pago.pdf';

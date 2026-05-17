@@ -17,7 +17,7 @@ import {
   AuthUser,
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ResetPasswordDto } from './dto/request/reset-password.dto';
 import { UpdateUsuarioDto } from './dto/request/update-usuario.dto';
 
 @ApiTags('usuarios')

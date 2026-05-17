@@ -8,7 +8,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateDescuentoDto,
   UpdateDescuentoDto,
-} from './dto/descuento.dto';
+} from './dto/request/descuento.dto';
 
 @Injectable()
 export class DescuentoService {

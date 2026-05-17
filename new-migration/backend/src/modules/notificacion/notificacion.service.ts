@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateNotificacionDto,
   ListNotificacionesDto,
-} from './dto/notificacion.dto';
+} from './dto/request/notificacion.dto';
 import {
   buildPaginationMeta,
   normalizePagination,

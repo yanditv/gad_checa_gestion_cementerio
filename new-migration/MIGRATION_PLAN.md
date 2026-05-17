@@ -467,7 +467,7 @@ este archivo.
     [ ] 11.6 Numeración secuencial vía YearSequenceService
     [x] 11.7 Calidad transversal (paginación pagos, rate limit, stream PDFs) ← 2026-05-17
     [ ] 11.8 Repository pattern selectivo (Contrato, Pago)
-    [ ] 11.9 Layout final dto/{request,response}/
+    [x] 11.9 Layout final dto/{request,response}/ ← 2026-05-17
 [ ] Fase 8  — Notificaciones + job
     [x] 8.1 NotificacionService (CRUD + listar) (@Famiitry)  ← 2026-05-15
     [x] 8.2 Job diario @nestjs/schedule (@Famiitry)          ← 2026-05-15

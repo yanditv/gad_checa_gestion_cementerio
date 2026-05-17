@@ -13,9 +13,9 @@ import {
   CreateContratoSimpleDto,
   CreateContratoWizardDto,
   PlanCuota,
-} from './dto/create-contrato.dto';
-import { RenovarContratoDto } from './dto/renovar-contrato.dto';
-import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
+} from './dto/request/create-contrato.dto';
+import { RenovarContratoDto } from './dto/request/renovar-contrato.dto';
+import { RelacionarContratosDto } from './dto/request/relacionar-contratos.dto';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
 
 type Tx = Prisma.TransactionClient;

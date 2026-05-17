@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BancoService } from './banco.service';
-import { CreateBancoDto, UpdateBancoDto } from './dto/banco.dto';
+import { CreateBancoDto, UpdateBancoDto } from './dto/request/banco.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('bancos')

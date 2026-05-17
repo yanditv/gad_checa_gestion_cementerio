@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CobrarDto } from './dto/cobrar.dto';
+import { CobrarDto } from './dto/request/cobrar.dto';
 import { CreatePagoDto } from './dto/request/create-pago.dto';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
