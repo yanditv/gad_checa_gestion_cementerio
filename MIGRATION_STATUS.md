@@ -258,5 +258,7 @@ Estas no son features pero quedan en el radar para fases futuras:
   caso de uso (admin sube Excel desde UI) corre de a uno, así que no hay
   race. Si se hace importación paralela en el futuro, migrar a secuencia
   PostgreSQL.
-- `Notificacion` ya tiene tabla en schema desde Fase 0, pero no hay
-  service ni job (Fase 8 abierta).
+- ~~Notificacion sin service ni job~~ → Fase 8.1–8.3 completada (PRs #11, #12, #13).
+- ~~Autorización inconsistente en endpoints~~ → Fase 11.4: `@Roles('Administrador')` en DELETE / anular / roles. Resto alineado con paridad legado (PR #18).
+- ~~`@Body() data: any` en controllers~~ → Fase 11.3: DTOs tipados en 7 módulos (PR #17).
+- ~~Fuga de `passwordHash`~~ → Pendiente en Fase 11.2 (asignada a @yanditv).

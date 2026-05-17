@@ -16,6 +16,7 @@ import type { Response } from 'express';
 import { PagoService } from './pago.service';
 import { CobrarDto } from './dto/cobrar.dto';
 import { CreatePagoDto } from './dto/request/create-pago.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { buildFacturaPdfBuffer } from './pago.pdf';
 import {
   AuthUser,
@@ -68,6 +69,7 @@ export class PagoController {
   }
 
   @Post(':id/anular')
+  @Roles('Administrador')
   @ApiOperation({
     summary: 'Anular un pago (solo Administrador)',
     description:
@@ -92,6 +94,7 @@ export class PagoController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: AuthUser,

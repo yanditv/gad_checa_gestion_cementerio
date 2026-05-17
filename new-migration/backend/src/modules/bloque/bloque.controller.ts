@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BloqueService } from './bloque.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { CreateBloqueDto, UpdateBloqueDto } from './dto/bloque.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AuthUser,
   CurrentUser,
@@ -57,6 +58,7 @@ export class BloqueController {
   }
 
   @Delete(':id')
+  @Roles('Administrador')
   @ApiOperation({
     summary: 'Eliminar bloque (lógico, falla si hay bóvedas activas)',
   })
