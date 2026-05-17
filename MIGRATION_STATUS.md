@@ -243,7 +243,7 @@ Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
   - **10.1 Manual de usuario** — @Famiitry
   - **10.2 Validación visual contra legado (88 vistas)** — mixto
   - **10.3 Pruebas de carga con dataset real (~5000 contratos)** — @yanditv
-  - **10.4 Tests E2E con Playwright** — @Famiitry
+  - ~~10.4 Tests E2E con Playwright~~ ✅
   - **10.5 Auditoría WCAG AA** — @Famiitry
   - **10.6 Cierre `MIGRATION_STATUS.md` final** — @yanditv
 
