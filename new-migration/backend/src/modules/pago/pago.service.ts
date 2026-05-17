@@ -350,7 +350,7 @@ export class PagoService {
                 create: cuotasIds.map((cuotaId: number) => ({ cuotaId })),
               }
             : undefined,
-        },
+        } as Prisma.PagoUncheckedCreateInput,
         include: { cuotas: { include: { cuota: true } } },
       });
       if (cuotasIds) {
