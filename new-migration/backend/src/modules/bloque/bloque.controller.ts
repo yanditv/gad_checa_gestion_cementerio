@@ -41,7 +41,6 @@ export class BloqueController {
   }
 
   @Post()
-  @Roles('Administrador')
   @ApiOperation({
     summary: 'Crear bloque (con autogeneración de N pisos si se indica)',
   })
@@ -50,7 +49,6 @@ export class BloqueController {
   }
 
   @Patch(':id')
-  @Roles('Administrador')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateBloqueDto,
@@ -60,7 +58,6 @@ export class BloqueController {
   }
 
   @Delete(':id')
-  @Roles('Administrador')
   @Roles('Administrador')
   @ApiOperation({
     summary: 'Eliminar bloque (lógico, falla si hay bóvedas activas)',

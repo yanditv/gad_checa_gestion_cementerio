@@ -17,6 +17,7 @@ import {
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
 import { UpdatePersonaDto } from './dto/request/update-persona.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('personas')
 @ApiBearerAuth()
