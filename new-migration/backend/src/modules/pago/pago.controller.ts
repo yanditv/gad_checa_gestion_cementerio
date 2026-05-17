@@ -18,6 +18,7 @@ import { CobrarDto } from './dto/cobrar.dto';
 import { CreatePagoDto } from './dto/request/create-pago.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { buildFacturaPdfBuffer } from './pago.pdf';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   AuthUser,
   CurrentUser,
@@ -30,8 +31,9 @@ export class PagoController {
   constructor(private service: PagoService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  @ApiOperation({ summary: 'Listar pagos (paginado)' })
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.service.findAll(query);
   }
 
   @Get('cobro-preview')
