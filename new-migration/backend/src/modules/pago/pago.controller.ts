@@ -19,6 +19,7 @@ import { CreatePagoDto } from './dto/request/create-pago.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { buildFacturaPdfBuffer } from './pago.pdf';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { Paginated } from '../../common/decorators/paginated.decorator';
 import {
   AuthUser,
   CurrentUser,
@@ -32,6 +33,7 @@ export class PagoController {
 
   @Get()
   @ApiOperation({ summary: 'Listar pagos (paginado)' })
+  @Paginated()
   findAll(@Query() query: PaginationQueryDto) {
     return this.service.findAll(query);
   }
@@ -61,7 +63,7 @@ export class PagoController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="Recibo_${pago.numeroRecibo}.pdf"`,
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Post('cobrar')

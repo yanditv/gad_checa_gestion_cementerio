@@ -33,10 +33,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 200 }]),
     PrismaModule,
     EmailModule,
     StorageModule,

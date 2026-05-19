@@ -68,7 +68,7 @@ export class ReportController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="reporte-ingresos.pdf"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('cuentas-por-cobrar/pdf')
@@ -80,7 +80,7 @@ export class ReportController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="cuentas-por-cobrar.pdf"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bovedas/pdf')
@@ -92,7 +92,7 @@ export class ReportController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="reporte-bovedas.pdf"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bloques/pdf')
@@ -104,7 +104,7 @@ export class ReportController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="reporte-bloques.pdf"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   // ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ export class ReportController {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="reporte-ingresos.xlsx"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('cuentas-por-cobrar/excel')
@@ -131,7 +131,7 @@ export class ReportController {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="cuentas-por-cobrar.xlsx"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bovedas/excel')
@@ -143,7 +143,7 @@ export class ReportController {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="reporte-bovedas.xlsx"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bloques/excel')
@@ -155,7 +155,7 @@ export class ReportController {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="reporte-bloques.xlsx"',
     });
-    return new StreamableFile(buffer);
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 }
 
