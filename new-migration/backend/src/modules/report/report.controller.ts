@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res, StreamableFile } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ReportService } from './report.service';
@@ -61,34 +61,50 @@ export class ReportController {
   // ---------------------------------------------------------------------------
   @Get('ingresos/pdf')
   @ApiOperation({ summary: 'PDF de ingresos en rango' })
-  async ingresosPdf(@Query() q: DateRangeDto, @Res() res: Response) {
+  async ingresosPdf(@Query() q: DateRangeDto, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getIngresos(q.desde, q.hasta);
     const buffer = await buildIngresosPdf(data);
-    sendPdf(res, buffer, 'reporte-ingresos.pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="reporte-ingresos.pdf"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('cuentas-por-cobrar/pdf')
   @ApiOperation({ summary: 'PDF de cuentas por cobrar' })
-  async cuentasPdf(@Res() res: Response) {
+  async cuentasPdf(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getCuentasPorCobrar();
     const buffer = await buildCuentasPorCobrarPdf(data);
-    sendPdf(res, buffer, 'cuentas-por-cobrar.pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="cuentas-por-cobrar.pdf"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bovedas/pdf')
   @ApiOperation({ summary: 'PDF del reporte de bóvedas' })
-  async bovedasPdf(@Query() q: BovedasFilterDto, @Res() res: Response) {
+  async bovedasPdf(@Query() q: BovedasFilterDto, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getBovedas(q.tipo, q.bloque, q.estado);
     const buffer = await buildBovedasPdf(data);
-    sendPdf(res, buffer, 'reporte-bovedas.pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="reporte-bovedas.pdf"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bloques/pdf')
   @ApiOperation({ summary: 'PDF de ocupación por bloque' })
-  async bloquesPdf(@Res() res: Response) {
+  async bloquesPdf(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getBloques();
     const buffer = await buildBloquesPdf(data);
-    sendPdf(res, buffer, 'reporte-bloques.pdf');
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="reporte-bloques.pdf"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   // ---------------------------------------------------------------------------
@@ -96,46 +112,51 @@ export class ReportController {
   // ---------------------------------------------------------------------------
   @Get('ingresos/excel')
   @ApiOperation({ summary: 'Excel de ingresos en rango' })
-  async ingresosExcel(@Query() q: DateRangeDto, @Res() res: Response) {
+  async ingresosExcel(@Query() q: DateRangeDto, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getIngresos(q.desde, q.hasta);
-    sendExcel(res, buildIngresosExcel(data), 'reporte-ingresos.xlsx');
+    const buffer = buildIngresosExcel(data);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="reporte-ingresos.xlsx"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('cuentas-por-cobrar/excel')
   @ApiOperation({ summary: 'Excel de cuentas por cobrar' })
-  async cuentasExcel(@Res() res: Response) {
+  async cuentasExcel(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getCuentasPorCobrar();
-    sendExcel(res, buildCuentasExcel(data), 'cuentas-por-cobrar.xlsx');
+    const buffer = buildCuentasExcel(data);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="cuentas-por-cobrar.xlsx"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bovedas/excel')
   @ApiOperation({ summary: 'Excel del reporte de bóvedas' })
-  async bovedasExcel(@Query() q: BovedasFilterDto, @Res() res: Response) {
+  async bovedasExcel(@Query() q: BovedasFilterDto, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getBovedas(q.tipo, q.bloque, q.estado);
-    sendExcel(res, buildBovedasExcel(data), 'reporte-bovedas.xlsx');
+    const buffer = buildBovedasExcel(data);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="reporte-bovedas.xlsx"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 
   @Get('bloques/excel')
   @ApiOperation({ summary: 'Excel de ocupación por bloque' })
-  async bloquesExcel(@Res() res: Response) {
+  async bloquesExcel(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const data = await this.service.getBloques();
-    sendExcel(res, buildBloquesExcel(data), 'reporte-bloques.xlsx');
+    const buffer = buildBloquesExcel(data);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="reporte-bloques.xlsx"',
+    });
+    return new StreamableFile(buffer, { length: buffer.length });
   }
 }
 
-function sendPdf(res: Response, buffer: Buffer, filename: string) {
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-  res.setHeader('Content-Length', String(buffer.length));
-  res.end(buffer);
-}
-
-function sendExcel(res: Response, buffer: Buffer, filename: string) {
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.setHeader('Content-Length', String(buffer.length));
-  res.end(buffer);
-}
+// Helpers eliminados — reemplazados por StreamableFile en cada endpoint.

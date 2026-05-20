@@ -9,6 +9,11 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CobrarDto } from './dto/cobrar.dto';
 import { CreatePagoDto } from './dto/request/create-pago.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
 
 type Tx = Prisma.TransactionClient;
 
@@ -24,27 +29,40 @@ export class PagoService {
   // Read
   // ---------------------------------------------------------------------------
 
-  async findAll() {
-    return this.prisma.pago.findMany({
-      where: { estado: true },
-      include: {
-        banco: true,
-        descuento: true,
-        cuotas: {
-          include: {
-            cuota: {
-              include: {
-                contrato: {
-                  include: { difunto: true, boveda: { include: { bloque: true } } },
+  async findAll(query: PaginationQueryDto) {
+    const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const where = { estado: true };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.pago.findMany({
+        where,
+        include: {
+          banco: true,
+          descuento: true,
+          cuotas: {
+            include: {
+              cuota: {
+                include: {
+                  contrato: {
+                    include: { difunto: true, boveda: { include: { bloque: true } } },
+                  },
                 },
               },
             },
           },
+          usuarioCreador: { select: { id: true, nombre: true, apellido: true } },
         },
-        usuarioCreador: { select: { id: true, nombre: true, apellido: true } },
-      },
-      orderBy: { fechaPago: 'desc' },
-    });
+        orderBy: { fechaPago: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.pago.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: buildPaginationMeta(page, limit, total),
+    };
   }
 
   async findOne(id: number) {
