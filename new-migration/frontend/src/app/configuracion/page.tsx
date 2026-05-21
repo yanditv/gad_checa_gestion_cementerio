@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import { cementeriosApi, gadInformacionApi, catastroApi } from '@/lib/api';
 
@@ -865,6 +865,7 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
     <div className="space-y-6">
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>
+      )}
 
       {saved && (
         <div role="status" className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 ring-1 ring-green-200">Guardado correctamente.</div>
@@ -959,7 +960,7 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
 function Field({ label, value, onChange, disabled, type = 'text' }: {
   label: string; value: string; onChange: (v: string) => void; disabled?: boolean; type?: string;
 }) {
-  const id = `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const id = useId();
   return (
     <div>
       <label htmlFor={id} className={LABEL_CLS}>{label}</label>
