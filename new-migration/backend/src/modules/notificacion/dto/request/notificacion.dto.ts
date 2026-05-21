@@ -6,7 +6,7 @@ import {
   Min,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '../../../../common/dto/pagination-query.dto';
 
 export class ListNotificacionesDto extends PaginationQueryDto {
   @ApiPropertyOptional({ description: 'true = solo no leídas, false = solo leídas' })
