@@ -83,7 +83,7 @@ export function DashboardLayout({ children }: LayoutProps) {
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
-      <main className="lg:ml-64 pt-16">
+      <main id="main-content" tabIndex={-1} className="lg:ml-64 pt-16 focus:outline-none">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </div>
