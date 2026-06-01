@@ -22,11 +22,6 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-interface HeaderProps {
-  user: SessionUser | null;
-  onToggleSidebar: () => void;
-}
-
 export function Header({ user, onToggleSidebar }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -113,7 +108,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
         </button>
 
         {/* Buscador (placeholder global, conectaremos al backend en fase posterior) */}
-        <div className="hidden flex-1 max-w-md md:block">
+        <div className="hidden w-full max-w-md md:block lg:max-w-xl">
           <div className="relative">
             <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -127,7 +122,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
 
         <div className="flex-1 md:hidden" />
 
-        <div className="flex items-center gap-1" ref={dropdownRef}>
+        <div className="ml-auto flex items-center gap-1" ref={dropdownRef}>
           {/* Notificaciones */}
           <div className="relative">
             <button
