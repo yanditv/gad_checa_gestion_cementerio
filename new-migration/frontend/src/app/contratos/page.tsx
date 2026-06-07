@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { contratosApi } from '@/lib/api';
 
 type EstadoFiltro = '' | 'activos' | 'porvencer' | 'vencidos' | 'inactivos';
 
@@ -85,6 +86,8 @@ function estadoVisual(row: Contrato): {
 export default function ContratosPage() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [estado, setEstado] = useState<EstadoFiltro>('');
   const [page, setPage] = useState(1);
@@ -95,6 +98,7 @@ export default function ContratosPage() {
     const controller = new AbortController();
     const handle = window.setTimeout(async () => {
       setLoading(true);
+      setError('');
       try {
         const params = new URLSearchParams({
           page: String(page),
@@ -114,7 +118,7 @@ export default function ContratosPage() {
         setMeta(payload.meta);
       } catch (err) {
         if (!cancelled && (err as Error).name !== 'AbortError') {
-          console.error(err);
+          setError(err instanceof Error ? err.message : 'No se pudieron cargar los contratos');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -135,8 +139,50 @@ export default function ContratosPage() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   })();
 
+  const clearFilters = () => {
+    setPage(1);
+    setSearchTerm('');
+    setEstado('');
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Desactivar este contrato?')) return;
+
+    setDeletingId(id);
+    setError('');
+    try {
+      await contratosApi.delete(id);
+      if (contratos.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        const response = await fetch(`/api/contratos?page=${page}&limit=15${searchTerm.trim() ? `&search=${encodeURIComponent(searchTerm.trim())}` : ''}${estado ? `&estado=${estado}` : ''}`, {
+          credentials: 'same-origin',
+        });
+        if (!response.ok) throw new Error('No se pudo refrescar la lista');
+        const payload = await response.json();
+        setContratos(payload.data || []);
+        setMeta(payload.meta);
+      }
+    } catch (err: any) {
+      setError(err.message || 'No se pudo desactivar el contrato');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const contratosActivos = contratos.filter((row) => estadoVisual(row).label === 'Activo').length;
+  const contratosRenovados = contratos.filter((row) => row.esRenovacion).length;
+  const contratosPorVencer = contratos.filter((row) => estadoVisual(row).label === 'Por vencer').length;
+
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Total de contratos" value={meta?.total ?? contratos.length} icon="ti-file-text" tone="primary" />
+        <SummaryCard label="Contratos activos" value={contratosActivos} icon="ti-check-circle" tone="success" />
+        <SummaryCard label="Renovaciones" value={contratosRenovados} icon="ti-repeat" tone="info" />
+        <SummaryCard label="Por vencer" value={contratosPorVencer} icon="ti-alert-triangle" tone="warning" />
+      </div>
+
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -195,7 +241,21 @@ export default function ContratosPage() {
               <option value="inactivos">Inactivos</option>
             </select>
           </div>
+
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <i className="ti ti-x" /> Limpiar
+          </button>
         </div>
+
+        {error && (
+          <div className="border-t border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Tabla */}
         <div className="overflow-x-auto">
@@ -323,6 +383,15 @@ export default function ContratosPage() {
                           >
                             <i className="ti ti-edit" />
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(row.id)}
+                            disabled={deletingId === row.id}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            title="Eliminar"
+                          >
+                            <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -378,6 +447,39 @@ export default function ContratosPage() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: string;
+  tone: 'primary' | 'success' | 'info' | 'warning';
+}) {
+  const tones = {
+    primary: 'bg-primary-50 text-primary-700 ring-primary-200',
+    success: 'bg-green-50 text-green-700 ring-green-200',
+    info: 'bg-info-50 text-info-700 ring-info-200',
+    warning: 'bg-amber-50 text-amber-700 ring-amber-200',
+  } as const;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+        </div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${tones[tone]}`}>
+          <i className={`ti ${icon} text-xl`} />
+        </span>
+      </div>
     </div>
   );
 }

@@ -26,6 +26,9 @@ export default function EditPersonaPage() {
     direccion: '',
     fechaNacimiento: '',
     genero: '',
+    estadoCivil: '',
+    profesion: '',
+    nacionalidad: '',
   });
 
   useEffect(() => {
@@ -42,6 +45,9 @@ export default function EditPersonaPage() {
           direccion: persona.direccion || '',
           fechaNacimiento: persona.fechaNacimiento ? new Date(persona.fechaNacimiento).toISOString().split('T')[0] : '',
           genero: persona.genero || '',
+          estadoCivil: persona.estadoCivil || '',
+          profesion: persona.profesion || '',
+          nacionalidad: persona.nacionalidad || '',
         });
       } catch (err: any) {
         setError(err.message || 'No se pudo cargar la persona');
@@ -212,10 +218,43 @@ export default function EditPersonaPage() {
               >
                 <option value="">Seleccionar...</option>
                 <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-              </select>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Estado civil</label>
+                <select
+                  className={INPUT_CLS}
+                  value={formData.estadoCivil}
+                  onChange={(e) => setFormData({ ...formData, estadoCivil: e.target.value })}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Soltero/a">Soltero/a</option>
+                  <option value="Casado/a">Casado/a</option>
+                  <option value="Divorciado/a">Divorciado/a</option>
+                  <option value="Viudo/a">Viudo/a</option>
+                  <option value="Unión libre">Unión libre</option>
+                </select>
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Profesión</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.profesion}
+                  onChange={(e) => setFormData({ ...formData, profesion: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Nacionalidad</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.nacionalidad}
+                  onChange={(e) => setFormData({ ...formData, nacionalidad: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
 
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <Link

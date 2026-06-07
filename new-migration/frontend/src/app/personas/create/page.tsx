@@ -24,6 +24,9 @@ export default function CreatePersonaPage() {
     direccion: '',
     fechaNacimiento: '',
     genero: '',
+    estadoCivil: '',
+    profesion: '',
+    nacionalidad: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,6 +169,39 @@ export default function CreatePersonaPage() {
                   <option value="M">Masculino</option>
                   <option value="F">Femenino</option>
                 </select>
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Estado civil</label>
+                <select
+                  className={INPUT_CLS}
+                  value={formData.estadoCivil}
+                  onChange={(e) => setFormData({ ...formData, estadoCivil: e.target.value })}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Soltero/a">Soltero/a</option>
+                  <option value="Casado/a">Casado/a</option>
+                  <option value="Divorciado/a">Divorciado/a</option>
+                  <option value="Viudo/a">Viudo/a</option>
+                  <option value="Unión libre">Unión libre</option>
+                </select>
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Profesión</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.profesion}
+                  onChange={(e) => setFormData({ ...formData, profesion: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Nacionalidad</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.nacionalidad}
+                  onChange={(e) => setFormData({ ...formData, nacionalidad: e.target.value })}
+                />
               </div>
             </div>
 

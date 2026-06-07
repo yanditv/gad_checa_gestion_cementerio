@@ -186,7 +186,7 @@ export default function PagoDetailPage({
           {error || 'No se pudo cargar el pago.'}
         </div>
         <Link
-          href="/cobros"
+          href="/pagos"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           <i className="ti ti-arrow-left" />
@@ -236,7 +236,7 @@ export default function PagoDetailPage({
             </button>
           )}
           <Link
-            href="/cobros"
+            href="/pagos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <i className="ti ti-arrow-left" />

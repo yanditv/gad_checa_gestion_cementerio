@@ -29,6 +29,26 @@ export class BovedaService {
               { numero: { contains: search, mode: 'insensitive' } },
               { tipo: { contains: search, mode: 'insensitive' } },
               {
+                propietario: {
+                  is: {
+                    persona: {
+                      is: {
+                        OR: [
+                          { nombre: { contains: search, mode: 'insensitive' } },
+                          { apellido: { contains: search, mode: 'insensitive' } },
+                          {
+                            numeroIdentificacion: {
+                              contains: search,
+                              mode: 'insensitive',
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+              {
                 bloque: {
                   is: { nombre: { contains: search, mode: 'insensitive' } },
                 },
@@ -45,6 +65,10 @@ export class BovedaService {
           bloque: { include: { cementerio: true } },
           piso: true,
           propietario: { include: { persona: true } },
+          contratos: {
+            where: { estado: true },
+            select: { id: true, numeroSecuencial: true },
+          },
         },
         orderBy: { fechaCreacion: 'desc' },
         skip,
@@ -90,16 +114,53 @@ export class BovedaService {
   }
 
   async create(dto: UpdateBovedaDto) {
-    return this.prisma.boveda.create({ data: dto as Prisma.BovedaUncheckedCreateInput });
+    const bloqueId = this.requireInt(dto.bloqueId, 'Debe seleccionar un bloque');
+    await this.ensureBloqueActivo(bloqueId);
+    const numero = this.normalizeNumero(dto.numero);
+    await this.ensureUniqueNumero(numero, bloqueId);
+
+    return this.prisma.boveda.create({
+      data: {
+        ...(dto as Prisma.BovedaUncheckedCreateInput),
+        numero,
+        bloqueId,
+        ubicacion: dto.ubicacion ?? null,
+        observaciones: dto.observaciones ?? null,
+      },
+    });
   }
 
   async update(id: number, dto: UpdateBovedaDto) {
-    await this.findOne(id);
-    return this.prisma.boveda.update({ where: { id }, data: dto as Prisma.BovedaUncheckedUpdateInput });
+    const actual = await this.findOne(id);
+
+    const bloqueId = dto.bloqueId ?? actual.bloqueId;
+    await this.ensureBloqueActivo(bloqueId);
+
+    if (dto.numero !== undefined) {
+      await this.ensureUniqueNumero(this.normalizeNumero(dto.numero), bloqueId, id);
+    }
+
+    return this.prisma.boveda.update({
+      where: { id },
+      data: {
+        ...(dto as Prisma.BovedaUncheckedUpdateInput),
+        ...(dto.numero !== undefined ? { numero: this.normalizeNumero(dto.numero) } : {}),
+        ...(dto.ubicacion !== undefined ? { ubicacion: dto.ubicacion ?? null } : {}),
+        ...(dto.observaciones !== undefined ? { observaciones: dto.observaciones ?? null } : {}),
+      },
+    });
   }
 
   async remove(id: number) {
     await this.findOne(id);
+    const contratosActivos = await this.prisma.contrato.count({
+      where: { bovedaId: id, estado: true },
+    });
+    if (contratosActivos > 0) {
+      throw new ConflictException(
+        'No se puede eliminar la bóveda porque tiene contratos activos',
+      );
+    }
     return this.prisma.boveda.update({
       where: { id },
       data: { estado: false },
@@ -187,5 +248,50 @@ export class BovedaService {
       },
       orderBy: { fechaInicio: 'desc' },
     });
+  }
+
+  private normalizeNumero(numero?: string) {
+    const normalized = (numero || '').trim();
+    if (!normalized) {
+      throw new BadRequestException('El número de la bóveda es obligatorio');
+    }
+    return normalized;
+  }
+
+  private requireInt(value: number | undefined, message: string) {
+    if (!value || !Number.isInteger(Number(value))) {
+      throw new BadRequestException(message);
+    }
+    return Number(value);
+  }
+
+  private async ensureBloqueActivo(bloqueId: number) {
+    const bloque = await this.prisma.bloque.findUnique({
+      where: { id: bloqueId },
+      select: { id: true, estado: true },
+    });
+    if (!bloque) {
+      throw new BadRequestException('El bloque seleccionado no existe');
+    }
+    if (!bloque.estado) {
+      throw new BadRequestException('El bloque seleccionado está inactivo');
+    }
+  }
+
+  private async ensureUniqueNumero(numero: string, bloqueId: number, excludeId?: number) {
+    const existing = await this.prisma.boveda.findFirst({
+      where: {
+        bloqueId,
+        numero: { equals: numero, mode: 'insensitive' },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        'Ya existe una bóveda con ese número en el bloque seleccionado',
+      );
+    }
   }
 }

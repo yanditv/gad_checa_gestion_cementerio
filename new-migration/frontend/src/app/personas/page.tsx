@@ -17,6 +17,8 @@ interface Persona {
 export default function PersonasPage() {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [tipo, setTipo] = useState<string>('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -28,6 +30,7 @@ export default function PersonasPage() {
 
   const loadPersonas = async () => {
     setLoading(true);
+    setError('');
     try {
       const result = await personasApi.findPage({
         page,
@@ -37,10 +40,29 @@ export default function PersonasPage() {
       });
       setPersonas(result.data);
       setMeta(result.meta);
-    } catch (error) {
-      console.error('Error loading personas:', error);
+    } catch (error: any) {
+      setError(error.message || 'No se pudieron cargar las personas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Desactivar esta persona?')) return;
+
+    setDeletingId(id);
+    setError('');
+    try {
+      await personasApi.delete(id);
+      if (personas.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await loadPersonas();
+      }
+    } catch (error: any) {
+      setError(error.message || 'No se pudo desactivar la persona');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -107,6 +129,12 @@ export default function PersonasPage() {
             </select>
           </div>
         </div>
+
+        {error && (
+          <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -187,6 +215,15 @@ export default function PersonasPage() {
                         >
                           <i className="ti ti-edit" />
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(row.id)}
+                          disabled={deletingId === row.id}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          title="Eliminar"
+                        >
+                          <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
+                        </button>
                       </div>
                     </td>
                   </tr>

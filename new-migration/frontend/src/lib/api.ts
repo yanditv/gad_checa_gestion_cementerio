@@ -300,7 +300,7 @@ export const bloquesApi = {
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/bloques', params),
   findOne: (id: number) => api.get<any>(`/bloques/${id}`),
   create: (data: any) => api.post<any>('/bloques', data),
-  update: (id: number, data: any) => api.put<any>(`/bloques/${id}`, data),
+  update: (id: number, data: any) => api.patch<any>(`/bloques/${id}`, data),
   delete: (id: number) => api.delete<any>(`/bloques/${id}`),
 };
 

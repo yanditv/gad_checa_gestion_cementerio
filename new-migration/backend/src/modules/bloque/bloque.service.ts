@@ -87,11 +87,15 @@ export class BloqueService {
    */
   async create(dto: CreateBloqueDto, userId?: string) {
     const numeroPisos = dto.numeroPisos ?? 0;
+    const nombre = dto.nombre.trim();
+
+    await this.ensureCementerioExists(dto.cementerioId);
+    await this.ensureUniqueNombre(nombre, dto.cementerioId);
 
     return this.prisma.$transaction(async (tx) => {
       const bloque = await tx.bloque.create({
         data: {
-          nombre: dto.nombre,
+          nombre,
           descripcion: dto.descripcion ?? null,
           cementerioId: dto.cementerioId,
           estado: true,
@@ -121,11 +125,16 @@ export class BloqueService {
   }
 
   async update(id: number, dto: UpdateBloqueDto, userId?: string) {
-    await this.findOne(id);
+    const actual = await this.findOne(id);
+
+    if (dto.nombre !== undefined) {
+      await this.ensureUniqueNombre(dto.nombre.trim(), actual.cementerioId, id);
+    }
+
     return this.prisma.bloque.update({
       where: { id },
       data: {
-        ...(dto.nombre !== undefined && { nombre: dto.nombre }),
+        ...(dto.nombre !== undefined && { nombre: dto.nombre.trim() }),
         ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
         ...(dto.estado !== undefined && { estado: dto.estado }),
         usuarioActualizadorId: userId ?? null,
@@ -158,5 +167,39 @@ export class BloqueService {
         usuarioEliminadorId: userId ?? null,
       },
     });
+  }
+
+  private async ensureCementerioExists(cementerioId: number) {
+    const cementerio = await this.prisma.cementerio.findUnique({
+      where: { id: cementerioId },
+      select: { id: true, estado: true },
+    });
+    if (!cementerio) {
+      throw new NotFoundException('El cementerio seleccionado no existe');
+    }
+    if (!cementerio.estado) {
+      throw new ConflictException('El cementerio seleccionado está inactivo');
+    }
+  }
+
+  private async ensureUniqueNombre(
+    nombre: string,
+    cementerioId: number,
+    excludeId?: number,
+  ) {
+    const existing = await this.prisma.bloque.findFirst({
+      where: {
+        cementerioId,
+        nombre: { equals: nombre, mode: 'insensitive' },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        'Ya existe un bloque con ese nombre en el cementerio seleccionado',
+      );
+    }
   }
 }

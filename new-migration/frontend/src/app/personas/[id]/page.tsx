@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Boveda {
   id: number;
@@ -101,9 +102,11 @@ export default function PersonaDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [persona, setPersona] = useState<Persona | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [tab, setTab] = useState<Tab>('datos');
 
   useEffect(() => {
@@ -145,6 +148,27 @@ export default function PersonaDetailsPage({
       r.contratoResponsables.map((cr) => cr.contrato),
     );
   }, [persona]);
+
+  async function handleDelete() {
+    if (!window.confirm('¿Desactivar esta persona?')) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/personas/${id}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || 'No se pudo eliminar');
+      }
+      router.push('/personas');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -224,6 +248,17 @@ export default function PersonaDetailsPage({
             <i className="ti ti-edit" />
             Editar
           </Link>
+          {persona.estado && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+            >
+              <i className={`ti ${deleting ? 'ti-loader animate-spin' : 'ti-trash'}`} />
+              Desactivar
+            </button>
+          )}
           <Link
             href="/personas"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -279,6 +314,7 @@ export default function PersonaDetailsPage({
             <Field label="Estado civil" value={persona.estadoCivil} />
             <Field label="Nacionalidad" value={persona.nacionalidad} />
             <Field label="Profesión" value={persona.profesion} />
+            <Field label="Tipo de persona" value={persona.tipoPersona} />
             <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Dirección" value={persona.direccion} />
             </div>

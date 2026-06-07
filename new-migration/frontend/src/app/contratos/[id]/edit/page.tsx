@@ -35,12 +35,12 @@ export default function EditContratoPage() {
       try {
         const [contrato, bovedasData, difuntosData] = await Promise.all([
           contratosApi.findOne(Number(params.id)),
-          bovedasApi.findAll(),
-          difuntosApi.findAll(),
+          bovedasApi.findPage({ page: 1, limit: 100 }),
+          difuntosApi.findPage({ page: 1, limit: 100 }),
         ]);
 
-        setBovedas(bovedasData.filter((item: any) => item.estado));
-        setDifuntos(difuntosData.filter((item: any) => item.estado));
+        setBovedas((bovedasData.data || []).filter((item: any) => item.estado));
+        setDifuntos((difuntosData.data || []).filter((item: any) => item.estado));
 
         setFormData({
           bovedaId: contrato.bovedaId?.toString() || '',
