@@ -16,6 +16,7 @@ import {
   ResetPasswordDto,
 } from './dto/auth.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 import {
   AuthUser,
   CurrentUser,
@@ -28,6 +29,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: 'Registrar nuevo usuario' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -36,6 +38,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Iniciar sesión' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);

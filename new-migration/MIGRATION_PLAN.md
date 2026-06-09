@@ -465,7 +465,7 @@ este archivo.
     [x] 11.4 Autorización consistente con `@Roles('Administrador')` ← 2026-05-16
     [ ] 11.5 Auditoría centralizada (interceptor + helper)
     [ ] 11.6 Numeración secuencial vía YearSequenceService
-    [ ] 11.7 Calidad transversal (paginación pagos, rate limit, stream PDFs)
+    [x] 11.7 Calidad transversal (paginación pagos, rate limit, stream PDFs) ← 2026-05-17
     [ ] 11.8 Repository pattern selectivo (Contrato, Pago)
     [ ] 11.9 Layout final dto/{request,response}/
 [ ] Fase 8  — Notificaciones + job
