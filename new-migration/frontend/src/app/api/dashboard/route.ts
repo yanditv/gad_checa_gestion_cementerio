@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../_utils';
 import { authHeaders } from '@/lib/auth';
 
+interface PaginatedPayload<T> {
+  data: T[];
+  meta?: {
+    page: number;
+    totalPages: number;
+    hasNextPage?: boolean;
+  };
+}
+
 function extractList<T>(payload: any): T[] {
   const unwrapped = unwrapApiResponse<any>(payload).data;
   if (Array.isArray(unwrapped)) return unwrapped as T[];
@@ -12,13 +21,43 @@ function extractList<T>(payload: any): T[] {
   return [];
 }
 
+async function fetchAllPages<T>(
+  path: string,
+  headers: HeadersInit,
+): Promise<T[]> {
+  const limit = 100;
+  let page = 1;
+  const items: T[] = [];
+
+  while (true) {
+    const join = path.includes('?') ? '&' : '?';
+    const response = await fetchWithTimeout(
+      `${API_URL}${path}${join}page=${page}&limit=${limit}`,
+      { headers, cache: 'no-store' },
+    );
+
+    if (!response.ok) break;
+
+    const payload = (await response.json()) as PaginatedPayload<T>;
+    const pageItems = extractList<T>(payload);
+    items.push(...pageItems);
+
+    const totalPages = payload?.meta?.totalPages ?? 1;
+    const hasNext = payload?.meta?.hasNextPage ?? page < totalPages;
+    if (!hasNext || page >= totalPages) break;
+    page += 1;
+  }
+
+  return items;
+}
+
 export async function GET() {
   try {
     const headers = await authHeaders();
     const [contratosRes, bovedasRes, difuntosRes, pagosRes] = await Promise.allSettled([
-      fetchWithTimeout(`${API_URL}/contratos?limit=100`, { headers, cache: 'no-store' }),
-      fetchWithTimeout(`${API_URL}/bovedas?limit=100`, { headers, cache: 'no-store' }),
-      fetchWithTimeout(`${API_URL}/difuntos?limit=100`, { headers, cache: 'no-store' }),
+      fetchAllPages<any>('/contratos', headers),
+      fetchAllPages<any>('/bovedas', headers),
+      fetchAllPages<any>('/difuntos', headers),
       fetchWithTimeout(`${API_URL}/pagos`, { headers, cache: 'no-store' }),
     ]);
 
@@ -27,19 +66,16 @@ export async function GET() {
     let difuntos: any[] = [];
     let pagos: any[] = [];
 
-    if (contratosRes.status === 'fulfilled' && contratosRes.value.ok) {
-      const payload = await contratosRes.value.json();
-      contratos = extractList<any>(payload);
+    if (contratosRes.status === 'fulfilled') {
+      contratos = contratosRes.value;
     }
 
-    if (bovedasRes.status === 'fulfilled' && bovedasRes.value.ok) {
-      const payload = await bovedasRes.value.json();
-      bovedas = extractList<any>(payload);
+    if (bovedasRes.status === 'fulfilled') {
+      bovedas = bovedasRes.value;
     }
 
-    if (difuntosRes.status === 'fulfilled' && difuntosRes.value.ok) {
-      const payload = await difuntosRes.value.json();
-      difuntos = extractList<any>(payload);
+    if (difuntosRes.status === 'fulfilled') {
+      difuntos = difuntosRes.value;
     }
 
     if (pagosRes.status === 'fulfilled' && pagosRes.value.ok) {

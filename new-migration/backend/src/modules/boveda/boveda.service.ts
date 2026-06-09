@@ -153,8 +153,13 @@ export class BovedaService {
 
   async remove(id: number) {
     await this.findOne(id);
+    const today = new Date();
     const contratosActivos = await this.prisma.contrato.count({
-      where: { bovedaId: id, estado: true },
+      where: {
+        bovedaId: id,
+        estado: true,
+        OR: [{ fechaFin: null }, { fechaFin: { gte: today } }],
+      },
     });
     if (contratosActivos > 0) {
       throw new ConflictException(

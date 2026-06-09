@@ -27,6 +27,21 @@ export default function CreateBovedaPage() {
     estado: true,
   });
 
+  const loadAllBloques = async () => {
+    const items: any[] = [];
+    let page = 1;
+
+    while (true) {
+      const result = await bloquesApi.findPage({ page, limit: 100 });
+      items.push(...(result.data || []));
+      const totalPages = result.meta?.totalPages ?? 1;
+      if (page >= totalPages) break;
+      page += 1;
+    }
+
+    return items;
+  };
+
   const validateForm = () => {
     const numero = formData.numero.trim();
     const ubicacion = formData.ubicacion.trim();
@@ -51,7 +66,7 @@ export default function CreateBovedaPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await bloquesApi.findAll();
+        const data = await loadAllBloques();
         setBloques(data.filter((b: any) => b.estado));
       } catch (err) {
         setBloques([]);
