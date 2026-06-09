@@ -92,9 +92,10 @@ al usuario** en vez de inventar.
 - **`JwtAuthGuard` es global** (registrado en `app.module.ts` vía
   `APP_GUARD`). No repetir `@UseGuards(JwtAuthGuard)` en controllers; usar
   `@Public()` para excepciones.
-- **Configuración** se lee vía `ConfigService` tipado (`ConfigType<typeof
-  authConfig>`). Prohibido `process.env.X` directo en código de aplicación.
-  `JWT_SECRET` no tiene fallback: si falta, el servidor no arranca.
+- **Configuración backend**: en modules/services preferir `ConfigService`.
+  Las lecturas directas de `process.env` que hoy existen quedan acotadas a
+  bootstrap, middleware o helpers de frontera. No agregar nuevas lecturas
+  directas en lógica de dominio sin necesidad clara.
 - **Errores con mensajes en español** dirigidos al usuario final, no stack
   traces ni nombres de columna. `AllExceptionsFilter` preserva `errors[]`
   cuando vienen de `ValidationPipe` (no se reduce a string).
@@ -106,8 +107,9 @@ al usuario** en vez de inventar.
 ### 2.3 De producto
 
 - **No** introduzcas dependencias UI nuevas (otra librería de componentes,
-  otro framework CSS) sin discutir. La pila visible es Bootstrap (Able Pro) +
-  Tabler Icons + ApexCharts (`DESIGN.md`).
+  otro framework CSS) sin discutir. La UI actual se escribe en **Tailwind**,
+  reutilizando assets globales de Able Pro y usando **Tabler Icons** +
+  **ApexCharts** (`DESIGN.md`).
 - **No** rompas la URL ni el contenido visible de una pantalla migrada sólo
   por "refactor". Las pantallas migradas son el contrato visual con el GAD.
 - **No** agregues features fuera del scope de la fase activa
@@ -188,10 +190,13 @@ El proyecto tiene dos colaboradores activos: **@yanditv** (owner) y
 
 1. Crea la ruta en `frontend/src/app/<X>/page.tsx`.
 2. Marca `'use client'` sólo si necesitas hooks.
-3. Empieza con `<PageHeader>`, sigue con `<div className="card">` (Bootstrap),
-   `<SearchFilters>`, `<DataGrid>`, `<PaginationNav>` para listados.
-4. Formularios: usa el patrón col-md-8 + col-md-4 (form + tarjeta de ayuda).
-5. Llama a la API vía `frontend/src/lib/api.ts` (no `fetch` suelto).
+3. Usa el patrón actual del repo: encabezado inline (`h1` + subtítulo + CTA),
+   card Tailwind (`rounded-xl border bg-white shadow-soft`), filtros inline,
+   tabla propia y paginación inline para listados.
+4. Formularios: usa `grid grid-cols-1 gap-6 lg:grid-cols-3` con formulario en
+   `lg:col-span-2` y tarjeta lateral de ayuda/contexto.
+5. Llama a la API de dominio vía `frontend/src/lib/api.ts`; reserva
+   `fetch('/api/...')` para route handlers BFF / auth internos de Next.
 6. Si la pantalla es protegida, asume el middleware de auth (`Fase 1` del
    plan). Mientras no exista, **no** generes endpoints públicos por
    conveniencia.
@@ -242,10 +247,10 @@ El proyecto tiene dos colaboradores activos: **@yanditv** (owner) y
    - Mismas reglas de validación (`Required`, `StringLength`, etc.).
    - Mismo orden de campos y agrupación visual.
    - Misma paginación / filtros / acciones por fila.
-4. Reemplazar partials (`_Modal*.cshtml`) por componentes React en
-   `components/ui/` o locales a la página si son únicos.
+4. Reemplazar partials (`_Modal*.cshtml`) por componentes React locales o
+   compartidos en `components/` solo si el patrón ya se repite.
 5. Reemplazar Razor helpers (`@Html.ActionLink`, `@Html.DropDownList`) por
-   `<Link>`, `<SelectInput>`, etc.
+   `<Link>`, `<select>`, `<input>` y composición Tailwind inline.
 6. Confirmar paridad visual con la vista legada (mismo template Able Pro).
 
 ### 3.6 Crear un módulo nuevo en el backend
@@ -328,7 +333,7 @@ Checklist mínimo:
 - [ ] Si afecta listado: paginación funcional.
 - [ ] Swagger actualizado (decoradores en controller + DTO).
 - [ ] Si cambia esquema: migración aplicada y `seed` revisado.
-- [ ] Si cambia UI: alineado con `DESIGN.md` (wrappers, tonos, iconos).
+- [ ] Si cambia UI: alineado con `DESIGN.md` (Tailwind, tonos, iconos).
 - [ ] `bun run lint` limpio en el módulo tocado.
 - [ ] `MIGRATION_STATUS.md` actualizado si cerraste un punto pendiente.
 
@@ -370,7 +375,7 @@ Checklist mínimo:
   fechas, mensajes de validación, qué muestra una tabla vacía.
 - ✅ Cuando la migración exija una decisión técnica nueva, registrarla en
   `MIGRATION_PLAN.md` §3 (decisiones cerradas) en el mismo PR.
-- ✅ Usar los wrappers UI antes de escribir Bootstrap a mano.
+- ✅ Reutilizar patrones Tailwind del repo antes de extraer un componente nuevo.
 - ✅ Reportar al usuario, al cerrar, qué quedó cubierto y qué queda
   pendiente, citando los IDs de requerimiento (`CONTRA-R8`, `DASH-R4`, ...).
 

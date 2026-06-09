@@ -96,7 +96,7 @@ export class UsuarioService {
   async update(id: string, data: UpdateUsuarioDto) {
     const usuario = await this.findOne(id);
 
-    const { id: _, passwordHash, ...safeData } = data || {};
+    const safeData = { ...data };
 
     // Bloqueo de identidad del super-admin: no permitir que se cambie su
     // email (perdería su privilegio implícito) ni que se desactive vía

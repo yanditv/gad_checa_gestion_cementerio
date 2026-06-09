@@ -7,16 +7,18 @@ Se basa en el código presente en `frontend/src/` y en los activos estáticos de
 
 ## 1. Fundamento del sistema
 
-El frontend reutiliza la plantilla **Able Pro – Bootstrap Admin Template** (CodedThemes) como capa visual base, sobre la que se añaden componentes propios en **React 19 / Next.js 15**.
+El frontend reutiliza activos estáticos de **Able Pro** (fuentes, CSS global,
+scripts del template) como capa base, pero la UI propia actual está escrita en
+**Tailwind + React 19 / Next.js 15**.
 
 Pila visual real:
 
 | Capa | Tecnología | Rol |
 |------|------------|-----|
-| Estilos base | Bootstrap 5 (vía `public/css/style.css`, ~23 kLOC) | Grid, utilidades, componentes (card, btn, alert, badge, form-control, modal, dropdown, table). |
+| Estilos base | Able Pro / Bootstrap 5 (vía `public/css/style.css`) | Activos globales heredados del template, tipografía y compatibilidad visual. |
 | Tema | `public/css/style-preset.css` (preset-1) | Tokens de color de marca, variantes de botón, `bg-light-*`, `btn-light-*`. |
 | Utilidades propias | `public/css/site.css` | `.stepper`, `.section-title`, `.hover-lift`, transición de `.card`. |
-| Tailwind | `tailwind.config.js` | Solo está cargado para futuras utilidades; **no se usa para el layout actual** (todas las páginas usan clases Bootstrap). |
+| Tailwind | `tailwind.config.js` | Fuente real para layout, spacing, cards, tablas, formularios y estados de la app actual. |
 | Iconos | Tabler Icons (principal) + Feather + FontAwesome + Material | Familia única visible en UI: `ti ti-*`. |
 | Gráficos | ApexCharts (cargado por `<Script>` global) | Dashboard. |
 
@@ -59,7 +61,10 @@ Cambiar el preset o `data-pc-theme` reemplaza los tokens — no se deben sobresc
 
 ### 3.1 Color
 
-**Paleta semántica (Bootstrap + preset-1)** — usar siempre vía clases utilitarias (`text-{tono}`, `bg-{tono}`, `bg-light-{tono}`, `btn-{tono}`, `btn-outline-{tono}`, `badge bg-{tono}`, `alert alert-{tono}`).
+**Paleta semántica** — en código nuevo usar siempre las utilidades Tailwind del
+repo (`bg-primary-500`, `text-slate-700`, `ring-primary-200`, `bg-danger-50`,
+etc.). Los CSS del template siguen cargados, pero no son la referencia para
+autorar componentes nuevos.
 
 | Token | Hex | Variante claro (`bg-light-*`) | Uso |
 |-------|-----|--------------------------------|-----|
@@ -95,7 +100,8 @@ Cambiar el preset o `data-pc-theme` reemplaza los tokens — no se deben sobresc
 
 **No usar:** colores hardcodeados en estilos inline (excepto el wordmark de marca y el rojo `#ef4444` específico del item "Cerrar Sesión"). Cualquier color nuevo debe pasar por una clase utilitaria semántica.
 
-> ⚠️ `tailwind.config.js` declara `primary: '#6366f1'`. Ese token **no está vigente** en la UI actual (toda la interfaz usa `#1890ff` del preset-1 de Bootstrap). Si en algún momento se introducen utilidades de Tailwind, alinear ese valor con `#1890ff` antes de mezclarlos.
+`tailwind.config.js` ya está alineado con el azul institucional vigente:
+`primary-500 = #1890ff`.
 
 ### 3.2 Tipografía
 
@@ -109,7 +115,7 @@ Convenciones tipográficas observadas en las páginas:
 
 | Elemento | Estilo |
 |----------|--------|
-| Título de página (`PageHeader`) | `<h2>` 1.5rem / 600 / margen inferior 0.25rem. |
+| Título de página | `<h1>` o `<h2>` con `text-2xl font-bold text-slate-900` + subtítulo `text-sm text-slate-500`. |
 | Subtítulo de página | `text-muted small`. |
 | Título de sección | `.section-title` — 1.1rem / 600 / `#495057` / borde inferior `2px #e9ecef`. |
 | Encabezado de card | `<h5 className="card-title">` o `<h5 className="mb-0">` precedido de icono. |
@@ -119,8 +125,8 @@ Convenciones tipográficas observadas en las páginas:
 
 ### 3.3 Espaciado, radio y elevación
 
-- Sistema de espaciado: **utilidades Bootstrap** (`m{Side}-{0..5}`, `p{Side}-{0..5}`, `g-{n}`, `gap-{n}`). No usar valores arbitrarios salvo en casos excepcionales.
-- Radios: heredados de Bootstrap (`rounded`, `rounded-circle`, radio implícito de `.card`, `.btn`, `.badge`).
+- Sistema de espaciado: utilidades Tailwind (`space-y-*`, `gap-*`, `px-*`, `py-*`).
+- Radios: `rounded-md`, `rounded-lg`, `rounded-xl` según jerarquía visual.
 - Sombras del template:
   - `shadow-sm` para todas las cards informativas del dashboard.
   - Hover de card: `box-shadow: 0 2px 8px rgba(0,0,0,0.1)` (transición 0.3s, definido en `site.css`).
@@ -128,9 +134,9 @@ Convenciones tipográficas observadas en las páginas:
 
 ### 3.4 Tokens Tailwind (Fase 2.5+)
 
-Tailwind coexiste con Bootstrap durante la migración. Los tokens reflejan los
-mismos colores semánticos para que cualquier pantalla migrada se vea idéntica
-visualmente al resto.
+Tailwind convive con los assets globales de Able Pro. Los tokens reflejan los
+mismos colores semánticos visibles para mantener continuidad con el sistema
+legado.
 
 | Bootstrap | Tailwind | Hex |
 |-----------|----------|-----|
@@ -169,7 +175,7 @@ Estructura global (montada en `app/layout.tsx` → `components/DashboardLayout.t
 │  │               │ ├──────────────────────────────┤    │
 │  │ Navigation    │ │ Main (.pc-container)         │    │
 │  │   - secciones │ │   .pc-content                │    │
-│  │   - items     │ │     PageHeader               │    │
+│  │   - items     │ │     encabezado de página     │    │
 │  │               │ │     [contenido de la página] │    │
 │  │               │ ├──────────────────────────────┤    │
 │  │               │ │ Footer (.pc-footer)          │    │
@@ -177,7 +183,8 @@ Estructura global (montada en `app/layout.tsx` → `components/DashboardLayout.t
 └────────────────────────────────────────────────────────┘
 ```
 
-- **Grid de contenido**: `.container-fluid` + `row` + `col-{breakpoint}-{n}` (Bootstrap). Breakpoints estándar: `sm`, `md`, `lg`, `xl`.
+- **Grid de contenido**: `max-w-7xl` centrado, `px-4 sm:px-6 lg:px-8`, cards y
+  grids Tailwind (`grid-cols-*`, `lg:grid-cols-3`, etc.).
 - **Altura mínima** del área de contenido: `calc(100vh - 160px)` (definida en `globals.css`).
 - **Loader inicial**: `.loader-bg` se oculta tras 500 ms para evitar parpadeo en la primera navegación (manejado dentro de `DashboardLayout`).
 
@@ -233,130 +240,84 @@ Estructura global (montada en `app/layout.tsx` → `components/DashboardLayout.t
 
 ---
 
-## 6. Componentes UI propios
+## 6. Patrones UI actuales
 
-Los wrappers viven en `src/components/ui/` y encapsulan el uso recomendado de Bootstrap.
-**Regla general:** preferir estos wrappers sobre escribir clases Bootstrap directamente en las páginas.
+No existe `src/components/ui/`. La app actual compone la UI directamente en
+las páginas y solo extrae componentes cuando el patrón ya está repetido.
 
-### 6.1 `<PageHeader />`
+### 6.1 Encabezado de página
 
-Encabezado consistente para cada vista.
-
-```tsx
-<PageHeader
-  title="Lista de Personas"
-  subtitle="Gestión de propietarios y responsables"
-  actions={<Button href="/personas/create" icon="ti-plus">Nueva Persona</Button>}
-/>
-```
-
-- `title`: `<h2>` 1.5rem / 600.
-- `subtitle`: opcional, `text-muted small`.
-- `actions`: nodo React libre — habitualmente un `Button` primario.
-
-### 6.2 `<Button />`
-
-Botón polimórfico (renderiza `<a>` si recibe `href`, `<button>` si no).
-
-| Prop | Valores | Notas |
-|------|---------|-------|
-| `variant` | `primary` \| `secondary` \| `outline-primary` \| `outline-secondary` \| `danger` | Por defecto `primary`. |
-| `href` | string | Si está presente, se renderiza con `next/link`. |
-| `icon` | nombre Tabler sin prefijo `ti-` requerido (se concatena tal cual) | Aparece a la izquierda con `me-1`. |
-
-Reglas:
-
-- Acción principal por página → un único botón `primary`.
-- Cancelar / Volver → `secondary` o `outline-secondary`.
-- Eliminar → `danger`.
-- Tamaños pequeños en listados / filtros: `className="btn-sm"` adicional.
-
-### 6.3 `<TextInput />`
-
-Input controlado. Si recibe `icon` se envuelve en `.search-box` (input con icono interno).
+Patrón actual en listados y formularios:
 
 ```tsx
-<TextInput icon="ti-search" placeholder="Buscar..." value={q} onChange={...} />
+<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 className="text-2xl font-bold text-slate-900">Lista de Personas</h1>
+    <p className="mt-1 text-sm text-slate-500">Gestión de propietarios y responsables.</p>
+  </div>
+  <Link className="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft hover:bg-primary-600">
+    <i className="ti ti-plus" />
+    Nueva Persona
+  </Link>
+</div>
 ```
 
-### 6.4 `<SelectInput />`
+### 6.2 Cards y contenedores
 
-`<select className="form-select">` que recibe `options: { value, label }[]`.
-La primera opción suele ser un sentinel `{ value: '', label: 'Todos…' }`.
+- Contenedor principal: `rounded-xl border border-slate-200 bg-white shadow-soft`.
+- Header de card: `border-b border-slate-100 px-5 py-3`.
+- Cuerpo: `p-4` o `p-5`.
 
-### 6.5 `<SearchFilters />`
+### 6.3 Inputs y filtros
 
-Contenedor flex horizontal para filtros, anclado como `card-header` con `gap-3` y `flex-wrap`.
+- `input` / `select` usan borde `slate-200`, fondo claro y foco
+  `focus:ring-2 focus:ring-primary-200`.
+- Los buscadores con icono usan `relative` + icono absoluto a la izquierda.
+- Los filtros de listados viven dentro de la card, arriba de la tabla.
 
-```tsx
-<SearchFilters>
-  <TextInput icon="ti-search" ... />
-  <SelectInput options={...} ... />
-</SearchFilters>
-```
+### 6.4 Tablas y paginación
 
-### 6.6 `<DataGrid />`
+- Tabla: `min-w-full divide-y divide-slate-100 text-sm`.
+- Header: `bg-slate-50`, títulos `text-xs uppercase tracking-wider`.
+- Estado vacío: icono Tabler + copy centrado.
+- Estado de carga: spinner SVG inline dentro de una fila o bloque centrado.
+- Paginación: resumen textual + botones inline con ventana ±2 páginas.
 
-Tabla genérica con tipado por columna.
-
-```tsx
-const columns: DataGridColumn<Persona>[] = [
-  { key: 'nombre', title: 'Nombre', render: (row) => `${row.nombre} ${row.apellido}` },
-  { key: 'acciones', title: 'Acciones', render: (row) => (...) },
-];
-<DataGrid columns={columns} rows={data} rowKey={(r) => r.id} loading={loading} />
-```
-
-Convenciones:
-
-- Última columna `acciones` con `<div className="actions">` y `<a className="action-btn">` o `<button className="action-btn">` (rojo: `action-btn danger`) para ver / editar / eliminar.
-- Estado vacío: `emptyMessage` por defecto `"No hay registros"`.
-- Estado de carga: muestra fila `"Cargando..."` centrada.
-
-### 6.7 `<PaginationNav />`
-
-- Solo se renderiza si `totalPages > 1`.
-- Muestra ventana ±2 alrededor de la página actual, más botones "Anterior / Siguiente".
-- Resumen a la izquierda: `Página X de Y - Total: N`.
-- Botones: `btn btn-sm btn-outline-secondary`, activo `btn-primary`.
-
-### 6.8 KPI Cards (definidas in-line en el dashboard)
+### 6.5 KPI cards y dashboard
 
 Patrón reutilizable:
 
 ```tsx
-<div className="card h-100 border-0 shadow-sm">
-  <div className="card-body">
-    <div className="d-flex justify-content-between align-items-start">
+<div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
+  <div className="flex items-start justify-between">
       <div>
-        <h6 className="text-muted">Título</h6>
-        <h3 className="text-{tono}">Valor</h3>
-        <small className="text-muted">Subtítulo</small>
+        <p className="text-xs uppercase tracking-wide text-slate-400">Título</p>
+        <p className="mt-1 text-2xl font-bold text-primary-600">Valor</p>
+        <p className="mt-0.5 text-xs text-slate-500">Subtítulo</p>
       </div>
-      <div className="avatar bg-light-{tono} text-{tono}">
-        <i className="ti ti-{icono} f-24"></i>
-      </div>
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg ring-1 bg-primary-50 text-primary-600 ring-primary-200">
+        <i className="ti ti-{icono} text-xl"></i>
+      </span>
     </div>
-    <div className="progress mt-3" style={{ height: '4px' }}>
-      <div className="progress-bar bg-{tono}" style={{ width: '{n}%' }}></div>
+    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="h-full bg-primary-500" style={{ width: '75%' }}></div>
     </div>
-  </div>
 </div>
 ```
 
-Si este patrón se reutiliza fuera del dashboard, **extraerlo a `components/ui/KpiCard.tsx`** antes de duplicar.
+Si el patrón se repite 3+ veces fuera del dashboard, extraer un componente
+compartido en `src/components/`.
 
-### 6.9 QuickCard
+### 6.6 QuickCard
 
 Atajo navegable en el dashboard. Se renderiza con `bg-light-{tono}`, ícono grande (1.8rem) y etiqueta corta. Útil para shortcuts; no usar como reemplazo de un menú principal.
 
-### 6.10 Stepper / Wizard
+### 6.7 Stepper / Wizard
 
-Definido en `public/css/site.css`. Usado en `app/contratos/create/page.tsx`.
-
-- `.stepper` (contenedor flex), `.step` (cada nodo), `.circle` (40 × 40 px).
-- Estados: `.step.active .circle` → azul `#007bff`; `.step.completed .circle` → verde `#28a745`.
-- Pasos actuales del wizard de contrato: *Datos del contrato → Datos del difunto → Datos de los responsables → Pago → Verificación*.
+El wizard de contratos ya no depende de clases Bootstrap o wrappers: está
+maquetado inline con pills circulares Tailwind. Mantener el orden actual de
+pasos: *Datos del contrato → Datos del difunto → Datos de los responsables →
+Pago → Verificación*.
 
 ---
 
@@ -366,40 +327,38 @@ Definido en `public/css/site.css`. Usado en `app/contratos/create/page.tsx`.
 
 Estructura canónica (`app/personas/page.tsx`, `app/bovedas/page.tsx`):
 
-1. `<PageHeader>` con botón **Nueva …** como acción principal.
-2. `<div className="card">` que contiene:
-   - `<SearchFilters>` con `<TextInput icon="ti-search">` + filtros tipo `<SelectInput>`.
-   - `<DataGrid>`.
-   - `<PaginationNav>`.
+1. Encabezado inline con `h1` + subtítulo + CTA principal.
+2. Card Tailwind con:
+   - buscador inline con icono,
+   - filtros compactos (`select`, toggles o tabs según módulo),
+   - tabla propia,
+   - paginación inline.
 3. Paginación servidor: `limit: 15`. Reset de `page` a `1` al cambiar filtros/búsqueda.
 
 ### 7.2 Formulario de creación / edición
 
 Estructura canónica (`app/personas/create/page.tsx`):
 
-1. `<PageHeader>` con botón **Volver** (`btn-secondary`).
-2. Grid `row` con **dos columnas**:
-   - `col-md-8`: card principal con el formulario.
-     - `card-header` → `<h5 className="card-title">`.
-     - `card-body` → `<form>` con:
-       - Alert de error condicional: `<div className="alert alert-danger">`.
-       - Filas `row` con `col-md-6` para campos en pareja.
-       - `.form-group` → `<label className="form-label">` (con `*` para obligatorios) → `form-control` / `form-select`.
-       - Pie del formulario: `d-flex justify-content-end gap-2 mt-3` con **Cancelar** (`btn-secondary`) + **Guardar** (`btn-primary` con spinner en estado de carga).
-   - `col-md-4`: card de **información contextual** (texto auxiliar con `text-muted small`).
+1. Encabezado inline con botón **Volver** secundario.
+2. Grid `grid grid-cols-1 gap-6 lg:grid-cols-3`:
+   - `lg:col-span-2`: card principal con el formulario.
+   - columna restante: card de información contextual.
+3. Campos en `grid grid-cols-1 gap-4 sm:grid-cols-2`.
+4. Error del formulario en bloque rojo suave al inicio.
+5. Pie del formulario alineado a la derecha con **Cancelar** + **Guardar**.
 
 ### 7.3 Detalle
 
-- Sigue el patrón "PageHeader + cards" con bloques de información en `col-md-{n}`.
-- Las acciones (editar / eliminar) van en `actions` del `<PageHeader>`.
+- Sigue el patrón de encabezado inline + cards informativas.
+- Las acciones (editar / eliminar) viven junto al título o en la cabecera de la card principal.
 
 ### 7.4 Dashboard
 
-- Sección **Indicadores Principales**: grid de `KpiCard` (col-sm-6 / col-md-4 / col-lg-3).
+- Sección **Indicadores Principales**: grid Tailwind responsivo (`sm:grid-cols-2`, `lg:grid-cols-4`).
 - Sección **Resumen Operativo**: cards con ApexCharts (pie, donut, bar, area).
 - Sección **Alertas**: `alert alert-{tono} border-0` con icono + descripción.
 - Sección **Accesos Rápidos**: grid de `QuickCard`.
-- Estado de carga global: `<div className="spinner-border text-primary" />` centrado.
+- Estado de carga global: spinner SVG inline centrado.
 
 ---
 
@@ -407,33 +366,33 @@ Estructura canónica (`app/personas/create/page.tsx`):
 
 | Situación | Patrón |
 |-----------|--------|
-| Cargando (página completa) | Spinner Bootstrap `spinner-border text-primary` centrado, `min-height: 40vh`. |
-| Cargando (botón) | Mismo botón, `disabled`, contenido reemplazado por `spinner` pequeño + texto "Guardando…". |
-| Cargando (fila de tabla) | Fila única `Cargando...` en `DataGrid`. |
-| Error de formulario | `<div className="alert alert-danger">` al inicio del form. |
-| Éxito sin redirección | `alert alert-success border-0`. |
-| Aviso preventivo | `alert alert-warning border-0` (ej. contratos por vencer). |
-| Error crítico | `alert alert-danger border-0` (ej. contratos vencidos). |
-| Sin datos en lista | Mensaje gris centrado dentro del `DataGrid` (`emptyMessage`). |
+| Cargando (página completa) | Spinner SVG inline centrado con `min-h-[20vh]` o `min-h-[40vh]`. |
+| Cargando (botón) | Botón deshabilitado con spinner SVG pequeño + texto `Guardando…`. |
+| Cargando (fila de tabla) | Fila o bloque con spinner + copy `Cargando ...`. |
+| Error de formulario | `rounded-lg bg-red-50 ... text-red-700 ring-red-200` al inicio del form. |
+| Éxito sin redirección | Bloque verde suave (`bg-green-50`, `text-green-700`). |
+| Aviso preventivo | Bloque ámbar suave (`bg-amber-50`, `text-amber-700`). |
+| Error crítico | Bloque rojo suave (`bg-red-50`, `text-red-700`). |
+| Sin datos en lista | Icono Tabler + copy gris centrado dentro de la card o tabla. |
 | Sin notificaciones | `"No hay notificaciones nuevas"` dentro del dropdown del header. |
 
 ### Badges de estado
 
 | Estado | Clase | Texto típico |
 |--------|-------|--------------|
-| Activo / disponible / OK | `badge bg-success` (o `badge-success`) | "Activo", "Disponible", "Conectado". |
-| Pendiente / advertencia | `badge bg-warning text-dark` | "Por Vencer". |
-| Inactivo / error | `badge bg-danger` (o `badge-danger`) | "Vencido", "Ocupada". |
-| Informativo | `badge bg-info` o `badge bg-primary` | "Renovación", "Nuevo". |
-| Versión / neutral | `badge bg-light-secondary text-secondary` | "v1.0.0". |
+| Activo / disponible / OK | `inline-flex ... bg-success-50 text-success-700 ring-success-200` | "Activo", "Disponible", "Conectado". |
+| Pendiente / advertencia | `bg-warning-50 text-warning-700 ring-warning-200` | "Por vencer". |
+| Inactivo / error | `bg-danger-50 text-danger-700 ring-danger-200` | "Vencido", "Ocupada". |
+| Informativo | `bg-primary-50 text-primary-700 ring-primary-200` | "Renovación", "Nuevo". |
+| Neutral | `bg-slate-100 text-slate-600 ring-slate-200` | "Borrador", "Sin datos". |
 
 ---
 
 ## 9. Modales y overlays
 
-- Modales Bootstrap (`.modal`, `.modal-dialog`, `.modal-content`) controlados manualmente con estado React local (ej. `showResponsableModal`, `showBovedaModal` en el wizard de contratos).
-- Dropdowns del header (`.dropdown-menu.show`) también controlados por estado React, **no** por el JS de Bootstrap. Solo un dropdown abierto a la vez.
-- Cuando se necesite un nuevo overlay, mantener este patrón (`useState` + condicional + `aria-label` en triggers) en vez de invocar la API de Bootstrap.
+- Los dropdowns del header se controlan con estado React local; solo uno abierto a la vez.
+- Cuando se necesite un nuevo overlay, mantener el patrón `useState` + render condicional + `aria-label` en triggers.
+- No invocar APIs JS de Bootstrap para dropdowns o modales nuevos.
 
 ---
 
@@ -454,9 +413,9 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 
 ## 11. Responsive
 
-- Breakpoints Bootstrap estándar (`sm` 576, `md` 768, `lg` 992, `xl` 1200, `xxl` 1400).
-- El sidebar se colapsa en móvil (manejado por `pcoded.js`); el header expone un trigger específico (`#mobile-collapse`).
-- Tablas: envueltas en `overflow-x: auto` dentro de `DataGrid` para evitar desbordes.
+- Breakpoints consumidos en código: `sm`, `md`, `lg` vía utilidades Tailwind.
+- El sidebar móvil se controla desde React (`sidebarOpen`) y el header expone el toggle.
+- Tablas: envueltas en `overflow-x-auto` para evitar desbordes.
 - Ajustes propios (en `site.css`) para ≤576 px: padding lateral del container y tamaño de `.section-title`.
 
 ---
@@ -464,20 +423,17 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 ## 12. Convenciones de implementación
 
 1. **Idioma de la UI**: español; textos en código fuente también en español (variables permanecen en español/inglés según campo de dominio).
-2. **No introducir nuevas dependencias UI** (component libraries) sin migrar el resto. La pila visible es Bootstrap + Tabler Icons + ApexCharts; añadir otra duplica criterios.
-3. **Coexistencia Bootstrap ↔ Tailwind** (Fase 2.5+): cada pantalla está en **uno solo** de los dos modos. Reglas:
-   - Bootstrap (legado, Able Pro): pantallas con `btn-*`, `card`, `form-control`, `col-md-*`, `row`, `pc-*`.
-   - Tailwind (nuevo, Stitch + design system): pantallas con `flex`, `grid`, `bg-primary-500`, etc. y sin clases Bootstrap.
-   - Tailwind tiene `corePlugins.preflight = false` para no resetear lo que Bootstrap ya estiliza.
-   - Tokens compartidos en `tailwind.config.js` (primary `#1890ff` igual que Bootstrap preset-1). Si cambian aquí, sincronizar la nota en §3.1.
-   - Si necesitas usar el wrapper `<Button>` en una pantalla Tailwind, está bien — el wrapper sigue renderizando con clases Bootstrap, pero la pantalla anfitriona NO debe mezclar otras clases `btn-*` libres. Esa es la única superposición permitida.
-4. **Tonos**: usar siempre los seis tonos canónicos (`primary`, `success`, `info`, `warning`, `danger`, `secondary`). No inventar nuevos.
-5. **Cards**: por defecto `card border-0 shadow-sm`. La sombra en hover es global — no añadir sombras inline.
-6. **Iconos**: una sola familia visible en componentes propios: Tabler. Mantener el mismo icono para el mismo significado (ver tabla §5).
-7. **Páginas Client**: marcar con `'use client'` cuando usen `useState`, `useEffect` o hooks de cliente. Toda la UI actual es client-rendered.
-8. **Wrappers `components/ui/`**: si se repite un patrón Bootstrap >2 veces, promoverlo a un wrapper aquí antes de duplicarlo.
-9. **Estilos inline**: aceptables solo para valores realmente puntuales (anchos de filtros, `style={{ height: '8px' }}` de una barra de progreso específica). Si se repite, crear utilidad CSS en `site.css`.
-10. **Spinner inicial**: respetar los 500 ms de `loader-bg`; no añadir loaders globales adicionales.
+2. **No introducir nuevas dependencias UI** sin discutir. La pila visible es Tailwind + Tabler Icons + ApexCharts, apoyada en assets globales de Able Pro.
+3. **No reintroducir Bootstrap en `src/app` o `src/components`**. Las clases `btn`, `card`, `form-control`, `row`, `col-*`, `pc-*` quedan reservadas para assets heredados, no para UI nueva.
+4. Tailwind tiene `corePlugins.preflight = false` para no resetear los estilos globales heredados.
+5. Tokens compartidos en `tailwind.config.js` (primary `#1890ff`). Si cambian aquí, sincronizar este documento.
+6. **Tonos**: usar siempre los tonos canónicos (`primary`, `success`, `info`, `warning`, `danger`) y neutrales `slate-*` del repo.
+7. **Cards**: por defecto `rounded-xl border border-slate-200 bg-white shadow-soft`.
+8. **Iconos**: una sola familia visible en componentes propios: Tabler. Mantener el mismo icono para el mismo significado (ver tabla §5).
+9. **Páginas Client**: marcar con `'use client'` cuando usen `useState`, `useEffect` o hooks de cliente. La mayor parte de la UI actual es client-rendered.
+10. **Extracción de componentes**: si un patrón Tailwind se repite 3+ veces, extraerlo en `src/components/`; si no, dejarlo inline.
+11. **Estilos inline**: aceptables solo para valores puntuales (por ejemplo ancho de barra de progreso). Si se repite, moverlo a utilidades o componente.
+12. **Spinner inicial**: respetar los 500 ms de `loader-bg`; no añadir loaders globales adicionales.
 
 ---
 
@@ -491,23 +447,23 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 | `frontend/src/components/Sidebar.tsx` | Definición de navegación. |
 | `frontend/src/components/Header.tsx` | Barra superior + dropdowns de notificaciones y usuario. |
 | `frontend/src/components/Footer.tsx` | Pie con estados del sistema y crédito. |
-| `frontend/src/components/ui/*` | Wrappers reutilizables (Button, PageHeader, DataGrid, PaginationNav, TextInput, SelectInput, SearchFilters). |
+| `frontend/src/lib/api.ts` | Cliente HTTP principal para recursos de dominio. |
 | `frontend/public/css/style.css` | Bootstrap + tema Able Pro completo. |
 | `frontend/public/css/style-preset.css` | Tokens del preset-1 (paleta azul `#1890ff`). |
 | `frontend/public/css/site.css` | Utilidades propias (stepper, section-title, hover-lift). |
-| `frontend/tailwind.config.js` | Declaración de Tailwind (preparada, sin uso activo). |
+| `frontend/tailwind.config.js` | Declaración real de tokens Tailwind usados por la UI actual. |
 
 ---
 
 ## 14. Checklist al añadir una vista nueva
 
 - [ ] Marca `'use client'` si necesita hooks.
-- [ ] Usa `<PageHeader>` con título, subtítulo y acción principal.
-- [ ] Estructura en `.container-fluid` + `.row` + `.col-*`.
-- [ ] Reutiliza wrappers de `components/ui/` antes que clases Bootstrap directas.
+- [ ] Usa encabezado inline con título, subtítulo y acción principal.
+- [ ] Estructura con grids y spacing Tailwind responsivos.
+- [ ] No introduzcas clases Bootstrap en la UI nueva.
 - [ ] Tonos solo dentro del set canónico.
 - [ ] Iconos Tabler con el significado de la tabla §5.
 - [ ] Estados: loading / vacío / error cubiertos.
-- [ ] Listados: 15 por página, búsqueda + filtros en `SearchFilters`, paginación con `PaginationNav`.
-- [ ] Formularios: layout 8/4, alertas dentro del form, botones Cancelar + Guardar al pie.
-- [ ] Si introduces un patrón nuevo repetido, créalo como wrapper en `components/ui/`.
+- [ ] Listados: 15 por página, búsqueda/filtros inline, paginación inline.
+- [ ] Formularios: layout `lg:grid-cols-3`, alertas dentro del form, botones Cancelar + Guardar al pie.
+- [ ] Si introduces un patrón nuevo repetido, extráelo a `src/components/`.

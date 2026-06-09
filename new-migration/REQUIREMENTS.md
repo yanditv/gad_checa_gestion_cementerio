@@ -317,13 +317,13 @@ Originalmente detectadas como pendientes; **resueltas en la migración
 | Capa | Tecnología | Justificación |
 |------|-----------|---------------|
 | Backend | **NestJS 11** + Prisma 6 + PostgreSQL 14+ | Ya iniciado en `new-migration/backend`. |
-| Frontend | **Next.js 15** (App Router) + React 19 + Tailwind preparado + Bootstrap (Able Pro template) | Ya iniciado en `new-migration/frontend`. Ver `DESIGN.md`. |
+| Frontend | **Next.js 15** (App Router) + React 19 + Tailwind + assets globales de Able Pro | Ya iniciado en `new-migration/frontend`. Ver `DESIGN.md`. |
 | Auth | JWT (bearer en frontend; `@nestjs/jwt` en backend) + bcrypt para hash | Equivalente funcional a Identity legado. |
-| Cache | `localStorage` para wizards multi-paso; `@tanstack/react-query` para datos remotos | React Query ya en `package.json`. |
+| Cache | `localStorage` para wizards multi-paso; carga remota actual con `fetch` nativo y estado local | Ver `frontend/src/lib/api.ts` y las páginas cliente. |
 | PDF | `pdfkit` (Node) en el backend o en route handlers de Next | Reemplaza QuestPDF/Rotativa. |
 | Excel | `xlsx` (ya en backend) | Lectura del catastro + export de reportes. |
 | Email | `nodemailer` con SMTP configurable | Reemplaza `EmailSender` legado. |
-| Runtime | `bun` (preferido) o `node 20+` | Definido en `bun.lock`. |
+| Runtime | `bun` (flujo preferido del repo) o `node 20+` | Los comandos documentados del workspace usan `bun`; no hay `bun.lock` versionado actualmente. |
 
 ### 3.2 Rendimiento
 

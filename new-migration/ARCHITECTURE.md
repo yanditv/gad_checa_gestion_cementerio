@@ -15,7 +15,7 @@ debe actualizar este documento.
                               ┌─────────────────────────────┐
                               │        Navegador             │
                               │   Next.js (App Router)       │
-                              │   React 19, Bootstrap UI     │
+                              │ React 19, Tailwind UI + BFF  │
                               └──────────────┬───────────────┘
                                              │ HTTPS, JWT bearer
                                              ▼
@@ -69,13 +69,6 @@ new-migration/
 │   ├── src/
 │   │   ├── main.ts            ← bootstrap, helmet, CORS, Swagger, Logger
 │   │   ├── app.module.ts      ← imports + APP_GUARD/FILTER/INTERCEPTOR globales
-│   │   ├── config/            ← @nestjs/config con registerAs + validationSchema
-│   │   │   ├── app.config.ts          ← port, env, frontendUrl, tz
-│   │   │   ├── auth.config.ts         ← jwtSecret (≥32 chars), expiraciones
-│   │   │   ├── database.config.ts     ← databaseUrl
-│   │   │   ├── smtp.config.ts         ← host, port, user, pass, from
-│   │   │   ├── storage.config.ts      ← driver (local|s3) + parámetros
-│   │   │   └── validation.schema.ts   ← Joi: falla al boot si falta una env
 │   │   ├── prisma/            ← PrismaService, PrismaModule
 │   │   ├── common/
 │   │   │   ├── audit/         ← applyAuditCreate / applyAuditUpdate helpers
@@ -118,7 +111,7 @@ new-migration/
     │   │   ├── layout.tsx
     │   │   ├── globals.css
     │   │   ├── page.tsx       ← dashboard
-    │   │   ├── auth/          ← (pendiente)
+    │   │   ├── auth/
     │   │   ├── contratos/
     │   │   ├── bovedas/
     │   │   ├── bloques/
@@ -136,8 +129,7 @@ new-migration/
     │   │   ├── DashboardLayout.tsx
     │   │   ├── Sidebar.tsx
     │   │   ├── Header.tsx
-    │   │   ├── Footer.tsx
-    │   │   └── ui/            ← wrappers reutilizables
+    │   │   └── Footer.tsx
     │   ├── lib/
     │   │   ├── api.ts                ← cliente HTTP
     │   │   ├── contratos-server.ts   ← helpers server-only
@@ -394,16 +386,21 @@ async generarNotificacionesDiarias() { ... }
 - Métodos por recurso: `contratosApi.findPage(...)`, `contratosApi.findById(id)`,
   `contratosApi.create(data)`, etc.
 - Tipos compartidos en `src/types/`.
-- Caché con `@tanstack/react-query` para listados y detalle; mutaciones
-  invalidan claves relevantes.
+- En páginas cliente, los listados se cargan hoy con `useEffect` + `useState`.
+- `fetch('/api/...')` queda reservado para route handlers BFF de Next
+  (auth, dashboard, proxies puntuales); el resto del dominio entra por `api.ts`.
+
+En backend, `ConfigModule.forRoot({ isGlobal: true })` expone `ConfigService`
+global. Los módulos de dominio consumen esa abstracción; algunas piezas de
+bootstrap o frontera todavía leen `process.env` directo.
 
 ### 4.3 Componentes UI
 
-Documentados en `DESIGN.md` §6. Reglas inflexibles:
+Documentados en `DESIGN.md`. Reglas inflexibles:
 
 - **No** mezclar Bootstrap y Tailwind en un mismo componente.
-- Reutilizar wrappers (`Button`, `PageHeader`, `DataGrid`, …) antes de
-  escribir clases Bootstrap directas.
+- La app actual no usa `components/ui/*`; las páginas componen la UI con
+  Tailwind inline y extraen componentes solo cuando el patrón ya se repite.
 - Iconos solo Tabler.
 
 ### 4.4 Wizards multi-paso
