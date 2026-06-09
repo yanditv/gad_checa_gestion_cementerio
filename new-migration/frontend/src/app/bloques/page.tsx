@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { PaginationMeta } from '@/lib/api';
+import { bloquesApi, PaginationMeta } from '@/lib/api';
 
 interface Bloque {
   id: number;
@@ -10,11 +10,16 @@ interface Bloque {
   descripcion: string | null;
   estado: boolean;
   cementerioId: number;
+  cementerio?: { id: number; nombre: string } | null;
+  pisos?: { id: number; numero: number }[];
+  bovedas?: { id: number }[];
 }
 
 export default function BloquesPage() {
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
@@ -25,23 +30,39 @@ export default function BloquesPage() {
 
   const loadBloques = async () => {
     setLoading(true);
+    setError('');
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '15',
+      const payload = await bloquesApi.findPage({
+        page,
+        limit: 15,
+        search: search.trim() || undefined,
       });
-      if (search.trim()) params.set('search', search.trim());
 
-      const response = await fetch(`/api/bloques?${params.toString()}`);
-      if (response.ok) {
-        const payload = await response.json();
-        setBloques(payload.data || []);
-        setMeta(payload.meta);
-      }
-    } catch (error) {
-      console.log('Error loading bloques');
+      setBloques(payload.data || []);
+      setMeta(payload.meta);
+    } catch (error: any) {
+      setError(error.message || 'No se pudieron cargar los bloques');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Desactivar este bloque?')) return;
+
+    setDeletingId(id);
+    setError('');
+    try {
+      await bloquesApi.delete(id);
+      if (bloques.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await loadBloques();
+      }
+    } catch (error: any) {
+      setError(error.message || 'No se pudo desactivar el bloque');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -87,11 +108,20 @@ export default function BloquesPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <th scope="col" className="px-4 py-3">Nombre</th>
+                <th scope="col" className="px-4 py-3">Cementerio</th>
+                <th scope="col" className="px-4 py-3">Pisos</th>
+                <th scope="col" className="px-4 py-3">Bóvedas</th>
                 <th scope="col" className="px-4 py-3">Descripción</th>
                 <th scope="col" className="px-4 py-3">Estado</th>
                 <th scope="col" className="px-4 py-3 text-right">Acciones</th>
@@ -100,7 +130,7 @@ export default function BloquesPage() {
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                     <div className="inline-flex items-center gap-2">
                       <svg
                         className="h-4 w-4 animate-spin text-primary-500"
@@ -127,7 +157,7 @@ export default function BloquesPage() {
                 </tr>
               ) : bloques.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
                     <i className="ti ti-stack-2 text-3xl text-slate-300" />
                     <div className="mt-2 text-sm">No hay bloques registrados.</div>
                   </td>
@@ -136,6 +166,9 @@ export default function BloquesPage() {
                 bloques.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-3 font-medium text-slate-900">{row.nombre}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.cementerio?.nombre || '-'}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.pisos?.length ?? 0}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.bovedas?.length ?? 0}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {row.descripcion || '-'}
                     </td>
@@ -152,26 +185,28 @@ export default function BloquesPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
-                        <button
-                          type="button"
+                        <Link
+                          href={`/bloques/${row.id}`}
                           className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
                           title="Ver"
                         >
                           <i className="ti ti-eye" />
-                        </button>
-                        <button
-                          type="button"
+                        </Link>
+                        <Link
+                          href={`/bloques/${row.id}/edit`}
                           className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
                           <i className="ti ti-edit" />
-                        </button>
+                        </Link>
                         <button
                           type="button"
+                          onClick={() => handleDelete(row.id)}
+                          disabled={deletingId === row.id}
                           className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                           title="Eliminar"
                         >
-                          <i className="ti ti-trash" />
+                          <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
                         </button>
                       </div>
                     </td>

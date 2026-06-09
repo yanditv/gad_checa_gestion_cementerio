@@ -30,17 +30,37 @@ export default function EditContratoPage() {
     estado: true,
   });
 
+  const loadAllPages = async <T,>(
+    loader: (params: { page: number; limit: number }) => Promise<{
+      data: T[];
+      meta?: { totalPages: number };
+    }>,
+  ) => {
+    const items: T[] = [];
+    let page = 1;
+
+    while (true) {
+      const result = await loader({ page, limit: 100 });
+      items.push(...(result.data || []));
+      const totalPages = result.meta?.totalPages ?? 1;
+      if (page >= totalPages) break;
+      page += 1;
+    }
+
+    return items;
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
         const [contrato, bovedasData, difuntosData] = await Promise.all([
           contratosApi.findOne(Number(params.id)),
-          bovedasApi.findAll(),
-          difuntosApi.findAll(),
+          loadAllPages((params) => bovedasApi.findPage(params)),
+          loadAllPages((params) => difuntosApi.findPage(params)),
         ]);
 
-        setBovedas(bovedasData.filter((item: any) => item.estado));
-        setDifuntos(difuntosData.filter((item: any) => item.estado));
+        setBovedas((bovedasData || []).filter((item: any) => item.estado));
+        setDifuntos((difuntosData || []).filter((item: any) => item.estado));
 
         setFormData({
           bovedaId: contrato.bovedaId?.toString() || '',

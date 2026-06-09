@@ -385,14 +385,14 @@ este archivo.
 | Cron | `@nestjs/schedule`. Job principal: `0 7 * * *` America/Guayaquil. |
 | Idioma del código | Identificadores y comentarios en **inglés**; literales de UI y mensajes al usuario en **español**. Excepción: nombres de dominio (`Boveda`, `Difunto`, `Cementerio`) se mantienen en español por consistencia con el cliente. |
 | Numeración anual | Secuencias PostgreSQL `contrato_numero_YYYY_seq` y `pago_numero_YYYY_seq` creadas perezosamente. Alternativa rechazada: contar `max()` (race condition). |
-| Cliente HTTP frontend | `fetch` nativo + `@tanstack/react-query` para caché. **No** axios (ya está en `package.json`; remover en limpieza posterior si no se usa). |
+| Cliente HTTP frontend | `fetch` nativo. `frontend/src/lib/api.ts` centraliza recursos de dominio y `fetch('/api/...')` se usa en route handlers BFF / auth. `@tanstack/react-query` sigue instalado pero no es la estrategia activa hoy. |
 | Validación formularios | `zod` en frontend (ya en `package.json`), `class-validator` en backend. |
 | Repository pattern (backend) | **Opcional/selectivo**. Solo en `ContratoRepository` y `PagoRepository` (services con ≥300 LOC o ≥3 queries complejas). Razón: skill `nestjs-best-practices §arch-use-repository-pattern` solo lo recomienda para queries complejas; CRUDs estables (Banco, Descuento, Rol) no lo necesitan. |
 | Arquitectura hexagonal/Clean | **Descartada**. La paridad 1:1 con SQL Server / EF exige queries directas; abstraer `Prisma.TransactionClient` detrás de un puerto duplica tipos sin reducir riesgo. |
 | Auditoría | **Helper `applyAudit*` invocado explícitamente** en services, no `BaseService` con herencia. Razón: mantener call sites grep-ables. Contexto provisto por `AuditContextInterceptor`. |
 | DTOs de respuesta | **Obligatorios** en cualquier endpoint que retorne entidades con campos sensibles. `Usuario` nunca se serializa cruda (oculta `passwordHash`). Mapper en `<feature>.mapper.ts`. |
 | Rate limiting | `@nestjs/throttler` en `/auth/login`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/register`: 5 req/min por IP. |
-| Configuración | `@nestjs/config` con `registerAs` y `validationSchema` (Joi). `JWT_SECRET` requerido (≥32 chars), sin fallback. Servidor falla al boot si una env requerida falta. |
+| Configuración | `@nestjs/config` está activo globalmente. Los módulos consumen `ConfigService`; aún no existe la capa `registerAs` + `validationSchema` del plan 11.1 y persisten algunos `process.env` en bootstrap/fronteras. |
 
 ---
 
@@ -539,4 +539,3 @@ agente cloud). Reglas:
    propone, Famiitry lo revisa antes de pushear).
 5. Para decisiones que crucen módulos o cambien reglas de `CLAUDE.md`, el
    agente debe **detenerse y preguntar**, no inventar.
-

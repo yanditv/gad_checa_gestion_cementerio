@@ -5,15 +5,15 @@ import { usePathname } from 'next/navigation';
 import type { SessionUser } from './DashboardLayout';
 
 type NavItem =
-  | { type: 'item'; label: string; href: string; icon: string; roles?: string[] }
+  | { type: 'item'; label: string; href: string; icon: string; roles?: string[]; match?: 'exact' | 'prefix' | 'contracts-list' }
   | { type: 'section'; label: string };
 
 const navigation: NavItem[] = [
-  { type: 'item', label: 'Dashboard', href: '/', icon: 'ti-dashboard' },
+  { type: 'item', label: 'Dashboard', href: '/', icon: 'ti-dashboard', match: 'exact' },
 
   { type: 'section', label: 'Contratos' },
-  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: 'ti-folder-plus' },
-  { type: 'item', label: 'Listado', href: '/contratos', icon: 'ti-list-search' },
+  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: 'ti-folder-plus', match: 'prefix' },
+  { type: 'item', label: 'Listado', href: '/contratos', icon: 'ti-list-search', match: 'contracts-list' },
 
   { type: 'section', label: 'Gestión' },
   { type: 'item', label: 'Personas', href: '/personas', icon: 'ti-users' },
@@ -56,9 +56,17 @@ interface SidebarProps {
 export function Sidebar({ user, open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname?.startsWith(href);
+  const isActive = (item: Extract<NavItem, { type: 'item' }>) => {
+    const href = item.href;
+    const mode = item.match ?? 'prefix';
+    if (!pathname) return false;
+    if (mode === 'exact') return pathname === href;
+    if (mode === 'contracts-list') {
+      if (pathname === '/contratos') return true;
+      return /^\/contratos\/\d+(?:\/.*)?$/.test(pathname);
+    }
+    if (pathname === href) return true;
+    return pathname.startsWith(`${href}/`);
   };
 
   const userRoles = user?.roles ?? [];
@@ -108,7 +116,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
 
         {/* Navegación */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="space-y-0.5">
+          <ul className="m-0 list-none space-y-0.5 p-0">
             {visibleNav.map((item, idx) => {
               if (item.type === 'section') {
                 return (
@@ -120,12 +128,13 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                   </li>
                 );
               }
-              const active = isActive(item.href);
+              const active = isActive(item);
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={onClose}
+                    {...(active ? { 'aria-current': 'page' as const } : {})}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                       active
                         ? 'bg-primary-50 font-semibold text-primary-700'

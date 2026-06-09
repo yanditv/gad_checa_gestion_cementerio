@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { PaginationMeta } from '@/lib/api';
+import { bovedasApi, PaginationMeta } from '@/lib/api';
 
 interface Boveda {
   id: number;
@@ -20,44 +20,80 @@ interface Boveda {
     persona: {
       nombre: string;
       apellido: string;
+      numeroIdentificacion?: string;
     };
   } | null;
+  piso?: { numero: number } | null;
+  contratos?: { id: number; numeroSecuencial: string }[];
 }
 
 export default function BovedasPage() {
   const [bovedas, setBovedas] = useState<Boveda[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipo, setFilterTipo] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
+  const [filterPropietario, setFilterPropietario] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadBovedas();
-  }, [page, searchTerm, filterEstado]);
+  }, [page, searchTerm, filterEstado, filterTipo, filterPropietario]);
 
   const loadBovedas = async () => {
     setLoading(true);
+    setError('');
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '15',
+      const payload = await bovedasApi.findPage({
+        page,
+        limit: 15,
+        search: searchTerm.trim() || undefined,
       });
-      if (searchTerm.trim()) params.set('search', searchTerm.trim());
 
-      const response = await fetch(`/api/bovedas?${params.toString()}`);
-      if (response.ok) {
-        const payload = await response.json();
-        let rows = payload.data || [];
-        if (filterEstado === 'disponible') rows = rows.filter((b: Boveda) => b.estado);
-        if (filterEstado === 'ocupada') rows = rows.filter((b: Boveda) => !b.estado);
-        setBovedas(rows);
-        setMeta(payload.meta);
+      let rows = payload.data || [];
+      if (filterEstado === 'disponible') {
+        rows = rows.filter((b: Boveda) => (b.contratos?.length ?? 0) === 0);
       }
-    } catch (error) {
-      console.log('Error loading bovedas');
+      if (filterEstado === 'ocupada') {
+        rows = rows.filter((b: Boveda) => (b.contratos?.length ?? 0) > 0);
+      }
+      if (filterTipo) {
+        rows = rows.filter((b: Boveda) => (b.tipo || 'Boveda') === filterTipo);
+      }
+      if (filterPropietario === 'con') {
+        rows = rows.filter((b: Boveda) => Boolean(b.propietario));
+      }
+      if (filterPropietario === 'sin') {
+        rows = rows.filter((b: Boveda) => !b.propietario);
+      }
+      setBovedas(rows);
+      setMeta(payload.meta);
+    } catch (error: any) {
+      setError(error.message || 'No se pudieron cargar las bóvedas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Desactivar esta bóveda?')) return;
+
+    setDeletingId(id);
+    setError('');
+    try {
+      await bovedasApi.delete(id);
+      if (bovedas.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await loadBovedas();
+      }
+    } catch (error: any) {
+      setError(error.message || 'No se pudo desactivar la bóveda');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -104,6 +140,29 @@ export default function BovedasPage() {
 
           <div className="flex items-center gap-2">
             <label
+              htmlFor="tipo-filter"
+              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+            >
+              Tipo
+            </label>
+            <select
+              id="tipo-filter"
+              value={filterTipo}
+              onChange={(e) => {
+                setPage(1);
+                setFilterTipo(e.target.value);
+              }}
+              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              <option value="">Todos los tipos</option>
+              <option value="Boveda">Bóvedas</option>
+              <option value="Nicho">Nichos</option>
+              <option value="Mausoleo">Mausoleos</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label
               htmlFor="estado-filter"
               className="text-xs font-medium uppercase tracking-wide text-slate-500"
             >
@@ -123,7 +182,35 @@ export default function BovedasPage() {
               <option value="ocupada">Ocupadas</option>
             </select>
           </div>
+
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="propietario-filter"
+              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+            >
+              Propietario
+            </label>
+            <select
+              id="propietario-filter"
+              value={filterPropietario}
+              onChange={(e) => {
+                setPage(1);
+                setFilterPropietario(e.target.value);
+              }}
+              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              <option value="">Todos</option>
+              <option value="con">Con propietario</option>
+              <option value="sin">Sin propietario</option>
+            </select>
+          </div>
         </div>
+
+        {error && (
+          <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -131,6 +218,7 @@ export default function BovedasPage() {
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <th scope="col" className="px-4 py-3">Número</th>
                 <th scope="col" className="px-4 py-3">Bloque</th>
+                <th scope="col" className="px-4 py-3">Piso</th>
                 <th scope="col" className="px-4 py-3">Tipo</th>
                 <th scope="col" className="px-4 py-3">Capacidad</th>
                 <th scope="col" className="px-4 py-3">Propietario</th>
@@ -143,7 +231,7 @@ export default function BovedasPage() {
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={10} className="px-4 py-10 text-center text-slate-400">
                     <div className="inline-flex items-center gap-2">
                       <svg
                         className="h-4 w-4 animate-spin text-primary-500"
@@ -170,7 +258,7 @@ export default function BovedasPage() {
                 </tr>
               ) : bovedas.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
                     <i className="ti ti-box-off text-3xl text-slate-300" />
                     <div className="mt-2 text-sm">No hay bóvedas registradas.</div>
                   </td>
@@ -180,6 +268,7 @@ export default function BovedasPage() {
                   <tr key={row.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-3 font-medium text-slate-900">{row.numero}</td>
                     <td className="px-4 py-3 text-slate-600">{row.bloque?.nombre || '-'}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.piso?.numero || '-'}</td>
                     <td className="px-4 py-3 text-slate-600">{row.tipo || 'Bóveda'}</td>
                     <td className="px-4 py-3 text-slate-600">{row.capacidad}</td>
                     <td className="px-4 py-3 text-slate-600">
@@ -194,7 +283,7 @@ export default function BovedasPage() {
                       ${Number(row.precioArrendamiento).toFixed(2)}
                     </td>
                     <td className="px-4 py-3">
-                      {row.estado ? (
+                      {(row.contratos?.length ?? 0) === 0 ? (
                         <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
                           Disponible
                         </span>
@@ -222,10 +311,12 @@ export default function BovedasPage() {
                         </Link>
                         <button
                           type="button"
+                          onClick={() => handleDelete(row.id)}
+                          disabled={deletingId === row.id}
                           className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                           title="Eliminar"
                         >
-                          <i className="ti ti-trash" />
+                          <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
                         </button>
                       </div>
                     </td>

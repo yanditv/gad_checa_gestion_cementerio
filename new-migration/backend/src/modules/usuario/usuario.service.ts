@@ -99,7 +99,7 @@ export class UsuarioService {
     // `UpdateUsuarioDto` no declara `id` ni `passwordHash` y el ValidationPipe
     // global (whitelist) rechaza propiedades no declaradas, así que el body ya
     // llega saneado; basta el guard de nullish.
-    const safeData = data ?? {};
+    const safeData = { ...(data ?? {}) };
 
     // Bloqueo de identidad del super-admin: no permitir que se cambie su
     // email (perdería su privilegio implícito) ni que se desactive vía

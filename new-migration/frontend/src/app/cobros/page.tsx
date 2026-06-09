@@ -27,11 +27,15 @@ interface ContratoAgrupado {
 
 export default function CobrosPage() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [pendientes, setPendientes] = useState<any[]>([]);
   const [pagos, setPagos] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'pendiente' | 'pagado'>('todos');
 
   useEffect(() => {
     const loadData = async () => {
+      setError('');
       try {
         const [cuotas, pagosData] = await Promise.all([
           cuotasApi.pendientes(),
@@ -39,6 +43,8 @@ export default function CobrosPage() {
         ]);
         setPendientes(cuotas);
         setPagos(pagosData);
+      } catch (err: any) {
+        setError(err.message || 'No se pudieron cargar los cobros');
       } finally {
         setLoading(false);
       }
@@ -70,6 +76,31 @@ export default function CobrosPage() {
       (a, b) => b.cuotas.length - a.cuotas.length,
     );
   }, [pendientes]);
+
+  const contratosFiltrados = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return contratosConPendientes.filter((item) => {
+      if (estadoFiltro === 'pagado') return false;
+      if (!term) return true;
+      return (
+        item.numeroSecuencial.toLowerCase().includes(term) ||
+        item.difunto.toLowerCase().includes(term)
+      );
+    });
+  }, [contratosConPendientes, search, estadoFiltro]);
+
+  const pagosFiltrados = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return pagos.filter((pago) => {
+      if (estadoFiltro === 'pendiente') return false;
+      if (!term) return true;
+      return (
+        String(pago.numeroRecibo || '').toLowerCase().includes(term) ||
+        String(pago.metodoPago || '').toLowerCase().includes(term) ||
+        String(pago.referencia || '').toLowerCase().includes(term)
+      );
+    });
+  }, [pagos, search, estadoFiltro]);
 
   if (loading) {
     return (
@@ -111,6 +142,42 @@ export default function CobrosPage() {
         </div>
       </div>
 
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 sm:max-w-md">
+            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por contrato, difunto o recibo..."
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Estado
+            </label>
+            <select
+              value={estadoFiltro}
+              onChange={(e) => setEstadoFiltro(e.target.value as 'todos' | 'pendiente' | 'pagado')}
+              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              <option value="todos">Todos</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="pagado">Pagados</option>
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <div className="border-t border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+      </section>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Contratos con cuotas pendientes */}
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
@@ -122,11 +189,11 @@ export default function CobrosPage() {
               </h3>
             </div>
             <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
-              {contratosConPendientes.length}
+              {contratosFiltrados.length}
             </span>
           </header>
           <div className="max-h-[480px] overflow-y-auto p-5">
-            {contratosConPendientes.length === 0 ? (
+            {contratosFiltrados.length === 0 ? (
               <div className="py-10 text-center text-slate-400">
                 <i className="ti ti-check text-3xl text-slate-300" />
                 <div className="mt-2 text-sm">
@@ -135,7 +202,7 @@ export default function CobrosPage() {
               </div>
             ) : (
               <ul className="divide-y divide-slate-100">
-                {contratosConPendientes.map((c) => (
+                {contratosFiltrados.map((c) => (
                   <li
                     key={c.contratoId}
                     className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
@@ -183,18 +250,18 @@ export default function CobrosPage() {
               </h3>
             </div>
             <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
-              {pagos.length}
+              {pagosFiltrados.length}
             </span>
           </header>
           <div className="max-h-[480px] overflow-y-auto p-5">
-            {pagos.length === 0 ? (
+            {pagosFiltrados.length === 0 ? (
               <div className="py-10 text-center text-slate-400">
                 <i className="ti ti-folder-x text-3xl text-slate-300" />
                 <div className="mt-2 text-sm">No hay pagos registrados.</div>
               </div>
             ) : (
               <ul className="divide-y divide-slate-100">
-                {pagos.slice(0, 20).map((pago) => (
+                {pagosFiltrados.slice(0, 20).map((pago) => (
                   <li
                     key={pago.id}
                     className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"

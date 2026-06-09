@@ -72,12 +72,16 @@ const REPORTES = [
 export default function ReportesPage() {
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     reportesApi
       .resumen()
       .then((r) => setResumen(r as Resumen))
-      .catch(() => setResumen(null))
+      .catch((err: any) => {
+        setResumen(null);
+        setError(err.message || 'No se pudo cargar el resumen de reportes');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -123,6 +127,12 @@ export default function ReportesPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {error}
+        </div>
+      )}
+
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <div
@@ -148,6 +158,65 @@ export default function ReportesPage() {
             </div>
           </div>
         ))}
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <header className="border-b border-slate-100 px-5 py-3">
+            <h2 className="text-sm font-semibold text-slate-700">Ingresos por método</h2>
+          </header>
+          <div className="p-5">
+            {loading ? (
+              <div className="text-sm text-slate-400">Cargando resumen…</div>
+            ) : resumen?.ingresos.porMetodo?.length ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {resumen.ingresos.porMetodo.map((metodo) => (
+                  <div key={metodo.metodo} className="rounded-lg bg-slate-50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">{metodo.metodo}</p>
+                    <p className="mt-1 text-lg font-bold text-slate-800">
+                      {formatCurrency(metodo.total)}
+                    </p>
+                    <p className="text-xs text-slate-400">{metodo.cantidad} pago(s)</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400">No hay ingresos para resumir.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <header className="border-b border-slate-100 px-5 py-3">
+            <h2 className="text-sm font-semibold text-slate-700">Estado del espacio funerario</h2>
+          </header>
+          <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
+              <p className="mt-1 text-lg font-bold text-slate-800">
+                {formatNumber(resumen?.bovedas.total ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-lg bg-blue-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-blue-600">Bóvedas ocupadas</p>
+              <p className="mt-1 text-lg font-bold text-blue-700">
+                {formatNumber(resumen?.bovedas.bovedasOcupadas ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-lg bg-purple-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-purple-600">Nichos ocupados</p>
+              <p className="mt-1 text-lg font-bold text-purple-700">
+                {formatNumber(resumen?.bovedas.nichosOcupados ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-lg bg-red-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-red-600">Vencidas</p>
+              <p className="mt-1 text-lg font-bold text-red-700">
+                {formatNumber(resumen?.bovedas.vencidas ?? 0)}
+              </p>
+            </div>
+          </div>
+        </section>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

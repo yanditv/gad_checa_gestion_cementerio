@@ -158,7 +158,7 @@ export default function CatastroImportPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
           {error}
         </div>
       )}
@@ -392,7 +392,7 @@ export default function CatastroImportPage() {
               </div>
 
               {selected.estado === 'ERROR' && selected.mensajeError && (
-                <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+                <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
                   <strong>Error:</strong> {selected.mensajeError}
                 </div>
               )}

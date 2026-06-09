@@ -52,7 +52,7 @@ function LoginForm() {
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
             {error}
           </div>
         )}

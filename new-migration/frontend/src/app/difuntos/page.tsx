@@ -20,24 +20,89 @@ interface Difunto {
 export default function DifuntosPage() {
   const [difuntos, setDifuntos] = useState<Difunto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+  const [filtroNumeroIdentificacion, setFiltroNumeroIdentificacion] = useState('');
+  const [filtroNombres, setFiltroNombres] = useState('');
+  const [filtroApellidos, setFiltroApellidos] = useState('');
+  const [filtroBoveda, setFiltroBoveda] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadDifuntos();
-  }, [page, search]);
+  }, [
+    page,
+    filtroNumeroIdentificacion,
+    filtroNombres,
+    filtroApellidos,
+    filtroBoveda,
+  ]);
 
   const loadDifuntos = async () => {
     setLoading(true);
+    setError('');
     try {
+      const search = [
+        filtroNumeroIdentificacion,
+        filtroNombres,
+        filtroApellidos,
+        filtroBoveda,
+      ]
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .join(' ');
+
       const result = await difuntosApi.findPage({ page, limit: 15, search });
-      setDifuntos(result.data);
+
+      const rows = result.data.filter((row) => {
+        const fullName = `${row.nombre} ${row.apellido}`.toLowerCase();
+        const numero = (row.numeroIdentificacion || '').toLowerCase();
+        const nombres = row.nombre.toLowerCase();
+        const apellidos = row.apellido.toLowerCase();
+        const boveda = `${row.boveda?.numero || ''} ${row.boveda?.bloque?.nombre || ''}`.toLowerCase();
+
+        const numeroOk = !filtroNumeroIdentificacion.trim() || numero.includes(filtroNumeroIdentificacion.trim().toLowerCase());
+        const nombresOk = !filtroNombres.trim() || nombres.includes(filtroNombres.trim().toLowerCase()) || fullName.includes(filtroNombres.trim().toLowerCase());
+        const apellidosOk = !filtroApellidos.trim() || apellidos.includes(filtroApellidos.trim().toLowerCase()) || fullName.includes(filtroApellidos.trim().toLowerCase());
+        const bovedaOk = !filtroBoveda.trim() || boveda.includes(filtroBoveda.trim().toLowerCase());
+
+        return numeroOk && nombresOk && apellidosOk && bovedaOk;
+      });
+
+      setDifuntos(rows);
       setMeta(result.meta);
-    } catch (error) {
-      console.error('Error loading difuntos:', error);
+    } catch (error: any) {
+      setError(error.message || 'No se pudieron cargar los difuntos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearFilters = () => {
+    setPage(1);
+    setFiltroNumeroIdentificacion('');
+    setFiltroNombres('');
+    setFiltroApellidos('');
+    setFiltroBoveda('');
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Desactivar este registro?')) return;
+
+    setDeletingId(id);
+    setError('');
+    try {
+      await difuntosApi.delete(id);
+      if (difuntos.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await loadDifuntos();
+      }
+    } catch (error: any) {
+      setError(error.message || 'No se pudo desactivar el difunto');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -64,22 +129,65 @@ export default function DifuntosPage() {
         </Link>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 sm:max-w-md">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="search"
-              placeholder="Buscar difuntos..."
-              value={search}
-              onChange={(e) => {
-                setPage(1);
-                setSearch(e.target.value);
-              }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
-            />
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
+            <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <input
+                type="search"
+                placeholder="Número de identificación"
+                value={filtroNumeroIdentificacion}
+                onChange={(e) => {
+                  setPage(1);
+                  setFiltroNumeroIdentificacion(e.target.value);
+                }}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+              <input
+                type="search"
+                placeholder="Nombres"
+                value={filtroNombres}
+                onChange={(e) => {
+                  setPage(1);
+                  setFiltroNombres(e.target.value);
+                }}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+              <input
+                type="search"
+                placeholder="Apellidos"
+                value={filtroApellidos}
+                onChange={(e) => {
+                  setPage(1);
+                  setFiltroApellidos(e.target.value);
+                }}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+              <input
+                type="search"
+                placeholder="Bóveda o bloque"
+                value={filtroBoveda}
+                onChange={(e) => {
+                  setPage(1);
+                  setFiltroBoveda(e.target.value);
+                }}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <i className="ti ti-x" /> Limpiar
+            </button>
           </div>
-        </div>
+
+          {error && (
+            <div className="border-t border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -162,6 +270,15 @@ export default function DifuntosPage() {
                         >
                           <i className="ti ti-edit" />
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(row.id)}
+                          disabled={deletingId === row.id}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          title="Eliminar"
+                        >
+                          <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
+                        </button>
                       </div>
                     </td>
                   </tr>

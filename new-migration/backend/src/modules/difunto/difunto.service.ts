@@ -35,7 +35,18 @@ export class DifuntoService {
               },
               {
                 boveda: {
-                  is: { numero: { contains: search, mode: 'insensitive' } },
+                  is: {
+                    OR: [
+                      { numero: { contains: search, mode: 'insensitive' } },
+                      {
+                        bloque: {
+                          is: {
+                            nombre: { contains: search, mode: 'insensitive' },
+                          },
+                        },
+                      },
+                    ],
+                  },
                 },
               },
             ],

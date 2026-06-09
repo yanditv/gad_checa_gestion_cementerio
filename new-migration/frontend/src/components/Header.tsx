@@ -22,11 +22,6 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-interface HeaderProps {
-  user: SessionUser | null;
-  onToggleSidebar: () => void;
-}
-
 export function Header({ user, onToggleSidebar }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -98,6 +93,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
     .slice(0, 2)
     .join('');
   const role = user?.roles?.[0] ?? '';
+  const avatarSrc = '/images/user/avatar-2.jpg';
 
   return (
     <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-slate-200 bg-white/95 backdrop-blur lg:left-64">
@@ -113,11 +109,12 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
         </button>
 
         {/* Buscador (placeholder global, conectaremos al backend en fase posterior) */}
-        <div className="hidden flex-1 max-w-md md:block">
+        <div className="hidden w-full max-w-md md:block lg:max-w-xl">
           <div className="relative">
             <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
+              aria-label="Buscar contratos, personas y bóvedas"
               placeholder="Buscar contratos, personas, bóvedas…"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
@@ -126,7 +123,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
 
         <div className="flex-1 md:hidden" />
 
-        <div className="flex items-center gap-1" ref={dropdownRef}>
+        <div className="ml-auto flex items-center gap-1" ref={dropdownRef}>
           {/* Notificaciones */}
           <div className="relative">
             <button
@@ -135,7 +132,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                 setShowNotifications((v) => !v);
                 setShowUserMenu(false);
               }}
-              className="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+              className="relative flex h-10 w-10 items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 outline-none ring-0 hover:bg-slate-100 focus:outline-none focus:ring-0"
               aria-label="Notificaciones"
             >
               <i className="ti ti-bell text-xl" />
@@ -228,11 +225,13 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                 setShowUserMenu((v) => !v);
                 setShowNotifications(false);
               }}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-100"
+              className="flex items-center gap-2 rounded-lg border-0 bg-transparent px-2 py-1.5 outline-none ring-0 hover:bg-slate-100 focus:outline-none focus:ring-0"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
-                {initials || 'U'}
-              </div>
+              <img
+                src={avatarSrc}
+                alt={displayName}
+                className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
+              />
               <div className="hidden text-left sm:block">
                 <div className="text-sm font-semibold text-slate-700">
                   {displayName}
@@ -248,9 +247,11 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
-                    {initials || 'U'}
-                  </div>
+                  <img
+                    src={avatarSrc}
+                    alt={displayName}
+                    className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-slate-700">
                       {displayName}

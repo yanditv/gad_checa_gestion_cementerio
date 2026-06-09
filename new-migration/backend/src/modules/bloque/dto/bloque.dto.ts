@@ -2,20 +2,40 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateBloqueDto {
   @ApiProperty()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  @IsNotEmpty({ message: 'El nombre del bloque es obligatorio' })
+  @MinLength(2, {
+    message: 'El nombre del bloque debe tener al menos 2 caracteres',
+  })
+  @MaxLength(80, {
+    message: 'El nombre del bloque no puede exceder 80 caracteres',
+  })
   nombre!: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? undefined : trimmed;
+  })
   @IsString()
+  @MaxLength(200, {
+    message: 'La descripción no puede exceder 200 caracteres',
+  })
   descripcion?: string;
 
   @ApiProperty()
@@ -38,12 +58,28 @@ export class CreateBloqueDto {
 export class UpdateBloqueDto {
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  @IsNotEmpty({ message: 'El nombre del bloque es obligatorio' })
+  @MinLength(2, {
+    message: 'El nombre del bloque debe tener al menos 2 caracteres',
+  })
+  @MaxLength(80, {
+    message: 'El nombre del bloque no puede exceder 80 caracteres',
+  })
   nombre?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? undefined : trimmed;
+  })
   @IsString()
+  @MaxLength(200, {
+    message: 'La descripción no puede exceder 200 caracteres',
+  })
   descripcion?: string;
 
   @ApiProperty({ required: false })

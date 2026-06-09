@@ -13,6 +13,20 @@ interface DashboardData {
   contratosActivos: number;
   contratosPorVencer: number;
   contratosVencidos: number;
+  ultimosContratos: Array<{
+    id: number;
+    numeroSecuencial: string;
+    fechaFin: string | null;
+    montoTotal: number;
+    estadoContrato: string;
+  }>;
+  transaccionesRecientes: Array<{
+    id: number;
+    numeroRecibo: string;
+    fechaPago: string;
+    monto: number;
+    nombrePersona: string;
+  }>;
 }
 
 type Tone =
@@ -60,6 +74,12 @@ function formatCurrency(value: number) {
     currency: 'USD',
     minimumFractionDigits: 0,
   }).format(value);
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('es-EC');
 }
 
 function Card({
@@ -160,8 +180,11 @@ export default function Home() {
     contratosActivos: 0,
     contratosPorVencer: 0,
     contratosVencidos: 0,
+    ultimosContratos: [],
+    transaccionesRecientes: [],
   });
   const [loading, setLoading] = useState(true);
+  const [chartsReady, setChartsReady] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -187,7 +210,23 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    if ((window as any).ApexCharts) {
+      setChartsReady(true);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      if ((window as any).ApexCharts) {
+        setChartsReady(true);
+        window.clearInterval(interval);
+      }
+    }, 250);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (loading || !chartsReady) return;
     const ApexCharts = (window as any).ApexCharts;
     if (!ApexCharts) return;
 
@@ -284,7 +323,7 @@ export default function Home() {
     }
 
     return () => charts.forEach((c) => c.destroy());
-  }, [loading, data]);
+  }, [loading, data, chartsReady]);
 
   if (loading) {
     return (
@@ -443,6 +482,78 @@ export default function Home() {
         </div>
         <Card title="Tendencia de ingresos" icon="ti-chart-line">
           <div id="ingresos-area-chart" style={{ height: 250 }} />
+        </Card>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card title="Transacciones recientes" icon="ti-receipt">
+          {data.transaccionesRecientes.length === 0 ? (
+            <div className="py-8 text-center text-sm text-slate-400">
+              No hay transacciones recientes.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.transaccionesRecientes.map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{tx.nombrePersona}</p>
+                    <p className="text-xs text-slate-500">{formatDate(tx.fechaPago)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-green-600">{formatCurrency(tx.monto)}</p>
+                    <p className="text-xs text-slate-400">#{tx.numeroRecibo}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card title="Últimos contratos" icon="ti-file-text">
+          {data.ultimosContratos.length === 0 ? (
+            <div className="py-8 text-center text-sm text-slate-400">
+              No hay contratos registrados.
+            </div>
+          ) : (
+            <div className="overflow-x-auto -m-5">
+              <table className="min-w-full divide-y divide-slate-100 text-sm">
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th className="px-5 py-2.5">Número</th>
+                    <th className="px-5 py-2.5">Vencimiento</th>
+                    <th className="px-5 py-2.5">Estado</th>
+                    <th className="px-5 py-2.5 text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {data.ultimosContratos.map((contrato) => (
+                    <tr key={contrato.id}>
+                      <td className="px-5 py-2.5 font-medium text-slate-800">
+                        <Link href={`/contratos/${contrato.id}`} className="hover:text-primary-600 hover:underline">
+                          {contrato.numeroSecuencial}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-2.5 text-slate-600">{formatDate(contrato.fechaFin)}</td>
+                      <td className="px-5 py-2.5">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                          contrato.estadoContrato === 'Vencido'
+                            ? 'bg-red-50 text-red-700 ring-red-200'
+                            : contrato.estadoContrato === 'Próximo a vencer'
+                              ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                              : 'bg-green-50 text-green-700 ring-green-200'
+                        }`}>
+                          {contrato.estadoContrato}
+                        </span>
+                      </td>
+                      <td className="px-5 py-2.5 text-right font-medium text-slate-700">
+                        {formatCurrency(contrato.montoTotal)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </section>
 

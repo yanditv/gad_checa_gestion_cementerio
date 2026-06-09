@@ -358,11 +358,29 @@ export class PagoService {
     const { cuotasIds, ...pagoData } = dto;
     return this.prisma.$transaction(async (tx) => {
       const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
+      const createData = {
+        ...(pagoData.monto !== undefined ? { monto: pagoData.monto } : {}),
+        ...(pagoData.montoSubtotal !== undefined
+          ? { montoSubtotal: pagoData.montoSubtotal }
+          : {}),
+        ...(pagoData.montoDescuento !== undefined
+          ? { montoDescuento: pagoData.montoDescuento }
+          : {}),
+        ...(pagoData.fechaPago ? { fechaPago: pagoData.fechaPago } : {}),
+        ...(pagoData.metodoPago ? { metodoPago: pagoData.metodoPago } : {}),
+        ...(pagoData.referencia ? { referencia: pagoData.referencia } : {}),
+        ...(pagoData.observacion ? { observacion: pagoData.observacion } : {}),
+        ...(pagoData.bancoId !== undefined ? { bancoId: pagoData.bancoId } : {}),
+        ...(pagoData.descuentoId !== undefined
+          ? { descuentoId: pagoData.descuentoId }
+          : {}),
+        numeroRecibo,
+        usuarioCreadorId: userId ?? null,
+      };
+
       const pago = await tx.pago.create({
         data: {
-          ...pagoData,
-          numeroRecibo,
-          usuarioCreadorId: userId ?? null,
+          ...(createData as Prisma.PagoUncheckedCreateInput),
           cuotas: cuotasIds?.length
             ? {
                 create: cuotasIds.map((cuotaId: number) => ({ cuotaId })),

@@ -22,6 +22,23 @@ export default function CreateBloquePage() {
     numeroPisos: 1,
   });
 
+  const validateForm = () => {
+    const nombre = formData.nombre.trim();
+    const descripcion = formData.descripcion.trim();
+    const numeroPisos = Number(formData.numeroPisos);
+
+    if (!nombre) return 'El nombre del bloque es obligatorio';
+    if (nombre.length < 2) return 'El nombre del bloque debe tener al menos 2 caracteres';
+    if (nombre.length > 80) return 'El nombre del bloque no puede exceder 80 caracteres';
+    if (!formData.cementerioId) return 'Seleccione un cementerio';
+    if (descripcion.length > 200) return 'La descripción no puede exceder 200 caracteres';
+    if (!Number.isInteger(numeroPisos) || numeroPisos < 0) {
+      return 'El número de pisos debe ser un entero mayor o igual a 0';
+    }
+    if (numeroPisos > 50) return 'El número de pisos no puede ser mayor a 50';
+    return '';
+  };
+
   useEffect(() => {
     const loadCementerios = async () => {
       try {
@@ -40,13 +57,15 @@ export default function CreateBloquePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    const validationError = validateForm();
+    setError(validationError);
+    if (validationError) return;
     setLoading(true);
 
     try {
       await bloquesApi.create({
-        nombre: formData.nombre,
-        descripcion: formData.descripcion || undefined,
+        nombre: formData.nombre.trim(),
+        descripcion: formData.descripcion.trim() || undefined,
         cementerioId: Number(formData.cementerioId),
         numeroPisos: Number(formData.numeroPisos) || 0,
       });

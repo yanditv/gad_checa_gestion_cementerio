@@ -27,10 +27,46 @@ export default function CreateBovedaPage() {
     estado: true,
   });
 
+  const loadAllBloques = async () => {
+    const items: any[] = [];
+    let page = 1;
+
+    while (true) {
+      const result = await bloquesApi.findPage({ page, limit: 100 });
+      items.push(...(result.data || []));
+      const totalPages = result.meta?.totalPages ?? 1;
+      if (page >= totalPages) break;
+      page += 1;
+    }
+
+    return items;
+  };
+
+  const validateForm = () => {
+    const numero = formData.numero.trim();
+    const ubicacion = formData.ubicacion.trim();
+    const observaciones = formData.observaciones.trim();
+    const capacidad = Number(formData.capacidad);
+    const precio = Number(formData.precio || 0);
+    const precioArrendamiento = Number(formData.precioArrendamiento || 0);
+
+    if (!numero) return 'El número de la bóveda es obligatorio';
+    if (numero.length > 30) return 'El número de la bóveda no puede exceder 30 caracteres';
+    if (!formData.bloqueId) return 'Seleccione un bloque';
+    if (!['Boveda', 'Nicho', 'Mausoleo'].includes(formData.tipo)) return 'Seleccione un tipo válido';
+    if (!Number.isInteger(capacidad) || capacidad < 1) return 'La capacidad debe ser un entero mayor o igual a 1';
+    if (capacidad > 20) return 'La capacidad no puede ser mayor a 20';
+    if (Number.isNaN(precio) || precio < 0) return 'El precio no puede ser negativo';
+    if (Number.isNaN(precioArrendamiento) || precioArrendamiento < 0) return 'El precio de arrendamiento no puede ser negativo';
+    if (ubicacion.length > 150) return 'La ubicación no puede exceder 150 caracteres';
+    if (observaciones.length > 300) return 'Las observaciones no pueden exceder 300 caracteres';
+    return '';
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await bloquesApi.findAll();
+        const data = await loadAllBloques();
         setBloques(data.filter((b: any) => b.estado));
       } catch (err) {
         setBloques([]);
@@ -41,15 +77,20 @@ export default function CreateBovedaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validateForm();
+    setError(validationError);
+    if (validationError) return;
     setLoading(true);
-    setError('');
     try {
       await bovedasApi.create({
         ...formData,
+        numero: formData.numero.trim(),
         bloqueId: Number(formData.bloqueId),
         capacidad: Number(formData.capacidad),
         precio: Number(formData.precio || 0),
         precioArrendamiento: Number(formData.precioArrendamiento || 0),
+        ubicacion: formData.ubicacion.trim() || undefined,
+        observaciones: formData.observaciones.trim() || undefined,
       });
       router.push('/bovedas');
     } catch (err: any) {

@@ -16,6 +16,7 @@ interface Usuario {
   email: string;
   numeroIdentificacion: string;
   estado: boolean;
+  mustChangePassword: boolean;
   usuarioRols: UsuarioRol[];
 }
 
@@ -28,12 +29,16 @@ export default function AdminUsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [tempPassword, setTempPassword] = useState<{ userId: string; value: string } | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   const loadUsuarios = async () => {
     setLoading(true);
+    setError('');
     try {
       const result = await usuariosApi.findPage({
         page,
@@ -42,8 +47,8 @@ export default function AdminUsuariosPage() {
       });
       setUsuarios(result.data);
       setMeta(result.meta);
-    } catch (err) {
-      console.error('Error al cargar usuarios:', err);
+    } catch (err: any) {
+      setError(err.message || 'No se pudieron cargar los usuarios');
     } finally {
       setLoading(false);
     }
@@ -53,8 +58,8 @@ export default function AdminUsuariosPage() {
     try {
       const data = await rolesApi.findAll();
       setRoles(data);
-    } catch (err) {
-      console.error('Error al cargar roles:', err);
+    } catch (err: any) {
+      setError(err.message || 'No se pudieron cargar los roles');
     }
   };
 
@@ -64,13 +69,50 @@ export default function AdminUsuariosPage() {
   }, [page, search]);
 
   const toggleEstado = async (id: string, estado: boolean) => {
-    await usuariosApi.updateEstado(id, !estado);
-    await loadUsuarios();
+    setSavingUserId(id);
+    setError('');
+    setTempPassword(null);
+    try {
+      await usuariosApi.updateEstado(id, !estado);
+      await loadUsuarios();
+    } catch (err: any) {
+      setError(err.message || 'No se pudo actualizar el estado del usuario');
+    } finally {
+      setSavingUserId(null);
+    }
   };
 
   const updateRoles = async (id: string, selected: string[]) => {
-    await usuariosApi.setRoles(id, selected);
-    await loadUsuarios();
+    setSavingUserId(id);
+    setError('');
+    setTempPassword(null);
+    try {
+      await usuariosApi.setRoles(id, selected);
+      await loadUsuarios();
+    } catch (err: any) {
+      setError(err.message || 'No se pudieron actualizar los roles');
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
+  const resetPassword = async (id: string) => {
+    if (!window.confirm('¿Generar una contraseña temporal para este usuario?')) return;
+
+    setSavingUserId(id);
+    setError('');
+    setTempPassword(null);
+    try {
+      const result = await usuariosApi.resetPassword(id, false);
+      if (result.tempPassword) {
+        setTempPassword({ userId: id, value: result.tempPassword });
+      }
+      await loadUsuarios();
+    } catch (err: any) {
+      setError(err.message || 'No se pudo resetear la contraseña');
+    } finally {
+      setSavingUserId(null);
+    }
   };
 
   const visiblePages = (() => {
@@ -106,6 +148,21 @@ export default function AdminUsuariosPage() {
             />
           </div>
         </div>
+
+        {error && (
+          <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {tempPassword && (
+          <div className="border-b border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Contraseña temporal generada:{' '}
+            <span className="font-mono text-base font-semibold tracking-wide">
+              {tempPassword.value}
+            </span>
+          </div>
+        )}
 
         {/* Tabla */}
         <div className="overflow-x-auto">
@@ -188,15 +245,22 @@ export default function AdminUsuariosPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
-                            usuario.estado
-                              ? 'bg-green-50 text-green-700 ring-green-200'
-                              : 'bg-red-50 text-red-700 ring-red-200'
-                          }`}
-                        >
-                          {usuario.estado ? 'Activo' : 'Inactivo'}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                              usuario.estado
+                                ? 'bg-green-50 text-green-700 ring-green-200'
+                                : 'bg-red-50 text-red-700 ring-red-200'
+                            }`}
+                          >
+                            {usuario.estado ? 'Activo' : 'Inactivo'}
+                          </span>
+                          {usuario.mustChangePassword && (
+                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+                              Debe cambiar contraseña
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-2">
@@ -210,6 +274,7 @@ export default function AdminUsuariosPage() {
                           <select
                             multiple
                             value={currentRoles}
+                            disabled={savingUserId === usuario.id}
                             onChange={(e) => {
                               const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
                               updateRoles(usuario.id, values);
@@ -224,14 +289,24 @@ export default function AdminUsuariosPage() {
                           </select>
                           <button
                             type="button"
+                            onClick={() => resetPassword(usuario.id)}
+                            disabled={savingUserId === usuario.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                          >
+                            <i className={`ti ${savingUserId === usuario.id ? 'ti-loader animate-spin' : 'ti-key'}`} />
+                            Resetear
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => toggleEstado(usuario.id, usuario.estado)}
+                            disabled={savingUserId === usuario.id}
                             className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
                               usuario.estado
                                 ? 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                                 : 'bg-primary-500 text-white hover:bg-primary-600'
-                            }`}
+                            } disabled:opacity-60`}
                           >
-                            <i className={`ti ${usuario.estado ? 'ti-user-off' : 'ti-user-check'}`} />
+                            <i className={`ti ${savingUserId === usuario.id ? 'ti-loader animate-spin' : usuario.estado ? 'ti-user-off' : 'ti-user-check'}`} />
                             {usuario.estado ? 'Desactivar' : 'Activar'}
                           </button>
                         </div>
