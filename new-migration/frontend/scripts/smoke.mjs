@@ -31,6 +31,7 @@ const ROUTES = [
   '/personas',
   '/bloques',
   '/bovedas',
+  '/bovedas/create',
   '/cobros',
   '/difuntos',
   '/exhumaciones',
@@ -55,6 +56,7 @@ const ROUTES = [
 const DYNAMIC = [
   { listRoute: '/inventario/bienes', selector: 'a[href^="/inventario/bienes/"]', exclude: ['/nuevo'], label: 'Bien (detalle)' },
   { listRoute: '/difuntos', selector: 'a[href^="/difuntos/"]', exclude: ['/create'], label: 'Difunto (detalle)' },
+  { listRoute: '/bovedas', selector: 'a[href^="/bovedas/"]', exclude: ['/create'], label: 'Bóveda (detalle/edición)' },
 ];
 
 const RUNTIME_ERR = /is not a function|cannot read|undefined is not|unhandled|hydration failed|minified react error/i;
