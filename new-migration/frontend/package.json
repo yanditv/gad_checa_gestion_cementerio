@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "smoke": "node scripts/smoke.mjs",
-    "e2e": "node e2e/bloques-bovedas.mjs"
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
