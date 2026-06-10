@@ -81,6 +81,8 @@ model Usuario {
 
   movimientosBienRegistrados MovimientoBien[] @relation("MovimientoBienUsuarioCreador")
 
+  inventariosImportados InventarioImport[]
+
   usuarioRols UsuarioRol[]
 }
 
@@ -738,4 +740,26 @@ model DepreciacionBien {
 
   @@unique([bienId, anio, mes])
   @@index([bienId])
+}
+
+// Estado de cada importación on-demand del inventario de bienes (Fase 9 TDR,
+// análogo a CatastroImport). Persiste conteos y filas con error en JSON.
+model InventarioImport {
+  id                  Int       @id @default(autoincrement())
+  filename            String
+  estado              String    @default("EN_PROGRESO") // EN_PROGRESO | COMPLETADO | ERROR
+  registrosProcesados Int       @default(0)
+  categoriasCreadas   Int       @default(0)
+  custodiosCreados    Int       @default(0)
+  bienesCreados       Int       @default(0)
+  bienesActualizados  Int       @default(0)
+  errores             String? // JSON con la lista de errores (máx 100)
+  mensajeError        String? // sólo si estado=ERROR (excepción global)
+  fechaInicio         DateTime  @default(now())
+  fechaFin            DateTime?
+
+  adminUserId String
+  adminUser   Usuario @relation(fields: [adminUserId], references: [id])
+
+  @@index([fechaInicio])
 }

@@ -9,6 +9,8 @@ import { DepreciacionController } from './depreciacion.controller';
 import { DepreciacionService } from './depreciacion.service';
 import { ReporteInventarioController } from './reporte-inventario.controller';
 import { ReporteInventarioService } from './reporte-inventario.service';
+import { InventarioImportController } from './inventario-import.controller';
+import { InventarioImportService } from './inventario-import.service';
 
 @Module({
   controllers: [
@@ -17,6 +19,7 @@ import { ReporteInventarioService } from './reporte-inventario.service';
     BienController,
     DepreciacionController,
     ReporteInventarioController,
+    InventarioImportController,
   ],
   providers: [
     CategoriaBienService,
@@ -24,6 +27,7 @@ import { ReporteInventarioService } from './reporte-inventario.service';
     BienService,
     DepreciacionService,
     ReporteInventarioService,
+    InventarioImportService,
   ],
   exports: [
     CategoriaBienService,
@@ -31,6 +35,7 @@ import { ReporteInventarioService } from './reporte-inventario.service';
     BienService,
     DepreciacionService,
     ReporteInventarioService,
+    InventarioImportService,
   ],
 })
 export class InventarioModule {}
