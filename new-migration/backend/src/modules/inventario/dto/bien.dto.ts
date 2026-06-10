@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -184,6 +184,7 @@ export class QueryBienDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({ description: 'Filtrar por bienes dados de baja' })
   @IsOptional()
+  @Type(() => String)
   @Transform(({ value }) =>
     value === 'true' || value === true
       ? true
