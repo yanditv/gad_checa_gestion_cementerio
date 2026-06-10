@@ -5,10 +5,27 @@ import { CustodioController } from './custodio.controller';
 import { CustodioService } from './custodio.service';
 import { BienController } from './bien.controller';
 import { BienService } from './bien.service';
+import { DepreciacionController } from './depreciacion.controller';
+import { DepreciacionService } from './depreciacion.service';
 
 @Module({
-  controllers: [CategoriaBienController, CustodioController, BienController],
-  providers: [CategoriaBienService, CustodioService, BienService],
-  exports: [CategoriaBienService, CustodioService, BienService],
+  controllers: [
+    CategoriaBienController,
+    CustodioController,
+    BienController,
+    DepreciacionController,
+  ],
+  providers: [
+    CategoriaBienService,
+    CustodioService,
+    BienService,
+    DepreciacionService,
+  ],
+  exports: [
+    CategoriaBienService,
+    CustodioService,
+    BienService,
+    DepreciacionService,
+  ],
 })
 export class InventarioModule {}

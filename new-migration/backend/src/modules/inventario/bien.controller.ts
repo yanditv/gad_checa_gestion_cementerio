@@ -16,6 +16,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { BienService } from './bien.service';
+import { DepreciacionService } from './depreciacion.service';
+import { DepreciacionBienResponseDto } from './dto/depreciacion.dto';
 import {
   BienListItemDto,
   BienResponseDto,
@@ -40,7 +42,10 @@ import {
 @ApiBearerAuth()
 @Controller('inventario/bienes')
 export class BienController {
-  constructor(private service: BienService) {}
+  constructor(
+    private service: BienService,
+    private depreciacionService: DepreciacionService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar bienes (paginado, con filtros y búsqueda)' })
@@ -111,6 +116,16 @@ export class BienController {
   @ApiResponse({ type: HistorialItemDto, isArray: true })
   historial(@Param('id', ParseIntPipe) id: number) {
     return this.service.historial(id);
+  }
+
+  @Get(':id/depreciacion')
+  @ApiOperation({
+    summary:
+      'Tabla de depreciación de un bien (valor residual, mensual y periodos registrados)',
+  })
+  @ApiResponse({ type: DepreciacionBienResponseDto })
+  depreciacion(@Param('id', ParseIntPipe) id: number) {
+    return this.depreciacionService.depreciacionDeBien(id);
   }
 
   @Post(':id/baja')
