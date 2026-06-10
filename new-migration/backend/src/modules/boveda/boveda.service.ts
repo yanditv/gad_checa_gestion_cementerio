@@ -15,7 +15,7 @@ import { CreateBovedaDto, UpdateBovedaDto } from './dto/request/boveda.dto';
 
 interface BovedaFilters {
   bloqueId?: number;
-  tipo?: string;
+  tipoEspacioId?: number;
   estado?: string; // 'disponible' | 'ocupada'
   tienePropietario?: string; // 'con' | 'sin'
 }
@@ -64,7 +64,9 @@ export class BovedaService {
           }
         : {}),
       ...(filters?.bloqueId ? { bloqueId: filters.bloqueId } : {}),
-      ...(filters?.tipo ? { tipo: filters.tipo } : {}),
+      ...(filters?.tipoEspacioId
+        ? { tipoEspacioId: filters.tipoEspacioId }
+        : {}),
       ...(filters?.tienePropietario === 'con'
         ? { propietarioId: { not: null } }
         : {}),
@@ -88,6 +90,7 @@ export class BovedaService {
         include: {
           bloque: { include: { cementerio: true } },
           piso: true,
+          tipoEspacio: true,
           propietario: { include: { persona: true } },
           contratos: {
             where: { estado: true },
@@ -119,7 +122,7 @@ export class BovedaService {
   async findByBloque(bloqueId: number) {
     return this.prisma.boveda.findMany({
       where: { bloqueId, estado: true },
-      include: { piso: true },
+      include: { piso: true, tipoEspacio: true },
     });
   }
 
@@ -129,6 +132,7 @@ export class BovedaService {
       include: {
         bloque: { include: { cementerio: true } },
         piso: true,
+        tipoEspacio: true,
         propietario: { include: { persona: true } },
         difuntos: { where: { estado: true, exhumado: false } },
         contratos: {
@@ -149,6 +153,11 @@ export class BovedaService {
   async create(dto: CreateBovedaDto, userId?: string) {
     const bloqueId = this.requireInt(dto.bloqueId, 'Debe seleccionar un bloque');
     await this.ensureBloqueActivo(bloqueId);
+    const tipoEspacioId = this.requireInt(
+      dto.tipoEspacioId,
+      'Debe seleccionar un tipo de espacio',
+    );
+    const tipoEspacio = await this.ensureTipoEspacioActivo(tipoEspacioId);
     const numero = this.normalizeNumero(dto.numero);
     await this.ensureUniqueNumero(numero, bloqueId);
 
@@ -156,7 +165,10 @@ export class BovedaService {
       data: {
         numero,
         capacidad: dto.capacidad,
-        tipo: dto.tipo ?? 'Boveda',
+        tipoEspacioId,
+        // Espejo del nombre del catálogo en la columna legada `tipo`,
+        // que se mantiene hasta el DROP manual posterior.
+        tipo: tipoEspacio.nombre,
         precio: dto.precio ?? 0,
         precioArrendamiento: dto.precioArrendamiento ?? 0,
         bloqueId,
@@ -166,6 +178,7 @@ export class BovedaService {
         estado: dto.estado ?? true,
         usuarioCreadorId: userId ?? null,
       },
+      include: { tipoEspacio: true },
     });
   }
 
@@ -179,12 +192,23 @@ export class BovedaService {
       await this.ensureUniqueNumero(this.normalizeNumero(dto.numero), bloqueId, id);
     }
 
+    // Resolver tipo de espacio (si cambia) y reflejar su nombre en la
+    // columna legada `tipo` mientras esta exista.
+    let tipoEspacioData: { tipoEspacioId: number; tipo: string } | undefined;
+    if (dto.tipoEspacioId !== undefined) {
+      const tipoEspacio = await this.ensureTipoEspacioActivo(dto.tipoEspacioId);
+      tipoEspacioData = {
+        tipoEspacioId: tipoEspacio.id,
+        tipo: tipoEspacio.nombre,
+      };
+    }
+
     return this.prisma.boveda.update({
       where: { id },
       data: {
         ...(dto.numero !== undefined ? { numero: this.normalizeNumero(dto.numero) } : {}),
         ...(dto.capacidad !== undefined ? { capacidad: dto.capacidad } : {}),
-        ...(dto.tipo !== undefined ? { tipo: dto.tipo } : {}),
+        ...(tipoEspacioData ?? {}),
         ...(dto.estado !== undefined ? { estado: dto.estado } : {}),
         ...(dto.precio !== undefined ? { precio: dto.precio } : {}),
         ...(dto.precioArrendamiento !== undefined ? { precioArrendamiento: dto.precioArrendamiento } : {}),
@@ -194,6 +218,7 @@ export class BovedaService {
         ...(dto.observaciones !== undefined ? { observaciones: dto.observaciones ?? null } : {}),
         usuarioActualizadorId: userId ?? null,
       },
+      include: { tipoEspacio: true },
     });
   }
 
@@ -338,6 +363,22 @@ export class BovedaService {
     if (!bloque.estado) {
       throw new BadRequestException('El bloque seleccionado está inactivo');
     }
+  }
+
+  private async ensureTipoEspacioActivo(tipoEspacioId: number) {
+    const tipoEspacio = await this.prisma.tipoEspacio.findUnique({
+      where: { id: tipoEspacioId },
+      select: { id: true, nombre: true, estado: true },
+    });
+    if (!tipoEspacio) {
+      throw new BadRequestException('El tipo de espacio seleccionado no existe');
+    }
+    if (!tipoEspacio.estado) {
+      throw new BadRequestException(
+        'El tipo de espacio seleccionado está inactivo',
+      );
+    }
+    return tipoEspacio;
   }
 
   private async ensureUniqueNumero(numero: string, bloqueId: number, excludeId?: number) {
