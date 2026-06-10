@@ -11,13 +11,20 @@ import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
-import { UpdateBovedaDto } from './dto/request/update-boveda.dto';
+import { CreateBovedaDto, UpdateBovedaDto } from './dto/request/boveda.dto';
+
+interface BovedaFilters {
+  bloqueId?: number;
+  tipo?: string;
+  estado?: string; // 'disponible' | 'ocupada'
+  tienePropietario?: string; // 'con' | 'sin'
+}
 
 @Injectable()
 export class BovedaService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: PaginationQueryDto) {
+  async findAll(query: PaginationQueryDto, filters?: BovedaFilters) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 
@@ -56,9 +63,26 @@ export class BovedaService {
             ],
           }
         : {}),
+      ...(filters?.bloqueId ? { bloqueId: filters.bloqueId } : {}),
+      ...(filters?.tipo ? { tipo: filters.tipo } : {}),
+      ...(filters?.tienePropietario === 'con'
+        ? { propietarioId: { not: null } }
+        : {}),
+      ...(filters?.tienePropietario === 'sin'
+        ? { propietarioId: null }
+        : {}),
     };
 
-    const [items, total] = await this.prisma.$transaction([
+    // El filtro de estado (disponible/ocupada) se aplica post-query
+    // porque depende de contratos activos, no del campo estado
+    let estadoFilter: ((b: any) => boolean) | null = null;
+    if (filters?.estado === 'disponible') {
+      estadoFilter = (b: any) => !b.contratos?.length;
+    } else if (filters?.estado === 'ocupada') {
+      estadoFilter = (b: any) => (b.contratos?.length ?? 0) > 0;
+    }
+
+    const [allItems, total] = await this.prisma.$transaction([
       this.prisma.boveda.findMany({
         where,
         include: {
@@ -71,15 +95,24 @@ export class BovedaService {
           },
         },
         orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
+        skip: estadoFilter ? undefined : skip,
+        take: estadoFilter ? undefined : limit,
       }),
       this.prisma.boveda.count({ where }),
     ]);
 
+    // Aplicar filtro de estado post-query (necesita datos de contratos)
+    const filtered = estadoFilter ? allItems.filter(estadoFilter) : allItems;
+    const totalFiltered = estadoFilter ? filtered.length : total;
+
+    // Re-paginar si aplicamos filtro post-query
+    const items = estadoFilter
+      ? filtered.slice(skip, skip + limit)
+      : filtered;
+
     return {
       items,
-      meta: buildPaginationMeta(page, limit, total),
+      meta: buildPaginationMeta(page, limit, totalFiltered),
     };
   }
 
@@ -113,7 +146,7 @@ export class BovedaService {
     return boveda;
   }
 
-  async create(dto: UpdateBovedaDto) {
+  async create(dto: CreateBovedaDto, userId?: string) {
     const bloqueId = this.requireInt(dto.bloqueId, 'Debe seleccionar un bloque');
     await this.ensureBloqueActivo(bloqueId);
     const numero = this.normalizeNumero(dto.numero);
@@ -121,16 +154,22 @@ export class BovedaService {
 
     return this.prisma.boveda.create({
       data: {
-        ...(dto as Prisma.BovedaUncheckedCreateInput),
         numero,
+        capacidad: dto.capacidad,
+        tipo: dto.tipo ?? 'Boveda',
+        precio: dto.precio ?? 0,
+        precioArrendamiento: dto.precioArrendamiento ?? 0,
         bloqueId,
+        pisoId: dto.pisoId ?? null,
         ubicacion: dto.ubicacion ?? null,
         observaciones: dto.observaciones ?? null,
+        estado: dto.estado ?? true,
+        usuarioCreadorId: userId ?? null,
       },
     });
   }
 
-  async update(id: number, dto: UpdateBovedaDto) {
+  async update(id: number, dto: UpdateBovedaDto, userId?: string) {
     const actual = await this.findOne(id);
 
     const bloqueId = dto.bloqueId ?? actual.bloqueId;
@@ -143,15 +182,22 @@ export class BovedaService {
     return this.prisma.boveda.update({
       where: { id },
       data: {
-        ...(dto as Prisma.BovedaUncheckedUpdateInput),
         ...(dto.numero !== undefined ? { numero: this.normalizeNumero(dto.numero) } : {}),
+        ...(dto.capacidad !== undefined ? { capacidad: dto.capacidad } : {}),
+        ...(dto.tipo !== undefined ? { tipo: dto.tipo } : {}),
+        ...(dto.estado !== undefined ? { estado: dto.estado } : {}),
+        ...(dto.precio !== undefined ? { precio: dto.precio } : {}),
+        ...(dto.precioArrendamiento !== undefined ? { precioArrendamiento: dto.precioArrendamiento } : {}),
+        ...(dto.bloqueId !== undefined ? { bloqueId: dto.bloqueId } : {}),
+        ...(dto.pisoId !== undefined ? { pisoId: dto.pisoId } : {}),
         ...(dto.ubicacion !== undefined ? { ubicacion: dto.ubicacion ?? null } : {}),
         ...(dto.observaciones !== undefined ? { observaciones: dto.observaciones ?? null } : {}),
+        usuarioActualizadorId: userId ?? null,
       },
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId?: string) {
     await this.findOne(id);
     const today = new Date();
     const contratosActivos = await this.prisma.contrato.count({
@@ -168,7 +214,10 @@ export class BovedaService {
     }
     return this.prisma.boveda.update({
       where: { id },
-      data: { estado: false },
+      data: {
+        estado: false,
+        usuarioEliminadorId: userId ?? null,
+      },
     });
   }
 
@@ -182,7 +231,7 @@ export class BovedaService {
    *   personaId === number → asigna; si la persona no es Propietario aún,
    *                          se crea la fila correspondiente.
    */
-  async setPropietario(bovedaId: number, personaId: number | null) {
+  async setPropietario(bovedaId: number, personaId: number | null, userId?: string) {
     const boveda = await this.prisma.boveda.findUnique({
       where: { id: bovedaId },
     });
@@ -191,7 +240,10 @@ export class BovedaService {
     if (personaId === null) {
       return this.prisma.boveda.update({
         where: { id: bovedaId },
-        data: { propietarioId: null },
+        data: {
+          propietarioId: null,
+          usuarioActualizadorId: userId ?? null,
+        },
         include: { propietario: { include: { persona: true } } },
       });
     }
@@ -205,13 +257,15 @@ export class BovedaService {
       );
     }
 
-    // Buscar/crear el Propietario asociado a esta persona.
     let propietario = await this.prisma.propietario.findFirst({
       where: { personaId },
     });
     if (!propietario) {
       propietario = await this.prisma.propietario.create({
-        data: { personaId, estado: true },
+        data: {
+          personaId,
+          estado: true,
+        },
       });
     } else if (!propietario.estado) {
       throw new ConflictException(
@@ -221,7 +275,10 @@ export class BovedaService {
 
     return this.prisma.boveda.update({
       where: { id: bovedaId },
-      data: { propietarioId: propietario.id },
+      data: {
+        propietarioId: propietario.id,
+        usuarioActualizadorId: userId ?? null,
+      },
       include: { propietario: { include: { persona: true } } },
     });
   }
