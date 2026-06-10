@@ -108,13 +108,13 @@ const FORMATOS: {
     formato: 'pdf',
     label: 'PDF',
     icon: 'ti-file-type-pdf',
-    cls: 'bg-red-50 text-red-700 ring-red-200 hover:bg-red-100',
+    cls: 'bg-danger-50 text-danger-700 ring-danger-200 hover:bg-danger-100',
   },
   {
     formato: 'excel',
     label: 'Excel',
     icon: 'ti-file-type-xls',
-    cls: 'bg-green-50 text-green-700 ring-green-200 hover:bg-green-100',
+    cls: 'bg-success-50 text-success-700 ring-success-200 hover:bg-success-100',
   },
   {
     formato: 'csv',
@@ -216,7 +216,7 @@ export default function ReportesInventarioPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+        <div className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
           {error}
         </div>
       )}
