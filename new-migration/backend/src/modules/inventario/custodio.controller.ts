@@ -22,6 +22,8 @@ import {
   UpdateCustodioDto,
 } from './dto/custodio.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Paginated } from '../../common/decorators/paginated.decorator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   AuthUser,
   CurrentUser,
@@ -34,10 +36,14 @@ export class CustodioController {
   constructor(private service: CustodioService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar custodios' })
+  @Paginated()
+  @ApiOperation({ summary: 'Listar custodios (paginado)' })
   @ApiResponse({ type: CustodioResponseDto, isArray: true })
-  findAll(@Query('includeInactive') includeInactive?: string) {
-    return this.service.findAll(includeInactive === 'true');
+  findAll(
+    @Query() query: PaginationQueryDto,
+    @Query('includeInactive') includeInactive?: string,
+  ) {
+    return this.service.findPage(query, includeInactive === 'true');
   }
 
   @Get(':id')

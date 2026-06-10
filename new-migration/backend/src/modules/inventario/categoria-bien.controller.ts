@@ -22,6 +22,8 @@ import {
   UpdateCategoriaBienDto,
 } from './dto/categoria-bien.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Paginated } from '../../common/decorators/paginated.decorator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   AuthUser,
   CurrentUser,
@@ -34,10 +36,14 @@ export class CategoriaBienController {
   constructor(private service: CategoriaBienService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar categorías de bienes' })
+  @Paginated()
+  @ApiOperation({ summary: 'Listar categorías de bienes (paginado)' })
   @ApiResponse({ type: CategoriaBienResponseDto, isArray: true })
-  findAll(@Query('includeInactive') includeInactive?: string) {
-    return this.service.findAll(includeInactive === 'true');
+  findAll(
+    @Query() query: PaginationQueryDto,
+    @Query('includeInactive') includeInactive?: string,
+  ) {
+    return this.service.findPage(query, includeInactive === 'true');
   }
 
   @Get(':id')

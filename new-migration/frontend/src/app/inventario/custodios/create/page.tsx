@@ -71,93 +71,115 @@ export default function CreateCustodioPage() {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
-            {error}
-          </div>
-        )}
-
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft lg:col-span-2">
           <header className="border-b border-slate-100 px-5 py-3">
             <h2 className="text-sm font-semibold text-slate-700">
               Datos del custodio
             </h2>
           </header>
-          <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <label className={LABEL_CLS}>Nombre *</label>
-              <input
-                type="text"
-                className={INPUT_CLS}
-                required
-                placeholder="Juan Pérez"
-                value={formData.nombre}
-                onChange={(e) => set('nombre', e.target.value)}
-              />
+          <form onSubmit={handleSubmit} className="space-y-4 p-5">
+            {error && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+                {error}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className={LABEL_CLS}>Nombre *</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  required
+                  placeholder="Juan Pérez"
+                  value={formData.nombre}
+                  onChange={(e) => set('nombre', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Identificación</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  placeholder="0102030405"
+                  value={formData.identificacion}
+                  onChange={(e) => set('identificacion', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Cargo</label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  placeholder="Secretario"
+                  value={formData.cargo}
+                  onChange={(e) => set('cargo', e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <label className={LABEL_CLS}>Identificación</label>
-              <input
-                type="text"
-                className={INPUT_CLS}
-                placeholder="0102030405"
-                value={formData.identificacion}
-                onChange={(e) => set('identificacion', e.target.value)}
-              />
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <Link
+                href="/inventario/custodios"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                    Guardando…
+                  </>
+                ) : (
+                  <>
+                    <i className="ti ti-check" /> Guardar
+                  </>
+                )}
+              </button>
             </div>
-            <div>
-              <label className={LABEL_CLS}>Cargo</label>
-              <input
-                type="text"
-                className={INPUT_CLS}
-                placeholder="Secretario"
-                value={formData.cargo}
-                onChange={(e) => set('cargo', e.target.value)}
-              />
-            </div>
-          </div>
+          </form>
         </section>
 
-        <div className="flex justify-end gap-2">
-          <Link
-            href="/inventario/custodios"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? (
-              <>
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
-                Guardando…
-              </>
-            ) : (
-              <>
-                <i className="ti ti-check" /> Guardar
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+        <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <header className="border-b border-slate-100 px-5 py-3">
+            <h2 className="text-sm font-semibold text-slate-700">Información</h2>
+          </header>
+          <div className="p-5 text-sm text-slate-600">
+            <p className="text-slate-500">
+              El custodio es el responsable de los bienes asignados:
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600">
+              <li>
+                <strong className="text-slate-700">Nombre:</strong> obligatorio.
+              </li>
+              <li>
+                <strong className="text-slate-700">Identificación y cargo:</strong>{' '}
+                opcionales, ayudan a ubicar al responsable.
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

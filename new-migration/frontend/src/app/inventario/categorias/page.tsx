@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { inventarioCategoriasApi } from '@/lib/api';
+import { inventarioCategoriasApi, PaginationMeta } from '@/lib/api';
 
 interface Categoria {
   id: number;
@@ -19,29 +19,32 @@ export default function CategoriasBienPage() {
   const [filtroNombre, setFiltroNombre] = useState('');
   const [includeInactive, setIncludeInactive] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadCategorias();
-  }, [includeInactive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, includeInactive, filtroNombre]);
 
   const loadCategorias = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await inventarioCategoriasApi.findAll(includeInactive);
-      setCategorias(data);
+      const result = await inventarioCategoriasApi.findPage({
+        page,
+        limit: 15,
+        search: filtroNombre.trim() || undefined,
+        includeInactive: includeInactive ? 'true' : undefined,
+      });
+      setCategorias(result.data);
+      setMeta(result.meta);
     } catch (err: any) {
       setError(err.message || 'No se pudieron cargar las categorías');
     } finally {
       setLoading(false);
     }
   };
-
-  const filtradas = useMemo(() => {
-    const term = filtroNombre.trim().toLowerCase();
-    if (!term) return categorias;
-    return categorias.filter((c) => c.nombre.toLowerCase().includes(term));
-  }, [categorias, filtroNombre]);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Desactivar esta categoría?')) return;
@@ -50,13 +53,24 @@ export default function CategoriasBienPage() {
     setError('');
     try {
       await inventarioCategoriasApi.delete(id);
-      await loadCategorias();
+      if (categorias.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await loadCategorias();
+      }
     } catch (err: any) {
       setError(err.message || 'No se pudo desactivar la categoría');
     } finally {
       setDeletingId(null);
     }
   };
+
+  const visiblePages = (() => {
+    if (!meta) return [];
+    const start = Math.max(1, meta.page - 2);
+    const end = Math.min(meta.totalPages, meta.page + 2);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  })();
 
   return (
     <div className="space-y-6">
@@ -85,14 +99,20 @@ export default function CategoriasBienPage() {
               type="search"
               placeholder="Nombre de la categoría"
               value={filtroNombre}
-              onChange={(e) => setFiltroNombre(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setFiltroNombre(e.target.value);
+              }}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
             <label className="inline-flex items-center gap-2 text-sm text-slate-600">
               <input
                 type="checkbox"
                 checked={includeInactive}
-                onChange={(e) => setIncludeInactive(e.target.checked)}
+                onChange={(e) => {
+                  setPage(1);
+                  setIncludeInactive(e.target.checked);
+                }}
                 className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-200"
               />
               Mostrar inactivas
@@ -101,7 +121,10 @@ export default function CategoriasBienPage() {
 
           <button
             type="button"
-            onClick={() => setFiltroNombre('')}
+            onClick={() => {
+              setPage(1);
+              setFiltroNombre('');
+            }}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <i className="ti ti-x" /> Limpiar
@@ -153,7 +176,7 @@ export default function CategoriasBienPage() {
                     </div>
                   </td>
                 </tr>
-              ) : filtradas.length === 0 ? (
+              ) : categorias.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
                     <i className="ti ti-folder-x text-3xl text-slate-300" />
@@ -163,7 +186,7 @@ export default function CategoriasBienPage() {
                   </td>
                 </tr>
               ) : (
-                filtradas.map((row) => (
+                categorias.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-3 font-medium text-slate-900">
                       {row.nombre}
@@ -217,6 +240,50 @@ export default function CategoriasBienPage() {
             </tbody>
           </table>
         </div>
+
+        {meta && meta.totalPages > 1 && (
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row">
+            <p className="text-xs text-slate-500">
+              Página <strong className="text-slate-700">{meta.page}</strong> de{' '}
+              <strong className="text-slate-700">{meta.totalPages}</strong>
+              <span className="mx-1.5 text-slate-300">·</span>
+              <strong className="text-slate-700">{meta.total}</strong>{' '}
+              categoría{meta.total === 1 ? '' : 's'}
+            </p>
+            <nav className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage(meta.page - 1)}
+                disabled={!meta.hasPrevPage}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <i className="ti ti-chevron-left" /> Anterior
+              </button>
+              {visiblePages.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  className={`rounded-md px-3 py-1 text-xs font-medium ${
+                    p === meta.page
+                      ? 'bg-primary-500 text-white'
+                      : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setPage(meta.page + 1)}
+                disabled={!meta.hasNextPage}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Siguiente <i className="ti ti-chevron-right" />
+              </button>
+            </nav>
+          </div>
+        )}
       </section>
     </div>
   );

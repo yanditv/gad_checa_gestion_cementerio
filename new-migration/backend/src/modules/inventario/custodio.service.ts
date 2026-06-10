@@ -3,7 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
 import { CreateCustodioDto, UpdateCustodioDto } from './dto/custodio.dto';
 import { toCustodioResponse } from './custodio.mapper';
 
@@ -17,6 +23,39 @@ export class CustodioService {
       orderBy: [{ estado: 'desc' }, { nombre: 'asc' }],
     });
     return custodios.map(toCustodioResponse);
+  }
+
+  async findPage(query: PaginationQueryDto, includeInactive = false) {
+    const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const search = query.search?.trim();
+
+    const where: Prisma.CustodioWhereInput = {
+      ...(includeInactive ? {} : { estado: true }),
+      ...(search
+        ? {
+            OR: [
+              { nombre: { contains: search, mode: 'insensitive' } },
+              { identificacion: { contains: search, mode: 'insensitive' } },
+              { cargo: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.custodio.findMany({
+        where,
+        orderBy: [{ estado: 'desc' }, { nombre: 'asc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.custodio.count({ where }),
+    ]);
+
+    return {
+      items: items.map(toCustodioResponse),
+      meta: buildPaginationMeta(page, limit, total),
+    };
   }
 
   async findOne(id: number) {

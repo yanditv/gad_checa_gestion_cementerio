@@ -3,7 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
 import {
   CreateCategoriaBienDto,
   UpdateCategoriaBienDto,
@@ -20,6 +26,33 @@ export class CategoriaBienService {
       orderBy: [{ estado: 'desc' }, { nombre: 'asc' }],
     });
     return categorias.map(toCategoriaBienResponse);
+  }
+
+  async findPage(query: PaginationQueryDto, includeInactive = false) {
+    const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const search = query.search?.trim();
+
+    const where: Prisma.CategoriaBienWhereInput = {
+      ...(includeInactive ? {} : { estado: true }),
+      ...(search
+        ? { nombre: { contains: search, mode: 'insensitive' } }
+        : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.categoriaBien.findMany({
+        where,
+        orderBy: [{ estado: 'desc' }, { nombre: 'asc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.categoriaBien.count({ where }),
+    ]);
+
+    return {
+      items: items.map(toCategoriaBienResponse),
+      meta: buildPaginationMeta(page, limit, total),
+    };
   }
 
   async findOne(id: number) {

@@ -363,6 +363,8 @@ export const inventarioCategoriasApi = {
     api.get<any[]>(
       `/inventario/categorias${includeInactive ? '?includeInactive=true' : ''}`,
     ),
+  findPage: (params?: PaginationParams) =>
+    api.getPaginated<any>('/inventario/categorias', params),
   findOne: (id: number) => api.get<any>(`/inventario/categorias/${id}`),
   create: (data: any) => api.post<any>('/inventario/categorias', data),
   update: (id: number, data: any) =>
@@ -375,6 +377,8 @@ export const inventarioCustodiosApi = {
     api.get<any[]>(
       `/inventario/custodios${includeInactive ? '?includeInactive=true' : ''}`,
     ),
+  findPage: (params?: PaginationParams) =>
+    api.getPaginated<any>('/inventario/custodios', params),
   findOne: (id: number) => api.get<any>(`/inventario/custodios/${id}`),
   create: (data: any) => api.post<any>('/inventario/custodios', data),
   update: (id: number, data: any) =>
