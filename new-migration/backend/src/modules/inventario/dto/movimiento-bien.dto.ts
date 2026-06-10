@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+} from 'class-validator';
 
 // ---------------------------------------------------------------------------
 // Request DTOs (Fase 4 — INV-R3, R4)
@@ -11,6 +19,7 @@ export class ReasignarCustodioDto {
     example: 7,
   })
   @IsInt()
+  @Min(1, { message: 'El identificador del custodio debe ser un entero positivo' })
   custodioId!: number;
 
   @ApiPropertyOptional({
@@ -45,6 +54,8 @@ export class MoverBienDto {
     example: 'Tesorería',
   })
   @IsString()
+  @IsNotEmpty({ message: 'La ubicación es obligatoria' })
+  @Matches(/\S/, { message: 'La ubicación no puede estar vacía' })
   ubicacion!: string;
 
   @ApiPropertyOptional({
@@ -77,7 +88,7 @@ export class MoverBienDto {
 // Response DTOs (historial — INV-R8)
 // ---------------------------------------------------------------------------
 
-class CustodioResumenDto {
+export class CustodioResumenDto {
   @ApiProperty()
   id!: number;
 
