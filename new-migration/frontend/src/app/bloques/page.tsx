@@ -8,8 +8,6 @@ interface Bloque {
   id: number;
   nombre: string;
   descripcion: string | null;
-  tipo: string | null;
-  tarifaBase: number | null;
   estado: boolean;
   cementerioId: number;
   cementerio?: { id: number; nombre: string } | null;
@@ -23,19 +21,12 @@ export default function BloquesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [filterTipo, setFilterTipo] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadBloques();
-  }, [page, search, filterTipo]);
-
-  function limpiarFiltros() {
-    setSearch('');
-    setFilterTipo('');
-    setPage(1);
-  }
+  }, [page, search]);
 
   const loadBloques = async () => {
     setLoading(true);
@@ -91,24 +82,13 @@ export default function BloquesPage() {
             Administración de bloques del cementerio.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(search || filterTipo) && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              <i className="ti ti-refresh" /> Limpiar
-            </button>
-          )}
-          <Link
-            href="/bloques/create"
-            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
-          >
-            <i className="ti ti-plus" />
-            Nuevo Bloque
-          </Link>
-        </div>
+        <Link
+          href="/bloques/create"
+          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+        >
+          <i className="ti ti-plus" />
+          Nuevo Bloque
+        </Link>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
@@ -126,18 +106,6 @@ export default function BloquesPage() {
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Tipo</label>
-            <select
-              value={filterTipo}
-              onChange={(e) => { setPage(1); setFilterTipo(e.target.value); }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos los tipos</option>
-              <option value="Bovedas">Bóvedas</option>
-              <option value="Nichos">Nichos</option>
-            </select>
-          </div>
         </div>
 
         {error && (
@@ -151,11 +119,9 @@ export default function BloquesPage() {
             <thead className="bg-slate-50">
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <th scope="col" className="px-4 py-3">Nombre</th>
-                <th scope="col" className="px-4 py-3">Tipo</th>
                 <th scope="col" className="px-4 py-3">Cementerio</th>
                 <th scope="col" className="px-4 py-3">Pisos</th>
                 <th scope="col" className="px-4 py-3">Bóvedas</th>
-                <th scope="col" className="px-4 py-3">Tarifa Base</th>
                 <th scope="col" className="px-4 py-3">Descripción</th>
                 <th scope="col" className="px-4 py-3">Estado</th>
                 <th scope="col" className="px-4 py-3 text-right">Acciones</th>
@@ -164,11 +130,26 @@ export default function BloquesPage() {
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                     <div className="inline-flex items-center gap-2">
-                      <svg className="h-4 w-4 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      <svg
+                        className="h-4 w-4 animate-spin text-primary-500"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
                       </svg>
                       Cargando bloques…
                     </div>
@@ -176,29 +157,21 @@ export default function BloquesPage() {
                 </tr>
               ) : bloques.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
                     <i className="ti ti-stack-2 text-3xl text-slate-300" />
                     <div className="mt-2 text-sm">No hay bloques registrados.</div>
                   </td>
                 </tr>
               ) : (
-                bloques
-                  .filter((row) => !filterTipo || (row.tipo || 'Bovedas') === filterTipo)
-                  .map((row) => (
+                bloques.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-3 font-medium text-slate-900">{row.nombre}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${(row.tipo || 'Bovedas') === 'Nichos' ? 'bg-purple-50 text-purple-700 ring-purple-200' : 'bg-primary-50 text-primary-700 ring-primary-200'}`}>
-                        {row.tipo || 'Bóvedas'}
-                      </span>
-                    </td>
                     <td className="px-4 py-3 text-slate-600">{row.cementerio?.nombre || '-'}</td>
                     <td className="px-4 py-3 text-slate-600">{row.pisos?.length ?? 0}</td>
                     <td className="px-4 py-3 text-slate-600">{row.bovedas?.length ?? 0}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {row.tarifaBase != null ? `$${Number(row.tarifaBase).toFixed(2)}` : '—'}
+                    <td className="px-4 py-3 text-slate-600">
+                      {row.descripcion || '-'}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{row.descripcion || '-'}</td>
                     <td className="px-4 py-3">
                       {row.estado ? (
                         <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
