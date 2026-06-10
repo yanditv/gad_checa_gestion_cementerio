@@ -41,8 +41,12 @@ export default function CobrosPage() {
           cuotasApi.pendientes(),
           pagosApi.findAll(),
         ]);
-        setPendientes(cuotas);
-        setPagos(pagosData);
+        // Los endpoints pueden devolver un array o una respuesta envuelta
+        // ({ data, meta } vía el proxy /api); normalizamos a array.
+        const toArray = (x: any) =>
+          Array.isArray(x) ? x : (x?.data ?? x?.items ?? []);
+        setPendientes(toArray(cuotas));
+        setPagos(toArray(pagosData));
       } catch (err: any) {
         setError(err.message || 'No se pudieron cargar los cobros');
       } finally {

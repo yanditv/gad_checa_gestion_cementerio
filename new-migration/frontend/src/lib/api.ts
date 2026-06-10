@@ -497,10 +497,15 @@ export const catastroApi = {
 };
 
 export const inventarioCategoriasApi = {
-  findAll: (includeInactive = false) =>
-    api.get<any[]>(
-      `/inventario/categorias${includeInactive ? '?includeInactive=true' : ''}`,
-    ),
+  // El endpoint pagina; para selects/dropdowns reutilizamos getPaginated
+  // (que normaliza el envelope { data, meta } incluso vía el proxy /api) y
+  // devolvemos el array de items pidiendo un límite alto.
+  findAll: async (): Promise<any[]> => {
+    const res = await api.getPaginated<any>('/inventario/categorias', {
+      limit: 100,
+    });
+    return res?.data ?? [];
+  },
   findPage: (params?: PaginationParams) =>
     api.getPaginated<any>('/inventario/categorias', params),
   findOne: (id: number) => api.get<any>(`/inventario/categorias/${id}`),
@@ -511,10 +516,15 @@ export const inventarioCategoriasApi = {
 };
 
 export const inventarioCustodiosApi = {
-  findAll: (includeInactive = false) =>
-    api.get<any[]>(
-      `/inventario/custodios${includeInactive ? '?includeInactive=true' : ''}`,
-    ),
+  // El endpoint pagina; para selects/dropdowns reutilizamos getPaginated
+  // (que normaliza el envelope { data, meta } incluso vía el proxy /api) y
+  // devolvemos el array de items pidiendo un límite alto.
+  findAll: async (): Promise<any[]> => {
+    const res = await api.getPaginated<any>('/inventario/custodios', {
+      limit: 100,
+    });
+    return res?.data ?? [];
+  },
   findPage: (params?: PaginationParams) =>
     api.getPaginated<any>('/inventario/custodios', params),
   findOne: (id: number) => api.get<any>(`/inventario/custodios/${id}`),
