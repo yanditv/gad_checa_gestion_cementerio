@@ -24,6 +24,7 @@ import {
   UpdateBienDto,
 } from './dto/bien.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Paginated } from '../../common/decorators/paginated.decorator';
 import {
   AuthUser,
   CurrentUser,
@@ -37,6 +38,7 @@ export class BienController {
 
   @Get()
   @ApiOperation({ summary: 'Listar bienes (paginado, con filtros y búsqueda)' })
+  @Paginated()
   @ApiResponse({ type: BienListItemDto, isArray: true })
   findAll(@Query() query: QueryBienDto) {
     return this.service.findAll(query);
