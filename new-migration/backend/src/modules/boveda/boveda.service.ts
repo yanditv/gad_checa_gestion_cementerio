@@ -93,7 +93,14 @@ export class BovedaService {
           tipoEspacio: true,
           propietario: { include: { persona: true } },
           contratos: {
-            where: { estado: true },
+            where: {
+              estado: true,
+              fechaInicio: { lte: new Date() },
+              OR: [
+                { fechaFin: null },
+                { fechaFin: { gte: new Date() } },
+              ],
+            },
             select: { id: true, numeroSecuencial: true },
           },
         },
