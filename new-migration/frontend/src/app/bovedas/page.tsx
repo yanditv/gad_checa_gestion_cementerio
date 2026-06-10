@@ -103,12 +103,13 @@ export default function BovedasPage() {
     }
   };
 
-  const visiblePages = (() => {
+  function calcVisiblePages() {
     if (!meta) return [];
     const start = Math.max(1, meta.page - 2);
     const end = Math.min(meta.totalPages, meta.page + 2);
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  })();
+  }
+  const visiblePages = calcVisiblePages();
 
   return (
     <div className="space-y-6">
@@ -119,13 +120,29 @@ export default function BovedasPage() {
             Administración de bóvedas y nichos.
           </p>
         </div>
-        <Link
-          href="/bovedas/create"
-          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
-        >
-          <i className="ti ti-plus" />
-          Nueva Bóveda
-        </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterTipo('');
+                  setFilterEstado('');
+                  setFilterPropietario('');
+                  setFilterBloqueId('');
+                  setPage(1);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                <i className="ti ti-refresh" /> Limpiar
+              </button>
+              <Link
+            href="/bovedas/create"
+            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          >
+            <i className="ti ti-plus" />
+            Nueva Bóveda
+          </Link>
+        </div>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
