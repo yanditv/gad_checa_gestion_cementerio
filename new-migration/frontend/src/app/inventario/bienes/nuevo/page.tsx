@@ -1,18 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   inventarioBienesApi,
   inventarioCategoriasApi,
   inventarioCustodiosApi,
 } from '@/lib/api';
-
-const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
-const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+import {
+  Button,
+  Card,
+  FormSection,
+  Input,
+  PageHeader,
+  Select,
+} from '@/components/ui';
 
 const ESTADOS_CONSERVACION = [
   { value: 'bueno', label: 'Bueno' },
@@ -119,239 +121,182 @@ export default function NuevoBienPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Nuevo bien</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Registrar (dar de alta) un bien institucional en el inventario.
-          </p>
-        </div>
-        <Link
-          href="/inventario/bienes"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <i className="ti ti-arrow-left" /> Volver
-        </Link>
-      </div>
+    <div>
+      <PageHeader
+        title="Nuevo bien"
+        subtitle="Registrar (dar de alta) un bien institucional en el inventario."
+        backHref="/inventario/bienes"
+        icon={<i className="ti ti-box-seam" aria-hidden="true" />}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft lg:col-span-2">
-          <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">Datos del bien</h2>
-          </header>
-          <form onSubmit={handleSubmit} className="space-y-4 p-5">
+        <Card
+          padding="none"
+          className="lg:col-span-2"
+          header={<Card.Title icon={<i className="ti ti-clipboard-list" aria-hidden="true" />}>Datos del bien</Card.Title>}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6 p-5">
             {error && (
-              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+              <div className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-inset ring-danger-200">
                 {error}
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className={LABEL_CLS}>Código (placa)</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+            <FormSection divided={false}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  label="Código (placa)"
                   placeholder="Se autogenera si se deja vacío"
                   value={formData.codigo}
                   onChange={(e) => set('codigo', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Categoría *</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Categoría"
                   required
+                  placeholder="Seleccione…"
                   value={formData.categoriaId}
                   onChange={(e) => set('categoriaId', e.target.value)}
                 >
-                  <option value="">Seleccione…</option>
                   {categorias.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.nombre}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div className="sm:col-span-2">
-                <label className={LABEL_CLS}>Descripción *</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+                </Select>
+                <Input
+                  label="Descripción"
                   required
+                  wrapperClassName="sm:col-span-2"
                   placeholder="Computadora de escritorio HP"
                   value={formData.descripcion}
                   onChange={(e) => set('descripcion', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Marca</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+                <Input
+                  label="Marca"
                   placeholder="HP"
                   value={formData.marca}
                   onChange={(e) => set('marca', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Modelo</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+                <Input
+                  label="Modelo"
                   placeholder="ProDesk 600 G6"
                   value={formData.modelo}
                   onChange={(e) => set('modelo', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Serie</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+                <Input
+                  label="Serie"
                   placeholder="SN-123456"
                   value={formData.serie}
                   onChange={(e) => set('serie', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Estado de conservación</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Estado de conservación"
                   value={formData.estadoConservacion}
                   onChange={(e) => set('estadoConservacion', e.target.value)}
-                >
-                  {ESTADOS_CONSERVACION.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  options={ESTADOS_CONSERVACION}
+                />
               </div>
-              <div>
-                <label className={LABEL_CLS}>Fecha de adquisición *</label>
-                <input
-                  type="date"
-                  className={INPUT_CLS}
+            </FormSection>
+
+            <FormSection
+              title="Adquisición y depreciación"
+              description="Datos contables del bien (CGE 406-03)."
+              icon={<i className="ti ti-receipt-2" aria-hidden="true" />}
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  label="Fecha de adquisición"
                   required
+                  type="date"
                   value={formData.fechaAdquisicion}
                   onChange={(e) => set('fechaAdquisicion', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Valor de adquisición *</label>
-                <input
+                <Input
+                  label="Valor de adquisición"
+                  required
                   type="number"
                   step="0.01"
                   min="0"
-                  className={INPUT_CLS}
-                  required
                   placeholder="850.00"
                   value={formData.valorAdquisicion}
                   onChange={(e) => set('valorAdquisicion', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Fuente de financiamiento</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+                <Input
+                  label="Fuente de financiamiento"
                   placeholder="Recursos propios"
                   value={formData.fuenteFinanciamiento}
                   onChange={(e) => set('fuenteFinanciamiento', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Ubicación</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
+                <Input
+                  label="Ubicación"
                   placeholder="Secretaría"
                   value={formData.ubicacion}
                   onChange={(e) => set('ubicacion', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Custodio</label>
-                <select
-                  className={INPUT_CLS}
-                  value={formData.custodioId}
-                  onChange={(e) => set('custodioId', e.target.value)}
-                >
-                  <option value="">Sin custodio</option>
-                  {custodios.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Valor residual (override)</label>
-                <input
+                <Input
+                  label="Valor residual (override)"
                   type="number"
                   step="0.01"
                   min="0"
-                  className={INPUT_CLS}
                   placeholder="Por defecto: % de la categoría"
                   value={formData.valorResidual}
                   onChange={(e) => set('valorResidual', e.target.value)}
                 />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Vida útil en meses (override)</label>
-                <input
+                <Input
+                  label="Vida útil en meses (override)"
                   type="number"
                   min="1"
-                  className={INPUT_CLS}
                   placeholder="Por defecto: vida útil de la categoría"
                   value={formData.vidaUtilMesesOverride}
                   onChange={(e) => set('vidaUtilMesesOverride', e.target.value)}
                 />
               </div>
-            </div>
+            </FormSection>
 
-            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-              <Link
-                href="/inventario/bienes"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            <FormSection title="Responsable" icon={<i className="ti ti-user-check" aria-hidden="true" />}>
+              <Select
+                label="Custodio"
+                wrapperClassName="sm:max-w-sm"
+                value={formData.custodioId}
+                onChange={(e) => set('custodioId', e.target.value)}
+              >
+                <option value="">Sin custodio</option>
+                {custodios.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </Select>
+            </FormSection>
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+              <Button
+                variant="secondary"
+                onClick={() => router.push('/inventario/bienes')}
               >
                 Cancelar
-              </Link>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                loading={loading}
+                leftIcon={<i className="ti ti-check" aria-hidden="true" />}
               >
-                {loading ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
-                    Guardando…
-                  </>
-                ) : (
-                  <>
-                    <i className="ti ti-check" /> Guardar
-                  </>
-                )}
-              </button>
+                Guardar
+              </Button>
             </div>
           </form>
-        </section>
+        </Card>
 
-        <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-          <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">Información</h2>
-          </header>
+        <Card
+          padding="none"
+          header={<Card.Title icon={<i className="ti ti-info-circle" aria-hidden="true" />}>Información</Card.Title>}
+        >
           <div className="p-5 text-sm text-slate-600">
             <p className="text-slate-500">
               Al registrar el bien se crea automáticamente un movimiento de
               <strong className="text-slate-700"> alta</strong> en su historial.
             </p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600">
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-600">
               <li>
                 <strong className="text-slate-700">Código:</strong> si se deja
                 vacío se autogenera con el patrón BN-AAAA-NNNN.
@@ -367,7 +312,7 @@ export default function NuevoBienPage() {
               </li>
             </ul>
           </div>
-        </aside>
+        </Card>
       </div>
     </div>
   );
