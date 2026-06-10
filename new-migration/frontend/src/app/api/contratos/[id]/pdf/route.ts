@@ -1,4 +1,4 @@
-import { getContratoById } from '@/lib/contratos-server';
+import { getContratoById, getGADInformacion } from '@/lib/contratos-server';
 import { buildContratoPdfBuffer } from '@/lib/contrato-pdf';
 
 export const runtime = 'nodejs';
@@ -14,8 +14,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const contrato = await getContratoById(id);
-    const pdfBuffer = await buildContratoPdfBuffer(contrato);
+    const [contrato, gadInfo] = await Promise.all([
+      getContratoById(id),
+      getGADInformacion().catch(() => null),
+    ]);
+    const pdfBuffer = await buildContratoPdfBuffer(contrato, gadInfo);
     const numeroContrato = contrato.numeroSecuencial || `CTR-${id}`;
     const fileName = `${sanitizeFileName(`Contrato_${numeroContrato}`)}.pdf`;
 

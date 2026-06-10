@@ -41,3 +41,17 @@ export function getContratoEstado(contrato: any) {
   if (!contrato.fechaFin) return 'Activo';
   return new Date(contrato.fechaFin) >= new Date() ? 'Activo' : 'Vencido';
 }
+
+export async function getGADInformacion() {
+  const response = await fetch(`${API_URL}/cementerios/gad-informacion`, {
+    headers: await authHeaders(),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo cargar la información del GAD');
+  }
+
+  const payload = await response.json();
+  return unwrapApiResponse<any>(payload).data;
+}

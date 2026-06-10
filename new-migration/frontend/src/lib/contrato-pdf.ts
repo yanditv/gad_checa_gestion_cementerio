@@ -76,7 +76,29 @@ function joinNombre(persona?: {
   return `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim();
 }
 
-function findContractLogo(): string | null {
+async function getLogoBufferOrPath(gadInfo?: any): Promise<string | Buffer | null> {
+  if (gadInfo?.logoUrl) {
+    if (gadInfo.logoUrl.startsWith('http://') || gadInfo.logoUrl.startsWith('https://')) {
+      try {
+        const res = await fetch(gadInfo.logoUrl);
+        if (res.ok) {
+          const arrayBuffer = await res.arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        }
+      } catch (e) {
+        console.error('Error downloading remote GAD logo:', e);
+      }
+    } else {
+      const relativePath = gadInfo.logoUrl.startsWith('/') 
+        ? gadInfo.logoUrl 
+        : `/${gadInfo.logoUrl}`;
+      const localPath = path.join(process.cwd(), 'public', relativePath);
+      if (fs.existsSync(localPath)) {
+        return localPath;
+      }
+    }
+  }
+
   const candidates = [
     path.join(process.cwd(), 'public', 'logo.png'),
     path.join(process.cwd(), 'public', 'images', 'logo_gad.png'),
@@ -117,13 +139,13 @@ function richParagraph(
   doc.moveDown(0.4);
 }
 
-function drawHeader(doc: PDFKit.PDFDocument, logoPath: string | null) {
-  if (!logoPath) return;
+function drawHeader(doc: PDFKit.PDFDocument, logo: string | Buffer | null) {
+  if (!logo) return;
   try {
     const pageWidth = doc.page.width;
     const imgWidth = 56;
     const x = (pageWidth - imgWidth) / 2;
-    doc.image(logoPath, x, 16, { width: imgWidth, height: 56 });
+    doc.image(logo, x, 16, { width: imgWidth, height: 56 });
   } catch {
     // ignorar errores de imagen
   }
@@ -131,6 +153,7 @@ function drawHeader(doc: PDFKit.PDFDocument, logoPath: string | null) {
 
 function drawFooter(
   doc: PDFKit.PDFDocument,
+  gadInfo: any,
   cementerio: {
     direccion?: string | null;
     telefono?: string | null;
@@ -141,29 +164,29 @@ function drawFooter(
   const right = doc.page.width - doc.page.margins.right;
   const y = doc.page.height - FOOTER_HEIGHT + 8;
 
-  const direccion = truncate(cementerio.direccion || 'Checa, Ecuador', 60);
-  const telefono = truncate(cementerio.telefono || '02-XXXXXXX', 15);
-  const email = truncate(cementerio.email || 'checa@example.gob.ec', 40);
+  const direccion = truncate(cementerio.direccion || gadInfo?.direccion || 'Checa, Ecuador', 60);
+  const telefono = truncate(cementerio.telefono || gadInfo?.telefono || '02-XXXXXXX', 15);
+  const email = truncate(cementerio.email || gadInfo?.email || 'checa@example.gob.ec', 40);
 
   doc.save();
+  
+  // Temporarily disable bottom margin to prevent recursive page breaks
+  const oldBottomMargin = doc.page.margins.bottom;
+  doc.page.margins.bottom = -1000;
+
   doc.fontSize(8.4).fillColor('#475569');
+  const footerText = `Dirección: ${direccion}  |  Teléfono: ${telefono}  |  Correo: ${email}`;
   doc
-    .font('Helvetica-Bold')
-    .text('Dirección: ', left, y, {
-      continued: true,
+    .font('Helvetica')
+    .text(footerText, left, y, {
       width: right - left,
       align: 'center',
-    })
-    .font('Helvetica')
-    .text(`${direccion}  |  `, { continued: true })
-    .font('Helvetica-Bold')
-    .text('Teléfono: ', { continued: true })
-    .font('Helvetica')
-    .text(`${telefono}  |  `, { continued: true })
-    .font('Helvetica-Bold')
-    .text('Correo: ', { continued: true })
-    .font('Helvetica')
-    .text(email);
+      lineGap: 2,
+    });
+
+  // Restore bottom margin
+  doc.page.margins.bottom = oldBottomMargin;
+
   doc.restore();
 }
 
@@ -171,7 +194,9 @@ function drawFooter(
 // Generación
 // ---------------------------------------------------------------------------
 
-export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
+export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Promise<Buffer> {
+  const logo = await getLogoBufferOrPath(gadInfo);
+
   return await new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
@@ -183,7 +208,7 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       },
       info: {
         Title: `Contrato ${contrato.numeroSecuencial || contrato.id}`,
-        Author: 'GAD Parroquial de Checa',
+        Author: gadInfo?.nombre || 'Gobierno Parroquial de Checa',
         Subject: 'Contrato de arrendamiento de bóveda',
       },
     });
@@ -204,20 +229,45 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     const bloque = boveda.bloque ?? {};
     const cuotas: Array<{ monto: number | string }> = contrato.cuotas ?? [];
 
+    const presidenteTitulo = cementerio.abreviaturaTituloPresidente || 'Presidente';
+    const presidenteNombre = cementerio.presidente || 'Presidente del GAD Parroquial de Checa';
     const presidente = truncate(
-      cementerio.presidente || 'Presidente del GAD Parroquial de Checa',
+      `${presidenteTitulo} ${presidenteNombre}`.trim(),
       60,
     );
+    const gadNombre = gadInfo?.nombre || 'Gobierno Parroquial de Checa';
+    const parroquia = gadNombre
+      .replace(/gobierno\s+(autónomo\s+descentralizado\s+)?parroquial\s+(de\s+)?/gi, '')
+      .replace(/gad\s+/gi, '')
+      .trim();
+
     const entidadFinanciera = cementerio.entidadFinanciera || 'BANCO';
     const nombreEntidadFinanciera = truncate(
       cementerio.nombreEntidadFinanciera || 'Banco del Austro',
       40,
     );
     const numeroCuenta = truncate(cementerio.numeroCuenta || '2000324704', 20);
-    const abreviaturaBanco =
-      String(entidadFinanciera).toUpperCase() === 'BANCO'
-        ? 'el banco'
-        : 'la Cooperativa de Ahorro y Crédito';
+
+    let bancoTexto = nombreEntidadFinanciera;
+    if (String(entidadFinanciera).toUpperCase() === 'BANCO') {
+      if (!nombreEntidadFinanciera.toLowerCase().startsWith('banco')) {
+        bancoTexto = `el Banco ${nombreEntidadFinanciera}`;
+      } else {
+        bancoTexto = `el ${nombreEntidadFinanciera}`;
+      }
+    } else {
+      if (!nombreEntidadFinanciera.toLowerCase().startsWith('cooperativa')) {
+        bancoTexto = `la Cooperativa ${nombreEntidadFinanciera}`;
+      } else {
+        bancoTexto = `la ${nombreEntidadFinanciera}`;
+      }
+    }
+
+    const nombreCementerioRaw = cementerio.nombre || 'de la Parroquia Checa';
+    const nombreCementerioUpper = nombreCementerioRaw.toUpperCase();
+    const cementerioTexto = nombreCementerioUpper.startsWith('CEMENTERIO')
+      ? nombreCementerioUpper
+      : `CEMENTERIO ${nombreCementerioUpper}`;
 
     const responsableNombre = truncate(
       joinNombre(responsable) || '________________',
@@ -265,10 +315,13 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     // -----------------------------------------------------------------------
     // Decoración por página (header + footer en cada página, incl. saltos)
     // -----------------------------------------------------------------------
-    const logoPath = findContractLogo();
     const decoratePage = () => {
-      drawHeader(doc, logoPath);
-      drawFooter(doc, cementerio);
+      const savedX = doc.x;
+      const savedY = doc.y;
+      drawHeader(doc, logo);
+      drawFooter(doc, gadInfo, cementerio);
+      doc.x = savedX;
+      doc.y = savedY;
     };
     doc.on('pageAdded', decoratePage);
     decoratePage(); // primera página
@@ -285,7 +338,7 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       .fillColor('#0f172a')
       .text(
         truncate(
-          `CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. ${numeroContrato}`,
+          `CONTRATO DE ARRIENDO DE BÓVEDA DEL ${cementerioTexto} NRO. ${numeroContrato}`,
           100,
         ),
         { align: 'center', width: contentWidth },
@@ -298,17 +351,17 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     richParagraph(
       doc,
       [
-        'En la Parroquia de Checa, a los ',
-        { text: fechaInicio.dia, bold: true },
-        ' días del mes de ',
-        { text: fechaInicio.mes, bold: true },
-        ' del ',
+        `En la Parroquia de ${parroquia}, a los `,
+        { text: fechaInicio.dia + ' ', bold: true },
+        'días del mes de ',
+        { text: fechaInicio.mes + ' ', bold: true },
+        'del ',
         { text: fechaInicio.anio, bold: true },
-        ', comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ',
+        `, comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el ${gadNombre}, debidamente representado por el `,
         { text: presidente, bold: true },
         '; por otro lado, el/la Sr/Sra. ',
-        { text: responsableNombre, bold: true },
-        ' con número de identidad ',
+        { text: responsableNombre + ' ', bold: true },
+        'con número de identidad ',
         { text: responsableCI, bold: true },
         ', número de teléfono ',
         { text: responsableTelefono, bold: true },
@@ -326,11 +379,11 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       doc,
       [
         { text: 'PRIMERA COMPARECIENTES. -', bold: true },
-        ' Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ',
+        ` Comparecen por una parte el ${gadNombre} representada por su presidente el `,
         { text: presidente, bold: true },
         '; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ',
-        { text: responsableNombre, bold: true },
-        ' a quien en lo posterior se le llamará Arrendatario.',
+        { text: responsableNombre + ' ', bold: true },
+        'a quien en lo posterior se le llamará Arrendatario.',
       ],
       contentWidth,
     );
@@ -339,7 +392,7 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       doc,
       [
         { text: 'SEGUNDA ANTECEDENTE. -', bold: true },
-        ' El Gobierno Parroquial de Checa es la Institución Pública que administra el Cementerio General de la Parroquia, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.',
+        ` El ${gadNombre} es la Institución Pública que administra el ${cementerio.nombre || 'Cementerio General de la Parroquia'}, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.`,
       ],
       contentWidth,
     );
@@ -348,13 +401,13 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       doc,
       [
         { text: 'TERCER OBJETO. -', bold: true },
-        ' El Gobierno Parroquial de Checa, en su calidad de Administrador del Cementerio General de la Parroquia, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: ',
-        { text: difuntoNombre, bold: true },
-        ' con número de cédula ',
+        ` El ${gadNombre}, en su calidad de Administrador del ${cementerio.nombre || 'Cementerio General de la Parroquia'}, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: `,
+        { text: difuntoNombre + ' ', bold: true },
+        'con número de cédula ',
         { text: difuntoCI, bold: true },
         ', restos que serán depositados en la bóveda número ',
-        { text: bovedaNumero, bold: true },
-        ' en el bloque ',
+        { text: bovedaNumero + ' ', bold: true },
+        'en el bloque ',
         { text: bloqueDescripcion, bold: true },
         piso?.numero != null
           ? `, piso ${piso.numero}.`
@@ -368,8 +421,8 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       [
         { text: 'CUARTA: PRECIO. -', bold: true },
         ' El valor por arriendo de la Bóveda es de ',
-        { text: formatCurrencyUsd(montoTotal), bold: true },
-        `, valor que fue cancelado con depósito en ${abreviaturaBanco} del ${nombreEntidadFinanciera} cta. # `,
+        { text: formatCurrencyUsd(montoTotal) + ' ', bold: true },
+        `valor que fue cancelado con depósito en ${bancoTexto} cta. # `,
         { text: numeroCuenta, bold: true },
       ],
       contentWidth,
@@ -379,9 +432,9 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       doc,
       [
         { text: 'QUINTA: OTRA. -', bold: true },
-        ' La parte arrendadora aclara que una vez que el Gobierno Parroquial entrega el derecho de uso por ',
-        { text: `${aniosArriendo} años`, bold: true },
-        ' a partir de la fecha del ',
+        ` La parte arrendadora aclara que una vez que el ${gadNombre} entrega el derecho de uso por `,
+        { text: `${aniosArriendo} años `, bold: true },
+        'a partir de la fecha del ',
         {
           text: `${fechaInicio.dia} de ${fechaInicio.mes} del ${fechaInicio.anio}`,
           bold: true,
@@ -419,13 +472,14 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     // -----------------------------------------------------------------------
     // Firmas
     // -----------------------------------------------------------------------
-    const signatureMinHeight = 110;
+    const signatureMinHeight = 160;
     const availableHeight =
       doc.page.height - doc.page.margins.bottom - doc.y;
     if (availableHeight < signatureMinHeight) {
       doc.addPage();
+      doc.moveDown(3);
     } else {
-      doc.moveDown(1.5);
+      doc.moveDown(4.5);
     }
 
     const left = doc.page.margins.left;
@@ -449,9 +503,13 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     const labelStyle = (size = 9.5, bold = true) =>
       doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(size).fillColor('#111827');
 
+    const cargoPresidente = 'PRESIDENTE';
+    const nombreEntidad = (gadInfo?.nombre || 'GAD CHECA').toUpperCase();
+    const firmaCargo = `${cargoPresidente} DEL ${nombreEntidad}`;
+
     labelStyle().text(presidente, leftX, textY, { width: colWidth, align: 'center' });
     labelStyle(8.6, false).text(
-      'PRESIDENTE GAD CHECA',
+      firmaCargo,
       leftX,
       textY + 14,
       { width: colWidth, align: 'center' },
