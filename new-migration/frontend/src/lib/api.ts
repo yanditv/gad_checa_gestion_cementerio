@@ -173,6 +173,45 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  /**
+   * Descarga un recurso binario (PDF, XLSX, CSV) desde el backend a través del
+   * proxy BFF `/api/*`, que anexa el JWT desde la cookie httpOnly. Devuelve el
+   * Blob junto al nombre de archivo sugerido por `Content-Disposition`.
+   */
+  async downloadBlob(
+    endpoint: string,
+    params?: PaginationParams,
+  ): Promise<{ blob: Blob; filename: string | null }> {
+    const token = this.getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(
+      this.buildUrl(`${endpoint}${this.toQueryString(params)}`),
+      { method: 'GET', headers, cache: 'no-store' },
+    );
+
+    if (!response.ok) {
+      let message = `Error ${response.status}`;
+      try {
+        const payload = await response.json();
+        message = payload?.message || payload?.error?.message || message;
+      } catch {
+        // respuesta sin cuerpo JSON: se conserva el mensaje genérico
+      }
+      throw new Error(message);
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('content-disposition');
+    let filename: string | null = null;
+    if (disposition) {
+      const match = /filename="?([^"]+)"?/i.exec(disposition);
+      if (match) filename = match[1];
+    }
+    return { blob, filename };
+  }
+
   async getPaginated<T>(endpoint: string, params?: PaginationParams): Promise<PaginatedResponse<T>> {
     const payload = await this.requestRaw<any>(`${endpoint}${this.toQueryString(params)}`, {
       method: 'GET',
@@ -442,6 +481,43 @@ export interface RecalcularDepreciacionResult {
   bienesProcesados: number;
   totalDepreciadoPeriodo: number;
 }
+
+/** Formatos de exportación admitidos por los reportes de inventario (REP-R2). */
+export type FormatoReporteInventario = 'pdf' | 'excel' | 'csv';
+
+/** Tipos de reporte de inventario disponibles. */
+export type TipoReporteInventario =
+  | 'por-custodio'
+  | 'por-ubicacion'
+  | 'por-categoria'
+  | 'depreciacion'
+  | 'acta-entrega';
+
+export interface ReporteInventarioFiltros {
+  categoriaId?: number | string;
+  custodioId?: number | string;
+  custodioSalienteId?: number | string;
+  ubicacion?: string;
+  incluirBajas?: boolean;
+  fechaCorte?: string;
+}
+
+export const inventarioReportesApi = {
+  /**
+   * Descarga un reporte de inventario en el formato indicado golpeando
+   * `/inventario/reportes/<tipo>/<pdf|excel|csv>`. La respuesta binaria se
+   * resuelve como Blob con el nombre de archivo sugerido por el backend.
+   */
+  descargar: (
+    tipo: TipoReporteInventario,
+    formato: FormatoReporteInventario,
+    filtros?: ReporteInventarioFiltros,
+  ) =>
+    api.downloadBlob(
+      `/inventario/reportes/${tipo}/${formato}`,
+      filtros as PaginationParams | undefined,
+    ),
+};
 
 export const inventarioDepreciacionApi = {
   /** Reporte de depreciación a una fecha de corte (valor en libros por bien). */
