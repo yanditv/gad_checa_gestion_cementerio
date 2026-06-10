@@ -2,9 +2,15 @@
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import Link from 'next/link';
-import { cementeriosApi, gadInformacionApi, catastroApi } from '@/lib/api';
+import {
+  cementeriosApi,
+  gadInformacionApi,
+  catastroApi,
+  tiposEspacioApi,
+  type TipoEspacio,
+} from '@/lib/api';
 
-type Tab = 'descuentos' | 'bancos' | 'cementerio';
+type Tab = 'descuentos' | 'bancos' | 'tipos' | 'cementerio';
 
 interface Descuento {
   id: number;
@@ -148,6 +154,12 @@ export default function ConfiguracionPage() {
             label="Bancos"
           />
           <TabButton
+            active={tab === 'tipos'}
+            onClick={() => setTab('tipos')}
+            icon="ti-layout-grid"
+            label="Tipos de espacio"
+          />
+          <TabButton
             active={tab === 'cementerio'}
             onClick={() => setTab('cementerio')}
             icon="ti-building-community"
@@ -160,6 +172,8 @@ export default function ConfiguracionPage() {
         <DescuentosPanel canEdit={isAdmin} />
       ) : tab === 'bancos' ? (
         <BancosPanel canEdit={isAdmin} />
+      ) : tab === 'tipos' ? (
+        <TiposEspacioPanel canEdit={isAdmin} />
       ) : (
         <CementerioPanel canEdit={isAdmin} />
       )}
@@ -780,6 +794,348 @@ function BancoModal({
 }
 
 // =============================================================================
+// Tipos de espacio (catálogo configurable: Bóveda, Nicho, Túmulo…)
+// =============================================================================
+function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
+  const [items, setItems] = useState<TipoEspacio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<TipoEspacio | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await tiposEspacioApi.findPage({
+        includeInactive: true,
+        limit: 100,
+      });
+      setItems(res?.data ?? []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudieron cargar los tipos de espacio',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('¿Dar de baja este tipo de espacio?')) return;
+    try {
+      await tiposEspacioApi.delete(id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo dar de baja');
+    }
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">
+          Tipos de espacio (Bóveda, Nicho, Túmulo…) con su tarifa, años de
+          arriendo, veces de renovación y prefijo de numeración.
+        </p>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+          >
+            <i className="ti ti-plus" />
+            Nuevo tipo
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100 text-sm">
+            <thead className="bg-slate-50">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <th scope="col" className="px-4 py-3">Nombre</th>
+                <th scope="col" className="px-4 py-3">Prefijo</th>
+                <th scope="col" className="px-4 py-3 text-right">Tarifa</th>
+                <th scope="col" className="px-4 py-3 text-right">Años</th>
+                <th scope="col" className="px-4 py-3 text-right">Renovaciones</th>
+                <th scope="col" className="px-4 py-3">Estado</th>
+                {canEdit && <th scope="col" className="px-4 py-3 text-right">Acciones</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={canEdit ? 7 : 6}
+                    className="px-4 py-8 text-center text-slate-400"
+                  >
+                    Cargando tipos de espacio…
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={canEdit ? 7 : 6}
+                    className="px-4 py-10 text-center text-slate-400"
+                  >
+                    No hay tipos de espacio registrados.
+                  </td>
+                </tr>
+              ) : (
+                items.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-2.5 font-medium text-slate-700">
+                      {t.nombre}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">
+                      {t.prefijoNumeracion || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      ${Number(t.tarifaArriendo).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      {t.aniosArriendo}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      {t.vecesRenovacion}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                          t.estado
+                            ? 'bg-green-50 text-green-700 ring-green-200'
+                            : 'bg-slate-100 text-slate-600 ring-slate-200'
+                        }`}
+                      >
+                        {t.estado ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    {canEdit && (
+                      <td className="px-4 py-2.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setEditing(t)}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                          title="Editar"
+                        >
+                          <i className="ti ti-edit" />
+                        </button>
+                        {t.estado && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(t.id)}
+                            className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            title="Dar de baja"
+                          >
+                            <i className="ti ti-trash" />
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {(creating || editing) && canEdit && (
+        <TipoEspacioModal
+          initial={editing}
+          onClose={() => {
+            setCreating(false);
+            setEditing(null);
+          }}
+          onSaved={() => {
+            setCreating(false);
+            setEditing(null);
+            void load();
+          }}
+        />
+      )}
+    </section>
+  );
+}
+
+function TipoEspacioModal({
+  initial,
+  onClose,
+  onSaved,
+}: {
+  initial: TipoEspacio | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [nombre, setNombre] = useState(initial?.nombre ?? '');
+  const [prefijoNumeracion, setPrefijoNumeracion] = useState(
+    initial?.prefijoNumeracion ?? '',
+  );
+  const [tarifaArriendo, setTarifaArriendo] = useState(
+    initial ? Number(initial.tarifaArriendo) : 0,
+  );
+  const [aniosArriendo, setAniosArriendo] = useState(
+    initial ? Number(initial.aniosArriendo) : 0,
+  );
+  const [vecesRenovacion, setVecesRenovacion] = useState(
+    initial ? Number(initial.vecesRenovacion) : 0,
+  );
+  const [estado, setEstado] = useState(initial?.estado ?? true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setError(null);
+    setSaving(true);
+    try {
+      if (initial) {
+        await tiposEspacioApi.update(initial.id, {
+          nombre,
+          prefijoNumeracion: prefijoNumeracion.trim() || undefined,
+          tarifaArriendo: Number(tarifaArriendo),
+          aniosArriendo: Number(aniosArriendo),
+          vecesRenovacion: Number(vecesRenovacion),
+          estado,
+        });
+      } else {
+        await tiposEspacioApi.create({
+          nombre,
+          prefijoNumeracion: prefijoNumeracion.trim() || undefined,
+          tarifaArriendo: Number(tarifaArriendo),
+          aniosArriendo: Number(aniosArriendo),
+          vecesRenovacion: Number(vecesRenovacion),
+        });
+      }
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <ModalShell
+      title={initial ? 'Editar tipo de espacio' : 'Nuevo tipo de espacio'}
+      onClose={onClose}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSubmit();
+        }}
+        className="space-y-4 p-5"
+      >
+        {error && (
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className={LABEL_CLS}>Nombre</label>
+          <input
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            placeholder="Bóveda, Nicho, Túmulo…"
+            className={INPUT_CLS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLS}>Prefijo de numeración</label>
+          <input
+            value={prefijoNumeracion}
+            onChange={(e) => setPrefijoNumeracion(e.target.value)}
+            placeholder="CTR, NCH, TML…"
+            className={INPUT_CLS}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label className={LABEL_CLS}>Tarifa arriendo</label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={tarifaArriendo}
+              onChange={(e) => setTarifaArriendo(Number(e.target.value))}
+              required
+              className={INPUT_CLS}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Años arriendo</label>
+            <input
+              type="number"
+              min={0}
+              step="1"
+              value={aniosArriendo}
+              onChange={(e) => setAniosArriendo(Number(e.target.value))}
+              required
+              className={INPUT_CLS}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Veces renovación</label>
+            <input
+              type="number"
+              min={0}
+              step="1"
+              value={vecesRenovacion}
+              onChange={(e) => setVecesRenovacion(Number(e.target.value))}
+              required
+              className={INPUT_CLS}
+            />
+          </div>
+        </div>
+        {initial && (
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={estado}
+              onChange={(e) => setEstado(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
+            />
+            Activo
+          </label>
+        )}
+        <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={saving || !nombre.trim()}
+            className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+          >
+            {saving ? 'Guardando…' : 'Guardar'}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// =============================================================================
 // Cementerio + GADInformacion
 // =============================================================================
 function CementerioPanel({ canEdit }: { canEdit: boolean }) {
@@ -886,14 +1242,12 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
             <Field label="Título presidente" value={cementerio?.abreviaturaTituloPresidente ?? ''} onChange={(v) => setField('abreviaturaTituloPresidente', v)} disabled={!canEdit} />
             <Field label="Presidente" value={cementerio?.presidente ?? ''} onChange={(v) => setField('presidente', v)} disabled={!canEdit} />
           </div>
-          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Tarifas y arriendos</h3>
+          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Mora</h3>
+          <p className="mb-3 text-xs text-slate-400">
+            Las tarifas, años y veces de renovación por tipo de espacio se
+            administran en la pestaña <strong>Tipos de espacio</strong>.
+          </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Tarifa arriendo bóveda" value={cementerio?.tarifaArriendo ?? ''} onChange={(v) => setField('tarifaArriendo', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Tarifa arriendo nicho" value={cementerio?.tarifaArriendoNicho ?? ''} onChange={(v) => setField('tarifaArriendoNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Años arriendo bóveda" value={cementerio?.aniosArriendoBovedas ?? ''} onChange={(v) => setField('aniosArriendoBovedas', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Años arriendo nicho" value={cementerio?.aniosArriendoNicho ?? ''} onChange={(v) => setField('aniosArriendoNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Veces renovación bóveda" value={cementerio?.vecesRenovacionBovedas ?? ''} onChange={(v) => setField('vecesRenovacionBovedas', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Veces renovación nicho" value={cementerio?.vecesRenovacionNicho ?? ''} onChange={(v) => setField('vecesRenovacionNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
             <Field label="Tasa mora diaria (%)" value={cementerio?.tasaMoraDiaria ?? ''} onChange={(v) => setField('tasaMoraDiaria', v ? Number(v) : null)} type="number" disabled={!canEdit} />
           </div>
           <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Datos bancarios</h3>

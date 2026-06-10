@@ -459,6 +459,51 @@ export const usuariosApi = {
   remove: (id: string) => api.delete<any>(`/usuarios/${id}`),
 };
 
+export interface TipoEspacio {
+  id: number;
+  nombre: string;
+  prefijoNumeracion: string | null;
+  tarifaArriendo: number;
+  aniosArriendo: number;
+  vecesRenovacion: number;
+  estado: boolean;
+}
+
+export interface CreateTipoEspacioPayload {
+  nombre: string;
+  prefijoNumeracion?: string;
+  tarifaArriendo: number;
+  aniosArriendo: number;
+  vecesRenovacion: number;
+}
+
+export interface UpdateTipoEspacioPayload extends Partial<CreateTipoEspacioPayload> {
+  estado?: boolean;
+}
+
+export const tiposEspacioApi = {
+  /**
+   * Lista paginada de tipos de espacio. `includeInactive=true` incluye los
+   * dados de baja (para la administración del catálogo). El backend devuelve
+   * `{ items, meta }`, que el proxy `/api` normaliza a `{ data, meta }`.
+   */
+  findPage: (params?: PaginationParams & { includeInactive?: boolean }) =>
+    api.getPaginated<TipoEspacio>('/tipos-espacio', params),
+  /** Catálogo activo (para selects de tipo de bóveda). */
+  findAll: async (): Promise<TipoEspacio[]> => {
+    const res = await api.getPaginated<TipoEspacio>('/tipos-espacio', {
+      limit: 100,
+    });
+    return res?.data ?? [];
+  },
+  findOne: (id: number) => api.get<TipoEspacio>(`/tipos-espacio/${id}`),
+  create: (data: CreateTipoEspacioPayload) =>
+    api.post<TipoEspacio>('/tipos-espacio', data),
+  update: (id: number, data: UpdateTipoEspacioPayload) =>
+    api.patch<TipoEspacio>(`/tipos-espacio/${id}`, data),
+  delete: (id: number) => api.delete<TipoEspacio>(`/tipos-espacio/${id}`),
+};
+
 export const rolesApi = {
   findAll: () => api.get<any[]>('/roles'),
   findOne: (id: string) => api.get<any>(`/roles/${id}`),
