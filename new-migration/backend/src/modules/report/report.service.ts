@@ -6,6 +6,21 @@ import {
   resolveRange,
 } from './report.helpers';
 
+/**
+ * Acumulado de espacios por cada `TipoEspacio` del catálogo, usado por el
+ * resumen del dashboard (desglose dinámico que reemplaza las claves fijas
+ * Bóveda/Nicho).
+ */
+export interface TipoEspacioResumen {
+  tipoEspacioId: number | null;
+  nombre: string;
+  total: number;
+  ocupados: number;
+  disponibles: number;
+  porCaducar: number;
+  vencidas: number;
+}
+
 @Injectable()
 export class ReportService {
   constructor(private prisma: PrismaService) {}
@@ -33,6 +48,7 @@ export class ReportService {
         select: {
           id: true,
           tipo: true,
+          tipoEspacio: { select: { id: true, nombre: true } },
           contratos: {
             where: { estado: true },
             select: { fechaFin: true },
@@ -50,27 +66,59 @@ export class ReportService {
     const contratosVencidos = contratos.length - contratosActivos;
     const ingresosRango = pagos.reduce((s, p) => s + Number(p.monto), 0);
 
-    let totalBovedas = 0;
-    let totalNichos = 0;
-    let bovedasOcupadas = 0;
-    let nichosOcupados = 0;
+    // Agregación dinámica por TipoEspacio: una entrada por cada tipo de
+    // espacio del catálogo presente en las bóvedas (Bóveda, Nicho, Túmulo…).
+    // Las bóvedas sin FK al catálogo (ventana de backfill) caen a una entrada
+    // derivada del string legado `boveda.tipo`.
+    const porTipoMap = new Map<string, TipoEspacioResumen>();
     let porCaducar = 0;
     let vencidas = 0;
 
     for (const b of bovedas) {
-      const tipo = (b.tipo ?? 'Boveda').toLowerCase();
-      const esNicho = tipo.includes('nicho');
+      const tipoEspacioId = b.tipoEspacio?.id ?? null;
+      const nombre = b.tipoEspacio?.nombre ?? b.tipo ?? 'Bóveda';
+      const clave = tipoEspacioId !== null ? `id:${tipoEspacioId}` : `txt:${nombre.toLowerCase()}`;
+      const acc =
+        porTipoMap.get(clave) ??
+        ({
+          tipoEspacioId,
+          nombre,
+          total: 0,
+          ocupados: 0,
+          disponibles: 0,
+          porCaducar: 0,
+          vencidas: 0,
+        } satisfies TipoEspacioResumen);
+
       const estado = clasificarEstadoBoveda(b.contratos[0] ?? null, ahora);
-      if (esNicho) {
-        totalNichos += 1;
-        if (estado !== 'disponible') nichosOcupados += 1;
-      } else {
-        totalBovedas += 1;
-        if (estado !== 'disponible') bovedasOcupadas += 1;
+      acc.total += 1;
+      if (estado === 'disponible') acc.disponibles += 1;
+      else acc.ocupados += 1;
+      if (estado === 'por_caducar') {
+        acc.porCaducar += 1;
+        porCaducar += 1;
       }
-      if (estado === 'por_caducar') porCaducar += 1;
-      if (estado === 'vencida') vencidas += 1;
+      if (estado === 'vencida') {
+        acc.vencidas += 1;
+        vencidas += 1;
+      }
+      porTipoMap.set(clave, acc);
     }
+
+    const porTipo = Array.from(porTipoMap.values()).sort((a, b) =>
+      a.nombre.localeCompare(b.nombre, 'es'),
+    );
+    const totalEspacios = porTipo.reduce((s, t) => s + t.total, 0);
+
+    // Compatibilidad mínima con el front no migrado (`reportes/page.tsx` y el
+    // BFF `app/api/dashboard`, que aún leen claves fijas Bóveda/Nicho). Se
+    // derivan de `porTipo` por nombre; quedan deprecadas y se eliminarán
+    // cuando el dashboard pase a consumir `porTipo` (Fase 7 del plan).
+    const esNombreNicho = (n: string) => n.toLowerCase().includes('nicho');
+    const bovedaLike = porTipo.filter((t) => !esNombreNicho(t.nombre));
+    const nichoLike = porTipo.filter((t) => esNombreNicho(t.nombre));
+    const sum = (arr: TipoEspacioResumen[], k: keyof TipoEspacioResumen) =>
+      arr.reduce((s, t) => s + (t[k] as number), 0);
 
     return {
       rango: { desde: from.toISOString(), hasta: to.toISOString() },
@@ -84,15 +132,18 @@ export class ReportService {
         porMetodo: this.agruparPorMetodo(pagos),
       },
       bovedas: {
-        total: totalBovedas + totalNichos,
-        bovedasTotal: totalBovedas,
-        nichosTotal: totalNichos,
-        bovedasOcupadas,
-        nichosOcupados,
-        bovedasDisponibles: totalBovedas - bovedasOcupadas,
-        nichosDisponibles: totalNichos - nichosOcupados,
+        total: totalEspacios,
         porCaducar,
         vencidas,
+        // Desglose dinámico por tipo de espacio (fuente de verdad nueva).
+        porTipo,
+        // --- Claves legadas (DEPRECADAS, ver comentario arriba) ---
+        bovedasTotal: sum(bovedaLike, 'total'),
+        nichosTotal: sum(nichoLike, 'total'),
+        bovedasOcupadas: sum(bovedaLike, 'ocupados'),
+        nichosOcupados: sum(nichoLike, 'ocupados'),
+        bovedasDisponibles: sum(bovedaLike, 'disponibles'),
+        nichosDisponibles: sum(nichoLike, 'disponibles'),
       },
     };
   }

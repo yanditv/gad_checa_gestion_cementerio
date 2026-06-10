@@ -459,12 +459,126 @@ export const usuariosApi = {
   remove: (id: string) => api.delete<any>(`/usuarios/${id}`),
 };
 
+export interface TipoEspacio {
+  id: number;
+  nombre: string;
+  prefijoNumeracion: string | null;
+  tarifaArriendo: number;
+  aniosArriendo: number;
+  vecesRenovacion: number;
+  estado: boolean;
+}
+
+export interface CreateTipoEspacioPayload {
+  nombre: string;
+  prefijoNumeracion?: string;
+  tarifaArriendo: number;
+  aniosArriendo: number;
+  vecesRenovacion: number;
+}
+
+export interface UpdateTipoEspacioPayload extends Partial<CreateTipoEspacioPayload> {
+  estado?: boolean;
+}
+
+export const tiposEspacioApi = {
+  /**
+   * Lista paginada de tipos de espacio. `includeInactive=true` incluye los
+   * dados de baja (para la administración del catálogo). El backend devuelve
+   * `{ items, meta }`, que el proxy `/api` normaliza a `{ data, meta }`.
+   */
+  findPage: (params?: PaginationParams & { includeInactive?: boolean }) =>
+    api.getPaginated<TipoEspacio>('/tipos-espacio', params),
+  /** Catálogo activo (para selects de tipo de bóveda). */
+  findAll: async (): Promise<TipoEspacio[]> => {
+    const res = await api.getPaginated<TipoEspacio>('/tipos-espacio', {
+      limit: 100,
+    });
+    return res?.data ?? [];
+  },
+  findOne: (id: number) => api.get<TipoEspacio>(`/tipos-espacio/${id}`),
+  create: (data: CreateTipoEspacioPayload) =>
+    api.post<TipoEspacio>('/tipos-espacio', data),
+  update: (id: number, data: UpdateTipoEspacioPayload) =>
+    api.patch<TipoEspacio>(`/tipos-espacio/${id}`, data),
+  delete: (id: number) => api.delete<TipoEspacio>(`/tipos-espacio/${id}`),
+};
+
 export const rolesApi = {
   findAll: () => api.get<any[]>('/roles'),
   findOne: (id: string) => api.get<any>(`/roles/${id}`),
   create: (data: any) => api.post<any>('/roles', data),
   update: (id: string, data: any) => api.put<any>(`/roles/${id}`, data),
   delete: (id: string) => api.delete<any>(`/roles/${id}`),
+};
+
+export interface Descuento {
+  id: number;
+  nombre: string;
+  porcentaje: number | string;
+  descripcion: string | null;
+  estado: boolean;
+}
+
+export interface CreateDescuentoPayload {
+  nombre: string;
+  porcentaje: number;
+  descripcion?: string;
+}
+
+export interface UpdateDescuentoPayload extends Partial<CreateDescuentoPayload> {
+  estado?: boolean;
+}
+
+export const descuentosApi = {
+  /**
+   * Lista de descuentos. El endpoint backend devuelve un array plano que el
+   * interceptor envuelve en `{ success, data }`; `api.get` lo desenvuelve a
+   * `Descuento[]`. `includeInactive=true` incluye los dados de baja.
+   */
+  findAll: (params?: { includeInactive?: boolean }) =>
+    api.get<Descuento[]>(
+      `/descuentos${params?.includeInactive ? '?includeInactive=true' : ''}`,
+    ),
+  findOne: (id: number) => api.get<Descuento>(`/descuentos/${id}`),
+  create: (data: CreateDescuentoPayload) =>
+    api.post<Descuento>('/descuentos', data),
+  update: (id: number, data: UpdateDescuentoPayload) =>
+    api.patch<Descuento>(`/descuentos/${id}`, data),
+  delete: (id: number) => api.delete<Descuento>(`/descuentos/${id}`),
+};
+
+export interface Banco {
+  id: number;
+  nombre: string;
+  cuenta: string | null;
+  estado: boolean;
+}
+
+export interface CreateBancoPayload {
+  nombre: string;
+  cuenta?: string;
+}
+
+export interface UpdateBancoPayload extends Partial<CreateBancoPayload> {
+  estado?: boolean;
+}
+
+export const bancosApi = {
+  /**
+   * Lista de bancos. El endpoint backend devuelve un array plano que el
+   * interceptor envuelve en `{ success, data }`; `api.get` lo desenvuelve a
+   * `Banco[]`. `includeInactive=true` incluye los dados de baja.
+   */
+  findAll: (params?: { includeInactive?: boolean }) =>
+    api.get<Banco[]>(
+      `/bancos${params?.includeInactive ? '?includeInactive=true' : ''}`,
+    ),
+  findOne: (id: number) => api.get<Banco>(`/bancos/${id}`),
+  create: (data: CreateBancoPayload) => api.post<Banco>('/bancos', data),
+  update: (id: number, data: UpdateBancoPayload) =>
+    api.patch<Banco>(`/bancos/${id}`, data),
+  delete: (id: number) => api.delete<Banco>(`/bancos/${id}`),
 };
 
 function qs(params: Record<string, string | undefined>): string {

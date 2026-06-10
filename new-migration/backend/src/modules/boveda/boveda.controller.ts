@@ -32,19 +32,19 @@ export class BovedaController {
 
   @Get()
   @ApiQuery({ name: 'bloqueId', required: false, type: Number })
-  @ApiQuery({ name: 'tipo', required: false, type: String })
+  @ApiQuery({ name: 'tipoEspacioId', required: false, type: Number })
   @ApiQuery({ name: 'estado', required: false, type: String, description: 'disponible | ocupada' })
   @ApiQuery({ name: 'tienePropietario', required: false, type: String, description: 'con | sin' })
   findAll(
     @Query() query: PaginationQueryDto,
     @Query('bloqueId') bloqueId?: string,
-    @Query('tipo') tipo?: string,
+    @Query('tipoEspacioId') tipoEspacioId?: string,
     @Query('estado') estado?: string,
     @Query('tienePropietario') tienePropietario?: string,
   ) {
     return this.service.findAll(query, {
       bloqueId: bloqueId ? Number(bloqueId) : undefined,
-      tipo,
+      tipoEspacioId: tipoEspacioId ? Number(tipoEspacioId) : undefined,
       estado,
       tienePropietario,
     });

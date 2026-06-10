@@ -83,6 +83,11 @@ model Usuario {
 
   inventariosImportados InventarioImport[]
 
+  // Catálogo de tipos de espacio (Bóveda, Nicho, Túmulo…)
+  tiposEspacioCreados      TipoEspacio[] @relation("TipoEspacioUsuarioCreador")
+  tiposEspacioActualizados TipoEspacio[] @relation("TipoEspacioUsuarioActualizador")
+  tiposEspacioEliminados   TipoEspacio[] @relation("TipoEspacioUsuarioEliminador")
+
   usuarioRols UsuarioRol[]
 }
 
@@ -234,6 +239,10 @@ model Boveda {
   propietarioId Int?
   propietario   Propietario? @relation(fields: [propietarioId], references: [id])
 
+  // Tipo de espacio (catálogo configurable). Nullable durante backfill.
+  tipoEspacioId Int?
+  tipoEspacio   TipoEspacio? @relation(fields: [tipoEspacioId], references: [id])
+
   usuarioCreadorId      String?
   usuarioCreador        Usuario? @relation("BovedaUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
@@ -244,6 +253,33 @@ model Boveda {
   contratos    Contrato[]
   difuntos     Difunto[]
   exhumaciones Exhumacion[] @relation("ExhumacionBovedaOrigen")
+}
+
+// =============================================================================
+// Catálogo de tipos de espacio (Bóveda, Nicho, Túmulo, Mausoleo…)
+// Reemplaza la dualidad cableada Bóveda/Nicho por un catálogo configurable.
+// =============================================================================
+model TipoEspacio {
+  id                Int     @id @default(autoincrement())
+  nombre            String  @unique
+  prefijoNumeracion String? // CTR / NCH / TML para nº de contrato
+  tarifaArriendo    Decimal @db.Decimal(18, 2)
+  aniosArriendo     Int
+  vecesRenovacion   Int
+  estado            Boolean @default(true)
+
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("TipoEspacioUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("TipoEspacioUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("TipoEspacioUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+
+  bovedas Boveda[]
 }
 
 // =============================================================================
