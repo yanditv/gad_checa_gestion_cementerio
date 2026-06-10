@@ -7,25 +7,14 @@ import {
   gadInformacionApi,
   catastroApi,
   tiposEspacioApi,
+  descuentosApi,
+  bancosApi,
   type TipoEspacio,
+  type Descuento,
+  type Banco,
 } from '@/lib/api';
 
 type Tab = 'descuentos' | 'bancos' | 'tipos' | 'cementerio';
-
-interface Descuento {
-  id: number;
-  nombre: string;
-  porcentaje: number | string;
-  descripcion: string | null;
-  estado: boolean;
-}
-
-interface Banco {
-  id: number;
-  nombre: string;
-  cuenta: string | null;
-  estado: boolean;
-}
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -220,16 +209,16 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/descuentos?includeInactive=true', {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error('No se pudieron cargar los descuentos');
-      const payload = await res.json();
-      setItems(Array.isArray(payload) ? payload : payload.data || []);
+      const res = await descuentosApi.findAll({ includeInactive: true });
+      setItems(res ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudieron cargar los descuentos',
+      );
     } finally {
       setLoading(false);
     }
@@ -242,17 +231,10 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
   async function handleDelete(id: number) {
     if (!window.confirm('¿Desactivar este descuento?')) return;
     try {
-      const res = await fetch(`/api/descuentos/${id}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo eliminar');
-      }
+      await descuentosApi.delete(id);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar');
     }
   }
 
@@ -404,29 +386,23 @@ function DescuentoModal({
     setError(null);
     setSaving(true);
     try {
-      const url = initial
-        ? `/api/descuentos/${initial.id}`
-        : '/api/descuentos';
-      const method = initial ? 'PATCH' : 'POST';
-      const body: Record<string, unknown> = {
-        nombre,
-        porcentaje: Number(porcentaje),
-        descripcion: descripcion || undefined,
-      };
-      if (initial) body.estado = estado;
-      const res = await fetch(url, {
-        method,
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo guardar');
+      if (initial) {
+        await descuentosApi.update(initial.id, {
+          nombre,
+          porcentaje: Number(porcentaje),
+          descripcion: descripcion || undefined,
+          estado,
+        });
+      } else {
+        await descuentosApi.create({
+          nombre,
+          porcentaje: Number(porcentaje),
+          descripcion: descripcion || undefined,
+        });
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo guardar');
     } finally {
       setSaving(false);
     }
@@ -524,16 +500,14 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/bancos?includeInactive=true', {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error('No se pudieron cargar los bancos');
-      const payload = await res.json();
-      setItems(Array.isArray(payload) ? payload : payload.data || []);
+      const res = await bancosApi.findAll({ includeInactive: true });
+      setItems(res ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(
+        err instanceof Error ? err.message : 'No se pudieron cargar los bancos',
+      );
     } finally {
       setLoading(false);
     }
@@ -546,17 +520,10 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
   async function handleDelete(id: number) {
     if (!window.confirm('¿Desactivar este banco?')) return;
     try {
-      const res = await fetch(`/api/bancos/${id}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo eliminar');
-      }
+      await bancosApi.delete(id);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar');
     }
   }
 
@@ -701,26 +668,21 @@ function BancoModal({
     setError(null);
     setSaving(true);
     try {
-      const url = initial ? `/api/bancos/${initial.id}` : '/api/bancos';
-      const method = initial ? 'PATCH' : 'POST';
-      const body: Record<string, unknown> = {
-        nombre,
-        cuenta: cuenta || undefined,
-      };
-      if (initial) body.estado = estado;
-      const res = await fetch(url, {
-        method,
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo guardar');
+      if (initial) {
+        await bancosApi.update(initial.id, {
+          nombre,
+          cuenta: cuenta || undefined,
+          estado,
+        });
+      } else {
+        await bancosApi.create({
+          nombre,
+          cuenta: cuenta || undefined,
+        });
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo guardar');
     } finally {
       setSaving(false);
     }
