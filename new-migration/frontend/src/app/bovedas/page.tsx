@@ -51,12 +51,25 @@ export default function BovedasPage() {
         page,
         limit: 15,
         search: searchTerm.trim() || undefined,
-        ...(filterTipo ? { tipo: filterTipo } : {}),
-        ...(filterEstado ? { estado: filterEstado } : {}),
-        ...(filterPropietario ? { tienePropietario: filterPropietario } : {}),
       });
 
-      setBovedas(payload.data || []);
+      let rows = payload.data || [];
+      if (filterEstado === 'disponible') {
+        rows = rows.filter((b: Boveda) => (b.contratos?.length ?? 0) === 0);
+      }
+      if (filterEstado === 'ocupada') {
+        rows = rows.filter((b: Boveda) => (b.contratos?.length ?? 0) > 0);
+      }
+      if (filterTipo) {
+        rows = rows.filter((b: Boveda) => (b.tipo || 'Boveda') === filterTipo);
+      }
+      if (filterPropietario === 'con') {
+        rows = rows.filter((b: Boveda) => Boolean(b.propietario));
+      }
+      if (filterPropietario === 'sin') {
+        rows = rows.filter((b: Boveda) => !b.propietario);
+      }
+      setBovedas(rows);
       setMeta(payload.meta);
     } catch (error: any) {
       setError(error.message || 'No se pudieron cargar las bóvedas');
