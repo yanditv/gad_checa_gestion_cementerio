@@ -148,6 +148,43 @@ export class SeedService {
       }
     }
 
+    await this.seedCategoriasBien(adminUserId);
+
     this.logger.log('Datos iniciales verificados');
+  }
+
+  // Catálogo de categorías de bienes para el Módulo de Inventario (TDR Módulo 1).
+  // Vidas útiles y valor residual según Norma de Control Interno CGE 406-03.
+  // PROVISIONAL: confirmar la tabla oficial con el GAD El Valle / Contraloría
+  // antes de la entrega; estos valores son los estándar del sector público.
+  private async seedCategoriasBien(adminUserId: string) {
+    const categorias = [
+      { nombre: 'Mueble y enser', vidaUtilAnios: 10 },
+      { nombre: 'Maquinaria y equipo', vidaUtilAnios: 10 },
+      { nombre: 'Equipo de cómputo', vidaUtilAnios: 3 },
+      { nombre: 'Equipo de comunicación', vidaUtilAnios: 10 },
+      { nombre: 'Vehículo', vidaUtilAnios: 5 },
+      { nombre: 'Herramienta', vidaUtilAnios: 10 },
+      { nombre: 'Equipo médico', vidaUtilAnios: 10 },
+    ];
+
+    for (const categoria of categorias) {
+      const exists = await this.prisma.categoriaBien.findFirst({
+        where: { nombre: categoria.nombre },
+        select: { id: true },
+      });
+
+      if (!exists) {
+        await this.prisma.categoriaBien.create({
+          data: {
+            nombre: categoria.nombre,
+            vidaUtilAnios: categoria.vidaUtilAnios,
+            valorResidualPct: 10,
+            estado: true,
+            usuarioCreadorId: adminUserId,
+          },
+        });
+      }
+    }
   }
 }

@@ -173,6 +173,45 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  /**
+   * Descarga un recurso binario (PDF, XLSX, CSV) desde el backend a través del
+   * proxy BFF `/api/*`, que anexa el JWT desde la cookie httpOnly. Devuelve el
+   * Blob junto al nombre de archivo sugerido por `Content-Disposition`.
+   */
+  async downloadBlob(
+    endpoint: string,
+    params?: PaginationParams,
+  ): Promise<{ blob: Blob; filename: string | null }> {
+    const token = this.getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(
+      this.buildUrl(`${endpoint}${this.toQueryString(params)}`),
+      { method: 'GET', headers, cache: 'no-store' },
+    );
+
+    if (!response.ok) {
+      let message = `Error ${response.status}`;
+      try {
+        const payload = await response.json();
+        message = payload?.message || payload?.error?.message || message;
+      } catch {
+        // respuesta sin cuerpo JSON: se conserva el mensaje genérico
+      }
+      throw new Error(message);
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('content-disposition');
+    let filename: string | null = null;
+    if (disposition) {
+      const match = /filename="?([^"]+)"?/i.exec(disposition);
+      if (match) filename = match[1];
+    }
+    return { blob, filename };
+  }
+
   async getPaginated<T>(endpoint: string, params?: PaginationParams): Promise<PaginatedResponse<T>> {
     const payload = await this.requestRaw<any>(`${endpoint}${this.toQueryString(params)}`, {
       method: 'GET',
@@ -253,6 +292,105 @@ export const difuntosApi = {
   create: (data: any) => api.post<any>('/difuntos', data),
   update: (id: number, data: any) => api.put<any>(`/difuntos/${id}`, data),
   delete: (id: number) => api.delete<any>(`/difuntos/${id}`),
+};
+
+/** Motivos válidos de exhumación (paridad con backend `MOTIVOS_EXHUMACION`). */
+export const MOTIVOS_EXHUMACION = [
+  'vencimiento_arriendo',
+  'traslado',
+  'orden_judicial',
+  'osario_comun',
+  'otro',
+] as const;
+
+export type MotivoExhumacion = (typeof MOTIVOS_EXHUMACION)[number];
+
+/** Etiquetas legibles en español para cada motivo de exhumación. */
+export const MOTIVO_EXHUMACION_LABEL: Record<MotivoExhumacion, string> = {
+  vencimiento_arriendo: 'Vencimiento de arriendo',
+  traslado: 'Traslado',
+  orden_judicial: 'Orden judicial',
+  osario_comun: 'Osario común',
+  otro: 'Otro',
+};
+
+export interface ExhumacionResponse {
+  id: number;
+  numeroActa: string;
+  difuntoId: number;
+  bovedaOrigenId: number;
+  bovedaDestinoId: number | null;
+  fechaExhumacion: string;
+  motivo: MotivoExhumacion;
+  destino: string;
+  numeroAutorizacion: string | null;
+  entidadAutorizante: string | null;
+  observaciones: string | null;
+  estado: boolean;
+  fechaCreacion: string;
+  difunto?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    numeroIdentificacion: string | null;
+  };
+  bovedaOrigen?: {
+    id: number;
+    numero: string;
+    tipo: string | null;
+  };
+}
+
+export interface CreateExhumacionPayload {
+  difuntoId: number;
+  fechaExhumacion: string;
+  motivo: MotivoExhumacion;
+  destino: string;
+  bovedaDestinoId?: number;
+  numeroAutorizacion?: string;
+  entidadAutorizante?: string;
+  observaciones?: string;
+}
+
+export const exhumacionesApi = {
+  /**
+   * Lista paginada de exhumaciones. El backend devuelve `{ items, meta }` que el
+   * interceptor convierte en `{ success, data, meta }`; tras pasar por el proxy
+   * BFF llega como `{ data, meta }`. Normalizamos a `{ data, meta }` aquí.
+   */
+  findPage: (
+    params?: PaginationParams & {
+      desde?: string;
+      hasta?: string;
+      bovedaId?: number;
+      motivo?: MotivoExhumacion;
+    },
+  ) =>
+    api.getPaginated<ExhumacionResponse>('/exhumaciones', params),
+  findOne: (id: number) => api.get<ExhumacionResponse>(`/exhumaciones/${id}`),
+  findByBoveda: (bovedaId: number) =>
+    api.get<ExhumacionResponse[]>(`/exhumaciones/boveda/${bovedaId}`),
+  /** Registrar exhumación/traslado (solo Administrador). */
+  create: (data: CreateExhumacionPayload) =>
+    api.post<ExhumacionResponse>('/exhumaciones', data),
+  /** Anular exhumación, revierte el efecto (solo Administrador). */
+  anular: (id: number) => api.post<ExhumacionResponse>(`/exhumaciones/${id}/anular`),
+  /** Descarga el acta de exhumación en PDF (Blob + nombre sugerido). */
+  actaPdf: (id: number) => api.downloadBlob(`/exhumaciones/${id}/pdf`),
+  /** Descarga el historial de exhumaciones en el formato indicado. */
+  descargarHistorial: (
+    formato: 'pdf' | 'excel' | 'csv',
+    params?: {
+      desde?: string;
+      hasta?: string;
+      bovedaId?: number;
+      motivo?: MotivoExhumacion;
+    },
+  ) =>
+    api.downloadBlob(
+      `/exhumaciones/reporte/${formato}`,
+      params as PaginationParams | undefined,
+    ),
 };
 
 export const personasApi = {
@@ -356,4 +494,166 @@ export const catastroApi = {
   list: (params?: PaginationParams) =>
     api.getPaginated<any>('/catastro/imports', params),
   detail: (id: number) => api.get<any>(`/catastro/imports/${id}`),
+};
+
+export const inventarioCategoriasApi = {
+  // El endpoint pagina; para selects/dropdowns reutilizamos getPaginated
+  // (que normaliza el envelope { data, meta } incluso vía el proxy /api) y
+  // devolvemos el array de items pidiendo un límite alto.
+  findAll: async (): Promise<any[]> => {
+    const res = await api.getPaginated<any>('/inventario/categorias', {
+      limit: 100,
+    });
+    return res?.data ?? [];
+  },
+  findPage: (params?: PaginationParams) =>
+    api.getPaginated<any>('/inventario/categorias', params),
+  findOne: (id: number) => api.get<any>(`/inventario/categorias/${id}`),
+  create: (data: any) => api.post<any>('/inventario/categorias', data),
+  update: (id: number, data: any) =>
+    api.patch<any>(`/inventario/categorias/${id}`, data),
+  delete: (id: number) => api.delete<any>(`/inventario/categorias/${id}`),
+};
+
+export const inventarioCustodiosApi = {
+  // El endpoint pagina; para selects/dropdowns reutilizamos getPaginated
+  // (que normaliza el envelope { data, meta } incluso vía el proxy /api) y
+  // devolvemos el array de items pidiendo un límite alto.
+  findAll: async (): Promise<any[]> => {
+    const res = await api.getPaginated<any>('/inventario/custodios', {
+      limit: 100,
+    });
+    return res?.data ?? [];
+  },
+  findPage: (params?: PaginationParams) =>
+    api.getPaginated<any>('/inventario/custodios', params),
+  findOne: (id: number) => api.get<any>(`/inventario/custodios/${id}`),
+  create: (data: any) => api.post<any>('/inventario/custodios', data),
+  update: (id: number, data: any) =>
+    api.patch<any>(`/inventario/custodios/${id}`, data),
+  delete: (id: number) => api.delete<any>(`/inventario/custodios/${id}`),
+};
+
+export const inventarioBienesApi = {
+  findPage: (params?: PaginationParams) =>
+    api.getPaginated<any>('/inventario/bienes', params),
+  findOne: (id: number) => api.get<any>(`/inventario/bienes/${id}`),
+  create: (data: any) => api.post<any>('/inventario/bienes', data),
+  update: (id: number, data: any) => api.put<any>(`/inventario/bienes/${id}`, data),
+  delete: (id: number) => api.delete<any>(`/inventario/bienes/${id}`),
+  historial: (id: number) => api.get<any[]>(`/inventario/bienes/${id}/historial`),
+  depreciacion: (id: number) =>
+    api.get<any>(`/inventario/bienes/${id}/depreciacion`),
+  reasignarCustodio: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/reasignar-custodio`, data),
+  mover: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/mover`, data),
+  baja: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/baja`, data),
+  reactivar: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/reactivar`, data),
+};
+
+export interface DepreciacionFila {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  marca: string | null;
+  modelo: string | null;
+  serie: string | null;
+  fechaAdquisicion: string;
+  valorAdquisicion: number;
+  estadoConservacion: string;
+  ubicacion: string | null;
+  dadoDeBaja: boolean;
+  categoriaId: number | null;
+  categoriaNombre: string;
+  custodioId: number | null;
+  custodioNombre: string;
+  valorResidual: number;
+  vidaUtilMeses: number;
+  depreciacionMensual: number;
+  mesesTranscurridos: number;
+  depreciacionAcumulada: number;
+  valorEnLibros: number;
+}
+
+export interface ReporteDepreciacion {
+  fechaCorte: string;
+  filas: DepreciacionFila[];
+  total: number;
+}
+
+export interface RecalcularDepreciacionResult {
+  anio: number;
+  mes: number;
+  bienesProcesados: number;
+  totalDepreciadoPeriodo: number;
+}
+
+/** Formatos de exportación admitidos por los reportes de inventario (REP-R2). */
+export type FormatoReporteInventario = 'pdf' | 'excel' | 'csv';
+
+/** Tipos de reporte de inventario disponibles. */
+export type TipoReporteInventario =
+  | 'por-custodio'
+  | 'por-ubicacion'
+  | 'por-categoria'
+  | 'depreciacion'
+  | 'acta-entrega';
+
+export interface ReporteInventarioFiltros {
+  categoriaId?: number | string;
+  custodioId?: number | string;
+  custodioSalienteId?: number | string;
+  ubicacion?: string;
+  incluirBajas?: boolean;
+  fechaCorte?: string;
+}
+
+export const inventarioReportesApi = {
+  /**
+   * Descarga un reporte de inventario en el formato indicado golpeando
+   * `/inventario/reportes/<tipo>/<pdf|excel|csv>`. La respuesta binaria se
+   * resuelve como Blob con el nombre de archivo sugerido por el backend.
+   */
+  descargar: (
+    tipo: TipoReporteInventario,
+    formato: FormatoReporteInventario,
+    filtros?: ReporteInventarioFiltros,
+  ) =>
+    api.downloadBlob(
+      `/inventario/reportes/${tipo}/${formato}`,
+      filtros as PaginationParams | undefined,
+    ),
+};
+
+export const inventarioDepreciacionApi = {
+  /** Reporte de depreciación a una fecha de corte (valor en libros por bien). */
+  reporte: (params?: {
+    fechaCorte?: string;
+    categoriaId?: number | string;
+    custodioId?: number | string;
+    ubicacion?: string;
+    incluirBajas?: boolean;
+  }) => {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.set(key, String(value));
+        }
+      });
+    }
+    const qs = query.toString();
+    return api.get<ReporteDepreciacion>(
+      `/inventario/reportes/depreciacion${qs ? `?${qs}` : ''}`,
+    );
+  },
+  /** Recalcula y persiste la depreciación de un periodo (solo Administrador). */
+  recalcular: (anio: number, mes: number) =>
+    api.post<RecalcularDepreciacionResult>('/inventario/depreciacion/recalcular', {
+      anio,
+      mes,
+    }),
 };

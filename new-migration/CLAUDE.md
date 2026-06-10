@@ -334,6 +334,11 @@ Checklist mínimo:
 - [ ] Swagger actualizado (decoradores en controller + DTO).
 - [ ] Si cambia esquema: migración aplicada y `seed` revisado.
 - [ ] Si cambia UI: alineado con `DESIGN.md` (Tailwind, tonos, iconos).
+- [ ] Si cambia UI: con backend + frontend arriba, `cd frontend && bun run smoke`
+  en verde. Abre cada pantalla en un Chromium real y atrapa errores de runtime
+  (p. ej. `X.map is not a function`) que `next build` NO detecta. La pantalla
+  nueva debe añadirse a la lista de rutas en `frontend/scripts/smoke.mjs` y
+  estar enlazada en `components/Sidebar.tsx` para ser accesible.
 - [ ] `bun run lint` limpio en el módulo tocado.
 - [ ] `MIGRATION_STATUS.md` actualizado si cerraste un punto pendiente.
 

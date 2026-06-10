@@ -21,6 +21,14 @@ const navigation: NavItem[] = [
   { type: 'item', label: 'Bóvedas', href: '/bovedas', icon: 'ti-box-multiple' },
   { type: 'item', label: 'Cobros', href: '/cobros', icon: 'ti-coin' },
   { type: 'item', label: 'Difuntos', href: '/difuntos', icon: 'ti-cloud' },
+  { type: 'item', label: 'Exhumaciones', href: '/exhumaciones', icon: 'ti-arrows-exchange' },
+
+  { type: 'section', label: 'Inventario' },
+  { type: 'item', label: 'Bienes', href: '/inventario/bienes', icon: 'ti-package' },
+  { type: 'item', label: 'Categorías', href: '/inventario/categorias', icon: 'ti-category' },
+  { type: 'item', label: 'Custodios', href: '/inventario/custodios', icon: 'ti-user-check' },
+  { type: 'item', label: 'Depreciación', href: '/inventario/depreciacion', icon: 'ti-trending-down' },
+  { type: 'item', label: 'Reportes', href: '/inventario/reportes', icon: 'ti-file-report' },
 
   { type: 'section', label: 'Administración' },
   { type: 'item', label: 'Mi Cuenta', href: '/cuenta', icon: 'ti-user' },

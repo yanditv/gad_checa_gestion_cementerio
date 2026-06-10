@@ -97,7 +97,7 @@ export class BovedaService {
         bloque: { include: { cementerio: true } },
         piso: true,
         propietario: { include: { persona: true } },
-        difuntos: { where: { estado: true } },
+        difuntos: { where: { estado: true, exhumado: false } },
         contratos: {
           where: { estado: true },
           include: {
