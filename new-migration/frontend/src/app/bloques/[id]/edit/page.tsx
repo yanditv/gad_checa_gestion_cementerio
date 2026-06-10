@@ -20,6 +20,7 @@ export default function EditBloquePage() {
   const [error, setError] = useState('');
   const [notFoundState, setNotFoundState] = useState(false);
   const [pisosActuales, setPisosActuales] = useState(0);
+  const [preciosPorPiso, setPreciosPorPiso] = useState<{ [key: number]: { usarTarifaBase: boolean; precio: number } }>({});
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -73,6 +74,14 @@ export default function EditBloquePage() {
           bovedasPorPiso: data.bovedasPorPiso ?? 0,
         });
         setPisosActuales((data.pisos ?? []).length);
+        const preciosIniciales: typeof preciosPorPiso = {};
+        (data.pisos ?? []).forEach((p: any) => {
+          preciosIniciales[p.numero] = {
+            usarTarifaBase: Number(p.precio) === Number(data.tarifaBase),
+            precio: Number(p.precio ?? data.tarifaBase ?? 0),
+          };
+        });
+        setPreciosPorPiso(preciosIniciales);
       } catch (err: any) {
         if (err.message?.includes('404') || err.message?.includes('no encontrado')) {
           if (active) setNotFoundState(true);
@@ -105,6 +114,9 @@ export default function EditBloquePage() {
         estado: formData.estado,
         numeroPisos: Number(formData.numeroPisos),
         bovedasPorPiso: Number(formData.bovedasPorPiso) || undefined,
+        preciosPorPiso: Object.entries(preciosPorPiso)
+          .filter(([, v]) => !v.usarTarifaBase)
+          .map(([k, v]) => ({ numeroPiso: Number(k), precio: v.precio })),
       });
       router.push(`/bloques/${bloqueId}`);
       router.refresh();
@@ -248,6 +260,68 @@ export default function EditBloquePage() {
               </div>
             </div>
 
+            {/* Vista previa de precios por piso */}
+            {Number(formData.numeroPisos) > 0 && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-slate-700">
+                  Precios por piso — {formData.numeroPisos} piso{Number(formData.numeroPisos) !== 1 ? 's' : ''}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase text-slate-500">
+                        <th className="px-3 py-2">Piso</th>
+                        <th className="px-3 py-2">Usar tarifa base</th>
+                        <th className="px-3 py-2">Precio personalizado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: Number(formData.numeroPisos) }, (_, i) => i + 1).map((pisoNum) => {
+                        const cfg = preciosPorPiso[pisoNum] ?? { usarTarifaBase: true, precio: formData.tarifaBase };
+                        return (
+                          <tr key={pisoNum} className="border-t border-slate-200">
+                            <td className="px-3 py-2 font-medium">Piso {pisoNum}</td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={cfg.usarTarifaBase}
+                                onChange={() => {
+                                  setPreciosPorPiso((prev) => ({
+                                    ...prev,
+                                    [pisoNum]: {
+                                      usarTarifaBase: !cfg.usarTarifaBase,
+                                      precio: cfg.usarTarifaBase ? cfg.precio : formData.tarifaBase,
+                                    },
+                                  }));
+                                }}
+                                className="h-4 w-4 rounded border-slate-300 text-primary-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                disabled={cfg.usarTarifaBase}
+                                className={`w-32 rounded border border-slate-200 px-2 py-1 text-sm ${cfg.usarTarifaBase ? 'bg-slate-100 text-slate-400' : 'bg-white'}`}
+                                value={cfg.precio}
+                                onChange={(e) => {
+                                  setPreciosPorPiso((prev) => ({
+                                    ...prev,
+                                    [pisoNum]: { ...cfg, precio: Number(e.target.value) },
+                                  }));
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
               <Link
                 href={bloqueId ? `/bloques/${bloqueId}` : '/bloques'}
@@ -276,8 +350,8 @@ export default function EditBloquePage() {
             <h2 className="text-sm font-semibold text-slate-700">Alcance</h2>
           </header>
           <div className="space-y-3 p-5 text-sm text-slate-600">
-            <p>En esta migración el backend permite editar nombre, descripción y estado del bloque.</p>
-            <p>La reasignación de cementerio y la reconfiguración de pisos debe hacerse por procesos específicos del dominio.</p>
+            <p>Edite los datos del bloque. Los cambios en número de pisos pueden crear o eliminar pisos (con validación de contratos activos).</p>
+            <p>Los precios por piso se pueden personalizar desmarcando "Usar tarifa base" en la tabla inferior.</p>
           </div>
         </section>
       </div>
