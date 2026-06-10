@@ -7,24 +7,58 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTipoEspacioDto } from './dto/request/create-tipo-espacio.dto';
 import { UpdateTipoEspacioDto } from './dto/request/update-tipo-espacio.dto';
+import { QueryTipoEspacioDto } from './dto/request/query-tipo-espacio.dto';
 import { toTipoEspacioResponse } from './tipo-espacio.mapper';
 import { TipoEspacioResponseDto } from './dto/response/tipo-espacio.response.dto';
+import {
+  buildPaginationMeta,
+  normalizePagination,
+} from '../../common/pagination';
+import { PaginationMeta } from '../../common/interfaces/paginated-result.interface';
 
 @Injectable()
 export class TipoEspacioService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Lista de tipos de espacio. Por defecto solo activos (para alimentar
-   * los selects del frontend). `includeInactive=true` devuelve también los
-   * dados de baja para la administración del catálogo.
+   * Lista paginada de tipos de espacio. Por defecto solo activos (para
+   * alimentar los selects del frontend). `includeInactive=true` devuelve
+   * también los dados de baja para la administración del catálogo.
    */
-  async findAll(includeInactive = false): Promise<TipoEspacioResponseDto[]> {
-    const tipos = await this.prisma.tipoEspacio.findMany({
-      where: includeInactive ? undefined : { estado: true },
-      orderBy: [{ estado: 'desc' }, { nombre: 'asc' }],
-    });
-    return tipos.map(toTipoEspacioResponse);
+  async findAll(
+    query: QueryTipoEspacioDto,
+  ): Promise<{ items: TipoEspacioResponseDto[]; meta: PaginationMeta }> {
+    const { page, limit, skip } = normalizePagination(query.page, query.limit);
+    const search = query.search?.trim();
+
+    const where: Prisma.TipoEspacioWhereInput = {
+      ...(query.includeInactive ? {} : { estado: true }),
+      ...(search
+        ? {
+            OR: [
+              { nombre: { contains: search, mode: 'insensitive' } },
+              {
+                prefijoNumeracion: { contains: search, mode: 'insensitive' },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [tipos, total] = await this.prisma.$transaction([
+      this.prisma.tipoEspacio.findMany({
+        where,
+        orderBy: [{ estado: 'desc' }, { nombre: 'asc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.tipoEspacio.count({ where }),
+    ]);
+
+    return {
+      items: tipos.map(toTipoEspacioResponse),
+      meta: buildPaginationMeta(page, limit, total),
+    };
   }
 
   async findOne(id: number): Promise<TipoEspacioResponseDto> {
