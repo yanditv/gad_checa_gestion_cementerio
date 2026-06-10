@@ -83,8 +83,8 @@ const TIPO_STYLE: Record<string, string> = {
   alta: 'bg-green-50 text-green-700 ring-green-200',
   baja: 'bg-red-50 text-red-700 ring-red-200',
   reactivacion: 'bg-green-50 text-green-700 ring-green-200',
-  reasignacion_custodio: 'bg-info-50 text-info-600 ring-info-500/30',
-  cambio_ubicacion: 'bg-warning-50 text-warning-600 ring-warning-500/30',
+  reasignacion_custodio: 'bg-info-50 text-info-600 ring-info-200',
+  cambio_ubicacion: 'bg-warning-50 text-warning-600 ring-warning-200',
   depreciacion: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 
