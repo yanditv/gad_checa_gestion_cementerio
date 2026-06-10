@@ -283,6 +283,8 @@ export const bovedasApi = {
   create: (data: any) => api.post<any>('/bovedas', data),
   update: (id: number, data: any) => api.put<any>(`/bovedas/${id}`, data),
   delete: (id: number) => api.delete<any>(`/bovedas/${id}`),
+  setPropietario: (id: number, personaId: number | null) =>
+    api.patch<any>(`/bovedas/${id}/propietario`, { personaId }),
 };
 
 export const difuntosApi = {

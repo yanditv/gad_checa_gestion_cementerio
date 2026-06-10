@@ -1,16 +1,33 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type, Transform } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+
+export class PisoPrecioDto {
+  @ApiProperty()
+  @IsInt()
+  numeroPiso!: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => (value != null ? Number(value) : null))
+  precio?: number | null;
+}
 
 export class CreateBloqueDto {
   @ApiProperty()
@@ -38,21 +55,45 @@ export class CreateBloqueDto {
   })
   descripcion?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsIn(['Bovedas', 'Nichos'], {
+    message: 'El tipo debe ser Bovedas o Nichos',
+  })
+  tipo?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => (value != null ? Number(value) : null))
+  tarifaBase?: number | null;
+
   @ApiProperty()
   @IsInt()
   cementerioId!: number;
 
-  /**
-   * Si se envía un valor > 0, el servicio crea automáticamente N pisos
-   * numerados de 1 a N al guardar el bloque. Paridad legado: el formulario
-   * de creación de bloques permite definir cuántos pisos tiene.
-   */
   @ApiProperty({ required: false, minimum: 0, maximum: 50, default: 0 })
   @IsOptional()
   @IsInt()
   @Min(0)
   @Max(50)
   numeroPisos?: number;
+
+  @ApiProperty({ required: false, minimum: 0, default: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  bovedasPorPiso?: number;
+
+  @ApiProperty({ required: false, type: [PisoPrecioDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PisoPrecioDto)
+  preciosPorPiso?: PisoPrecioDto[];
 }
 
 export class UpdateBloqueDto {
@@ -84,6 +125,42 @@ export class UpdateBloqueDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsIn(['Bovedas', 'Nichos'], {
+    message: 'El tipo debe ser Bovedas o Nichos',
+  })
+  tipo?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Transform(({ value }) => (value != null ? Number(value) : null))
+  tarifaBase?: number | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsBoolean()
   estado?: boolean;
+
+  @ApiProperty({ required: false, minimum: 0, maximum: 50 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(50)
+  numeroPisos?: number;
+
+  @ApiProperty({ required: false, minimum: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  bovedasPorPiso?: number;
+
+  @ApiProperty({ required: false, type: [PisoPrecioDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PisoPrecioDto)
+  preciosPorPiso?: PisoPrecioDto[];
 }
