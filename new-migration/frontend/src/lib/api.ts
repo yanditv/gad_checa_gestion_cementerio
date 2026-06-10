@@ -357,3 +357,27 @@ export const catastroApi = {
     api.getPaginated<any>('/catastro/imports', params),
   detail: (id: number) => api.get<any>(`/catastro/imports/${id}`),
 };
+
+export const inventarioCategoriasApi = {
+  findAll: (includeInactive = false) =>
+    api.get<any[]>(
+      `/inventario/categorias${includeInactive ? '?includeInactive=true' : ''}`,
+    ),
+  findOne: (id: number) => api.get<any>(`/inventario/categorias/${id}`),
+  create: (data: any) => api.post<any>('/inventario/categorias', data),
+  update: (id: number, data: any) =>
+    api.patch<any>(`/inventario/categorias/${id}`, data),
+  delete: (id: number) => api.delete<any>(`/inventario/categorias/${id}`),
+};
+
+export const inventarioCustodiosApi = {
+  findAll: (includeInactive = false) =>
+    api.get<any[]>(
+      `/inventario/custodios${includeInactive ? '?includeInactive=true' : ''}`,
+    ),
+  findOne: (id: number) => api.get<any>(`/inventario/custodios/${id}`),
+  create: (data: any) => api.post<any>('/inventario/custodios', data),
+  update: (id: number, data: any) =>
+    api.patch<any>(`/inventario/custodios/${id}`, data),
+  delete: (id: number) => api.delete<any>(`/inventario/custodios/${id}`),
+};
