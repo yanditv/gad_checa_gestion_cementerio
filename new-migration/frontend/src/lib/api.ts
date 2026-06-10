@@ -294,6 +294,105 @@ export const difuntosApi = {
   delete: (id: number) => api.delete<any>(`/difuntos/${id}`),
 };
 
+/** Motivos válidos de exhumación (paridad con backend `MOTIVOS_EXHUMACION`). */
+export const MOTIVOS_EXHUMACION = [
+  'vencimiento_arriendo',
+  'traslado',
+  'orden_judicial',
+  'osario_comun',
+  'otro',
+] as const;
+
+export type MotivoExhumacion = (typeof MOTIVOS_EXHUMACION)[number];
+
+/** Etiquetas legibles en español para cada motivo de exhumación. */
+export const MOTIVO_EXHUMACION_LABEL: Record<MotivoExhumacion, string> = {
+  vencimiento_arriendo: 'Vencimiento de arriendo',
+  traslado: 'Traslado',
+  orden_judicial: 'Orden judicial',
+  osario_comun: 'Osario común',
+  otro: 'Otro',
+};
+
+export interface ExhumacionResponse {
+  id: number;
+  numeroActa: string;
+  difuntoId: number;
+  bovedaOrigenId: number;
+  bovedaDestinoId: number | null;
+  fechaExhumacion: string;
+  motivo: MotivoExhumacion;
+  destino: string;
+  numeroAutorizacion: string | null;
+  entidadAutorizante: string | null;
+  observaciones: string | null;
+  estado: boolean;
+  fechaCreacion: string;
+  difunto?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    numeroIdentificacion: string | null;
+  };
+  bovedaOrigen?: {
+    id: number;
+    numero: string;
+    tipo: string | null;
+  };
+}
+
+export interface CreateExhumacionPayload {
+  difuntoId: number;
+  fechaExhumacion: string;
+  motivo: MotivoExhumacion;
+  destino: string;
+  bovedaDestinoId?: number;
+  numeroAutorizacion?: string;
+  entidadAutorizante?: string;
+  observaciones?: string;
+}
+
+export const exhumacionesApi = {
+  /**
+   * Lista paginada de exhumaciones. El backend devuelve `{ items, meta }` que el
+   * interceptor convierte en `{ success, data, meta }`; tras pasar por el proxy
+   * BFF llega como `{ data, meta }`. Normalizamos a `{ data, meta }` aquí.
+   */
+  findPage: (
+    params?: PaginationParams & {
+      desde?: string;
+      hasta?: string;
+      bovedaId?: number;
+      motivo?: MotivoExhumacion;
+    },
+  ) =>
+    api.getPaginated<ExhumacionResponse>('/exhumaciones', params),
+  findOne: (id: number) => api.get<ExhumacionResponse>(`/exhumaciones/${id}`),
+  findByBoveda: (bovedaId: number) =>
+    api.get<ExhumacionResponse[]>(`/exhumaciones/boveda/${bovedaId}`),
+  /** Registrar exhumación/traslado (solo Administrador). */
+  create: (data: CreateExhumacionPayload) =>
+    api.post<ExhumacionResponse>('/exhumaciones', data),
+  /** Anular exhumación, revierte el efecto (solo Administrador). */
+  anular: (id: number) => api.post<ExhumacionResponse>(`/exhumaciones/${id}/anular`),
+  /** Descarga el acta de exhumación en PDF (Blob + nombre sugerido). */
+  actaPdf: (id: number) => api.downloadBlob(`/exhumaciones/${id}/pdf`),
+  /** Descarga el historial de exhumaciones en el formato indicado. */
+  descargarHistorial: (
+    formato: 'pdf' | 'excel' | 'csv',
+    params?: {
+      desde?: string;
+      hasta?: string;
+      bovedaId?: number;
+      motivo?: MotivoExhumacion;
+    },
+  ) =>
+    api.downloadBlob(
+      `/exhumaciones/reporte/${formato}`,
+      params as PaginationParams | undefined,
+    ),
+};
+
 export const personasApi = {
   findAll: (tipo?: string) => api.get<any[]>(`/personas${tipo ? `?tipo=${tipo}` : ''}`),
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/personas', params),
