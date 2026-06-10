@@ -136,11 +136,13 @@ export default function BloqueDetailsPage() {
       const e = getEstadoBoveda(b);
       return e.label === 'Ocupada' || e.label === 'Por liberar';
     }).length;
+    const porcentajeOcupacion = total > 0 ? Math.round((ocupadas / total) * 100) : 0;
     return {
       totalBovedas: total,
       activas: (bloque?.bovedas ?? []).filter((b) => b.estado).length,
       disponibles,
       ocupadas,
+      porcentajeOcupacion,
       pisos: bloque?.pisos?.length ?? 0,
     };
   }, [bloque]);
@@ -157,10 +159,13 @@ export default function BloqueDetailsPage() {
 
   // Todos los difuntos del bloque
   const difuntos = useMemo(() => {
-    const all: { id: number; nombre: string; apellido: string; fechaDefuncion: string | null; piso: number; boveda: string }[] = [];
+    const all: { id: number; nombre: string; apellido: string; fechaDefuncion: string | null; piso: number; boveda: string; propietarioNombre: string | null }[] = [];
     for (const b of bloque?.bovedas ?? []) {
+      const propNombre = b.propietario
+        ? `${b.propietario.persona.nombre} ${b.propietario.persona.apellido}`
+        : null;
       for (const d of b.difuntos ?? []) {
-        all.push({ ...d, piso: b.piso?.numero ?? 0, boveda: b.numero });
+        all.push({ ...d, piso: b.piso?.numero ?? 0, boveda: b.numero, propietarioNombre: propNombre });
       }
     }
     return all;
@@ -242,11 +247,29 @@ export default function BloqueDetailsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <StatCard label="Cementerio" value={bloque.cementerio?.nombre || '-'} tone="primary" />
         <StatCard label="Pisos" value={stats.pisos} tone="success" />
         <StatCard label="Bóvedas total" value={stats.totalBovedas} tone="warning" />
-        <StatCard label="Ocupación" value={`${stats.ocupadas}/${stats.totalBovedas}`} tone="danger" />
+        <StatCard label="Disponibles" value={stats.disponibles} tone="success" />
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+          <p className="text-xs uppercase tracking-wide text-slate-400">Ocupación</p>
+          <div className="mt-2">
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-bold text-slate-800">{stats.ocupadas}/{stats.totalBovedas}</span>
+              <span className="text-xs text-slate-500">{stats.porcentajeOcupacion}%</span>
+            </div>
+            <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  stats.porcentajeOcupacion > 80 ? 'bg-red-500' :
+                  stats.porcentajeOcupacion > 50 ? 'bg-amber-400' : 'bg-green-500'
+                }`}
+                style={{ width: `${Math.min(stats.porcentajeOcupacion, 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -396,18 +419,33 @@ export default function BloqueDetailsPage() {
                   <th className="px-4 py-3">Nombre</th>
                   <th className="px-4 py-3">F. defunción</th>
                   <th className="px-4 py-3">Ubicación</th>
+                  <th className="px-4 py-3">Propietario</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
-                {difuntos.map((d, i) => (
-                  <tr key={`${d.id}-${i}`} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{d.nombre} {d.apellido}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString('es-EC') : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">Piso {d.piso} · Bóveda {d.boveda}</td>
-                  </tr>
-                ))}
+                {difuntos.map((d, i) => {
+                  const propietario = d.propietarioNombre;
+                  return (
+                    <tr key={`${d.id}-${i}`} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-3 font-medium text-slate-800">{d.nombre} {d.apellido}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString('es-EC') : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">Piso {d.piso} · Bóveda {d.boveda}</td>
+                      <td className="px-4 py-3">
+                        {propietario ? (
+                          <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
+                            {propietario}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
+                            Sin propietario
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
