@@ -7,6 +7,8 @@ import { BienController } from './bien.controller';
 import { BienService } from './bien.service';
 import { DepreciacionController } from './depreciacion.controller';
 import { DepreciacionService } from './depreciacion.service';
+import { ReporteInventarioController } from './reporte-inventario.controller';
+import { ReporteInventarioService } from './reporte-inventario.service';
 
 @Module({
   controllers: [
@@ -14,18 +16,21 @@ import { DepreciacionService } from './depreciacion.service';
     CustodioController,
     BienController,
     DepreciacionController,
+    ReporteInventarioController,
   ],
   providers: [
     CategoriaBienService,
     CustodioService,
     BienService,
     DepreciacionService,
+    ReporteInventarioService,
   ],
   exports: [
     CategoriaBienService,
     CustodioService,
     BienService,
     DepreciacionService,
+    ReporteInventarioService,
   ],
 })
 export class InventarioModule {}

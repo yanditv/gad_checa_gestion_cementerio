@@ -39,10 +39,28 @@ export function findLogo(): string | null {
   return null;
 }
 
+/**
+ * Datos institucionales que parametrizan el encabezado/pie del PDF. Provienen
+ * de `Cementerio` / `GADInformacion` para no hardcodear "Checa" (el sistema se
+ * despliega también para otros GAD, p. ej. El Valle).
+ */
+export interface InstitucionPdf {
+  /** Nombre institucional (ej. "GAD Parroquial de El Valle"). */
+  nombre: string;
+  /** Línea secundaria (ej. "Sistema de Gestión de Inventario"). */
+  subtitulo?: string;
+}
+
+const INSTITUCION_DEFAULT: InstitucionPdf = {
+  nombre: 'GAD Parroquial de Checa',
+  subtitulo: 'Sistema de Gestión de Cementerio',
+};
+
 export function drawHeader(
   doc: PDFKit.PDFDocument,
   titulo: string,
   subtitulo?: string,
+  institucion: InstitucionPdf = INSTITUCION_DEFAULT,
 ) {
   const left = doc.page.margins.left;
   const right = doc.page.width - doc.page.margins.right;
@@ -61,11 +79,15 @@ export function drawHeader(
     .font('Helvetica-Bold')
     .fontSize(11)
     .fillColor('#0f172a')
-    .text('GAD Parroquial de Checa', left + 50, 28)
+    .text(institucion.nombre, left + 50, 28)
     .font('Helvetica')
     .fontSize(8)
     .fillColor('#475569')
-    .text('Sistema de Gestión de Cementerio', left + 50, 42);
+    .text(
+      institucion.subtitulo ?? INSTITUCION_DEFAULT.subtitulo!,
+      left + 50,
+      42,
+    );
 
   doc
     .font('Helvetica-Bold')
@@ -93,22 +115,25 @@ export function drawHeader(
   doc.y = 86;
 }
 
-export function drawFooter(doc: PDFKit.PDFDocument) {
+export function drawFooter(
+  doc: PDFKit.PDFDocument,
+  institucion: InstitucionPdf = INSTITUCION_DEFAULT,
+) {
   const left = doc.page.margins.left;
   const right = doc.page.width - doc.page.margins.right;
   const contentWidth = right - left;
   const footerY = doc.page.height - 24;
 
+  const subtitulo = institucion.subtitulo ?? INSTITUCION_DEFAULT.subtitulo!;
+
   doc
     .font('Helvetica')
     .fontSize(7)
     .fillColor('#94a3b8')
-    .text(
-      'Sistema de Gestión de Cementerio · GAD Parroquial de Checa',
-      left,
-      footerY,
-      { width: contentWidth, align: 'center' },
-    );
+    .text(`${subtitulo} · ${institucion.nombre}`, left, footerY, {
+      width: contentWidth,
+      align: 'center',
+    });
 }
 
 export type Column<T> = {
