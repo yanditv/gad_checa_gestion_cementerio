@@ -405,3 +405,70 @@ export const inventarioBienesApi = {
   reactivar: (id: number, data: any) =>
     api.post<any>(`/inventario/bienes/${id}/reactivar`, data),
 };
+
+export interface DepreciacionFila {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  marca: string | null;
+  modelo: string | null;
+  serie: string | null;
+  fechaAdquisicion: string;
+  valorAdquisicion: number;
+  estadoConservacion: string;
+  ubicacion: string | null;
+  dadoDeBaja: boolean;
+  categoriaId: number | null;
+  categoriaNombre: string;
+  custodioId: number | null;
+  custodioNombre: string;
+  valorResidual: number;
+  vidaUtilMeses: number;
+  depreciacionMensual: number;
+  mesesTranscurridos: number;
+  depreciacionAcumulada: number;
+  valorEnLibros: number;
+}
+
+export interface ReporteDepreciacion {
+  fechaCorte: string;
+  filas: DepreciacionFila[];
+  total: number;
+}
+
+export interface RecalcularDepreciacionResult {
+  anio: number;
+  mes: number;
+  bienesProcesados: number;
+  totalDepreciadoPeriodo: number;
+}
+
+export const inventarioDepreciacionApi = {
+  /** Reporte de depreciación a una fecha de corte (valor en libros por bien). */
+  reporte: (params?: {
+    fechaCorte?: string;
+    categoriaId?: number | string;
+    custodioId?: number | string;
+    ubicacion?: string;
+    incluirBajas?: boolean;
+  }) => {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.set(key, String(value));
+        }
+      });
+    }
+    const qs = query.toString();
+    return api.get<ReporteDepreciacion>(
+      `/inventario/reportes/depreciacion${qs ? `?${qs}` : ''}`,
+    );
+  },
+  /** Recalcula y persiste la depreciación de un periodo (solo Administrador). */
+  recalcular: (anio: number, mes: number) =>
+    api.post<RecalcularDepreciacionResult>('/inventario/depreciacion/recalcular', {
+      anio,
+      mes,
+    }),
+};
