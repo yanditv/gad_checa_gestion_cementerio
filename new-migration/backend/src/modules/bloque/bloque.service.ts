@@ -209,7 +209,7 @@ export class BloqueService {
                 data: Array.from({ length: bovedasXPiso }, (_, bIdx) => ({
                   numero: `${p}-${bIdx + 1}`,
                   capacidad: 1,
-                  tipo: dto.tipo ?? actual.tipo === 'Nichos' ? 'Nicho' : 'Boveda',
+                  tipo: (dto.tipo ?? actual.tipo) === 'Nichos' ? 'Nicho' : 'Boveda',
                   precio: dto.tarifaBase ?? actual.tarifaBase ?? 0,
                   precioArrendamiento: dto.tarifaBase ?? actual.tarifaBase ?? 0,
                   bloqueId: id,

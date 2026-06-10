@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { bloquesApi, bovedasApi } from '@/lib/api';
+import { bloquesApi, bovedasApi, personasApi } from '@/lib/api';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -116,16 +116,7 @@ export default function EditBovedaPage() {
   async function quitarPropietario() {
     if (!bovedaInfo || !window.confirm('¿Quitar el propietario actual?')) return;
     try {
-      const res = await fetch(`/api/bovedas/${params.id}/propietario`, {
-        method: 'PATCH',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId: null }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo quitar el propietario');
-      }
+      await bovedasApi.setPropietario(Number(params.id), null);
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error al quitar propietario');
@@ -403,45 +394,29 @@ function PropietarioModal({
 
   useEffect(() => {
     let cancelled = false;
-    const controller = new AbortController();
     const handle = window.setTimeout(async () => {
       if (search.trim().length < 2) { setResults([]); return; }
       setLoading(true);
       try {
-        const res = await fetch(`/api/personas/search?q=${encodeURIComponent(search.trim())}`, {
-          credentials: 'same-origin',
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-        if (!res.ok) throw new Error('No se pudo buscar');
-        const payload = await res.json();
+        const data = await personasApi.search(search.trim());
         if (cancelled) return;
-        setResults((Array.isArray(payload) ? payload : payload?.data ?? []) as any[]);
+        setResults((Array.isArray(data) ? data : []) as any[]);
       } catch (err) {
-        if (!cancelled && (err as Error).name !== 'AbortError') {
+        if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Error');
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }, 200);
-    return () => { cancelled = true; controller.abort(); window.clearTimeout(handle); };
+    return () => { cancelled = true; window.clearTimeout(handle); };
   }, [search]);
 
   async function asignar(personaId: number) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/bovedas/${bovedaId}/propietario`, {
-        method: 'PATCH',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo asignar');
-      }
+      await bovedasApi.setPropietario(bovedaId, personaId);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
