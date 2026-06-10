@@ -31,6 +31,10 @@ model Usuario {
   difuntosActualizados Difunto[] @relation("DifuntoUsuarioActualizador")
   difuntosEliminados   Difunto[] @relation("DifuntoUsuarioEliminador")
 
+  exhumacionesCreadas      Exhumacion[] @relation("ExhumacionUsuarioCreador")
+  exhumacionesActualizadas Exhumacion[] @relation("ExhumacionUsuarioActualizador")
+  exhumacionesEliminadas   Exhumacion[] @relation("ExhumacionUsuarioEliminador")
+
   contratos             Contrato[] @relation("ContratoUsuarioCreador")
   contratosActualizados Contrato[] @relation("ContratoUsuarioActualizador")
   contratosEliminados   Contrato[] @relation("ContratoUsuarioEliminador")
@@ -231,8 +235,9 @@ model Boveda {
   usuarioEliminadorId   String?
   usuarioEliminador     Usuario? @relation("BovedaUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
-  contratos Contrato[]
-  difuntos  Difunto[]
+  contratos    Contrato[]
+  difuntos     Difunto[]
+  exhumaciones Exhumacion[] @relation("ExhumacionBovedaOrigen")
 }
 
 // =============================================================================
@@ -332,6 +337,12 @@ model Difunto {
   estado        Boolean  @default(true)
   fechaCreacion DateTime @default(now())
 
+  // Exhumación / traslado (CAT-R4b…R4d). `exhumado=true` libera la plaza:
+  // las consultas de ocupación excluyen difuntos exhumados. No se usa
+  // `estado=false` (eso es borrado lógico).
+  exhumado        Boolean   @default(false)
+  fechaExhumacion DateTime?
+
   bovedaId Int
   boveda   Boveda @relation(fields: [bovedaId], references: [id])
 
@@ -342,7 +353,43 @@ model Difunto {
   usuarioEliminadorId   String?
   usuarioEliminador     Usuario? @relation("DifuntoUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
-  contratos Contrato[]
+  contratos    Contrato[]
+  exhumaciones Exhumacion[]
+}
+
+// =============================================================================
+// Exhumacion — acto administrativo de retiro de restos / traslado (CAT-R4b…R4d)
+// Un difunto puede tener N eventos de exhumación a lo largo del tiempo.
+// =============================================================================
+model Exhumacion {
+  id         Int     @id @default(autoincrement())
+  numeroActa String  @unique // EXH-YYYY-NNNN
+
+  difuntoId Int
+  difunto   Difunto @relation(fields: [difuntoId], references: [id])
+
+  bovedaOrigenId Int
+  bovedaOrigen   Boveda @relation("ExhumacionBovedaOrigen", fields: [bovedaOrigenId], references: [id])
+
+  fechaExhumacion DateTime
+  // vencimiento_arriendo | traslado | orden_judicial | osario_comun | otro
+  motivo          String
+  destino         String
+  bovedaDestinoId Int?
+
+  numeroAutorizacion String?
+  entidadAutorizante String?
+  observaciones      String?
+
+  estado        Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("ExhumacionUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("ExhumacionUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("ExhumacionUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 }
 
 // =============================================================================

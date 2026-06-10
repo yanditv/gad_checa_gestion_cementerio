@@ -76,8 +76,9 @@ export class DifuntoService {
   }
 
   async findByBoveda(bovedaId: number) {
+    // Excluye difuntos exhumados: la plaza queda liberada (CAT-R4c).
     return this.prisma.difunto.findMany({
-      where: { bovedaId, estado: true },
+      where: { bovedaId, estado: true, exhumado: false },
     });
   }
 
