@@ -10,11 +10,15 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { BovedaService } from './boveda.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UpdateBovedaDto } from './dto/request/update-boveda.dto';
+import {
+  AuthUser,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator';
+import { CreateBovedaDto, UpdateBovedaDto } from './dto/request/boveda.dto';
 
 class SetPropietarioDto {
   personaId!: number | null;
@@ -27,8 +31,23 @@ export class BovedaController {
   constructor(private service: BovedaService) {}
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.service.findAll(query);
+  @ApiQuery({ name: 'bloqueId', required: false, type: Number })
+  @ApiQuery({ name: 'tipo', required: false, type: String })
+  @ApiQuery({ name: 'estado', required: false, type: String, description: 'disponible | ocupada' })
+  @ApiQuery({ name: 'tienePropietario', required: false, type: String, description: 'con | sin' })
+  findAll(
+    @Query() query: PaginationQueryDto,
+    @Query('bloqueId') bloqueId?: string,
+    @Query('tipo') tipo?: string,
+    @Query('estado') estado?: string,
+    @Query('tienePropietario') tienePropietario?: string,
+  ) {
+    return this.service.findAll(query, {
+      bloqueId: bloqueId ? Number(bloqueId) : undefined,
+      tipo,
+      estado,
+      tienePropietario,
+    });
   }
 
   @Get('bloque/:bloqueId')
@@ -50,13 +69,20 @@ export class BovedaController {
   }
 
   @Post()
-  create(@Body() dto: UpdateBovedaDto) {
-    return this.service.create(dto);
+  create(
+    @Body() dto: CreateBovedaDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.create(dto, user.id);
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBovedaDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateBovedaDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.update(id, dto, user.id);
   }
 
   @Patch(':id/propietario')
@@ -68,16 +94,21 @@ export class BovedaController {
   setPropietario(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SetPropietarioDto,
+    @CurrentUser() user: AuthUser,
   ) {
     return this.service.setPropietario(
       id,
       dto.personaId == null ? null : Number(dto.personaId),
+      user.id,
     );
   }
 
   @Delete(':id')
   @Roles('Administrador')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.remove(id, user.id);
   }
 }

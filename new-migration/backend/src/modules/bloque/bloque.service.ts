@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -72,21 +73,27 @@ export class BloqueService {
       where: { id },
       include: {
         cementerio: true,
-        pisos: { orderBy: { numero: 'asc' } },
-        bovedas: { include: { piso: true } },
+        pisos: { orderBy: { numero: 'asc' }, include: { bovedas: true } },
+        bovedas: {
+          include: {
+            piso: true,
+            propietario: { include: { persona: true } },
+            contratos: {
+              where: { estado: true },
+              select: { id: true, fechaInicio: true, fechaFin: true, difunto: { select: { nombre: true, apellido: true } } },
+            },
+            difuntos: { where: { estado: true }, select: { id: true, nombre: true, apellido: true, fechaDefuncion: true } },
+          },
+        },
       },
     });
     if (!bloque) throw new NotFoundException('Bloque no encontrado');
     return bloque;
   }
 
-  /**
-   * Crea el bloque y opcionalmente autogenera N pisos numerados 1..N.
-   * Operación transaccional: si falla la creación de pisos, no queda un
-   * bloque huérfano. Paridad con el flujo legado de creación de bloque.
-   */
   async create(dto: CreateBloqueDto, userId?: string) {
     const numeroPisos = dto.numeroPisos ?? 0;
+    const bovedasPorPiso = dto.bovedasPorPiso ?? 0;
     const nombre = dto.nombre.trim();
 
     await this.ensureCementerioExists(dto.cementerioId);
@@ -97,6 +104,9 @@ export class BloqueService {
         data: {
           nombre,
           descripcion: dto.descripcion ?? null,
+          tipo: dto.tipo ?? null,
+          tarifaBase: dto.tarifaBase != null ? dto.tarifaBase : null,
+          bovedasPorPiso,
           cementerioId: dto.cementerioId,
           estado: true,
           usuarioCreadorId: userId ?? null,
@@ -104,14 +114,37 @@ export class BloqueService {
       });
 
       if (numeroPisos > 0) {
-        await tx.piso.createMany({
-          data: Array.from({ length: numeroPisos }, (_, idx) => ({
-            numero: idx + 1,
-            descripcion: `Piso ${idx + 1}`,
-            bloqueId: bloque.id,
-            estado: true,
-          })),
-        });
+        for (let pisoNum = 1; pisoNum <= numeroPisos; pisoNum++) {
+          const precioPiso = dto.preciosPorPiso?.find(
+            (p) => p.numeroPiso === pisoNum,
+          )?.precio;
+
+          const piso = await tx.piso.create({
+            data: {
+              numero: pisoNum,
+              descripcion: `Piso ${pisoNum}`,
+              precio: precioPiso != null ? precioPiso : null,
+              bloqueId: bloque.id,
+              estado: true,
+            },
+          });
+
+          if (bovedasPorPiso > 0) {
+            await tx.boveda.createMany({
+              data: Array.from({ length: bovedasPorPiso }, (_, bIdx) => ({
+                numero: `${pisoNum}-${bIdx + 1}`,
+                capacidad: 1,
+                tipo: dto.tipo === 'Nichos' ? 'Nicho' : 'Boveda',
+                precio: dto.tarifaBase ?? 0,
+                precioArrendamiento: dto.tarifaBase ?? 0,
+                bloqueId: bloque.id,
+                pisoId: piso.id,
+                estado: true,
+                usuarioCreadorId: userId ?? null,
+              })),
+            });
+          }
+        }
       }
 
       return tx.bloque.findUnique({
@@ -119,6 +152,7 @@ export class BloqueService {
         include: {
           cementerio: true,
           pisos: { orderBy: { numero: 'asc' } },
+          bovedas: { where: { estado: true } },
         },
       });
     });
@@ -131,22 +165,121 @@ export class BloqueService {
       await this.ensureUniqueNombre(dto.nombre.trim(), actual.cementerioId, id);
     }
 
-    return this.prisma.bloque.update({
-      where: { id },
-      data: {
-        ...(dto.nombre !== undefined && { nombre: dto.nombre.trim() }),
-        ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
-        ...(dto.estado !== undefined && { estado: dto.estado }),
-        usuarioActualizadorId: userId ?? null,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updateData: any = {};
+      if (dto.nombre !== undefined) updateData.nombre = dto.nombre.trim();
+      if (dto.descripcion !== undefined) updateData.descripcion = dto.descripcion;
+      if (dto.estado !== undefined) updateData.estado = dto.estado;
+      if (dto.tipo !== undefined) updateData.tipo = dto.tipo;
+      if (dto.tarifaBase !== undefined) updateData.tarifaBase = dto.tarifaBase;
+      if (dto.bovedasPorPiso !== undefined) updateData.bovedasPorPiso = dto.bovedasPorPiso;
+      updateData.usuarioActualizadorId = userId ?? null;
+
+      await tx.bloque.update({ where: { id }, data: updateData });
+
+      // ── Ajuste de numeroPisos ──────────────────────────────────
+      const newNumeroPisos = dto.numeroPisos;
+      if (newNumeroPisos !== undefined) {
+        const pisosActuales = await tx.piso.findMany({
+          where: { bloqueId: id, estado: true },
+          orderBy: { numero: 'asc' },
+          include: { bovedas: { include: { contratos: { where: { estado: true } } } } },
+        });
+
+        if (newNumeroPisos > pisosActuales.length) {
+          // Aumentar pisos: crear los que faltan
+          for (let p = pisosActuales.length + 1; p <= newNumeroPisos; p++) {
+            const precioPiso = dto.preciosPorPiso?.find(
+              (pp) => pp.numeroPiso === p,
+            )?.precio;
+
+            const piso = await tx.piso.create({
+              data: {
+                numero: p,
+                descripcion: `Piso ${p}`,
+                precio: precioPiso != null ? precioPiso : null,
+                bloqueId: id,
+                estado: true,
+              },
+            });
+
+            const bovedasXPiso = dto.bovedasPorPiso ?? actual.bovedasPorPiso;
+            if (bovedasXPiso > 0) {
+              await tx.boveda.createMany({
+                data: Array.from({ length: bovedasXPiso }, (_, bIdx) => ({
+                  numero: `${p}-${bIdx + 1}`,
+                  capacidad: 1,
+                  tipo: dto.tipo ?? actual.tipo === 'Nichos' ? 'Nicho' : 'Boveda',
+                  precio: dto.tarifaBase ?? actual.tarifaBase ?? 0,
+                  precioArrendamiento: dto.tarifaBase ?? actual.tarifaBase ?? 0,
+                  bloqueId: id,
+                  pisoId: piso.id,
+                  estado: true,
+                  usuarioCreadorId: userId ?? null,
+                })),
+              });
+            }
+          }
+        } else if (newNumeroPisos < pisosActuales.length) {
+          // Reducir pisos: verificar contratos en los pisos a eliminar
+          const pisosAEliminar = pisosActuales.filter(
+            (p) => p.numero > newNumeroPisos,
+          );
+
+          for (const piso of pisosAEliminar) {
+            const tieneContratos = piso.bovedas.some(
+              (b) => b.contratos.length > 0,
+            );
+            if (tieneContratos) {
+              throw new BadRequestException(
+                `No se puede reducir: el piso ${piso.numero} tiene bóvedas con contratos activos`,
+              );
+            }
+          }
+
+          // Soft-delete bóvedas y pisos excedentes
+          for (const piso of pisosAEliminar) {
+            await tx.boveda.updateMany({
+              where: { pisoId: piso.id },
+              data: {
+                estado: false,
+                usuarioEliminadorId: userId ?? null,
+              },
+            });
+            await tx.piso.update({
+              where: { id: piso.id },
+              data: { estado: false },
+            });
+          }
+        }
+      }
+
+      // ── Actualizar precios por piso ────────────────────────────
+      if (dto.preciosPorPiso) {
+        for (const pp of dto.preciosPorPiso) {
+          const pisoExistente = await tx.piso.findFirst({
+            where: { bloqueId: id, numero: pp.numeroPiso },
+          });
+          if (pisoExistente) {
+            await tx.piso.update({
+              where: { id: pisoExistente.id },
+              data: { precio: pp.precio != null ? pp.precio : null },
+            });
+          }
+        }
+      }
+
+      return tx.bloque.findUnique({
+        where: { id },
+        include: {
+          cementerio: true,
+          pisos: { orderBy: { numero: 'asc' } },
+          bovedas: { where: { estado: true } },
+        },
+      });
     });
   }
 
-  /**
-   * Eliminación lógica con validación de integridad:
-   * un bloque con bóvedas activas NO se puede eliminar — el operador debe
-   * primero desactivar/migrar las bóvedas.
-   */
   async remove(id: number, userId?: string) {
     const bloque = await this.findOne(id);
     if (!bloque.estado) {
@@ -172,7 +305,7 @@ export class BloqueService {
   private async ensureCementerioExists(cementerioId: number) {
     const cementerio = await this.prisma.cementerio.findUnique({
       where: { id: cementerioId },
-      select: { id: true, estado: true },
+      select: { id: true, estado: true, tarifaArriendo: true },
     });
     if (!cementerio) {
       throw new NotFoundException('El cementerio seleccionado no existe');
