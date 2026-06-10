@@ -23,3 +23,75 @@ body {
 .pc-sidebar .m-header .b-brand .logo-lg {
   max-height: 70px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Lenguaje visual CRM — utilidades base
+ *
+ * El preflight de Tailwind está desactivado para no chocar con Able Pro, así
+ * que aquí declaramos a mano lo que el reset cubriría: tipografía Inter,
+ * antialiasing y foco accesible para el contenido propio de la app.
+ * ------------------------------------------------------------------------- */
+
+/* Tipografía de marca + suavizado en el contenido de la app. */
+.pc-container,
+.pc-container .pc-content,
+[data-app-surface] {
+  font-family:
+    'Inter', 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Habilita el font-feature de Inter (tabular nums en cifras de dinero). */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco accesible y visible para todo interactivo de la app nueva.
+ * Solo en navegación por teclado (focus-visible), sin halo al click. */
+[data-app-surface] :is(a, button, input, select, textarea, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.35);
+  border-radius: 0.5rem;
+}
+
+/* Skeleton: brillo de carga reutilizable por la librería de componentes. */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #f1f5f9; /* slate-100 */
+}
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-shimmer 1.6s infinite;
+}
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Respeta la preferencia del sistema de movimiento reducido. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-shimmer::after {
+    animation: none;
+  }
+}
