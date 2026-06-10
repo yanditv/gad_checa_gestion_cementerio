@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { bloquesApi, bovedasApi, personasApi } from '@/lib/api';
+import { bloquesApi, bovedasApi, personasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -21,12 +21,13 @@ export default function EditBovedaPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [bloques, setBloques] = useState<any[]>([]);
+  const [tiposEspacio, setTiposEspacio] = useState<TipoEspacio[]>([]);
   const [bovedaInfo, setBovedaInfo] = useState<any>(null);
   const [showPropietarioModal, setShowPropietarioModal] = useState(false);
   const [formData, setFormData] = useState({
     numero: '',
     bloqueId: '',
-    tipo: 'Boveda',
+    tipoEspacioId: '',
     capacidad: '1',
     precio: '',
     precioArrendamiento: '',
@@ -46,7 +47,7 @@ export default function EditBovedaPage() {
     if (!numero) return 'El número de la bóveda es obligatorio';
     if (numero.length > 30) return 'El número de la bóveda no puede exceder 30 caracteres';
     if (!formData.bloqueId) return 'Seleccione un bloque';
-    if (!['Boveda', 'Nicho', 'Mausoleo'].includes(formData.tipo)) return 'Seleccione un tipo válido';
+    if (!formData.tipoEspacioId) return 'Seleccione un tipo de espacio';
     if (!Number.isInteger(capacidad) || capacidad < 1) return 'La capacidad debe ser un entero mayor o igual a 1';
     if (capacidad > 20) return 'La capacidad no puede ser mayor a 20';
     if (Number.isNaN(precio) || precio < 0) return 'El precio no puede ser negativo';
@@ -58,17 +59,19 @@ export default function EditBovedaPage() {
 
   const loadData = async () => {
     try {
-      const [boveda, bloquesData] = await Promise.all([
+      const [boveda, bloquesData, tipos] = await Promise.all([
         bovedasApi.findOne(Number(params.id)),
         bloquesApi.findPage({ page: 1, limit: 100 }),
+        tiposEspacioApi.findAll(),
       ]);
 
       setBovedaInfo(boveda);
       setBloques((bloquesData.data || []).filter((b: any) => b.estado));
+      setTiposEspacio(Array.isArray(tipos) ? tipos : []);
       setFormData({
         numero: boveda.numero || '',
         bloqueId: boveda.bloqueId?.toString() || '',
-        tipo: boveda.tipo || 'Boveda',
+        tipoEspacioId: boveda.tipoEspacioId?.toString() || '',
         capacidad: boveda.capacidad?.toString() || '1',
         precio: boveda.precio?.toString() || '',
         precioArrendamiento: boveda.precioArrendamiento?.toString() || '',
@@ -99,6 +102,7 @@ export default function EditBovedaPage() {
         ...formData,
         numero: formData.numero.trim(),
         bloqueId: Number(formData.bloqueId),
+        tipoEspacioId: Number(formData.tipoEspacioId),
         capacidad: Number(formData.capacidad),
         precio: Number(formData.precio || 0),
         precioArrendamiento: Number(formData.precioArrendamiento || 0),
@@ -212,15 +216,19 @@ export default function EditBovedaPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className={LABEL_CLS}>Tipo</label>
+                <label className={LABEL_CLS}>Tipo *</label>
                 <select
                   className={INPUT_CLS}
-                  value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                  required
+                  value={formData.tipoEspacioId}
+                  onChange={(e) => setFormData({ ...formData, tipoEspacioId: e.target.value })}
                 >
-                  <option value="Boveda">Bóveda</option>
-                  <option value="Nicho">Nicho</option>
-                  <option value="Mausoleo">Mausoleo</option>
+                  <option value="">Seleccionar tipo...</option>
+                  {tiposEspacio.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

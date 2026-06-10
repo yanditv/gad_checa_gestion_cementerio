@@ -20,9 +20,25 @@ type RegistroCatastro = {
   observaciones: string;
 };
 
+/**
+ * Tipo de espacio del catálogo cacheado al inicio del run, para resolver
+ * tarifa y años de arriendo por nombre (reemplaza las columnas pareadas del
+ * cementerio Bóveda/Nicho).
+ */
+interface TipoEspacioCache {
+  id: number;
+  nombre: string;
+  tarifaArriendo: number;
+  aniosArriendo: number;
+}
+
+const DEFAULT_TARIFA = 240;
+const DEFAULT_ANIOS = 5;
+
 @Injectable()
 export class CatastroImportService {
   private readonly logger = new Logger(CatastroImportService.name);
+  private tiposEspacio: TipoEspacioCache[] = [];
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -84,6 +100,7 @@ export class CatastroImportService {
   private async importFromExcel(excelPath: string, adminUserId: string) {
     this.logger.log(`Iniciando importación de catastro desde ${excelPath}`);
 
+    this.tiposEspacio = await this.loadTiposEspacio();
     const workbook = XLSX.readFile(excelPath, { cellDates: true });
     const targetSheets = ['tabla nichos', 'tabla tumulos', 'tabla bovedas', 'nichos', 'tumulos', 'bovedas'];
 
@@ -154,7 +171,13 @@ export class CatastroImportService {
           adminUserId,
         });
 
-        await this.createCuotasYPagoInicial(contrato.id, contrato.montoTotal, personaResponsable.id, contrato.fechaInicio);
+        await this.createCuotasYPagoInicial(
+          contrato.id,
+          contrato.montoTotal,
+          personaResponsable.id,
+          contrato.fechaInicio,
+          registro.tipo,
+        );
 
         await this.prisma.boveda.update({
           where: { id: boveda.id },
@@ -233,15 +256,21 @@ export class CatastroImportService {
     });
     if (existing) return existing;
 
+    const tipoEspacio = this.matchTipoEspacio(registro.tipo);
+    const tarifa = tipoEspacio?.tarifaArriendo ?? DEFAULT_TARIFA;
+
     return this.prisma.boveda.create({
       data: {
         numero: numero.trim(),
         capacidad: 1,
+        // `tipo` (string) se mantiene durante el backfill aditivo; la FK
+        // `tipoEspacioId` apunta al catálogo y manda en tarifa/años.
         tipo: registro.tipo || 'Boveda',
+        tipoEspacioId: tipoEspacio?.id ?? null,
         estado: true,
         observaciones: registro.observaciones || 'Migrado de catastro',
-        precio: 240,
-        precioArrendamiento: 240,
+        precio: tarifa,
+        precioArrendamiento: tarifa,
         bloqueId,
         pisoId,
         usuarioCreadorId: adminUserId,
@@ -336,13 +365,24 @@ export class CatastroImportService {
       (params.fin.getFullYear() - params.inicio.getFullYear()) * 12 + (params.fin.getMonth() - params.inicio.getMonth()),
     );
 
+    // La tarifa sale del `TipoEspacio` de la bóveda (catálogo configurable),
+    // ya no de un valor hardcodeado. Fallback al string legado durante el
+    // backfill y a `DEFAULT_TARIFA` si no hay coincidencia.
+    const boveda = await this.prisma.boveda.findUnique({
+      where: { id: params.bovedaId },
+      select: { tipo: true, tipoEspacio: { select: { tarifaArriendo: true } } },
+    });
+    const montoTotal = boveda?.tipoEspacio
+      ? Number(boveda.tipoEspacio.tarifaArriendo)
+      : this.tarifaPorTipo(boveda?.tipo);
+
     const contrato = await this.prisma.contrato.create({
       data: {
         numeroSecuencial,
         fechaInicio: params.inicio,
         fechaFin: params.fin,
         numeroDeMeses,
-        montoTotal: 240,
+        montoTotal,
         estado: true,
         observaciones: params.observaciones,
         bovedaId: params.bovedaId,
@@ -368,12 +408,21 @@ export class CatastroImportService {
     return contrato;
   }
 
-  private async createCuotasYPagoInicial(contratoId: number, montoTotal: any, personaId: number, fechaInicio: Date) {
+  private async createCuotasYPagoInicial(
+    contratoId: number,
+    montoTotal: any,
+    personaId: number,
+    fechaInicio: Date,
+    tipoBoveda?: string | null,
+  ) {
     const total = Number(montoTotal);
-    const cuotaMonto = Number((total / 5).toFixed(2));
+    // El número de cuotas/años sale del `TipoEspacio` (catálogo), ya no de
+    // un 5 hardcodeado. Se garantiza al menos 1 cuota.
+    const anios = Math.max(1, this.aniosPorTipo(tipoBoveda));
+    const cuotaMonto = Number((total / anios).toFixed(2));
     const cuotas = [];
 
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= anios; i++) {
       const cuota = await this.prisma.cuota.create({
         data: {
           contratoId,
@@ -404,6 +453,76 @@ export class CatastroImportService {
     await this.prisma.cuotaPago.createMany({
       data: cuotas.map((c) => ({ cuotaId: c.id, pagoId: pago.id })),
     });
+  }
+
+  /**
+   * Carga el catálogo de tipos de espacio activo (Bóveda, Nicho, Túmulo…).
+   * Reemplaza las columnas pareadas del cementerio por filas configurables.
+   */
+  private async loadTiposEspacio(): Promise<TipoEspacioCache[]> {
+    const tipos = await this.prisma.tipoEspacio.findMany({
+      where: { estado: true },
+      select: {
+        id: true,
+        nombre: true,
+        tarifaArriendo: true,
+        aniosArriendo: true,
+      },
+    });
+    return tipos.map((t) => ({
+      id: t.id,
+      nombre: t.nombre,
+      tarifaArriendo: Number(t.tarifaArriendo),
+      aniosArriendo: t.aniosArriendo,
+    }));
+  }
+
+  /**
+   * Empareja el string de tipo del Excel con un `TipoEspacio` del catálogo:
+   * igualdad de nombre (insensible a mayúsculas/acentos) y, si falla,
+   * coincidencia por substring. Devuelve `null` si no hay catálogo o no hay
+   * coincidencia, dejando que el caller aplique el fallback legado.
+   */
+  private matchTipoEspacio(tipo?: string | null): TipoEspacioCache | null {
+    if (!this.tiposEspacio.length) return null;
+    const objetivo = this.normalizeTipo(tipo);
+    if (!objetivo) {
+      return (
+        this.tiposEspacio.find(
+          (t) => this.normalizeTipo(t.nombre) === 'boveda',
+        ) ??
+        this.tiposEspacio[0] ??
+        null
+      );
+    }
+    const exacto = this.tiposEspacio.find(
+      (t) => this.normalizeTipo(t.nombre) === objetivo,
+    );
+    if (exacto) return exacto;
+    return (
+      this.tiposEspacio.find((t) => {
+        const nombre = this.normalizeTipo(t.nombre);
+        return nombre.includes(objetivo) || objetivo.includes(nombre);
+      }) ?? null
+    );
+  }
+
+  private normalizeTipo(value?: string | null): string {
+    return (value ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .trim();
+  }
+
+  /** Tarifa por tipo (fallback de string legado durante el backfill). */
+  private tarifaPorTipo(tipo?: string | null): number {
+    return this.matchTipoEspacio(tipo)?.tarifaArriendo ?? DEFAULT_TARIFA;
+  }
+
+  /** Años de arriendo por tipo (catálogo); cae a `DEFAULT_ANIOS`. */
+  private aniosPorTipo(tipo?: string | null): number {
+    return this.matchTipoEspacio(tipo)?.aniosArriendo ?? DEFAULT_ANIOS;
   }
 
   private async generateNumeroContrato(bovedaId: number, isRenovacion = false): Promise<string> {

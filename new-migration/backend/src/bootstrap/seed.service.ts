@@ -122,6 +122,41 @@ export class SeedService {
       },
     });
 
+    // Catálogo de tipos de espacio (reemplaza la dualidad cableada Bóveda/Nicho).
+    // Valores alineados con los parámetros semilla del Cementerio id=1.
+    const tiposEspacio = [
+      {
+        nombre: 'Bóveda',
+        prefijoNumeracion: 'CTR',
+        tarifaArriendo: 240.0,
+        aniosArriendo: 5,
+        vecesRenovacion: 1,
+      },
+      {
+        nombre: 'Nicho',
+        prefijoNumeracion: 'NCH',
+        tarifaArriendo: 240.0,
+        aniosArriendo: 5,
+        vecesRenovacion: 1,
+      },
+    ];
+
+    for (const tipo of tiposEspacio) {
+      await this.prisma.tipoEspacio.upsert({
+        where: { nombre: tipo.nombre },
+        update: {},
+        create: {
+          nombre: tipo.nombre,
+          prefijoNumeracion: tipo.prefijoNumeracion,
+          tarifaArriendo: tipo.tarifaArriendo,
+          aniosArriendo: tipo.aniosArriendo,
+          vecesRenovacion: tipo.vecesRenovacion,
+          estado: true,
+          usuarioCreadorId: adminUserId,
+        },
+      });
+    }
+
     const descuentos = [
       { nombre: 'Ninguno', porcentaje: 0 },
       { nombre: '50%', porcentaje: 50 },

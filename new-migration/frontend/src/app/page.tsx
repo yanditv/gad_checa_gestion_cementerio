@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { reportesApi } from '@/lib/api';
 
 interface DashboardData {
   numeroDifuntos: number;
   ingresosTotales: number;
-  bovedasDisponibles: number;
-  bovedasOcupadas: number;
-  nichosDisponibles: number;
-  nichosOcupados: number;
   contratosActivos: number;
   contratosPorVencer: number;
   contratosVencidos: number;
@@ -28,6 +25,53 @@ interface DashboardData {
     nombrePersona: string;
   }>;
 }
+
+/**
+ * Resumen de espacios por cada `TipoEspacio` del catálogo (Bóveda, Nicho,
+ * Túmulo…). Es la fuente dinámica de las tarjetas/gráfico de espacios; viene
+ * de `report.service` (`/reportes/resumen` → `bovedas.porTipo`).
+ */
+interface TipoEspacioResumen {
+  tipoEspacioId: number | null;
+  nombre: string;
+  total: number;
+  ocupados: number;
+  disponibles: number;
+  porCaducar: number;
+  vencidas: number;
+}
+
+/** Normaliza un valor desconocido a número finito (0 por defecto). */
+function toNumber(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Normaliza la respuesta de `/reportes/resumen` (forma dinámica) a un arreglo
+ * tipado de `TipoEspacioResumen`, tolerando ausencias o formas inesperadas.
+ */
+function normalizePorTipo(resumen: unknown): TipoEspacioResumen[] {
+  const raw = (resumen as { bovedas?: { porTipo?: unknown } } | null)?.bovedas
+    ?.porTipo;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((t: any) => ({
+    tipoEspacioId:
+      t?.tipoEspacioId === null || t?.tipoEspacioId === undefined
+        ? null
+        : toNumber(t.tipoEspacioId),
+    nombre: typeof t?.nombre === 'string' && t.nombre.trim() ? t.nombre : 'Espacio',
+    total: toNumber(t?.total),
+    ocupados: toNumber(t?.ocupados),
+    disponibles: toNumber(t?.disponibles),
+    porCaducar: toNumber(t?.porCaducar),
+    vencidas: toNumber(t?.vencidas),
+  }));
+}
+
+/** Paleta cíclica para las tarjetas y el gráfico de espacios por tipo. */
+const TIPO_TONES: Tone[] = ['success', 'info', 'primary', 'warning', 'danger', 'slate'];
+const TIPO_PIE_COLORS = ['#52c41a', '#13c2c2', '#722ed1', '#fa8c16', '#ff4d4f', '#8c8c8c'];
 
 type Tone =
   | 'primary'
@@ -173,16 +217,13 @@ export default function Home() {
   const [data, setData] = useState<DashboardData>({
     numeroDifuntos: 0,
     ingresosTotales: 0,
-    bovedasDisponibles: 0,
-    bovedasOcupadas: 0,
-    nichosDisponibles: 0,
-    nichosOcupados: 0,
     contratosActivos: 0,
     contratosPorVencer: 0,
     contratosVencidos: 0,
     ultimosContratos: [],
     transaccionesRecientes: [],
   });
+  const [porTipo, setPorTipo] = useState<TipoEspacioResumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartsReady, setChartsReady] = useState(false);
 
@@ -190,21 +231,39 @@ export default function Home() {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 8000);
     (async () => {
-      try {
-        const response = await fetch('/api/dashboard', {
+      // El resumen global de contratos/ingresos sigue viniendo del BFF; el
+      // desglose de espacios por tipo viene del `report.service` dinámico.
+      const [dashboard, resumen] = await Promise.allSettled([
+        fetch('/api/dashboard', {
           signal: controller.signal,
           credentials: 'same-origin',
+        }).then((r) => (r.ok ? r.json() : null)),
+        reportesApi.resumen(),
+      ]);
+
+      if (dashboard.status === 'fulfilled' && dashboard.value) {
+        const result = dashboard.value;
+        setData({
+          numeroDifuntos: toNumber(result.numeroDifuntos),
+          ingresosTotales: toNumber(result.ingresosTotales),
+          contratosActivos: toNumber(result.contratosActivos),
+          contratosPorVencer: toNumber(result.contratosPorVencer),
+          contratosVencidos: toNumber(result.contratosVencidos),
+          ultimosContratos: Array.isArray(result.ultimosContratos)
+            ? result.ultimosContratos
+            : [],
+          transaccionesRecientes: Array.isArray(result.transaccionesRecientes)
+            ? result.transaccionesRecientes
+            : [],
         });
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
-        }
-      } catch {
-        /* ignore */
-      } finally {
-        window.clearTimeout(timeout);
-        setLoading(false);
       }
+
+      if (resumen.status === 'fulfilled') {
+        setPorTipo(normalizePorTipo(resumen.value));
+      }
+
+      window.clearTimeout(timeout);
+      setLoading(false);
     })();
     return () => controller.abort();
   }, []);
@@ -239,22 +298,22 @@ export default function Home() {
     const charts: any[] = [];
 
     const pieEl = document.querySelector('#espacios-pie-chart');
-    if (pieEl) {
+    if (pieEl && porTipo.length > 0) {
+      // Distribución dinámica: disponibles vs ocupados por cada TipoEspacio.
+      const pieSeries: number[] = [];
+      const pieLabels: string[] = [];
+      const pieColors: string[] = [];
+      porTipo.forEach((t, idx) => {
+        const base = TIPO_PIE_COLORS[idx % TIPO_PIE_COLORS.length];
+        pieSeries.push(t.disponibles, t.ocupados);
+        pieLabels.push(`${t.nombre} disponibles`, `${t.nombre} ocupados`);
+        pieColors.push(base, `${base}99`);
+      });
       const pieChart = new ApexCharts(pieEl, {
         chart: { type: 'pie', height: 250, toolbar: { show: false } },
-        series: [
-          data.bovedasDisponibles,
-          data.bovedasOcupadas,
-          data.nichosDisponibles,
-          data.nichosOcupados,
-        ],
-        labels: [
-          'Bóvedas disponibles',
-          'Bóvedas ocupadas',
-          'Nichos disponibles',
-          'Nichos ocupados',
-        ],
-        colors: ['#52c41a', '#13c2c2', '#722ed1', '#fa8c16'],
+        series: pieSeries,
+        labels: pieLabels,
+        colors: pieColors,
         legend: { position: 'bottom' },
       });
       pieChart.render();
@@ -323,7 +382,7 @@ export default function Home() {
     }
 
     return () => charts.forEach((c) => c.destroy());
-  }, [loading, data, chartsReady]);
+  }, [loading, data, porTipo, chartsReady]);
 
   if (loading) {
     return (
@@ -336,10 +395,9 @@ export default function Home() {
     );
   }
 
-  const totalEspacios =
-    data.bovedasDisponibles + data.bovedasOcupadas + data.nichosDisponibles + data.nichosOcupados;
-  const ocupados = data.bovedasOcupadas + data.nichosOcupados;
-  const disponibles = data.bovedasDisponibles + data.nichosDisponibles;
+  const totalEspacios = porTipo.reduce((s, t) => s + t.total, 0);
+  const ocupados = porTipo.reduce((s, t) => s + t.ocupados, 0);
+  const disponibles = porTipo.reduce((s, t) => s + t.disponibles, 0);
   const pctOcupacion = totalEspacios > 0 ? (ocupados * 100) / totalEspacios : 0;
 
   return (
@@ -385,34 +443,6 @@ export default function Home() {
             progress={85}
           />
           <KpiCard
-            title="Bóvedas disponibles"
-            value={formatNumber(data.bovedasDisponibles)}
-            subtitle="Sin contrato activo"
-            tone="success"
-            icon="ti-box"
-          />
-          <KpiCard
-            title="Bóvedas ocupadas"
-            value={formatNumber(data.bovedasOcupadas)}
-            subtitle="Con contrato activo"
-            tone="info"
-            icon="ti-user-check"
-          />
-          <KpiCard
-            title="Nichos disponibles"
-            value={formatNumber(data.nichosDisponibles)}
-            subtitle="Actualmente libres"
-            tone="success"
-            icon="ti-check"
-          />
-          <KpiCard
-            title="Nichos ocupados"
-            value={formatNumber(data.nichosOcupados)}
-            subtitle="Ya asignados"
-            tone="slate"
-            icon="ti-user"
-          />
-          <KpiCard
             title="Contratos por vencer"
             value={formatNumber(data.contratosPorVencer)}
             subtitle="Próximos 30 días"
@@ -420,14 +450,46 @@ export default function Home() {
             icon="ti-alert-triangle"
           />
           <KpiCard
-            title="Ingresos del año"
-            value={formatCurrency(data.ingresosTotales)}
-            subtitle="Acumulado anual"
-            tone="primary"
-            icon="ti-trending-up"
-            progress={85}
+            title="Total de espacios"
+            value={formatNumber(totalEspacios)}
+            subtitle={`${porTipo.length} tipos en catálogo`}
+            tone="info"
+            icon="ti-building-warehouse"
           />
         </div>
+      </section>
+
+      {/* Sección: espacios por tipo (dinámico por TipoEspacio) */}
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <i className="ti ti-stack-2 text-green-600" />
+          Espacios por tipo
+        </h2>
+        {porTipo.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-400 shadow-soft">
+            No hay tipos de espacio configurados.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {porTipo.map((tipo, idx) => {
+              const tone = TIPO_TONES[idx % TIPO_TONES.length];
+              const pct = tipo.total > 0 ? (tipo.disponibles * 100) / tipo.total : 0;
+              return (
+                <KpiCard
+                  key={tipo.tipoEspacioId ?? `txt-${tipo.nombre}-${idx}`}
+                  title={tipo.nombre}
+                  value={`${formatNumber(tipo.disponibles)} / ${formatNumber(tipo.total)}`}
+                  subtitle={`${formatNumber(tipo.ocupados)} ocupados · ${formatNumber(
+                    tipo.disponibles,
+                  )} disponibles`}
+                  tone={tone}
+                  icon="ti-box"
+                  progress={pct}
+                />
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Sección: resumen operativo */}

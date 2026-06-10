@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { bloquesApi, bovedasApi, PaginationMeta } from '@/lib/api';
+import { bloquesApi, bovedasApi, tiposEspacioApi, PaginationMeta, TipoEspacio } from '@/lib/api';
 
 interface Boveda {
   id: number;
   numero: string;
   capacidad: number;
   tipo: string | null;
+  tipoEspacioId: number | null;
+  tipoEspacio?: { id: number; nombre: string } | null;
   estado: boolean;
   precio: number;
   precioArrendamiento: number;
@@ -29,6 +31,7 @@ interface Boveda {
 
 export default function BovedasPage() {
   const [bovedas, setBovedas] = useState<Boveda[]>([]);
+  const [tiposEspacio, setTiposEspacio] = useState<TipoEspacio[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -51,6 +54,13 @@ export default function BovedasPage() {
     }).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    tiposEspacioApi
+      .findAll()
+      .then((tipos) => setTiposEspacio(Array.isArray(tipos) ? tipos : []))
+      .catch(() => setTiposEspacio([]));
+  }, []);
+
   const loadBovedas = async () => {
     setLoading(true);
     setError('');
@@ -59,7 +69,7 @@ export default function BovedasPage() {
         page,
         limit: 15,
         search: searchTerm.trim() || undefined,
-        ...(filterTipo ? { tipo: filterTipo } : {}),
+        ...(filterTipo ? { tipoEspacioId: filterTipo } : {}),
         ...(filterEstado ? { estado: filterEstado } : {}),
         ...(filterPropietario ? { tienePropietario: filterPropietario } : {}),
         ...(filterBloqueId ? { bloqueId: Number(filterBloqueId) } : {}),
@@ -151,9 +161,11 @@ export default function BovedasPage() {
               className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
             >
               <option value="">Todos los tipos</option>
-              <option value="Boveda">Bóvedas</option>
-              <option value="Nicho">Nichos</option>
-              <option value="Mausoleo">Mausoleos</option>
+              {tiposEspacio.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -284,7 +296,7 @@ export default function BovedasPage() {
                     <td className="px-4 py-3 font-medium text-slate-900">{row.numero}</td>
                     <td className="px-4 py-3 text-slate-600">{row.bloque?.nombre || '-'}</td>
                     <td className="px-4 py-3 text-slate-600">{row.piso?.numero || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.tipo || 'Bóveda'}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.tipoEspacio?.nombre || row.tipo || '-'}</td>
                     <td className="px-4 py-3 text-slate-600">{row.capacidad}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {row.propietario

@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -24,13 +23,22 @@ export class CreateBovedaDto {
   })
   numero!: string;
 
-  @ApiProperty({ required: false, default: 'Boveda' })
+  @ApiProperty({
+    minimum: 1,
+    description: 'Identificador del tipo de espacio (catálogo TipoEspacio)',
+  })
+  @IsInt({ message: 'Debe seleccionar un tipo de espacio' })
+  @Min(1, { message: 'Debe seleccionar un tipo de espacio' })
+  @Transform(({ value }) => Number(value))
+  tipoEspacioId!: number;
+
+  @ApiPropertyOptional({
+    deprecated: true,
+    description: 'Campo legado. Usar tipoEspacioId.',
+  })
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @IsIn(['Boveda', 'Nicho', 'Mausoleo'], {
-    message: 'El tipo debe ser Boveda, Nicho o Mausoleo',
-  })
   tipo?: string;
 
   @ApiProperty({ minimum: 1 })
@@ -117,13 +125,23 @@ export class UpdateBovedaDto {
   @Transform(({ value }) => Number(value))
   capacidad?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    minimum: 1,
+    description: 'Identificador del tipo de espacio (catálogo TipoEspacio)',
+  })
+  @IsOptional()
+  @IsInt({ message: 'Debe seleccionar un tipo de espacio' })
+  @Min(1, { message: 'Debe seleccionar un tipo de espacio' })
+  @Transform(({ value }) => Number(value))
+  tipoEspacioId?: number;
+
+  @ApiPropertyOptional({
+    deprecated: true,
+    description: 'Campo legado. Usar tipoEspacioId.',
+  })
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @IsIn(['Boveda', 'Nicho', 'Mausoleo'], {
-    message: 'El tipo debe ser Boveda, Nicho o Mausoleo',
-  })
   tipo?: string;
 
   @ApiPropertyOptional()
