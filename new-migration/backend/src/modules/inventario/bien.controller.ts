@@ -23,6 +23,11 @@ import {
   QueryBienDto,
   UpdateBienDto,
 } from './dto/bien.dto';
+import {
+  HistorialItemDto,
+  MoverBienDto,
+  ReasignarCustodioDto,
+} from './dto/movimiento-bien.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paginated } from '../../common/decorators/paginated.decorator';
 import {
@@ -69,6 +74,42 @@ export class BienController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.service.update(id, dto, user.id);
+  }
+
+  @Post(':id/reasignar-custodio')
+  @ApiOperation({
+    summary: 'Reasignar el custodio de un bien (registra el movimiento)',
+  })
+  @ApiResponse({ type: BienResponseDto })
+  reasignarCustodio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReasignarCustodioDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.reasignarCustodio(id, dto, user.id);
+  }
+
+  @Post(':id/mover')
+  @ApiOperation({
+    summary: 'Cambiar la ubicación de un bien (registra el movimiento)',
+  })
+  @ApiResponse({ type: BienResponseDto })
+  mover(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: MoverBienDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.mover(id, dto, user.id);
+  }
+
+  @Get(':id/historial')
+  @ApiOperation({
+    summary:
+      'Historial cronológico unificado del bien (movimientos + depreciaciones)',
+  })
+  @ApiResponse({ type: HistorialItemDto, isArray: true })
+  historial(@Param('id', ParseIntPipe) id: number) {
+    return this.service.historial(id);
   }
 
   @Delete(':id')

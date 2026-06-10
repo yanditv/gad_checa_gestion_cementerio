@@ -20,6 +20,14 @@ import {
   toBienListItem,
   toBienResponse,
 } from './bien.mapper';
+import {
+  MoverBienDto,
+  ReasignarCustodioDto,
+} from './dto/movimiento-bien.dto';
+import {
+  depreciacionToHistorialItem,
+  movimientoToHistorialItem,
+} from './historial-bien.mapper';
 
 const BIEN_INCLUDE = {
   categoria: { select: { id: true, nombre: true } },
@@ -225,6 +233,160 @@ export class BienService {
       include: BIEN_INCLUDE,
     });
     return toBienResponse(eliminado as BienConRelaciones);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reasignación de custodio (INV-R3): actualiza Bien.custodioId + registra
+  // MovimientoBien tipo 'reasignacion_custodio' guardando custodioAnterior/Nuevo.
+  // ---------------------------------------------------------------------------
+  async reasignarCustodio(
+    id: number,
+    dto: ReasignarCustodioDto,
+    userId?: string,
+  ) {
+    const bien = await this.findEntity(id);
+    if (bien.dadoDeBaja) {
+      throw new ConflictException(
+        'No se puede reasignar el custodio de un bien dado de baja',
+      );
+    }
+
+    await this.validarCustodio(dto.custodioId);
+
+    if (bien.custodioId === dto.custodioId) {
+      throw new ConflictException(
+        'El bien ya está asignado a ese custodio',
+      );
+    }
+
+    const custodioAnteriorId = bien.custodioId;
+    const fecha = dto.fecha ? new Date(dto.fecha) : new Date();
+
+    const actualizado = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.bien.update({
+        where: { id },
+        data: {
+          custodioId: dto.custodioId,
+          fechaActualizacion: new Date(),
+          usuarioActualizadorId: userId ?? null,
+        },
+        include: BIEN_INCLUDE,
+      });
+
+      await tx.movimientoBien.create({
+        data: {
+          bienId: id,
+          tipo: 'reasignacion_custodio',
+          fecha,
+          detalle: dto.detalle?.trim() || null,
+          custodioAnteriorId: custodioAnteriorId,
+          custodioNuevoId: dto.custodioId,
+          documento: dto.documento?.trim() || null,
+          usuarioCreadorId: userId ?? null,
+        },
+      });
+
+      return result;
+    });
+
+    return toBienResponse(actualizado as BienConRelaciones);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cambio de ubicación (INV-R4): actualiza Bien.ubicacion + registra
+  // MovimientoBien tipo 'cambio_ubicacion' guardando ubicacionAnterior/Nueva.
+  // ---------------------------------------------------------------------------
+  async mover(id: number, dto: MoverBienDto, userId?: string) {
+    const bien = await this.findEntity(id);
+    if (bien.dadoDeBaja) {
+      throw new ConflictException(
+        'No se puede mover un bien dado de baja',
+      );
+    }
+
+    const ubicacionNueva = dto.ubicacion.trim();
+    if (!ubicacionNueva) {
+      throw new BadRequestException('La ubicación no puede estar vacía');
+    }
+
+    const ubicacionAnterior = bien.ubicacion;
+    if (ubicacionAnterior === ubicacionNueva) {
+      throw new ConflictException('El bien ya se encuentra en esa ubicación');
+    }
+
+    const fecha = dto.fecha ? new Date(dto.fecha) : new Date();
+
+    const actualizado = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.bien.update({
+        where: { id },
+        data: {
+          ubicacion: ubicacionNueva,
+          fechaActualizacion: new Date(),
+          usuarioActualizadorId: userId ?? null,
+        },
+        include: BIEN_INCLUDE,
+      });
+
+      await tx.movimientoBien.create({
+        data: {
+          bienId: id,
+          tipo: 'cambio_ubicacion',
+          fecha,
+          detalle: dto.detalle?.trim() || null,
+          ubicacionAnterior: ubicacionAnterior,
+          ubicacionNueva: ubicacionNueva,
+          documento: dto.documento?.trim() || null,
+          usuarioCreadorId: userId ?? null,
+        },
+      });
+
+      return result;
+    });
+
+    return toBienResponse(actualizado as BienConRelaciones);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Historial unificado (INV-R8): cronología de MovimientoBien + DepreciacionBien
+  // ordenada por fecha (más reciente primero).
+  // ---------------------------------------------------------------------------
+  async historial(id: number) {
+    await this.findEntity(id);
+
+    const [movimientos, depreciaciones] = await this.prisma.$transaction([
+      this.prisma.movimientoBien.findMany({
+        where: { bienId: id },
+        orderBy: { fecha: 'desc' },
+      }),
+      this.prisma.depreciacionBien.findMany({
+        where: { bienId: id },
+        orderBy: { fechaCalculo: 'desc' },
+      }),
+    ]);
+
+    // Resolver nombres de custodios referenciados en los movimientos.
+    const custodioIds = new Set<number>();
+    for (const mov of movimientos) {
+      if (mov.custodioAnteriorId !== null)
+        custodioIds.add(mov.custodioAnteriorId);
+      if (mov.custodioNuevoId !== null) custodioIds.add(mov.custodioNuevoId);
+    }
+
+    const custodios = new Map<number, string>();
+    if (custodioIds.size > 0) {
+      const registros = await this.prisma.custodio.findMany({
+        where: { id: { in: [...custodioIds] } },
+        select: { id: true, nombre: true },
+      });
+      for (const c of registros) custodios.set(c.id, c.nombre);
+    }
+
+    const items = [
+      ...movimientos.map((m) => movimientoToHistorialItem(m, custodios)),
+      ...depreciaciones.map((d) => depreciacionToHistorialItem(d)),
+    ].sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+    return items;
   }
 
   // ---------------------------------------------------------------------------
