@@ -199,7 +199,7 @@ export default function CategoriasBienPage() {
                     </td>
                     <td className="px-4 py-3">
                       {row.estado ? (
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+                        <span className="inline-flex items-center rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-medium text-success-700 ring-1 ring-success-200">
                           Activa
                         </span>
                       ) : (
