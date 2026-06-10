@@ -57,6 +57,27 @@ export class CementerioResponseDto {
 
   @ApiProperty()
   estado: boolean;
+
+  @ApiPropertyOptional()
+  contratoPreambulo?: string;
+
+  @ApiPropertyOptional()
+  contratoClausula1?: string;
+
+  @ApiPropertyOptional()
+  contratoClausula2?: string;
+
+  @ApiPropertyOptional()
+  contratoClausula3?: string;
+
+  @ApiPropertyOptional()
+  contratoClausula4?: string;
+
+  @ApiPropertyOptional()
+  contratoClausula5?: string;
+
+  @ApiPropertyOptional()
+  contratoClausula6?: string;
 }
 
 export class GADInformacionResponseDto {

@@ -129,6 +129,15 @@ model Cementerio {
   usuarioEliminadorId   String?
   usuarioEliminador     Usuario? @relation("CementerioUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
+  // Plantillas de textos para el contrato PDF (con soporte de **negritas** y {placeholders})
+  contratoPreambulo String? @db.Text
+  contratoClausula1 String? @db.Text
+  contratoClausula2 String? @db.Text
+  contratoClausula3 String? @db.Text
+  contratoClausula4 String? @db.Text
+  contratoClausula5 String? @db.Text
+  contratoClausula6 String? @db.Text
+
   bloques Bloque[]
 }
 

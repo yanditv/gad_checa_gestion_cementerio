@@ -114,16 +114,47 @@ async function getLogoBufferOrPath(gadInfo?: any): Promise<string | Buffer | nul
 // Helpers de dibujo
 // ---------------------------------------------------------------------------
 
+function compileTemplate(template: string, vars: Record<string, string>): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val ?? '');
+  }
+  return result;
+}
+
 function richParagraph(
   doc: PDFKit.PDFDocument,
-  segments: RichSegment[],
+  input: RichSegment[] | string,
   contentWidth: number,
 ) {
+  let segments: RichSegment[];
+  if (typeof input === 'string') {
+    // Parse Markdown-style **bold**
+    const parts = input.split('**');
+    segments = parts.map((part, idx) => {
+      // Even indexes are normal, odd indexes are bold
+      const isBold = idx % 2 === 1;
+      return { text: part, bold: isBold };
+    }).filter(s => s.text !== '');
+  } else {
+    segments = input;
+  }
+
   const normalized = segments.map<{ text: string; bold: boolean }>((s) =>
     typeof s === 'string'
       ? { text: s, bold: false }
       : { text: s.text ?? '', bold: !!s.bold },
   );
+
+  // PDFKit space collapse prevention: 
+  // If a segment starts with a space and there is a previous segment,
+  // append the space to the end of the previous segment instead.
+  for (let i = 1; i < normalized.length; i++) {
+    if (normalized[i].text.startsWith(' ') && !normalized[i - 1].text.endsWith(' ')) {
+      normalized[i - 1].text += ' ';
+      normalized[i].text = normalized[i].text.slice(1);
+    }
+  }
 
   doc.fontSize(10.5).fillColor('#1f2937');
   normalized.forEach((seg, idx) => {
@@ -346,117 +377,76 @@ export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Prom
     doc.moveDown(0.8);
 
     // -----------------------------------------------------------------------
-    // Preámbulo
+    // Variables para compilación de plantillas
     // -----------------------------------------------------------------------
-    richParagraph(
-      doc,
-      [
-        `En la Parroquia de ${parroquia}, a los `,
-        { text: fechaInicio.dia + ' ', bold: true },
-        'días del mes de ',
-        { text: fechaInicio.mes + ' ', bold: true },
-        'del ',
-        { text: fechaInicio.anio, bold: true },
-        `, comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el ${gadNombre}, debidamente representado por el `,
-        { text: presidente, bold: true },
-        '; por otro lado, el/la Sr/Sra. ',
-        { text: responsableNombre + ' ', bold: true },
-        'con número de identidad ',
-        { text: responsableCI, bold: true },
-        ', número de teléfono ',
-        { text: responsableTelefono, bold: true },
-        ', correo electrónico ',
-        { text: responsableEmail, bold: true },
-        ', los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:',
-      ],
-      contentWidth,
-    );
+    const pisoTexto = piso?.numero != null ? `, piso ${piso.numero}` : '';
+    const vars: Record<string, string> = {
+      parroquia,
+      fechaInicioDia: fechaInicio.dia,
+      fechaInicioMes: fechaInicio.mes,
+      fechaInicioAnio: fechaInicio.anio,
+      fechaFinDia: fechaFin.dia,
+      fechaFinMes: fechaFin.mes,
+      fechaFinAnio: fechaFin.anio,
+      gadNombre,
+      presidente,
+      responsableNombre,
+      responsableCI,
+      responsableTelefono,
+      responsableEmail,
+      difuntoNombre,
+      difuntoCI,
+      bovedaNumero,
+      bloqueDescripcion,
+      pisoTexto,
+      pisoNumero: piso?.numero != null ? String(piso.numero) : '',
+      montoTotal: formatCurrencyUsd(montoTotal),
+      bancoTexto,
+      numeroCuenta,
+      aniosArriendo: String(aniosArriendo),
+      cementerioNombre: cementerio.nombre || 'Cementerio de la Parroquia',
+      numeroContrato,
+    };
+
+    // Plantillas con fallbacks si no están configuradas en la base de datos
+    const tPreambulo =
+      cementerio.contratoPreambulo ||
+      'En la Parroquia de {parroquia}, a los **{fechaInicioDia}** días del mes de **{fechaInicioMes}** del **{fechaInicioAnio}**, comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el {gadNombre}, debidamente representado por el **{presidente}**; por otro lado, el/la Sr/Sra. **{responsableNombre}** con número de identidad **{responsableCI}**, número de teléfono **{responsableTelefono}**, correo electrónico **{responsableEmail}**, los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:';
+
+    const tClausula1 =
+      cementerio.contratoClausula1 ||
+      '**PRIMERA COMPARECIENTES. -** Comparecen por una parte el {gadNombre} representada por su presidente el **{presidente}**; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. **{responsableNombre}** a quien en lo posterior se le llamará Arrendatario.';
+
+    const tClausula2 =
+      cementerio.contratoClausula2 ||
+      '**SEGUNDA ANTECEDENTE. -** El {gadNombre} es la Institución Pública que administra el {cementerioNombre}, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.';
+
+    const tClausula3 =
+      cementerio.contratoClausula3 ||
+      '**TERCER OBJETO. -** El {gadNombre}, en su calidad de Administrador del {cementerioNombre}, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: **{difuntoNombre}** con número de cédula **{difuntoCI}**, restos que serán depositados en la bóveda número **{bovedaNumero}** en el bloque **{bloqueDescripcion}**{pisoTexto}.';
+
+    const tClausula4 =
+      cementerio.contratoClausula4 ||
+      '**CUARTA: PRECIO. -** El valor por arriendo de la Bóveda es de **{montoTotal}** valor que fue cancelado con depósito en {bancoTexto} cta. # **{numeroCuenta}**';
+
+    const tClausula5 =
+      cementerio.contratoClausula5 ||
+      '**QUINTA: OTRA. -** La parte arrendadora aclara que una vez que el {gadNombre} entrega el derecho de uso por **{aniosArriendo} años** a partir de la fecha del **{fechaInicioDia} de {fechaInicioMes} del {fechaInicioAnio}**, la parte arrendataria. Vence el contrato el **{fechaFinDia} de {fechaFinMes} del {fechaFinAnio}**.';
+
+    const tClausula6 =
+      cementerio.contratoClausula6 ||
+      '**SEXTA: -** Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.';
 
     // -----------------------------------------------------------------------
-    // Cláusulas
+    // Renderizado del Contenido del PDF
     // -----------------------------------------------------------------------
-    richParagraph(
-      doc,
-      [
-        { text: 'PRIMERA COMPARECIENTES. -', bold: true },
-        ` Comparecen por una parte el ${gadNombre} representada por su presidente el `,
-        { text: presidente, bold: true },
-        '; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ',
-        { text: responsableNombre + ' ', bold: true },
-        'a quien en lo posterior se le llamará Arrendatario.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'SEGUNDA ANTECEDENTE. -', bold: true },
-        ` El ${gadNombre} es la Institución Pública que administra el ${cementerio.nombre || 'Cementerio General de la Parroquia'}, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.`,
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'TERCER OBJETO. -', bold: true },
-        ` El ${gadNombre}, en su calidad de Administrador del ${cementerio.nombre || 'Cementerio General de la Parroquia'}, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: `,
-        { text: difuntoNombre + ' ', bold: true },
-        'con número de cédula ',
-        { text: difuntoCI, bold: true },
-        ', restos que serán depositados en la bóveda número ',
-        { text: bovedaNumero + ' ', bold: true },
-        'en el bloque ',
-        { text: bloqueDescripcion, bold: true },
-        piso?.numero != null
-          ? `, piso ${piso.numero}.`
-          : '.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'CUARTA: PRECIO. -', bold: true },
-        ' El valor por arriendo de la Bóveda es de ',
-        { text: formatCurrencyUsd(montoTotal) + ' ', bold: true },
-        `valor que fue cancelado con depósito en ${bancoTexto} cta. # `,
-        { text: numeroCuenta, bold: true },
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'QUINTA: OTRA. -', bold: true },
-        ` La parte arrendadora aclara que una vez que el ${gadNombre} entrega el derecho de uso por `,
-        { text: `${aniosArriendo} años `, bold: true },
-        'a partir de la fecha del ',
-        {
-          text: `${fechaInicio.dia} de ${fechaInicio.mes} del ${fechaInicio.anio}`,
-          bold: true,
-        },
-        ', la parte arrendataria. Vence el contrato el ',
-        {
-          text: `${fechaFin.dia} de ${fechaFin.mes} del ${fechaFin.anio}`,
-          bold: true,
-        },
-        '.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'SEXTA: -', bold: true },
-        ' Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.',
-      ],
-      contentWidth,
-    );
+    richParagraph(doc, compileTemplate(tPreambulo, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula1, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula2, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula3, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula4, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula5, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula6, vars), contentWidth);
 
     if (observaciones) {
       richParagraph(
@@ -520,7 +510,7 @@ export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Prom
     });
 
     labelStyle().text(
-      truncate(`Sr/Sra. ${responsableNombre}`, 40),
+      truncate(responsableNombre, 40),
       rightX,
       textY,
       { width: colWidth, align: 'center' },

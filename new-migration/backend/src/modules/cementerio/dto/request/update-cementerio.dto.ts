@@ -98,4 +98,39 @@ export class UpdateCementerioDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   tasaMoraDiaria?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoPreambulo?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoClausula1?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoClausula2?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoClausula3?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoClausula4?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoClausula5?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  contratoClausula6?: string;
 }
