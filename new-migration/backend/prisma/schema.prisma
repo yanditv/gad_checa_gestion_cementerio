@@ -181,6 +181,9 @@ model Bloque {
   id            Int      @id @default(autoincrement())
   nombre        String
   descripcion   String?
+  tipo          String?  // "Bovedas" | "Nichos" | null (compatibilidad)
+  tarifaBase    Decimal? @db.Decimal(18, 2) // tarifa por defecto del bloque
+  bovedasPorPiso Int     @default(0)        // bóvedas que se auto-generan por piso
   estado        Boolean  @default(true)
   fechaCreacion DateTime @default(now())
 
@@ -199,10 +202,11 @@ model Bloque {
 }
 
 model Piso {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   numero      Int
   descripcion String?
-  estado      Boolean @default(true)
+  precio      Decimal? @db.Decimal(18, 2) // precio personalizado por piso (null = usar tarifaBase del bloque)
+  estado      Boolean  @default(true)
 
   bloqueId Int
   bloque   Bloque @relation(fields: [bloqueId], references: [id])
