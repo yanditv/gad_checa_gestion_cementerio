@@ -18,28 +18,20 @@ export default function EditBloquePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notFoundState, setNotFoundState] = useState(false);
-  const [pisosActuales, setPisosActuales] = useState(0);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    tipo: 'Bovedas',
-    tarifaBase: 0,
     estado: true,
-    numeroPisos: 0,
-    bovedasPorPiso: 0,
   });
 
   const validateForm = () => {
     const nombre = formData.nombre.trim();
     const descripcion = formData.descripcion.trim();
-    const numeroPisos = Number(formData.numeroPisos);
 
     if (!nombre) return 'El nombre del bloque es obligatorio';
     if (nombre.length < 2) return 'El nombre del bloque debe tener al menos 2 caracteres';
     if (nombre.length > 80) return 'El nombre del bloque no puede exceder 80 caracteres';
     if (descripcion.length > 200) return 'La descripción no puede exceder 200 caracteres';
-    if (!Number.isInteger(numeroPisos) || numeroPisos < 0) return 'El número de pisos debe ser un entero mayor o igual a 0';
-    if (numeroPisos > 50) return 'El número de pisos no puede ser mayor a 50';
     return '';
   };
 
@@ -65,13 +57,8 @@ export default function EditBloquePage() {
         setFormData({
           nombre: data.nombre || '',
           descripcion: data.descripcion || '',
-          tipo: data.tipo || 'Bovedas',
-          tarifaBase: Number(data.tarifaBase ?? 0),
           estado: Boolean(data.estado),
-          numeroPisos: (data.pisos ?? []).length,
-          bovedasPorPiso: data.bovedasPorPiso ?? 0,
         });
-        setPisosActuales((data.pisos ?? []).length);
       } catch (err: any) {
         if (err.message?.includes('404') || err.message?.includes('no encontrado')) {
           if (active) setNotFoundState(true);
@@ -99,11 +86,7 @@ export default function EditBloquePage() {
       await bloquesApi.update(bloqueId, {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || undefined,
-        tipo: formData.tipo,
-        tarifaBase: Number(formData.tarifaBase) || undefined,
         estado: formData.estado,
-        numeroPisos: Number(formData.numeroPisos),
-        bovedasPorPiso: Number(formData.bovedasPorPiso) || undefined,
       });
       router.push(`/bloques/${bloqueId}`);
       router.refresh();
@@ -183,63 +166,10 @@ export default function EditBloquePage() {
                 </select>
               </div>
 
-              <div>
-                <label className={LABEL_CLS}>Tipo</label>
-                <select
-                  className={INPUT_CLS}
-                  value={formData.tipo}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, tipo: e.target.value }))}
-                >
-                  <option value="Bovedas">Bóvedas</option>
-                  <option value="Nichos">Nichos</option>
-                </select>
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Tarifa Base ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  className={INPUT_CLS}
-                  value={formData.tarifaBase}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, tarifaBase: Number(e.target.value) }))}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_CLS}>Número de pisos</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={50}
-                  className={INPUT_CLS}
-                  value={formData.numeroPisos}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, numeroPisos: Number(e.target.value) }))}
-                />
-                {formData.numeroPisos !== pisosActuales && (
-                  <p className="mt-1 text-xs text-amber-600">
-                    {formData.numeroPisos > pisosActuales
-                      ? `Se crearán ${formData.numeroPisos - pisosActuales} piso(s) nuevo(s).`
-                      : `Se desactivarán ${pisosActuales - formData.numeroPisos} piso(s).`}
-                    {formData.numeroPisos < pisosActuales && ' Si tienen bóvedas con contratos, el cambio será rechazado.'}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Bóvedas por piso</label>
-                <input
-                  type="number"
-                  min={0}
-                  className={INPUT_CLS}
-                  value={formData.bovedasPorPiso}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, bovedasPorPiso: Number(e.target.value) }))}
-                />
-              </div>
-
               <div className="sm:col-span-2">
                 <label className={LABEL_CLS}>Descripción</label>
                 <textarea
-                  rows={3}
+                  rows={4}
                   className={INPUT_CLS}
                   value={formData.descripcion}
                   onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
