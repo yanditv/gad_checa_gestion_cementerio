@@ -2,8 +2,9 @@
  * Librería de componentes CRM (Tailwind puro, tipada, accesible).
  * Punto único de importación: `import { Button, Badge } from '@/components/ui'`.
  *
- * Fase 1 — Primitivos. Las fases siguientes añaden compuestos (Card,
- * DataTable, Modal, …) a este mismo barril.
+ * Fase 1 — Primitivos. Fase 2 — Compuestos (Card, PageHeader, DataTable,
+ * Pagination, Modal, DropdownMenu, Tabs, EmptyState, Toast, SearchFilters,
+ * FormSection, StatusPill).
  */
 
 // Utilidades y tipos compartidos
@@ -47,3 +48,42 @@ export { Skeleton } from './Skeleton';
 export type { SkeletonProps } from './Skeleton';
 export { Tooltip } from './Tooltip';
 export type { TooltipProps, TooltipSide } from './Tooltip';
+
+// ─── Fase 2 · Compuestos ────────────────────────────────────────────────
+
+// Superficies y estructura
+export { Card } from './Card';
+export type { CardProps, CardSectionProps, CardBodyProps } from './Card';
+export { PageHeader } from './PageHeader';
+export type { PageHeaderProps } from './PageHeader';
+export { FormSection } from './FormSection';
+export type { FormSectionProps } from './FormSection';
+
+// Listados
+export { DataTable } from './DataTable';
+export type {
+  DataTableProps,
+  DataTableColumn,
+  DataTableSort,
+  SortDirection,
+} from './DataTable';
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
+export { SearchFilters } from './SearchFilters';
+export type { SearchFiltersProps } from './SearchFilters';
+
+// Overlays e interacción
+export { Modal } from './Modal';
+export type { ModalProps, ModalSize } from './Modal';
+export { DropdownMenu } from './DropdownMenu';
+export type { DropdownMenuProps, DropdownMenuItem } from './DropdownMenu';
+export { Tabs } from './Tabs';
+export type { TabsProps, TabItem } from './Tabs';
+
+// Estado / feedback
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+export { ToastProvider, useToast } from './Toast';
+export type { ToastOptions, ToastTone } from './Toast';
+export { StatusPill } from './StatusPill';
+export type { StatusPillProps } from './StatusPill';
