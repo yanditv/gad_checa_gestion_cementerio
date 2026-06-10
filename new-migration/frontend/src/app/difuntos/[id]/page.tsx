@@ -4,7 +4,9 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  authApi,
   contratosApi,
+  difuntosApi,
   exhumacionesApi,
   MOTIVOS_EXHUMACION,
   MOTIVO_EXHUMACION_LABEL,
@@ -186,17 +188,8 @@ export default function DifuntoDetailsPage({
 
   async function reloadExhumaciones(difuntoId: number) {
     try {
-      const res = await fetch(`/api/exhumaciones?limit=100`, {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (!res.ok) return;
-      const payload = await res.json();
-      const items: ExhumacionResponse[] = Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload?.items)
-          ? payload.items
-          : [];
+      const { data } = await exhumacionesApi.findPage({ limit: 100 });
+      const items: ExhumacionResponse[] = Array.isArray(data) ? data : [];
       setExhumaciones(items.filter((e) => e.difuntoId === difuntoId));
     } catch {
       /* no-op */
@@ -208,17 +201,8 @@ export default function DifuntoDetailsPage({
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/difuntos/${id}`, {
-          credentials: 'same-origin',
-          cache: 'no-store',
-        });
-        if (!res.ok) {
-          const payload = await res.json().catch(() => ({}));
-          throw new Error(payload.message || 'No se pudo cargar');
-        }
-        const payload = await res.json();
+        const data = (await difuntosApi.findOne(parseInt(id, 10))) as Difunto;
         if (cancelled) return;
-        const data = (payload?.data ?? payload) as Difunto;
         setDifunto(data);
         await reloadExhumaciones(data.id);
       } catch (err) {
@@ -238,18 +222,12 @@ export default function DifuntoDetailsPage({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/auth/me', {
-          cache: 'no-store',
-          credentials: 'same-origin',
-        });
-        if (res.ok) {
-          const payload = await res.json();
-          const roles: string[] = payload?.data?.roles ?? payload?.roles ?? [];
-          if (!cancelled)
-            setIsAdmin(
-              roles.includes('Administrador') || roles.includes('Admin'),
-            );
-        }
+        const profile = await authApi.getProfile();
+        const roles: string[] = profile?.roles ?? [];
+        if (!cancelled)
+          setIsAdmin(
+            roles.includes('Administrador') || roles.includes('Admin'),
+          );
       } catch {
         /* no-op */
       }
@@ -313,16 +291,9 @@ export default function DifuntoDetailsPage({
       });
       setModalOpen(false);
       // Recargar la ficha (cambia bóveda/estado exhumado) y el historial.
-      const res = await fetch(`/api/difuntos/${id}`, {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (res.ok) {
-        const payload = await res.json();
-        const data = (payload?.data ?? payload) as Difunto;
-        setDifunto(data);
-        await reloadExhumaciones(data.id);
-      }
+      const data = (await difuntosApi.findOne(parseInt(id, 10))) as Difunto;
+      setDifunto(data);
+      await reloadExhumaciones(data.id);
     } catch (err) {
       setModalError(
         err instanceof Error ? err.message : 'No se pudo registrar la exhumación',
@@ -337,16 +308,9 @@ export default function DifuntoDetailsPage({
     if (!window.confirm('¿Anular esta exhumación? Se revertirá su efecto.')) return;
     try {
       await exhumacionesApi.anular(exhId);
-      const res = await fetch(`/api/difuntos/${id}`, {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (res.ok) {
-        const payload = await res.json();
-        const data = (payload?.data ?? payload) as Difunto;
-        setDifunto(data);
-        await reloadExhumaciones(data.id);
-      }
+      const data = (await difuntosApi.findOne(parseInt(id, 10))) as Difunto;
+      setDifunto(data);
+      await reloadExhumaciones(data.id);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'No se pudo anular la exhumación',
@@ -375,14 +339,7 @@ export default function DifuntoDetailsPage({
   async function handleDelete() {
     if (!window.confirm('¿Desactivar este registro?')) return;
     try {
-      const res = await fetch(`/api/difuntos/${id}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo eliminar');
-      }
+      await difuntosApi.delete(parseInt(id, 10));
       router.push('/difuntos');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
@@ -445,7 +402,7 @@ export default function DifuntoDetailsPage({
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
             <span>{difunto.numeroIdentificacion ?? 'Sin identificación'}</span>
             {difunto.exhumado && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+              <span className="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-700 ring-1 ring-warning-200">
                 <i className="ti ti-grave-2" />
                 Exhumado
               </span>
@@ -462,7 +419,7 @@ export default function DifuntoDetailsPage({
             <button
               type="button"
               onClick={openExhumacionModal}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-warning-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-warning-600"
             >
               <i className="ti ti-grave-2" />
               Registrar exhumación/traslado
@@ -630,7 +587,7 @@ export default function DifuntoDetailsPage({
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
                               e.estado
-                                ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                ? 'bg-warning-50 text-warning-700 ring-warning-200'
                                 : 'bg-slate-100 text-slate-600 ring-slate-200'
                             }`}
                           >
@@ -852,7 +809,7 @@ export default function DifuntoDetailsPage({
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-warning-500 px-3 py-2 text-sm font-medium text-white hover:bg-warning-600 disabled:opacity-50"
               >
                 {submitting ? 'Registrando…' : 'Registrar'}
               </button>
