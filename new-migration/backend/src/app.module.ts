@@ -25,6 +25,7 @@ import { ReportModule } from './modules/report/report.module';
 import { CatastroModule } from './modules/catastro/catastro.module';
 import { NotificacionModule } from './modules/notificacion/notificacion.module';
 import { InventarioModule } from './modules/inventario/inventario.module';
+import { TipoEspacioModule } from './modules/tipo-espacio/tipo-espacio.module';
 import { SeedService } from './bootstrap/seed.service';
 import { CatastroImportService } from './bootstrap/catastro-import.service';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
@@ -55,6 +56,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     CatastroModule,
     NotificacionModule,
     InventarioModule,
+    TipoEspacioModule,
   ],
   providers: [
     SeedService,
