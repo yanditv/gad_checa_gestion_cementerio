@@ -24,6 +24,7 @@ import {
   MoverBienDto,
   ReasignarCustodioDto,
 } from './dto/movimiento-bien.dto';
+import { BajaBienDto, ReactivarBienDto } from './dto/baja-bien.dto';
 import {
   depreciacionToHistorialItem,
   movimientoToHistorialItem,
@@ -236,6 +237,92 @@ export class BienService {
   }
 
   // ---------------------------------------------------------------------------
+  // Baja de uso (INV-R6): marca dadoDeBaja=true + fechaBaja + motivoBaja y
+  // registra MovimientoBien tipo 'baja'. Nunca borra físico. Distinta de la
+  // eliminación lógica (`estado`). Solo Administrador.
+  // ---------------------------------------------------------------------------
+  async baja(id: number, dto: BajaBienDto, userId?: string) {
+    const bien = await this.findEntity(id);
+    if (bien.dadoDeBaja) {
+      throw new ConflictException('El bien ya está dado de baja');
+    }
+
+    const fecha = new Date(dto.fecha);
+    const detalle = this.construirDetalleBaja(dto);
+
+    const actualizado = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.bien.update({
+        where: { id },
+        data: {
+          dadoDeBaja: true,
+          fechaBaja: fecha,
+          motivoBaja: dto.motivo,
+          fechaActualizacion: new Date(),
+          usuarioActualizadorId: userId ?? null,
+        },
+        include: BIEN_INCLUDE,
+      });
+
+      await tx.movimientoBien.create({
+        data: {
+          bienId: id,
+          tipo: 'baja',
+          fecha,
+          detalle,
+          documento: dto.documento?.trim() || null,
+          usuarioCreadorId: userId ?? null,
+        },
+      });
+
+      return result;
+    });
+
+    return toBienResponse(actualizado as BienConRelaciones);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reactivación (INV-R6): revierte una baja registrada por error. Limpia
+  // dadoDeBaja/fechaBaja/motivoBaja y registra MovimientoBien tipo
+  // 'reactivacion'. Solo Administrador.
+  // ---------------------------------------------------------------------------
+  async reactivar(id: number, dto: ReactivarBienDto, userId?: string) {
+    const bien = await this.findEntity(id);
+    if (!bien.dadoDeBaja) {
+      throw new ConflictException('El bien no está dado de baja');
+    }
+
+    const detalle =
+      dto.detalle?.trim() || 'Reversión de baja registrada por error';
+
+    const actualizado = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.bien.update({
+        where: { id },
+        data: {
+          dadoDeBaja: false,
+          fechaBaja: null,
+          motivoBaja: null,
+          fechaActualizacion: new Date(),
+          usuarioActualizadorId: userId ?? null,
+        },
+        include: BIEN_INCLUDE,
+      });
+
+      await tx.movimientoBien.create({
+        data: {
+          bienId: id,
+          tipo: 'reactivacion',
+          detalle,
+          usuarioCreadorId: userId ?? null,
+        },
+      });
+
+      return result;
+    });
+
+    return toBienResponse(actualizado as BienConRelaciones);
+  }
+
+  // ---------------------------------------------------------------------------
   // Reasignación de custodio (INV-R3): actualiza Bien.custodioId + registra
   // MovimientoBien tipo 'reasignacion_custodio' guardando custodioAnterior/Nuevo.
   // ---------------------------------------------------------------------------
@@ -392,6 +479,20 @@ export class BienService {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+  /**
+   * Compone el detalle textual del movimiento de baja a partir del motivo y la
+   * autorización (la tabla MovimientoBien no tiene columna `autorizacion`, por
+   * lo que la referencia se persiste dentro del detalle del movimiento).
+   */
+  private construirDetalleBaja(dto: BajaBienDto): string {
+    const partes = [`Baja por ${dto.motivo}`];
+    const autorizacion = dto.autorizacion?.trim();
+    if (autorizacion) {
+      partes.push(`Autorización: ${autorizacion}`);
+    }
+    return partes.join('. ');
+  }
+
   private async findEntity(id: number): Promise<BienConRelaciones> {
     const bien = await this.prisma.bien.findFirst({
       where: { id, estado: true },

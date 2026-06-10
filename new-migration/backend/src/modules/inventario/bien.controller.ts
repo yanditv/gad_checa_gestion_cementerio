@@ -28,6 +28,7 @@ import {
   MoverBienDto,
   ReasignarCustodioDto,
 } from './dto/movimiento-bien.dto';
+import { BajaBienDto, ReactivarBienDto } from './dto/baja-bien.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paginated } from '../../common/decorators/paginated.decorator';
 import {
@@ -110,6 +111,35 @@ export class BienController {
   @ApiResponse({ type: HistorialItemDto, isArray: true })
   historial(@Param('id', ParseIntPipe) id: number) {
     return this.service.historial(id);
+  }
+
+  @Post(':id/baja')
+  @Roles('Administrador', 'Admin')
+  @ApiOperation({
+    summary: 'Dar de baja un bien (solo Administrador); registra el movimiento',
+  })
+  @ApiResponse({ type: BienResponseDto })
+  baja(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: BajaBienDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.baja(id, dto, user.id);
+  }
+
+  @Post(':id/reactivar')
+  @Roles('Administrador', 'Admin')
+  @ApiOperation({
+    summary:
+      'Reactivar un bien dado de baja por error (solo Administrador); registra el movimiento',
+  })
+  @ApiResponse({ type: BienResponseDto })
+  reactivar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReactivarBienDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.reactivar(id, dto, user.id);
   }
 
   @Delete(':id')
