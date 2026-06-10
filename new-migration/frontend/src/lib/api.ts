@@ -385,3 +385,23 @@ export const inventarioCustodiosApi = {
     api.patch<any>(`/inventario/custodios/${id}`, data),
   delete: (id: number) => api.delete<any>(`/inventario/custodios/${id}`),
 };
+
+export const inventarioBienesApi = {
+  findPage: (params?: PaginationParams) =>
+    api.getPaginated<any>('/inventario/bienes', params),
+  findOne: (id: number) => api.get<any>(`/inventario/bienes/${id}`),
+  create: (data: any) => api.post<any>('/inventario/bienes', data),
+  update: (id: number, data: any) => api.put<any>(`/inventario/bienes/${id}`, data),
+  delete: (id: number) => api.delete<any>(`/inventario/bienes/${id}`),
+  historial: (id: number) => api.get<any[]>(`/inventario/bienes/${id}/historial`),
+  depreciacion: (id: number) =>
+    api.get<any>(`/inventario/bienes/${id}/depreciacion`),
+  reasignarCustodio: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/reasignar-custodio`, data),
+  mover: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/mover`, data),
+  baja: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/baja`, data),
+  reactivar: (id: number, data: any) =>
+    api.post<any>(`/inventario/bienes/${id}/reactivar`, data),
+};
