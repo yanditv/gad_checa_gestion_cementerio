@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { bovedasApi, PaginationMeta } from '@/lib/api';
+import { bloquesApi, bovedasApi, PaginationMeta } from '@/lib/api';
 
 interface Boveda {
   id: number;
@@ -36,12 +36,20 @@ export default function BovedasPage() {
   const [filterTipo, setFilterTipo] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [filterPropietario, setFilterPropietario] = useState('');
+  const [filterBloqueId, setFilterBloqueId] = useState('');
+  const [bloques, setBloques] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadBovedas();
-  }, [page, searchTerm, filterEstado, filterTipo, filterPropietario]);
+  }, [page, searchTerm, filterEstado, filterTipo, filterPropietario, filterBloqueId]);
+
+  useEffect(() => {
+    bloquesApi.findPage({ page: 1, limit: 100 }).then((r) => {
+      setBloques((r.data || []).filter((b: any) => b.estado));
+    }).catch(() => {});
+  }, []);
 
   const loadBovedas = async () => {
     setLoading(true);
@@ -54,6 +62,7 @@ export default function BovedasPage() {
         ...(filterTipo ? { tipo: filterTipo } : {}),
         ...(filterEstado ? { estado: filterEstado } : {}),
         ...(filterPropietario ? { tienePropietario: filterPropietario } : {}),
+        ...(filterBloqueId ? { bloqueId: Number(filterBloqueId) } : {}),
       });
 
       setBovedas(payload.data || []);
@@ -167,6 +176,25 @@ export default function BovedasPage() {
               <option value="">Todos los estados</option>
               <option value="disponible">Disponibles</option>
               <option value="ocupada">Ocupadas</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Bloque
+            </label>
+            <select
+              value={filterBloqueId}
+              onChange={(e) => {
+                setPage(1);
+                setFilterBloqueId(e.target.value);
+              }}
+              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              <option value="">Todos los bloques</option>
+              {bloques.map((b: any) => (
+                <option key={b.id} value={b.id}>{b.nombre}</option>
+              ))}
             </select>
           </div>
 
