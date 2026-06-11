@@ -30,6 +30,8 @@ export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
 export { Select } from './Select';
 export type { SelectProps, SelectOption } from './Select';
+export { DatePicker } from './DatePicker';
+export type { DatePickerProps } from './DatePicker';
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
 export { Switch } from './Switch';

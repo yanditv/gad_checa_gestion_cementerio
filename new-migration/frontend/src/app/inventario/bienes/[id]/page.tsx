@@ -19,6 +19,7 @@ import {
   Badge,
   Button,
   Card,
+  DatePicker,
   Input,
   Modal,
   PageHeader,
@@ -666,11 +667,10 @@ export default function BienDetailPage({
               </option>
             ))}
           </Select>
-          <Input
+          <DatePicker
             label="Fecha"
-            type="date"
             value={fechaMovimiento}
-            onChange={(e) => setFechaMovimiento(e.target.value)}
+            onChange={setFechaMovimiento}
           />
           <Input
             label="Detalle"
@@ -700,11 +700,10 @@ export default function BienDetailPage({
             value={nuevaUbicacion}
             onChange={(e) => setNuevaUbicacion(e.target.value)}
           />
-          <Input
+          <DatePicker
             label="Fecha"
-            type="date"
             value={fechaMovimiento}
-            onChange={(e) => setFechaMovimiento(e.target.value)}
+            onChange={setFechaMovimiento}
           />
           <Input
             label="Detalle"
@@ -734,12 +733,11 @@ export default function BienDetailPage({
             onChange={(e) => setMotivoBaja(e.target.value)}
             options={MOTIVOS_BAJA}
           />
-          <Input
+          <DatePicker
             label="Fecha de baja"
             required
-            type="date"
             value={fechaMovimiento}
-            onChange={(e) => setFechaMovimiento(e.target.value)}
+            onChange={setFechaMovimiento}
           />
           <Input
             label="Autorización"

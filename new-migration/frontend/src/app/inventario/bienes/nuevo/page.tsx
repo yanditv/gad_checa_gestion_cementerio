@@ -18,6 +18,7 @@ import {
 import {
   Button,
   Card,
+  DatePicker,
   FormSection,
   Input,
   PageHeader,
@@ -212,12 +213,11 @@ export default function NuevoBienPage() {
               icon={<Receipt className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
+                <DatePicker
                   label="Fecha de adquisición"
                   required
-                  type="date"
                   value={formData.fechaAdquisicion}
-                  onChange={(e) => set('fechaAdquisicion', e.target.value)}
+                  onChange={(v) => set('fechaAdquisicion', v)}
                 />
                 <Input
                   label="Valor de adquisición"

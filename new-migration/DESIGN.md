@@ -330,6 +330,7 @@ componente:
 | `Input` / `Field` | `label`, `hint`, `error`, `leftIcon`, `required` | `Field` envuelve label + control + hint/error con `aria-describedby`/`aria-invalid`. |
 | `Textarea` | `label`, `hint`, `error`, `rows` | Mismo contrato que `Field`. |
 | `Select` | `label`, `options`, `error`, `placeholder` | Nativo estilizado; chevron Tabler. |
+| `DatePicker` | `value` (ISO `yyyy-mm-dd`), `onChange`, `min`, `max`, `label`, `error`, `required`, `disabled` | Selector de fecha propio (sin dependencias de calendario): input tipeable `dd/mm/aaaa` + botón calendario (lucide) que abre popover `role="dialog"` con grilla mensual `role="grid"` (`shadow-lifted`). Locale es-EC: semana inicia lunes, meses/días en español; el valor viaja en ISO hacia la API. Teclado: flechas mueven el día, `RePág`/`AvPág` cambian de mes, `Inicio`/`Fin` lunes/domingo, `Enter` selecciona, `Esc` cierra (sin cerrar un `Modal` padre). Navegación de mes y año (chevrons dobles), botones **Hoy** y **Limpiar**, días fuera de `min`/`max` deshabilitados, día seleccionado `bg-primary-600`, hoy con anillo `primary-200`. Cierra al click fuera y devuelve el foco al input. |
 | `Checkbox` / `Switch` | `label`, `checked`, `onChange` | `Switch` con transición 150 ms y `role="switch"`. |
 | `Badge` | `tone`, `size`, `dot` | `tone`: los seis + `neutral`. Pill `bg-{tono}-50 text-{tono}-700 ring-{tono}-200`. |
 | `Avatar` | `src`, `name` (iniciales fallback), `size` | Tamaños `xs→lg`; círculo; `alt` desde `name`. |

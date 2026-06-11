@@ -24,8 +24,8 @@ import {
   Button,
   Card,
   DataTable,
+  DatePicker,
   EmptyState,
-  Field,
   PageHeader,
   Pagination,
   Select,
@@ -256,30 +256,26 @@ export default function ExhumacionesPage() {
       <Card padding="none">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-end">
           <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Desde" htmlFor="exh-desde">
-              <input
-                id="exh-desde"
-                type="date"
-                value={desde}
-                onChange={(e) => {
-                  setPage(1);
-                  setDesde(e.target.value);
-                }}
-                className="block h-10 w-full rounded-lg border-0 bg-white px-3 py-2 text-base text-slate-900 shadow-xs ring-1 ring-inset ring-slate-200 transition-shadow duration-150 focus:outline-none focus:ring-2 focus:ring-primary-400"
-              />
-            </Field>
-            <Field label="Hasta" htmlFor="exh-hasta">
-              <input
-                id="exh-hasta"
-                type="date"
-                value={hasta}
-                onChange={(e) => {
-                  setPage(1);
-                  setHasta(e.target.value);
-                }}
-                className="block h-10 w-full rounded-lg border-0 bg-white px-3 py-2 text-base text-slate-900 shadow-xs ring-1 ring-inset ring-slate-200 transition-shadow duration-150 focus:outline-none focus:ring-2 focus:ring-primary-400"
-              />
-            </Field>
+            <DatePicker
+              id="exh-desde"
+              label="Desde"
+              value={desde}
+              max={hasta || undefined}
+              onChange={(v) => {
+                setPage(1);
+                setDesde(v);
+              }}
+            />
+            <DatePicker
+              id="exh-hasta"
+              label="Hasta"
+              value={hasta}
+              min={desde || undefined}
+              onChange={(v) => {
+                setPage(1);
+                setHasta(v);
+              }}
+            />
             <Select
               label="Motivo"
               value={motivo}
