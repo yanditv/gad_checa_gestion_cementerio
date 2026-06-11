@@ -362,12 +362,30 @@ Checklist mínimo:
   `row`, `pc-*`, `d-flex`, `badge bg-*`, etc.) en cualquier archivo de la
   app. Todo el frontend está en **Tailwind puro** desde 2026-05-14. Si una
   pantalla nueva las usa, el cambio se rechaza en revisión.
-- ❌ Importar wrappers de `components/ui/*` (Button, DataGrid, PageHeader,
-  PaginationNav, SearchFilters, SelectInput, TextInput). Esos archivos
-  **fueron eliminados**. Usa elementos Tailwind inline o crea nuevos
-  wrappers en Tailwind cuando un patrón se repita 3+ veces.
 - ❌ Hardcodear textos del cementerio (presidente, dirección, etc.). Vienen
   de `Cementerio` y `GADInformacion`.
+
+> **Reversión de regla (2026-06-10, rama `feat/frontend-ux`).** Queda
+> **permitido** y recomendado usar `frontend/src/components/ui/*` de nuevo. La
+> prohibición anterior ("esos archivos fueron eliminados, no importar wrappers")
+> **se revierte**: se reintroduce `components/ui/` como **librería curada,
+> tipada y accesible en Tailwind puro** (no son los wrappers viejos basados en
+> Bootstrap). Guía de uso:
+>
+> - Compón la UI nueva con los componentes de `components/ui/` (`Button`,
+>   `Field`, `Select`, `Badge`, `Avatar`, `Card`, `PageHeader`, `DataTable`,
+>   `Pagination`, `Modal`, `EmptyState`, `Toast`, …). Catálogo y contrato de
+>   props en `DESIGN.md` §6.
+> - **Tailwind puro** dentro de los componentes: prohibido Bootstrap
+>   (`btn`, `card`, `form-control`, `col-*`, `pc-*`, `badge bg-*`).
+> - Tipados (TS estricto), accesibles (`focus-visible`, `aria-*`, estados
+>   loading/empty/error) y construidos sobre los tokens de `DESIGN.md` §3
+>   (los seis tonos, sombras en capas, radios `xl`, Inter).
+> - Si un patrón se repite 3+ veces y no existe en la librería, **créalo en
+>   `components/ui/`** en vez de duplicar Tailwind inline. No lo hagas por
+>   anticipado: extrae cuando el patrón ya se repite.
+> - Tokens nuevos van en `tailwind.config.js` y se documentan en `DESIGN.md`
+>   §3 en el mismo PR.
 
 ---
 
@@ -380,7 +398,8 @@ Checklist mínimo:
   fechas, mensajes de validación, qué muestra una tabla vacía.
 - ✅ Cuando la migración exija una decisión técnica nueva, registrarla en
   `MIGRATION_PLAN.md` §3 (decisiones cerradas) en el mismo PR.
-- ✅ Reutilizar patrones Tailwind del repo antes de extraer un componente nuevo.
+- ✅ Reutilizar los componentes de `components/ui/` (y los patrones Tailwind
+  del repo) antes de escribir UI nueva a mano. Ver `DESIGN.md` §6.
 - ✅ Reportar al usuario, al cerrar, qué quedó cubierto y qué queda
   pendiente, citando los IDs de requerimiento (`CONTRA-R8`, `DASH-R4`, ...).
 

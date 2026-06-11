@@ -258,7 +258,7 @@ export default function BovedasPage() {
               ) : bovedas.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
-                    <i className="ti ti-box-off text-3xl text-slate-300" />
+                    <i className="ti ti-box text-3xl text-slate-300" />
                     <div className="mt-2 text-sm">No hay bóvedas registradas.</div>
                   </td>
                 </tr>

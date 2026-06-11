@@ -104,7 +104,7 @@ export default function ReportesPage() {
       label: 'Bóvedas por caducar',
       value: formatNumber(resumen?.bovedas.porCaducar ?? 0),
       tone: 'bg-amber-50 text-amber-600 ring-amber-200',
-      icon: 'ti-clock-exclamation',
+      icon: 'ti-clock',
       valueClass: 'text-amber-600',
     },
     {

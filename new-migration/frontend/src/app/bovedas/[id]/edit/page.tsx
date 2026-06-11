@@ -340,7 +340,7 @@ export default function EditBovedaPage() {
                     onClick={() => setShowPropietarioModal(true)}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    <i className="ti ti-user-edit" /> Cambiar
+                    <i className="ti ti-edit" /> Cambiar
                   </button>
                   <button
                     type="button"
@@ -434,10 +434,10 @@ function PropietarioModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" role="dialog"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-fade-in" role="dialog"
       onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}>
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-lifted">
-        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-lifted animate-scale-in">
+        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5">
           <div>
             <h3 className="text-base font-semibold text-slate-800">Asignar propietario</h3>
             <p className="text-xs text-slate-500">Buscar por nombre, apellido o cédula.</p>
@@ -447,7 +447,7 @@ function PropietarioModal({
             <i className="ti ti-x" />
           </button>
         </header>
-        <div className="p-5">
+        <div className="p-6">
           {error && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>}
           <div className="relative mb-3">
             <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -480,7 +480,7 @@ function PropietarioModal({
             )}
           </div>
         </div>
-        <footer className="flex justify-end border-t border-slate-100 px-5 py-3">
+        <footer className="flex justify-end border-t border-slate-100 px-6 py-3.5">
           <button type="button" onClick={onClose} disabled={saving}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Cerrar

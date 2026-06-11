@@ -222,7 +222,7 @@ export default function PagoDetailPage({
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-file-type-pdf" />
+            <i className="ti ti-file-text" />
             Factura PDF
           </a>
           {puedeAnular && (

@@ -2,6 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import {
+  Bell,
+  Check,
+  ChevronDown,
+  Lock,
+  Menu,
+  Power,
+  Search,
+  Settings,
+  User,
+} from 'lucide-react';
 import type { SessionUser } from './DashboardLayout';
 import { notificacionesApi } from '@/lib/api';
 import { timeAgo } from '@/lib/timeago';
@@ -105,13 +116,17 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
           onClick={onToggleSidebar}
           aria-label="Abrir menú"
         >
-          <i className="ti ti-menu-2 text-xl" />
+          <Menu className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
         </button>
 
         {/* Buscador (placeholder global, conectaremos al backend en fase posterior) */}
         <div className="hidden w-full max-w-md md:block lg:max-w-xl">
           <div className="relative">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             <input
               type="search"
               aria-label="Buscar contratos, personas y bóvedas"
@@ -135,7 +150,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               className="relative flex h-10 w-10 items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 outline-none ring-0 hover:bg-slate-100 focus:outline-none focus:ring-0"
               aria-label="Notificaciones"
             >
-              <i className="ti ti-bell text-xl" />
+              <Bell className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
               {unreadCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -197,7 +212,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                                 className="shrink-0 rounded-full p-1 text-primary-500 hover:bg-primary-50"
                                 title="Marcar como leída"
                               >
-                                <i className="ti ti-check text-xs" />
+                                <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                               </button>
                             )}
                           </div>
@@ -242,7 +257,11 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                   </div>
                 )}
               </div>
-              <i className="ti ti-chevron-down hidden text-slate-400 sm:block" />
+              <ChevronDown
+                className="hidden h-4 w-4 text-slate-400 sm:block"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
             </button>
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
@@ -268,7 +287,8 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <i className="ti ti-user text-slate-400" /> Perfil
+                      <User className="h-4 w-4 text-slate-400" strokeWidth={2} aria-hidden="true" />{' '}
+                      Perfil
                     </Link>
                   </li>
                   <li>
@@ -277,7 +297,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <i className="ti ti-settings text-slate-400" />{' '}
+                      <Settings className="h-4 w-4 text-slate-400" strokeWidth={2} aria-hidden="true" />{' '}
                       Configuración
                     </Link>
                   </li>
@@ -287,8 +307,8 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <i className="ti ti-lock text-slate-400" /> Cambiar
-                      contraseña
+                      <Lock className="h-4 w-4 text-slate-400" strokeWidth={2} aria-hidden="true" />{' '}
+                      Cambiar contraseña
                     </Link>
                   </li>
                   <li className="border-t border-slate-100">
@@ -297,7 +317,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       onClick={handleLogout}
                       className="flex items-center gap-2 px-4 py-2 text-danger-600 hover:bg-danger-50"
                     >
-                      <i className="ti ti-power" />
+                      <Power className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                       {loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
                     </a>
                   </li>

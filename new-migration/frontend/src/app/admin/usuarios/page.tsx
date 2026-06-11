@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 import { usuariosApi, rolesApi, PaginationMeta } from '@/lib/api';
 
 interface UsuarioRol {
@@ -207,7 +208,7 @@ export default function AdminUsuariosPage() {
               ) : usuarios.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
-                    <i className="ti ti-users-off text-3xl text-slate-300" />
+                    <i className="ti ti-users text-3xl text-slate-300" />
                     <div className="mt-2 text-sm">
                       No hay usuarios que coincidan con los filtros.
                     </div>
@@ -271,22 +272,43 @@ export default function AdminUsuariosPage() {
                           >
                             <i className="ti ti-eye" />
                           </Link>
-                          <select
-                            multiple
-                            value={currentRoles}
-                            disabled={savingUserId === usuario.id}
-                            onChange={(e) => {
-                              const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-                              updateRoles(usuario.id, values);
-                            }}
-                            className="min-w-[160px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                          {/* Pills toggleables: un <select multiple> nativo no se
+                              puede estilizar y se ve fuera de sistema. */}
+                          <div
+                            role="group"
+                            aria-label={`Roles de ${usuario.nombre} ${usuario.apellido}`}
+                            className="inline-flex flex-wrap items-center gap-1"
                           >
-                            {roles.map((rol) => (
-                              <option key={rol.id} value={rol.id}>
-                                {rol.nombre}
-                              </option>
-                            ))}
-                          </select>
+                            {roles.map((rol) => {
+                              const checked = currentRoles.includes(rol.id);
+                              return (
+                                <button
+                                  key={rol.id}
+                                  type="button"
+                                  aria-pressed={checked}
+                                  disabled={savingUserId === usuario.id}
+                                  onClick={() =>
+                                    updateRoles(
+                                      usuario.id,
+                                      checked
+                                        ? currentRoles.filter((id) => id !== rol.id)
+                                        : [...currentRoles, rol.id],
+                                    )
+                                  }
+                                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 disabled:opacity-60 ${
+                                    checked
+                                      ? 'bg-primary-50 text-primary-700 ring-primary-200 hover:bg-primary-100'
+                                      : 'bg-white text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-700'
+                                  }`}
+                                >
+                                  {checked && (
+                                    <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+                                  )}
+                                  {rol.nombre}
+                                </button>
+                              );
+                            })}
+                          </div>
                           <button
                             type="button"
                             onClick={() => resetPassword(usuario.id)}
