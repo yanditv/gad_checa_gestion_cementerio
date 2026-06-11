@@ -37,7 +37,12 @@ export default function RootLayout({
         <link rel="stylesheet" href="/css/site.css" />
         <link rel="icon" href="/images/favicon.svg" type="image/x-icon" />
       </head>
-      <body data-pc-preset="preset-1" data-pc-direction="ltr" data-pc-theme="light">
+      <body
+        data-app-surface=""
+        data-pc-preset="preset-1"
+        data-pc-direction="ltr"
+        data-pc-theme="light"
+      >
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary-500 focus:px-4 focus:py-2 focus:text-white focus:outline-none"

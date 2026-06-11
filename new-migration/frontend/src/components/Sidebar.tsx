@@ -121,26 +121,24 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-slate-900 transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         aria-label="Menú principal"
       >
         {/* Branding */}
-        <div className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-800 px-4">
+        <div className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 px-4">
           <Link
             href="/"
-            className="flex items-center gap-2"
+            className="flex items-center gap-1"
             onClick={onClose}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/95 p-0.5 shadow-sm">
-              <img
-                src="/logo.png"
-                alt="Cementerio GAD Checa"
-                className="h-8 w-8 object-contain"
-              />
-            </span>
-            <span className="font-display text-xl font-bold lowercase tracking-tight text-white">
+            <img
+              src="/logo.png"
+              alt="Cementerio GAD Checa"
+              className="h-10 w-10 object-contain"
+            />
+            <span className="font-display text-xl font-bold lowercase tracking-tight text-brand-dark">
               cementer<span className="text-brand-accent">io</span>
             </span>
           </Link>
@@ -154,7 +152,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                 return (
                   <li
                     key={`s-${idx}`}
-                    className="mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 first:mt-0"
+                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 first:mt-0"
                   >
                     {item.label}
                   </li>
@@ -169,16 +167,16 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                     {...(active ? { 'aria-current': 'page' as const } : {})}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                       active
-                        ? 'bg-primary-600 font-semibold text-white shadow-md'
-                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        ? 'bg-primary-50 font-semibold text-primary-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
                     <span
                       aria-hidden="true"
                       className={`flex h-5 w-5 items-center justify-center ${
                         active
-                          ? 'text-white'
-                          : 'text-slate-400 group-hover:text-slate-200'
+                          ? 'text-primary-600'
+                          : 'text-slate-400 group-hover:text-slate-600'
                       }`}
                     >
                       <item.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
@@ -187,7 +185,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                     {active && (
                       <span
                         aria-hidden="true"
-                        className="h-1.5 w-1.5 rounded-full bg-white/80"
+                        className="h-1.5 w-1.5 rounded-full bg-primary-500"
                       />
                     )}
                   </Link>
@@ -198,7 +196,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer del sidebar */}
-        <div className="border-t border-slate-800 px-4 py-3 text-xs text-slate-500">
+        <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-400">
           <div className="flex items-center justify-between">
             <span>v1.0.0</span>
             <span className="inline-flex items-center gap-1">
