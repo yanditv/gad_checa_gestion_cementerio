@@ -75,7 +75,7 @@ export default function EditBloquePage() {
         });
         setPisosActuales((data.pisos ?? []).length);
         const preciosIniciales: typeof preciosPorPiso = {};
-        (data.pisos ?? []).forEach((p: any) => {
+        (data.pisos ?? []).forEach((p: { numero: number; precio: number | null }) => {
           preciosIniciales[p.numero] = {
             usarTarifaBase: Number(p.precio) === Number(data.tarifaBase),
             precio: Number(p.precio ?? data.tarifaBase ?? 0),

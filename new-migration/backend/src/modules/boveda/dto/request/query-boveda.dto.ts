@@ -1,32 +1,8 @@
-import { Transform, Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { PaginationQueryDto } from '../../../../common/dto/pagination-query.dto';
 
-export class QueryBovedaDto {
-  @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
-
-  @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number = 15;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
-
-  @IsOptional()
-  @IsString()
-  sortBy?: string;
-
-  @IsOptional()
-  @IsIn(['asc', 'desc'])
-  sortOrder?: 'asc' | 'desc' = 'desc';
-
+export class QueryBovedaDto extends PaginationQueryDto {
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()
@@ -39,9 +15,11 @@ export class QueryBovedaDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(['disponible', 'ocupada'])
   estado?: string;
 
   @IsOptional()
   @IsString()
+  @IsIn(['con', 'sin'])
   tienePropietario?: string;
 }

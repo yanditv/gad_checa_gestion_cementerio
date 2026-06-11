@@ -19,15 +19,7 @@ import {
 } from '../../common/decorators/current-user.decorator';
 import { CreateBovedaDto, UpdateBovedaDto } from './dto/request/boveda.dto';
 import { QueryBovedaDto } from './dto/request/query-boveda.dto';
-import { IsOptional, IsNumber } from 'class-validator';
-import { Transform } from 'class-transformer';
-
-class SetPropietarioDto {
-  @IsOptional()
-  @IsNumber()
-  @Transform(({ value }) => (value != null ? Number(value) : null))
-  personaId!: number | null;
-}
+import { SetPropietarioDto } from './dto/request/set-propietario.dto';
 
 @ApiTags('bovedas')
 @ApiBearerAuth()

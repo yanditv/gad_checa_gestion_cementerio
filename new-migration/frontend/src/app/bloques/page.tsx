@@ -42,7 +42,7 @@ export default function BloquesPage() {
 
   useEffect(() => {
     loadBloques();
-  }, [page, search]);
+  }, [page, search, filterTipo]);
 
   const loadBloques = async () => {
     setLoading(true);
@@ -52,8 +52,8 @@ export default function BloquesPage() {
         page,
         limit: 15,
         search: search.trim() || undefined,
+        ...(filterTipo ? { tipo: filterTipo } : {}),
       });
-
       setBloques(payload.data || []);
       setMeta(payload.meta);
     } catch (error: any) {
@@ -62,6 +62,12 @@ export default function BloquesPage() {
       setLoading(false);
     }
   };
+
+  function limpiarFiltros() {
+    setSearch('');
+    setFilterTipo('');
+    setPage(1);
+  }
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Desactivar este bloque?')) return;

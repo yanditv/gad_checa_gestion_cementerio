@@ -53,7 +53,7 @@ export default function BovedasPage() {
   const [filterEstado, setFilterEstado] = useState('');
   const [filterPropietario, setFilterPropietario] = useState('');
   const [filterBloqueId, setFilterBloqueId] = useState('');
-  const [bloques, setBloques] = useState<any[]>([]);
+  const [bloques, setBloques] = useState<{ id: number; nombre: string; estado: boolean }[]>([]);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
@@ -63,7 +63,7 @@ export default function BovedasPage() {
 
   useEffect(() => {
     bloquesApi.findPage({ page: 1, limit: 100 }).then((r) => {
-      setBloques((r.data || []).filter((b: any) => b.estado));
+      setBloques((r.data || []).filter((b: { estado: boolean }) => b.estado));
     }).catch(() => {});
   }, []);
 
@@ -366,7 +366,7 @@ export default function BovedasPage() {
               className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
             >
               <option value="">Todos los bloques</option>
-              {bloques.map((b: any) => (
+              {bloques.map((b) => (
                 <option key={b.id} value={b.id}>{b.nombre}</option>
               ))}
             </select>

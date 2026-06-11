@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BloqueService } from './bloque.service';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { QueryBloqueDto } from './dto/query-bloque.dto';
 import { CreateBloqueDto, UpdateBloqueDto } from './dto/bloque.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
@@ -26,7 +26,7 @@ export class BloqueController {
   constructor(private service: BloqueService) {}
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
+  findAll(@Query() query: QueryBloqueDto) {
     return this.service.findAll(query);
   }
 
