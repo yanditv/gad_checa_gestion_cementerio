@@ -3,6 +3,19 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
+  Check,
+  CircleX,
+  ClipboardList,
+  History,
+  MapPin,
+  Package,
+  RotateCcw,
+  Settings,
+  TrendingDown,
+  Truck,
+  UserPlus,
+} from 'lucide-react';
+import {
   Badge,
   Button,
   Card,
@@ -354,7 +367,7 @@ export default function BienDetailPage({
         form={formId}
         loading={submitting}
         variant={danger ? 'danger' : 'primary'}
-        leftIcon={<i className="ti ti-check" aria-hidden="true" />}
+        leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
       >
         {submitLabel}
       </Button>
@@ -383,7 +396,7 @@ export default function BienDetailPage({
           </span>
         }
         backHref="/inventario/bienes"
-        icon={<i className="ti ti-package" aria-hidden="true" />}
+        icon={<Package className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
       />
 
       {error && (
@@ -397,7 +410,7 @@ export default function BienDetailPage({
           <Card
             padding="md"
             header={
-              <Card.Title icon={<i className="ti ti-clipboard-list" aria-hidden="true" />}>
+              <Card.Title icon={<ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
                 Datos del bien
               </Card.Title>
             }
@@ -435,7 +448,7 @@ export default function BienDetailPage({
             <Card
               padding="md"
               header={
-                <Card.Title icon={<i className="ti ti-circle-x" aria-hidden="true" />}>
+                <Card.Title icon={<CircleX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
                   Baja del bien
                 </Card.Title>
               }
@@ -451,7 +464,7 @@ export default function BienDetailPage({
             padding="md"
             header={
               <div className="flex items-center gap-2">
-                <Card.Title icon={<i className="ti ti-history" aria-hidden="true" />}>
+                <Card.Title icon={<History className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
                   Historial
                 </Card.Title>
                 <Badge tone="neutral" size="sm">
@@ -508,7 +521,7 @@ export default function BienDetailPage({
           <Card
             padding="md"
             header={
-              <Card.Title icon={<i className="ti ti-map-pin" aria-hidden="true" />}>
+              <Card.Title icon={<MapPin className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
                 Custodio y ubicación
               </Card.Title>
             }
@@ -530,7 +543,7 @@ export default function BienDetailPage({
           <Card
             padding="md"
             header={
-              <Card.Title icon={<i className="ti ti-trending-down" aria-hidden="true" />}>
+              <Card.Title icon={<TrendingDown className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
                 Depreciación
               </Card.Title>
             }
@@ -570,7 +583,7 @@ export default function BienDetailPage({
           <Card
             padding="md"
             header={
-              <Card.Title icon={<i className="ti ti-settings" aria-hidden="true" />}>
+              <Card.Title icon={<Settings className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
                 Acciones
               </Card.Title>
             }
@@ -581,7 +594,7 @@ export default function BienDetailPage({
                 block
                 disabled={bien.dadoDeBaja}
                 onClick={() => openModal('reasignar')}
-                leftIcon={<i className="ti ti-user-plus" aria-hidden="true" />}
+                leftIcon={<UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               >
                 Reasignar custodio
               </Button>
@@ -590,7 +603,7 @@ export default function BienDetailPage({
                 block
                 disabled={bien.dadoDeBaja}
                 onClick={() => openModal('mover')}
-                leftIcon={<i className="ti ti-truck" aria-hidden="true" />}
+                leftIcon={<Truck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               >
                 Mover de ubicación
               </Button>
@@ -600,7 +613,7 @@ export default function BienDetailPage({
                   variant="secondary"
                   block
                   onClick={() => openModal('baja')}
-                  leftIcon={<i className="ti ti-circle-x" aria-hidden="true" />}
+                  leftIcon={<CircleX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                   className="border-danger-200 text-danger-600 ring-danger-200 hover:bg-danger-50 hover:text-danger-700"
                 >
                   Dar de baja
@@ -612,7 +625,7 @@ export default function BienDetailPage({
                   block
                   loading={submitting}
                   onClick={handleReactivar}
-                  leftIcon={<i className="ti ti-rotate" aria-hidden="true" />}
+                  leftIcon={<RotateCcw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                   className="border-success-200 text-success-700 ring-success-200 hover:bg-success-50"
                 >
                   Reactivar bien

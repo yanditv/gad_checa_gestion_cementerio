@@ -10,6 +10,14 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  CircleAlert,
+  CircleCheck,
+  Info,
+  TriangleAlert,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from './cn';
 import type { Tone } from './tokens';
 
@@ -39,29 +47,29 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const toneConfig: Record<ToastTone, { icon: string; classes: string; iconColor: string }> = {
+const toneConfig: Record<ToastTone, { icon: LucideIcon; classes: string; iconColor: string }> = {
   primary: {
-    icon: 'ti-info-circle',
+    icon: Info,
     classes: 'border-primary-200',
     iconColor: 'text-primary-500',
   },
   info: {
-    icon: 'ti-info-circle',
+    icon: Info,
     classes: 'border-info-200',
     iconColor: 'text-info-500',
   },
   success: {
-    icon: 'ti-circle-check',
+    icon: CircleCheck,
     classes: 'border-success-200',
     iconColor: 'text-success-600',
   },
   warning: {
-    icon: 'ti-alert-triangle',
+    icon: TriangleAlert,
     classes: 'border-warning-200',
     iconColor: 'text-warning-600',
   },
   danger: {
-    icon: 'ti-alert-circle',
+    icon: CircleAlert,
     classes: 'border-danger-200',
     iconColor: 'text-danger-500',
   },
@@ -130,6 +138,7 @@ function ToastItem({
   onDismiss: () => void;
 }) {
   const cfg = toneConfig[toast.tone ?? 'primary'];
+  const ToneIcon = cfg.icon;
   return (
     <div
       className={cn(
@@ -137,9 +146,10 @@ function ToastItem({
         cfg.classes,
       )}
     >
-      <i
+      <ToneIcon
         aria-hidden="true"
-        className={cn('ti mt-0.5 shrink-0 text-lg', cfg.icon, cfg.iconColor)}
+        strokeWidth={2}
+        className={cn('mt-0.5 h-5 w-5 shrink-0', cfg.iconColor)}
       />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-slate-900">{toast.title}</p>
@@ -153,7 +163,7 @@ function ToastItem({
         aria-label="Cerrar notificación"
         className="-mr-1 -mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
       >
-        <i className="ti ti-x text-base" aria-hidden="true" />
+        <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
       </button>
     </div>
   );

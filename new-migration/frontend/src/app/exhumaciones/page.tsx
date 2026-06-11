@@ -3,6 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
+  ArrowLeftRight,
+  Download,
+  FileDown,
+  FileText,
+  FolderX,
+  Table,
+  X,
+} from 'lucide-react';
+import {
   exhumacionesApi,
   MOTIVOS_EXHUMACION,
   MOTIVO_EXHUMACION_LABEL,
@@ -194,7 +203,7 @@ export default function ExhumacionesPage() {
         <Button
           size="sm"
           variant="ghost"
-          leftIcon={<i className="ti ti-download" aria-hidden="true" />}
+          leftIcon={<Download className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
           onClick={() => handleDescargarActa(row)}
           className="text-primary-600 hover:text-primary-700"
           aria-label={`Descargar acta ${row.numeroActa}`}
@@ -210,14 +219,14 @@ export default function ExhumacionesPage() {
       <PageHeader
         title="Exhumaciones"
         subtitle="Historial de exhumaciones y traslados registrados."
-        icon={<i className="ti ti-switch-horizontal" aria-hidden="true" />}
+        icon={<ArrowLeftRight className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
         actions={
           <>
             <Button
               variant="secondary"
               size="sm"
               loading={downloading}
-              leftIcon={<i className="ti ti-file-text" aria-hidden="true" />}
+              leftIcon={<FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               onClick={() => handleExport('pdf')}
             >
               PDF
@@ -226,7 +235,7 @@ export default function ExhumacionesPage() {
               variant="secondary"
               size="sm"
               loading={downloading}
-              leftIcon={<i className="ti ti-table" aria-hidden="true" />}
+              leftIcon={<Table className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               onClick={() => handleExport('excel')}
             >
               Excel
@@ -235,7 +244,7 @@ export default function ExhumacionesPage() {
               variant="secondary"
               size="sm"
               loading={downloading}
-              leftIcon={<i className="ti ti-file-download" aria-hidden="true" />}
+              leftIcon={<FileDown className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               onClick={() => handleExport('csv')}
             >
               CSV
@@ -292,7 +301,7 @@ export default function ExhumacionesPage() {
             size="md"
             disabled={!hasFilters}
             onClick={clearFilters}
-            leftIcon={<i className="ti ti-x" aria-hidden="true" />}
+            leftIcon={<X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             className="self-end"
           >
             Limpiar
@@ -312,7 +321,7 @@ export default function ExhumacionesPage() {
           loading={loading}
           empty={
             <EmptyState
-              icon={<i className="ti ti-folder-x" aria-hidden="true" />}
+              icon={<FolderX className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />}
               title="No hay exhumaciones registradas"
               description={
                 hasFilters

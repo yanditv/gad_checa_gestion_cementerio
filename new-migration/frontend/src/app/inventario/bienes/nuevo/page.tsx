@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Check,
+  ClipboardList,
+  Info,
+  Package,
+  Receipt,
+  UserCheck,
+} from 'lucide-react';
+import {
   inventarioBienesApi,
   inventarioCategoriasApi,
   inventarioCustodiosApi,
@@ -126,14 +134,14 @@ export default function NuevoBienPage() {
         title="Nuevo bien"
         subtitle="Registrar (dar de alta) un bien institucional en el inventario."
         backHref="/inventario/bienes"
-        icon={<i className="ti ti-package" aria-hidden="true" />}
+        icon={<Package className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
           padding="none"
           className="lg:col-span-2"
-          header={<Card.Title icon={<i className="ti ti-clipboard-list" aria-hidden="true" />}>Datos del bien</Card.Title>}
+          header={<Card.Title icon={<ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>Datos del bien</Card.Title>}
         >
           <form onSubmit={handleSubmit} className="space-y-6 p-5">
             {error && (
@@ -201,7 +209,7 @@ export default function NuevoBienPage() {
             <FormSection
               title="Adquisición y depreciación"
               description="Datos contables del bien (CGE 406-03)."
-              icon={<i className="ti ti-receipt-2" aria-hidden="true" />}
+              icon={<Receipt className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
@@ -253,7 +261,7 @@ export default function NuevoBienPage() {
               </div>
             </FormSection>
 
-            <FormSection title="Responsable" icon={<i className="ti ti-user-check" aria-hidden="true" />}>
+            <FormSection title="Responsable" icon={<UserCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
               <Select
                 label="Custodio"
                 wrapperClassName="sm:max-w-sm"
@@ -279,7 +287,7 @@ export default function NuevoBienPage() {
               <Button
                 type="submit"
                 loading={loading}
-                leftIcon={<i className="ti ti-check" aria-hidden="true" />}
+                leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               >
                 Guardar
               </Button>
@@ -289,7 +297,7 @@ export default function NuevoBienPage() {
 
         <Card
           padding="none"
-          header={<Card.Title icon={<i className="ti ti-info-circle" aria-hidden="true" />}>Información</Card.Title>}
+          header={<Card.Title icon={<Info className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>Información</Card.Title>}
         >
           <div className="p-5 text-sm text-slate-600">
             <p className="text-slate-500">

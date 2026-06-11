@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import { Search, X } from 'lucide-react';
 import { cn } from './cn';
 
 export interface SearchFiltersProps {
@@ -41,9 +42,10 @@ export function SearchFilters({
       )}
     >
       <div className="relative w-full sm:max-w-xs">
-        <i
+        <Search
           aria-hidden="true"
-          className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base text-slate-400"
+          strokeWidth={2}
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
         />
         <input
           type="search"
@@ -60,7 +62,7 @@ export function SearchFilters({
             aria-label="Limpiar búsqueda"
             className="absolute right-2 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
           >
-            <i className="ti ti-x text-sm" aria-hidden="true" />
+            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </button>
         )}
       </div>

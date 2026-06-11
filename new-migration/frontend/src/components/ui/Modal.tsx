@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 import { cn } from './cn';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -171,7 +172,7 @@ export function Modal({
                 aria-label="Cerrar"
                 className="-mr-1.5 -mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
               >
-                <i className="ti ti-x text-lg" aria-hidden="true" />
+                <X className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
               </button>
             )}
           </div>

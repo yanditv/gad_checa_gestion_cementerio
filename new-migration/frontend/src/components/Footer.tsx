@@ -1,3 +1,5 @@
+import { Database, ShieldCheck } from 'lucide-react';
+
 export function Footer() {
   return (
     <footer className="mt-8 border-t border-slate-200 bg-white">
@@ -16,11 +18,11 @@ export function Footer() {
             Sistema activo
           </span>
           <span className="inline-flex items-center gap-1">
-            <i className="ti ti-database text-info-600" />
+            <Database className="h-4 w-4 text-info-600" strokeWidth={2} aria-hidden="true" />
             Base de datos
           </span>
           <span className="inline-flex items-center gap-1">
-            <i className="ti ti-shield-check text-warning-600" />
+            <ShieldCheck className="h-4 w-4 text-warning-600" strokeWidth={2} aria-hidden="true" />
             Seguro
           </span>
         </div>

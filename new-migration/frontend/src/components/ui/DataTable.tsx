@@ -1,4 +1,5 @@
 import { type ReactNode, type Key } from 'react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { cn } from './cn';
 import { Skeleton } from './Skeleton';
 import { EmptyState } from './EmptyState';
@@ -127,17 +128,25 @@ export function DataTable<T>({
                       )}
                     >
                       <span>{col.header}</span>
-                      <i
-                        aria-hidden="true"
-                        className={cn(
-                          'ti text-sm',
-                          !isSorted && 'ti-arrows-sort text-slate-300',
-                          isSorted &&
-                            (sort?.direction === 'asc'
-                              ? 'ti-arrow-up text-primary-500'
-                              : 'ti-arrow-down text-primary-500'),
-                        )}
-                      />
+                      {!isSorted ? (
+                        <ArrowUpDown
+                          aria-hidden="true"
+                          strokeWidth={2}
+                          className="h-4 w-4 text-slate-300"
+                        />
+                      ) : sort?.direction === 'asc' ? (
+                        <ArrowUp
+                          aria-hidden="true"
+                          strokeWidth={2}
+                          className="h-4 w-4 text-primary-500"
+                        />
+                      ) : (
+                        <ArrowDown
+                          aria-hidden="true"
+                          strokeWidth={2}
+                          className="h-4 w-4 text-primary-500"
+                        />
+                      )}
                     </button>
                   ) : (
                     col.header

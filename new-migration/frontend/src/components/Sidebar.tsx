@@ -2,57 +2,79 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Archive,
+  ArrowLeftRight,
+  BookOpen,
+  Boxes,
+  Building2,
+  ChartScatter,
+  Cloud,
+  Coins,
+  FileBarChart,
+  FolderPlus,
+  LayoutDashboard,
+  Package,
+  Settings,
+  ShieldCheck,
+  TextSearch,
+  TrendingDown,
+  User,
+  UserCheck,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import type { SessionUser } from './DashboardLayout';
 
 type NavItem =
-  | { type: 'item'; label: string; href: string; icon: string; roles?: string[]; match?: 'exact' | 'prefix' | 'contracts-list' }
+  | { type: 'item'; label: string; href: string; icon: LucideIcon; roles?: string[]; match?: 'exact' | 'prefix' | 'contracts-list' }
   | { type: 'section'; label: string };
 
 const navigation: NavItem[] = [
-  { type: 'item', label: 'Dashboard', href: '/', icon: 'ti-dashboard', match: 'exact' },
+  { type: 'item', label: 'Dashboard', href: '/', icon: LayoutDashboard, match: 'exact' },
 
   { type: 'section', label: 'Contratos' },
-  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: 'ti-folder-plus', match: 'prefix' },
-  { type: 'item', label: 'Listado', href: '/contratos', icon: 'ti-list-search', match: 'contracts-list' },
+  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: FolderPlus, match: 'prefix' },
+  { type: 'item', label: 'Listado', href: '/contratos', icon: TextSearch, match: 'contracts-list' },
 
   { type: 'section', label: 'Gestión' },
-  { type: 'item', label: 'Personas', href: '/personas', icon: 'ti-users' },
-  { type: 'item', label: 'Bloques', href: '/bloques', icon: 'ti-building' },
-  { type: 'item', label: 'Bóvedas', href: '/bovedas', icon: 'ti-box-multiple' },
-  { type: 'item', label: 'Cobros', href: '/cobros', icon: 'ti-coin' },
-  { type: 'item', label: 'Difuntos', href: '/difuntos', icon: 'ti-cloud' },
-  { type: 'item', label: 'Exhumaciones', href: '/exhumaciones', icon: 'ti-switch-horizontal' },
+  { type: 'item', label: 'Personas', href: '/personas', icon: Users },
+  { type: 'item', label: 'Bloques', href: '/bloques', icon: Building2 },
+  { type: 'item', label: 'Bóvedas', href: '/bovedas', icon: Boxes },
+  { type: 'item', label: 'Cobros', href: '/cobros', icon: Coins },
+  { type: 'item', label: 'Difuntos', href: '/difuntos', icon: Cloud },
+  { type: 'item', label: 'Exhumaciones', href: '/exhumaciones', icon: ArrowLeftRight },
 
   { type: 'section', label: 'Inventario' },
-  { type: 'item', label: 'Bienes', href: '/inventario/bienes', icon: 'ti-package' },
-  { type: 'item', label: 'Categorías', href: '/inventario/categorias', icon: 'ti-archive' },
-  { type: 'item', label: 'Custodios', href: '/inventario/custodios', icon: 'ti-user-check' },
-  { type: 'item', label: 'Depreciación', href: '/inventario/depreciacion', icon: 'ti-trending-down' },
-  { type: 'item', label: 'Reportes', href: '/inventario/reportes', icon: 'ti-file-report' },
+  { type: 'item', label: 'Bienes', href: '/inventario/bienes', icon: Package },
+  { type: 'item', label: 'Categorías', href: '/inventario/categorias', icon: Archive },
+  { type: 'item', label: 'Custodios', href: '/inventario/custodios', icon: UserCheck },
+  { type: 'item', label: 'Depreciación', href: '/inventario/depreciacion', icon: TrendingDown },
+  { type: 'item', label: 'Reportes', href: '/inventario/reportes', icon: FileBarChart },
 
   { type: 'section', label: 'Administración' },
-  { type: 'item', label: 'Mi Cuenta', href: '/cuenta', icon: 'ti-user' },
+  { type: 'item', label: 'Mi Cuenta', href: '/cuenta', icon: User },
   {
     type: 'item',
     label: 'Usuarios',
     href: '/admin/usuarios',
-    icon: 'ti-users',
+    icon: Users,
     roles: ['Admin', 'Administrador'],
   },
   {
     type: 'item',
     label: 'Roles',
     href: '/admin/roles',
-    icon: 'ti-shield-check',
+    icon: ShieldCheck,
     roles: ['Admin', 'Administrador'],
   },
 
   { type: 'section', label: 'Configuración' },
-  { type: 'item', label: 'Ajustes', href: '/configuracion', icon: 'ti-settings' },
-  { type: 'item', label: 'Reportes', href: '/reportes', icon: 'ti-chart-dots' },
+  { type: 'item', label: 'Ajustes', href: '/configuracion', icon: Settings },
+  { type: 'item', label: 'Reportes', href: '/reportes', icon: ChartScatter },
 
   { type: 'section', label: 'Ayuda' },
-  { type: 'item', label: 'Manual de usuario', href: '/manual', icon: 'ti-book' },
+  { type: 'item', label: 'Manual de usuario', href: '/manual', icon: BookOpen },
 ];
 
 interface SidebarProps {
@@ -153,13 +175,13 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                   >
                     <span
                       aria-hidden="true"
-                      className={`flex h-5 w-5 items-center justify-center text-base ${
+                      className={`flex h-5 w-5 items-center justify-center ${
                         active
                           ? 'text-white'
                           : 'text-slate-400 group-hover:text-slate-200'
                       }`}
                     >
-                      <i className={`ti ${item.icon}`} />
+                      <item.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
                     </span>
                     <span className="flex-1">{item.label}</span>
                     {active && (

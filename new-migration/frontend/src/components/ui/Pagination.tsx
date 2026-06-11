@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from './cn';
 
 export interface PaginationProps {
@@ -90,7 +91,7 @@ export function Pagination({
                 'text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-700',
               )}
             >
-              <i className="ti ti-chevron-left text-base" aria-hidden="true" />
+              <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             </button>
           </li>
           {pages.map((p, i) =>
@@ -130,7 +131,7 @@ export function Pagination({
                 'text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-700',
               )}
             >
-              <i className="ti ti-chevron-right text-base" aria-hidden="true" />
+              <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             </button>
           </li>
         </ul>
