@@ -1,9 +1,8 @@
 /**
- * Tailwind coexiste con el template Able Pro (Bootstrap) durante la
- * migración gradual. Para evitar conflictos de reset:
- *   - `corePlugins.preflight = false` → Tailwind no aplica reset global.
- *     Las pantallas Bootstrap conservan su reset propio; las pantallas
- *     migradas a Tailwind aplican normalización vía clases utilitarias.
+ * Tailwind puro (desde 2026-06-11): el CSS global de Able Pro/Bootstrap fue
+ * retirado del layout — sus utilidades homónimas (.p-5, .mb-3, … con
+ * !important y otra escala) pisaban a las de Tailwind. El **preflight está
+ * activo** y provee el reset global (box-sizing, márgenes, listas, botones).
  *
  * Lenguaje visual: CRM profesional (Linear / HubSpot, pero institucional).
  * Esencia preservada — azul `primary #1890ff`, neutros `slate`, los seis
@@ -16,9 +15,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
-  corePlugins: {
-    preflight: false,
-  },
   theme: {
     extend: {
       colors: {

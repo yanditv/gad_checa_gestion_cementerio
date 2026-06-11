@@ -32,8 +32,9 @@ export default function RootLayout({
         <link rel="stylesheet" href="/fonts/feather.css" />
         <link rel="stylesheet" href="/fonts/fontawesome.css" />
         <link rel="stylesheet" href="/fonts/material.css" />
-        <link rel="stylesheet" href="/css/style.css" />
-        <link rel="stylesheet" href="/css/style-preset.css" />
+        {/* style.css / style-preset.css (Able Pro · Bootstrap) eliminados:
+            sus utilidades homónimas (.p-5, .mb-3, …) con !important pisaban
+            a las de Tailwind. El reset lo provee el preflight de Tailwind. */}
         <link rel="stylesheet" href="/css/site.css" />
         <link rel="icon" href="/images/favicon.svg" type="image/x-icon" />
       </head>
@@ -50,22 +51,11 @@ export default function RootLayout({
           Saltar al contenido principal
         </a>
 
-        <div className="loader-bg">
-          <div className="loader-track">
-            <div className="loader-fill"></div>
-          </div>
-        </div>
-
         <DashboardLayout>
           {children}
         </DashboardLayout>
 
-        <Script src="/js/plugins/popper.min.js" strategy="afterInteractive" />
-        <Script src="/js/plugins/simplebar.min.js" strategy="afterInteractive" />
-        <Script src="/js/plugins/bootstrap.min.js" strategy="afterInteractive" />
         <Script src="/js/plugins/apexcharts.min.js" strategy="afterInteractive" />
-        <Script src="/js/plugins/feather.min.js" strategy="afterInteractive" />
-        <Script src="/js/pcoded.js" strategy="afterInteractive" />
       </body>
     </html>
   );
