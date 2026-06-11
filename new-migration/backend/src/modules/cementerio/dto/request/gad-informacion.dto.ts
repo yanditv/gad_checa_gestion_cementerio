@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateGADInformacionDto {
   @ApiPropertyOptional()
@@ -51,4 +51,24 @@ export class UpdateGADInformacionDto {
   @IsOptional()
   @IsString()
   vision?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  usarHeaderImagen?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  headerImagenUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  usarFooterImagen?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  footerImagenUrl?: string;
 }

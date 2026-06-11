@@ -45,6 +45,10 @@ export function toGADInformacionResponse(entity: GADInformacion): GADInformacion
     mision: entity.mision ?? undefined,
     vision: entity.vision ?? undefined,
     slogan: entity.slogan ?? undefined,
+    usarHeaderImagen: entity.usarHeaderImagen,
+    headerImagenUrl: entity.headerImagenUrl ?? undefined,
+    usarFooterImagen: entity.usarFooterImagen,
+    footerImagenUrl: entity.footerImagenUrl ?? undefined,
     fechaCreacion: entity.fechaCreacion.toISOString(),
     fechaActualizacion: entity.fechaActualizacion?.toISOString(),
   };

@@ -812,6 +812,10 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
   const [saved, setSaved] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [headerUploadError, setHeaderUploadError] = useState<string | null>(null);
+  const [uploadingFooter, setUploadingFooter] = useState(false);
+  const [footerUploadError, setFooterUploadError] = useState<string | null>(null);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -821,18 +825,64 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/configuracion/logo', {
+      const res = await fetch('/api/configuracion/logo?type=logo', {
         method: 'POST',
         body: formData,
         credentials: 'same-origin',
       });
       if (!res.ok) throw new Error('Error al subir el logo');
       const payload = await res.json();
-      setGadField('logoUrl', payload.logoUrl);
+      setGadField('logoUrl', payload.url);
     } catch (err) {
       setLogoUploadError(err instanceof Error ? err.message : 'Error al subir');
     } finally {
       setUploadingLogo(false);
+    }
+  };
+
+  const handleHeaderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHeader(true);
+    setHeaderUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/configuracion/logo?type=header', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Error al subir la cabecera');
+      const payload = await res.json();
+      setGadField('headerImagenUrl', payload.url);
+    } catch (err) {
+      setHeaderUploadError(err instanceof Error ? err.message : 'Error al subir');
+    } finally {
+      setUploadingHeader(false);
+    }
+  };
+
+  const handleFooterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFooter(true);
+    setFooterUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/configuracion/logo?type=footer', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Error al subir el pie de página');
+      const payload = await res.json();
+      setGadField('footerImagenUrl', payload.url);
+    } catch (err) {
+      setFooterUploadError(err instanceof Error ? err.message : 'Error al subir');
+    } finally {
+      setUploadingFooter(false);
     }
   };
 
@@ -1137,6 +1187,92 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
             </div>
             <Field label="Eslogan" value={gad?.slogan ?? ''} onChange={(v) => setGadField('slogan', v)} disabled={!canEdit} />
           </div>
+
+          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Banners del Contrato PDF (Cabecera y Pie)
+          </h3>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 border border-slate-200 rounded-lg p-4 bg-slate-50/50 mb-4">
+            {/* Cabecera (Header Image) */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 select-none cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gad?.usarHeaderImagen ?? false}
+                  onChange={(e) => setGadField('usarHeaderImagen', e.target.checked)}
+                  disabled={!canEdit}
+                  className="rounded border-slate-300 text-primary-500 focus:ring-primary-500 h-4 w-4"
+                />
+                Usar imagen de cabecera personalizada (Banner)
+              </label>
+
+              {gad?.usarHeaderImagen && (
+                <div className="space-y-2 pl-6">
+                  <Field label="URL Cabecera" value={gad?.headerImagenUrl ?? ''} onChange={(v) => setGadField('headerImagenUrl', v)} disabled={!canEdit} />
+                  {canEdit && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 w-fit">
+                        <i className="ti ti-upload" /> Subir banner de cabecera
+                        <input type="file" accept="image/*" className="hidden" onChange={handleHeaderUpload} disabled={uploadingHeader} />
+                      </label>
+                      {uploadingHeader && <span className="text-[10px] text-primary-500 animate-pulse">Subiendo cabecera...</span>}
+                      {headerUploadError && <span className="text-[10px] text-red-500">{headerUploadError}</span>}
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <span className="block text-xs font-medium text-slate-500 mb-1">Vista previa del banner:</span>
+                    <div className="h-16 w-full relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
+                      {gad?.headerImagenUrl ? (
+                        <img src={gad.headerImagenUrl} alt="Cabecera Contrato" className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <span className="text-[10px] text-slate-400">Sin imagen de cabecera</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pie de Página (Footer Image) */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 select-none cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gad?.usarFooterImagen ?? false}
+                  onChange={(e) => setGadField('usarFooterImagen', e.target.checked)}
+                  disabled={!canEdit}
+                  className="rounded border-slate-300 text-primary-500 focus:ring-primary-500 h-4 w-4"
+                />
+                Usar imagen de pie de página personalizada (Banner)
+              </label>
+
+              {gad?.usarFooterImagen && (
+                <div className="space-y-2 pl-6">
+                  <Field label="URL Pie de Página" value={gad?.footerImagenUrl ?? ''} onChange={(v) => setGadField('footerImagenUrl', v)} disabled={!canEdit} />
+                  {canEdit && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 w-fit">
+                        <i className="ti ti-upload" /> Subir banner de pie
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} disabled={uploadingFooter} />
+                      </label>
+                      {uploadingFooter && <span className="text-[10px] text-primary-500 animate-pulse">Subiendo pie...</span>}
+                      {footerUploadError && <span className="text-[10px] text-red-500">{footerUploadError}</span>}
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <span className="block text-xs font-medium text-slate-500 mb-1">Vista previa del banner:</span>
+                    <div className="h-16 w-full relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
+                      {gad?.footerImagenUrl ? (
+                        <img src={gad.footerImagenUrl} alt="Pie de Página Contrato" className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <span className="text-[10px] text-slate-400">Sin imagen de pie de página</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="mt-4 space-y-4">
             <div>
               <label className={LABEL_CLS}>Misión</label>

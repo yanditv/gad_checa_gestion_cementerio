@@ -156,6 +156,11 @@ model GADInformacion {
   vision    String?
   slogan    String?
 
+  usarHeaderImagen  Boolean @default(false)
+  headerImagenUrl   String?
+  usarFooterImagen  Boolean @default(false)
+  footerImagenUrl   String?
+
   fechaCreacion      DateTime  @default(now())
   fechaActualizacion DateTime?
 

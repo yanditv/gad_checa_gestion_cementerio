@@ -76,27 +76,34 @@ function joinNombre(persona?: {
   return `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim();
 }
 
+async function getImageBufferOrPath(imgUrl?: string | null): Promise<string | Buffer | null> {
+  if (!imgUrl) return null;
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    try {
+      const res = await fetch(imgUrl);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+    } catch (e) {
+      console.error('Error downloading remote image:', e, imgUrl);
+    }
+  } else {
+    const relativePath = imgUrl.startsWith('/') 
+      ? imgUrl 
+      : `/${imgUrl}`;
+    const localPath = path.join(process.cwd(), 'public', relativePath);
+    if (fs.existsSync(localPath)) {
+      return localPath;
+    }
+  }
+  return null;
+}
+
 async function getLogoBufferOrPath(gadInfo?: any): Promise<string | Buffer | null> {
   if (gadInfo?.logoUrl) {
-    if (gadInfo.logoUrl.startsWith('http://') || gadInfo.logoUrl.startsWith('https://')) {
-      try {
-        const res = await fetch(gadInfo.logoUrl);
-        if (res.ok) {
-          const arrayBuffer = await res.arrayBuffer();
-          return Buffer.from(arrayBuffer);
-        }
-      } catch (e) {
-        console.error('Error downloading remote GAD logo:', e);
-      }
-    } else {
-      const relativePath = gadInfo.logoUrl.startsWith('/') 
-        ? gadInfo.logoUrl 
-        : `/${gadInfo.logoUrl}`;
-      const localPath = path.join(process.cwd(), 'public', relativePath);
-      if (fs.existsSync(localPath)) {
-        return localPath;
-      }
-    }
+    const customLogo = await getImageBufferOrPath(gadInfo.logoUrl);
+    if (customLogo) return customLogo;
   }
 
   const candidates = [
@@ -170,15 +177,25 @@ function richParagraph(
   doc.moveDown(0.4);
 }
 
-function drawHeader(doc: PDFKit.PDFDocument, logo: string | Buffer | null) {
-  if (!logo) return;
+function drawHeader(
+  doc: PDFKit.PDFDocument,
+  logo: string | Buffer | null,
+  headerBanner: string | Buffer | null,
+  usarHeaderImagen: boolean,
+) {
   try {
-    const pageWidth = doc.page.width;
-    const imgWidth = 56;
-    const x = (pageWidth - imgWidth) / 2;
-    doc.image(logo, x, 16, { width: imgWidth, height: 56 });
-  } catch {
-    // ignorar errores de imagen
+    if (usarHeaderImagen && headerBanner) {
+      const pageWidth = doc.page.width;
+      const height = 80;
+      doc.image(headerBanner, 0, 0, { width: pageWidth, height: height });
+    } else if (logo) {
+      const pageWidth = doc.page.width;
+      const imgWidth = 56;
+      const x = (pageWidth - imgWidth) / 2;
+      doc.image(logo, x, 16, { width: imgWidth, height: 56 });
+    }
+  } catch (err) {
+    console.error('Error rendering PDF header image:', err);
   }
 }
 
@@ -190,14 +207,13 @@ function drawFooter(
     telefono?: string | null;
     email?: string | null;
   },
+  footerBanner: string | Buffer | null,
+  usarFooterImagen: boolean,
 ) {
   const left = doc.page.margins.left;
   const right = doc.page.width - doc.page.margins.right;
-  const y = doc.page.height - FOOTER_HEIGHT + 8;
-
-  const direccion = truncate(cementerio.direccion || gadInfo?.direccion || 'Checa, Ecuador', 60);
-  const telefono = truncate(cementerio.telefono || gadInfo?.telefono || '02-XXXXXXX', 15);
-  const email = truncate(cementerio.email || gadInfo?.email || 'checa@example.gob.ec', 40);
+  const pageHeight = doc.page.height;
+  const y = pageHeight - FOOTER_HEIGHT + 8;
 
   doc.save();
   
@@ -205,15 +221,29 @@ function drawFooter(
   const oldBottomMargin = doc.page.margins.bottom;
   doc.page.margins.bottom = -1000;
 
-  doc.fontSize(8.4).fillColor('#475569');
-  const footerText = `Dirección: ${direccion}  |  Teléfono: ${telefono}  |  Correo: ${email}`;
-  doc
-    .font('Helvetica')
-    .text(footerText, left, y, {
-      width: right - left,
-      align: 'center',
-      lineGap: 2,
-    });
+  try {
+    if (usarFooterImagen && footerBanner) {
+      const pageWidth = doc.page.width;
+      const height = 60;
+      doc.image(footerBanner, 0, pageHeight - height, { width: pageWidth, height: height });
+    } else {
+      const direccion = truncate(cementerio.direccion || gadInfo?.direccion || 'Checa, Ecuador', 60);
+      const telefono = truncate(cementerio.telefono || gadInfo?.telefono || '02-XXXXXXX', 15);
+      const email = truncate(cementerio.email || gadInfo?.email || 'checa@example.gob.ec', 40);
+
+      doc.fontSize(8.4).fillColor('#475569');
+      const footerText = `Dirección: ${direccion}  |  Teléfono: ${telefono}  |  Correo: ${email}`;
+      doc
+        .font('Helvetica')
+        .text(footerText, left, y, {
+          width: right - left,
+          align: 'center',
+          lineGap: 2,
+        });
+    }
+  } catch (err) {
+    console.error('Error rendering PDF footer image:', err);
+  }
 
   // Restore bottom margin
   doc.page.margins.bottom = oldBottomMargin;
@@ -227,6 +257,12 @@ function drawFooter(
 
 export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Promise<Buffer> {
   const logo = await getLogoBufferOrPath(gadInfo);
+  const headerBanner = gadInfo?.usarHeaderImagen
+    ? await getImageBufferOrPath(gadInfo.headerImagenUrl)
+    : null;
+  const footerBanner = gadInfo?.usarFooterImagen
+    ? await getImageBufferOrPath(gadInfo.footerImagenUrl)
+    : null;
 
   return await new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({
@@ -349,8 +385,8 @@ export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Prom
     const decoratePage = () => {
       const savedX = doc.x;
       const savedY = doc.y;
-      drawHeader(doc, logo);
-      drawFooter(doc, gadInfo, cementerio);
+      drawHeader(doc, logo, headerBanner, !!gadInfo?.usarHeaderImagen);
+      drawFooter(doc, gadInfo, cementerio, footerBanner, !!gadInfo?.usarFooterImagen);
       doc.x = savedX;
       doc.y = savedY;
     };

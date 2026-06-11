@@ -115,6 +115,18 @@ export class GADInformacionResponseDto {
   slogan?: string;
 
   @ApiProperty()
+  usarHeaderImagen: boolean;
+
+  @ApiPropertyOptional()
+  headerImagenUrl?: string;
+
+  @ApiProperty()
+  usarFooterImagen: boolean;
+
+  @ApiPropertyOptional()
+  footerImagenUrl?: string;
+
+  @ApiProperty()
   fechaCreacion: string;
 
   @ApiPropertyOptional()

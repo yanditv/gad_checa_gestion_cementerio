@@ -6,6 +6,9 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type') || 'logo'; // 'logo', 'header', 'footer'
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     if (!file) {
@@ -24,15 +27,15 @@ export async function POST(request: Request) {
 
     // Preservar la extensión original del archivo (ej. .png, .jpg)
     const ext = path.extname(file.name) || '.png';
-    const filename = `logo_gad_${Date.now()}${ext}`;
+    const filename = `${type}_gad_${Date.now()}${ext}`;
     const filePath = path.join(uploadDir, filename);
 
     await fs.writeFile(filePath, buffer);
 
-    const logoUrl = `/uploads/${filename}`;
-    return NextResponse.json({ logoUrl });
+    const url = `/uploads/${filename}`;
+    return NextResponse.json({ url, logoUrl: url });
   } catch (error: any) {
-    console.error('Error al subir el logo:', error);
+    console.error('Error al subir el archivo:', error);
     return NextResponse.json(
       { message: `Error interno al guardar la imagen: ${error.message}` },
       { status: 500 },
