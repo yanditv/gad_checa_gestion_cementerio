@@ -3,6 +3,16 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  Boxes,
+  FileText,
+  Loader2,
+  Pencil,
+  Trash2,
+  User,
+} from 'lucide-react';
+import { DataTable, type DataTableColumn } from '@/components/ui';
 
 interface Boveda {
   id: number;
@@ -149,6 +159,144 @@ export default function PersonaDetailsPage({
     );
   }, [persona]);
 
+  const bovedaColumns: DataTableColumn<Boveda>[] = [
+    {
+      key: 'boveda',
+      header: 'Bóveda',
+      sortable: true,
+      sortValue: (b) => b.numero,
+      cell: (b) => (
+        <span className="font-medium text-slate-700">{b.numero}</span>
+      ),
+    },
+    {
+      key: 'bloque',
+      header: 'Bloque',
+      sortable: true,
+      sortValue: (b) => b.bloque?.nombre,
+      cell: (b) => (
+        <span className="text-slate-600">
+          {b.bloque?.nombre ?? '—'}
+          {b.bloque?.cementerio?.nombre && (
+            <span className="block text-xs text-slate-400">
+              {b.bloque.cementerio.nombre}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'piso',
+      header: 'Piso',
+      sortable: true,
+      sortValue: (b) => b.piso?.numero,
+      cell: (b) => <span className="text-slate-600">{b.piso?.numero ?? '—'}</span>,
+    },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      sortable: true,
+      sortValue: (b) => b.tipo,
+      cell: (b) => <span className="text-slate-600">{b.tipo || '—'}</span>,
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      cell: (b) => (
+        <Link
+          href={`/bovedas/${b.id}`}
+          className="text-xs font-medium text-primary-600 hover:underline"
+        >
+          Ver bóveda →
+        </Link>
+      ),
+    },
+  ];
+
+  const contratoColumns: DataTableColumn<ContratoRow>[] = [
+    {
+      key: 'contrato',
+      header: 'Contrato',
+      sortable: true,
+      sortValue: (c) => c.numeroSecuencial,
+      cell: (c) => (
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {c.numeroSecuencial}
+        </span>
+      ),
+    },
+    {
+      key: 'difunto',
+      header: 'Difunto',
+      sortable: true,
+      sortValue: (c) =>
+        c.difunto ? `${c.difunto.nombre} ${c.difunto.apellido}` : null,
+      cell: (c) => (
+        <span className="text-slate-600">
+          {c.difunto ? `${c.difunto.nombre} ${c.difunto.apellido}` : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'boveda',
+      header: 'Bóveda',
+      sortable: true,
+      sortValue: (c) => c.boveda?.numero,
+      cell: (c) => (
+        <span className="text-slate-600">
+          {c.boveda?.numero ?? '—'}
+          {c.boveda?.bloque?.nombre && (
+            <span className="ml-1 text-xs text-slate-400">
+              ({c.boveda.bloque.nombre})
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'vigencia',
+      header: 'Vigencia',
+      sortable: true,
+      sortValue: (c) => c.fechaInicio,
+      cell: (c) => (
+        <span className="text-xs text-slate-500">
+          {formatDate(c.fechaInicio)} → {formatDate(c.fechaFin)}
+        </span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortable: true,
+      sortValue: (c) => (c.estado ? 'Activo' : 'Inactivo'),
+      cell: (c) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+            c.estado
+              ? 'bg-green-50 text-green-700 ring-green-200'
+              : 'bg-slate-100 text-slate-600 ring-slate-200'
+          }`}
+        >
+          {c.estado ? 'Activo' : 'Inactivo'}
+        </span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      cell: (c) => (
+        <Link
+          href={`/contratos/${c.id}`}
+          className="text-xs font-medium text-primary-600 hover:underline"
+        >
+          Ver contrato →
+        </Link>
+      ),
+    },
+  ];
+
   async function handleDelete() {
     if (!window.confirm('¿Desactivar esta persona?')) return;
     setDeleting(true);
@@ -207,7 +355,7 @@ export default function PersonaDetailsPage({
           href="/personas"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -222,7 +370,7 @@ export default function PersonaDetailsPage({
     .join('');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700">
@@ -245,7 +393,7 @@ export default function PersonaDetailsPage({
             href={`/personas/${id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-edit" />
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar
           </Link>
           {persona.estado && (
@@ -255,7 +403,15 @@ export default function PersonaDetailsPage({
               disabled={deleting}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
             >
-              <i className={`ti ${deleting ? 'ti-loader animate-spin' : 'ti-trash'}`} />
+              {deleting ? (
+                <Loader2
+                  className="h-4 w-4 animate-spin"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
+              ) : (
+                <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              )}
               Desactivar
             </button>
           )}
@@ -263,7 +419,7 @@ export default function PersonaDetailsPage({
             href="/personas"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" />
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Volver
           </Link>
         </div>
@@ -280,19 +436,19 @@ export default function PersonaDetailsPage({
           <TabButton
             active={tab === 'datos'}
             onClick={() => setTab('datos')}
-            icon="ti-user"
+            icon={<User className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             label="Datos personales"
           />
           <TabButton
             active={tab === 'bovedas'}
             onClick={() => setTab('bovedas')}
-            icon="ti-box-multiple"
+            icon={<Boxes className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             label={`Bóvedas · ${bovedas.length}`}
           />
           <TabButton
             active={tab === 'contratos'}
             onClick={() => setTab('contratos')}
-            icon="ti-file-text"
+            icon={<FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             label={`Contratos · ${contratos.length}`}
           />
         </nav>
@@ -329,49 +485,12 @@ export default function PersonaDetailsPage({
               Esta persona no es propietaria de ninguna bóveda.
             </p>
           ) : (
-            <div className="overflow-x-auto -m-5">
-              <table className="min-w-full divide-y divide-slate-100 text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-5 py-2.5">Bóveda</th>
-                    <th className="px-5 py-2.5">Bloque</th>
-                    <th className="px-5 py-2.5">Piso</th>
-                    <th className="px-5 py-2.5">Tipo</th>
-                    <th className="px-5 py-2.5 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {bovedas.map((b) => (
-                    <tr key={b.id}>
-                      <td className="px-5 py-2.5 font-medium text-slate-700">
-                        {b.numero}
-                      </td>
-                      <td className="px-5 py-2.5 text-slate-600">
-                        {b.bloque?.nombre ?? '—'}
-                        {b.bloque?.cementerio?.nombre && (
-                          <div className="text-xs text-slate-400">
-                            {b.bloque.cementerio.nombre}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-5 py-2.5 text-slate-600">
-                        {b.piso?.numero ?? '—'}
-                      </td>
-                      <td className="px-5 py-2.5 text-slate-600">
-                        {b.tipo || '—'}
-                      </td>
-                      <td className="px-5 py-2.5 text-right">
-                        <Link
-                          href={`/bovedas/${b.id}`}
-                          className="text-xs font-medium text-primary-600 hover:underline"
-                        >
-                          Ver bóveda →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="-m-5">
+              <DataTable
+                columns={bovedaColumns}
+                rows={bovedas}
+                rowKey={(b) => b.id}
+              />
             </div>
           )}
         </Card>
@@ -384,63 +503,12 @@ export default function PersonaDetailsPage({
               Esta persona no figura como responsable en ningún contrato.
             </p>
           ) : (
-            <div className="overflow-x-auto -m-5">
-              <table className="min-w-full divide-y divide-slate-100 text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-5 py-2.5">Contrato</th>
-                    <th className="px-5 py-2.5">Difunto</th>
-                    <th className="px-5 py-2.5">Bóveda</th>
-                    <th className="px-5 py-2.5">Vigencia</th>
-                    <th className="px-5 py-2.5">Estado</th>
-                    <th className="px-5 py-2.5 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {contratos.map((c) => (
-                    <tr key={c.id}>
-                      <td className="px-5 py-2.5 font-mono text-xs font-semibold text-slate-700">
-                        {c.numeroSecuencial}
-                      </td>
-                      <td className="px-5 py-2.5 text-slate-600">
-                        {c.difunto
-                          ? `${c.difunto.nombre} ${c.difunto.apellido}`
-                          : '—'}
-                      </td>
-                      <td className="px-5 py-2.5 text-slate-600">
-                        {c.boveda?.numero ?? '—'}
-                        {c.boveda?.bloque?.nombre && (
-                          <span className="ml-1 text-xs text-slate-400">
-                            ({c.boveda.bloque.nombre})
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-2.5 text-xs text-slate-500">
-                        {formatDate(c.fechaInicio)} → {formatDate(c.fechaFin)}
-                      </td>
-                      <td className="px-5 py-2.5">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
-                            c.estado
-                              ? 'bg-green-50 text-green-700 ring-green-200'
-                              : 'bg-slate-100 text-slate-600 ring-slate-200'
-                          }`}
-                        >
-                          {c.estado ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-2.5 text-right">
-                        <Link
-                          href={`/contratos/${c.id}`}
-                          className="text-xs font-medium text-primary-600 hover:underline"
-                        >
-                          Ver contrato →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="-m-5">
+              <DataTable
+                columns={contratoColumns}
+                rows={contratos}
+                rowKey={(c) => c.id}
+              />
             </div>
           )}
         </Card>
@@ -457,7 +525,7 @@ function TabButton({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
 }) {
   return (
@@ -470,7 +538,7 @@ function TabButton({
           : 'border-transparent text-slate-500 hover:border-slate-200 hover:text-slate-700'
       }`}
     >
-      <i className={`ti ${icon}`} />
+      {icon}
       {label}
     </button>
   );

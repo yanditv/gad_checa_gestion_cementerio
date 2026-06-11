@@ -3,6 +3,28 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import {
+  Building2,
+  ChevronRight,
+  Database,
+  Landmark,
+  LayoutGrid,
+  Loader2,
+  Lock,
+  Pencil,
+  Percent,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  Modal,
+  Tabs,
+  type DataTableColumn,
+} from '@/components/ui';
+import {
   cementeriosApi,
   gadInformacionApi,
   catastroApi,
@@ -72,14 +94,19 @@ export default function ConfiguracionPage() {
             href="/configuracion/catastro"
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-white px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50"
           >
-            <i className="ti ti-database-import" /> Importar catastro
+            <Database className="h-4 w-4" strokeWidth={2} aria-hidden="true" />{' '}
+            Importar catastro
           </Link>
         )}
       </div>
 
       {!isAdmin && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <i className="ti ti-shield-lock mr-1" />
+          <Lock
+            className="mr-1 inline h-4 w-4 align-[-0.125em]"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
           Solo lectura. Para modificar la configuración se requiere rol{' '}
           <strong>Administrador</strong>.
         </div>
@@ -93,7 +120,7 @@ export default function ConfiguracionPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
-                <i className="ti ti-database-import text-lg" />
+                <Database className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-700">
@@ -111,18 +138,18 @@ export default function ConfiguracionPage() {
                   {lastImport.bloquesCreados} bloques · {lastImport.bovedasCreadas} bóvedas · {lastImport.contratosCreados} contratos
                 </p>
               </div>
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${
+              <Badge
+                tone={
                   lastImport.estado === 'COMPLETADO'
-                    ? 'bg-green-50 text-green-700 ring-green-200'
+                    ? 'success'
                     : lastImport.estado === 'ERROR'
-                      ? 'bg-red-50 text-red-700 ring-red-200'
-                      : 'bg-amber-50 text-amber-700 ring-amber-200'
-                }`}
+                      ? 'danger'
+                      : 'warning'
+                }
               >
                 {lastImport.estado === 'EN_PROGRESO' ? 'En progreso' : lastImport.estado === 'COMPLETADO' ? 'Completado' : 'Error'}
-              </span>
-              <i className="ti ti-chevron-right text-slate-300" />
+              </Badge>
+              <ChevronRight className="h-4 w-4 text-slate-300" strokeWidth={2} aria-hidden="true" />
             </div>
           </div>
         </Link>

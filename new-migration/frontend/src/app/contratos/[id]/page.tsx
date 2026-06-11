@@ -1,6 +1,19 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
+  ArrowLeft,
+  CircleAlert,
+  CircleCheck,
+  CircleOff,
+  Copy,
+  FileText,
+  Mail,
+  Pencil,
+  Phone,
+  Printer,
+  type LucideIcon,
+} from 'lucide-react';
+import {
   formatCurrency,
   formatDate,
   getContratoById,
@@ -15,18 +28,18 @@ const ESTADO_BADGE: Record<string, string> = {
   Inactivo: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 
-const ESTADO_ALERT: Record<string, { box: string; icon: string }> = {
+const ESTADO_ALERT: Record<string, { box: string; icon: LucideIcon }> = {
   Activo: {
     box: 'bg-green-50 text-green-700 border-green-200',
-    icon: 'ti-circle-check',
+    icon: CircleCheck,
   },
   Vencido: {
     box: 'bg-amber-50 text-amber-700 border-amber-200',
-    icon: 'ti-alert-circle',
+    icon: CircleAlert,
   },
   Inactivo: {
     box: 'bg-slate-100 text-slate-600 border-slate-200',
-    icon: 'ti-circle-off',
+    icon: CircleOff,
   },
 };
 
@@ -117,9 +130,10 @@ export default async function ContratoDetailsPage({
     totalContrato > 0 ? Math.min(100, (montoPagado / totalContrato) * 100) : 0;
 
   const alert = ESTADO_ALERT[estadoContrato] ?? ESTADO_ALERT['Inactivo'];
+  const AlertIcon = alert.icon;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -140,7 +154,7 @@ export default async function ContratoDetailsPage({
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-file-text" />
+            <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             PDF
           </a>
           <Link
@@ -148,21 +162,21 @@ export default async function ContratoDetailsPage({
             target="_blank"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-printer" />
+            <Printer className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Imprimir
           </Link>
           <Link
             href={`/contratos/${id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-edit" />
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar
           </Link>
           <Link
             href="/contratos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" />
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Volver
           </Link>
         </div>
@@ -172,7 +186,7 @@ export default async function ContratoDetailsPage({
       <div
         className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${alert.box}`}
       >
-        <i className={`ti ${alert.icon} text-xl`} />
+        <AlertIcon className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
         <div>
           Contrato <strong>{estadoContrato.toLowerCase()}</strong>
           {contrato.fechaFin && (
@@ -334,13 +348,13 @@ export default async function ContratoDetailsPage({
                       </div>
                       {persona?.telefono && (
                         <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                          <i className="ti ti-phone text-slate-400" />
+                          <Phone className="h-3.5 w-3.5 text-slate-400" strokeWidth={2} aria-hidden="true" />
                           {persona.telefono}
                         </div>
                       )}
                       {persona?.email && (
                         <div className="flex items-center gap-1 text-xs text-slate-500">
-                          <i className="ti ti-mail text-slate-400" />
+                          <Mail className="h-3.5 w-3.5 text-slate-400" strokeWidth={2} aria-hidden="true" />
                           {persona.email}
                         </div>
                       )}
@@ -543,7 +557,7 @@ export default async function ContratoDetailsPage({
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                <i className="ti ti-file-text" />
+                <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Ver PDF oficial
               </a>
               <Link
@@ -551,21 +565,21 @@ export default async function ContratoDetailsPage({
                 target="_blank"
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                <i className="ti ti-printer" />
+                <Printer className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Vista imprimible
               </Link>
               <Link
                 href={`/contratos/${id}/edit`}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                <i className="ti ti-edit" />
+                <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Editar contrato
               </Link>
               <Link
                 href={`/contratos/${id}/renovar`}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-600"
               >
-                <i className="ti ti-copy" />
+                <Copy className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Renovar contrato
               </Link>
             </div>

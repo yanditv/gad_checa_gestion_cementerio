@@ -3,11 +3,24 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  FolderX,
+  Plus,
+  X,
+} from 'lucide-react';
+import {
   inventarioBienesApi,
   inventarioCategoriasApi,
   inventarioCustodiosApi,
   PaginationMeta,
 } from '@/lib/api';
+import {
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface CategoriaResumen {
   id: number;

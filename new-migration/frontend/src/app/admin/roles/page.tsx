@@ -1,7 +1,15 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { Check, Loader2, Pencil, Plus, ShieldOff, Trash2 } from 'lucide-react';
 import { rolesApi } from '@/lib/api';
+import {
+  Button,
+  DataTable,
+  EmptyState,
+  Modal,
+  type DataTableColumn,
+} from '@/components/ui';
 
 export default function AdminRolesPage() {
   const [loading, setLoading] = useState(true);
@@ -85,13 +93,79 @@ export default function AdminRolesPage() {
     }
   };
 
+  const columns: DataTableColumn<any>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      sortable: true,
+      sortValue: (rol) => rol.nombre,
+      cell: (rol) => (
+        <span className="font-medium text-slate-900">{rol.nombre}</span>
+      ),
+    },
+    {
+      key: 'usuarios',
+      header: 'Usuarios',
+      sortable: true,
+      sortValue: (rol) => rol.usuarios?.length || 0,
+      cell: (rol) => (
+        <div className="text-slate-600">
+          <div>{rol.usuarios?.length || 0}</div>
+          {rol.usuarios?.length > 0 && (
+            <div className="mt-1 text-xs text-slate-400">
+              {rol.usuarios
+                .slice(0, 3)
+                .map((item: any) => item.usuario?.email)
+                .filter(Boolean)
+                .join(', ')}
+              {rol.usuarios.length > 3 ? '…' : ''}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      cellClassName: 'whitespace-nowrap',
+      cell: (rol) => (
+        <div className="inline-flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => startEdit(rol)}
+            disabled={busyRoleId === rol.id}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          >
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDelete(rol.id)}
+            disabled={busyRoleId === rol.id}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            {busyRoleId === rol.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            )}
+            Eliminar
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
+        <Loader2
+          className="h-6 w-6 animate-spin text-primary-500"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -151,15 +225,12 @@ export default function AdminRolesPage() {
               >
                 {saving ? (
                   <>
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
                     Guardando…
                   </>
                 ) : (
                   <>
-                    <i className="ti ti-plus" />
+                    <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                     Crear Rol
                   </>
                 )}
@@ -173,133 +244,69 @@ export default function AdminRolesPage() {
           <header className="border-b border-slate-100 px-5 py-3">
             <h2 className="text-sm font-semibold text-slate-700">Roles Existentes</h2>
           </header>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th scope="col" className="px-4 py-3">Nombre</th>
-                  <th scope="col" className="px-4 py-3">Usuarios</th>
-                  <th scope="col" className="px-4 py-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {roles.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-12 text-center text-slate-400">
-                      <i className="ti ti-shield-off text-3xl text-slate-300" />
-                      <div className="mt-2 text-sm">No hay roles registrados.</div>
-                    </td>
-                  </tr>
-                ) : (
-                  roles.map((rol) => (
-                    <tr key={rol.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-3 font-medium text-slate-900">{rol.nombre}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        <div>{rol.usuarios?.length || 0}</div>
-                        {rol.usuarios?.length > 0 && (
-                          <div className="mt-1 text-xs text-slate-400">
-                            {rol.usuarios
-                              .slice(0, 3)
-                              .map((item: any) => item.usuario?.email)
-                              .filter(Boolean)
-                              .join(', ')}
-                            {rol.usuarios.length > 3 ? '…' : ''}
-                          </div>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(rol)}
-                            disabled={busyRoleId === rol.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-                          >
-                            <i className="ti ti-edit" />
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(rol.id)}
-                            disabled={busyRoleId === rol.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                          >
-                            <i className={`ti ${busyRoleId === rol.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            rows={roles}
+            rowKey={(rol) => rol.id}
+            empty={
+              <EmptyState
+                icon={
+                  <ShieldOff className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
+                }
+                title="No hay roles registrados."
+                compact
+              />
+            }
+          />
         </section>
       </div>
 
-      {editingRoleId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={cancelEdit}
-          />
-          <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
-            <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">Editar rol</h2>
-              <button
-                type="button"
-                onClick={cancelEdit}
-                className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </header>
-            <div className="space-y-4 p-5">
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  value={editingForm.nombre}
-                  onChange={(e) => setEditingForm((prev) => ({ ...prev, nombre: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Permisos
-                </label>
-                <textarea
-                  rows={5}
-                  value={editingForm.permisos}
-                  onChange={(e) => setEditingForm((prev) => ({ ...prev, permisos: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                />
-              </div>
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdate(editingRoleId)}
-                  disabled={busyRoleId === editingRoleId}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
-                >
-                  <i className={`ti ${busyRoleId === editingRoleId ? 'ti-loader animate-spin' : 'ti-check'}`} />
-                  Guardar cambios
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={editingRoleId !== null}
+        onClose={cancelEdit}
+        title="Editar rol"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={cancelEdit}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => editingRoleId && handleUpdate(editingRoleId)}
+              loading={busyRoleId === editingRoleId}
+              leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+            >
+              Guardar cambios
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Nombre
+            </label>
+            <input
+              type="text"
+              value={editingForm.nombre}
+              onChange={(e) => setEditingForm((prev) => ({ ...prev, nombre: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Permisos
+            </label>
+            <textarea
+              rows={5}
+              value={editingForm.permisos}
+              onChange={(e) => setEditingForm((prev) => ({ ...prev, permisos: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            />
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

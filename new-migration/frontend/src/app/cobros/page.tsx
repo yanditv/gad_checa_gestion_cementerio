@@ -2,6 +2,16 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import {
+  Check,
+  Clock,
+  Coins,
+  FileText,
+  FolderX,
+  Loader2,
+  Receipt,
+  Search,
+} from 'lucide-react';
 import { cuotasApi, pagosApi } from '@/lib/api';
 
 function formatCurrency(value: number | string | null | undefined) {
@@ -110,25 +120,11 @@ export default function CobrosPage() {
     return (
       <div className="flex items-center justify-center py-20 text-slate-400">
         <div className="inline-flex items-center gap-2">
-          <svg
+          <Loader2
             className="h-4 w-4 animate-spin text-primary-500"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            />
-          </svg>
+            strokeWidth={2}
+            aria-hidden="true"
+          />
           <span className="text-sm">Cargando…</span>
         </div>
       </div>
@@ -149,7 +145,11 @@ export default function CobrosPage() {
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 sm:max-w-md">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             <input
               type="search"
               value={search}
@@ -187,7 +187,11 @@ export default function CobrosPage() {
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
             <div className="flex items-center gap-2">
-              <i className="ti ti-clock text-amber-500" />
+              <Clock
+                className="h-4 w-4 text-amber-500"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
               <h3 className="text-sm font-semibold text-slate-700">
                 Contratos con cuotas pendientes
               </h3>
@@ -199,7 +203,11 @@ export default function CobrosPage() {
           <div className="max-h-[480px] overflow-y-auto p-5">
             {contratosFiltrados.length === 0 ? (
               <div className="py-10 text-center text-slate-400">
-                <i className="ti ti-check text-3xl text-slate-300" />
+                <Check
+                  className="mx-auto h-8 w-8 text-slate-300"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
                 <div className="mt-2 text-sm">
                   No hay cuotas vencidas pendientes.
                 </div>
@@ -234,7 +242,11 @@ export default function CobrosPage() {
                       href={`/cobros/${c.contratoId}/cobrar`}
                       className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600"
                     >
-                      <i className="ti ti-coin" />
+                      <Coins
+                        className="h-3.5 w-3.5"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
                       Cobrar
                     </Link>
                   </li>
@@ -248,7 +260,11 @@ export default function CobrosPage() {
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
             <div className="flex items-center gap-2">
-              <i className="ti ti-receipt text-primary-500" />
+              <Receipt
+              className="h-4 w-4 text-primary-500"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
               <h3 className="text-sm font-semibold text-slate-700">
                 Últimos pagos
               </h3>
@@ -260,7 +276,11 @@ export default function CobrosPage() {
           <div className="max-h-[480px] overflow-y-auto p-5">
             {pagosFiltrados.length === 0 ? (
               <div className="py-10 text-center text-slate-400">
-                <i className="ti ti-folder-x text-3xl text-slate-300" />
+                <FolderX
+                  className="mx-auto h-8 w-8 text-slate-300"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
                 <div className="mt-2 text-sm">No hay pagos registrados.</div>
               </div>
             ) : (
@@ -291,7 +311,11 @@ export default function CobrosPage() {
                         rel="noreferrer"
                         className="mt-1 inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
                       >
-                        <i className="ti ti-file-text" />
+                        <FileText
+                          className="h-3.5 w-3.5"
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
                         Recibo
                       </a>
                     </div>

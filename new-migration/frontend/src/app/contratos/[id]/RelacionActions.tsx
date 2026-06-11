@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Link2, Search, Unlink } from 'lucide-react';
+import {
+  Button,
+  DataTable,
+  EmptyState,
+  Modal,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface ContratoRelacionado {
   id: number;
@@ -61,7 +69,7 @@ export function RelacionActions({
           disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
         >
-          <i className="ti ti-unlink" />
+          <Unlink className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
           Romper relación
         </button>
 
@@ -113,7 +121,7 @@ export function RelacionActions({
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100"
       >
-        <i className="ti ti-link" />
+        <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
         Relacionar con otro contrato
       </button>
 
@@ -145,7 +153,22 @@ function ConfirmRomperModal({
   onConfirm: () => void;
 }) {
   return (
-    <ModalShell title="Romper relación" onClose={onCancel}>
+    <Modal
+      open
+      onClose={onCancel}
+      title="Romper relación"
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" size="sm" onClick={onCancel} disabled={busy}>
+            Cancelar
+          </Button>
+          <Button variant="danger" size="sm" onClick={onConfirm} disabled={busy}>
+            {busy ? 'Procesando…' : 'Romper relación'}
+          </Button>
+        </>
+      }
+    >
       {error && (
         <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
           {error}
@@ -155,25 +178,7 @@ function ConfirmRomperModal({
         ¿Confirmas que deseas romper la relación entre estos dos contratos? La
         operación se aplica a ambos.
       </p>
-      <div className="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={busy}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={busy}
-          className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
-        >
-          {busy ? 'Procesando…' : 'Romper relación'}
-        </button>
-      </div>
-    </ModalShell>
+    </Modal>
   );
 }
 
@@ -253,12 +258,84 @@ function CandidatosModal({
     }
   }
 
+  const columns: DataTableColumn<CandidatoContrato>[] = [
+    {
+      key: 'contrato',
+      header: 'Contrato',
+      sortable: true,
+      sortValue: (c) => c.numeroSecuencial,
+      cell: (c) => (
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {c.numeroSecuencial}
+        </span>
+      ),
+    },
+    {
+      key: 'difunto',
+      header: 'Difunto',
+      sortable: true,
+      sortValue: (c) => `${c.difunto.nombre} ${c.difunto.apellido}`,
+      cell: (c) => (
+        <>
+          <div className="text-sm text-slate-800">
+            {c.difunto.nombre} {c.difunto.apellido}
+          </div>
+          {c.difunto.numeroIdentificacion && (
+            <div className="text-xs text-slate-400">
+              {c.difunto.numeroIdentificacion}
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'boveda',
+      header: 'Bóveda',
+      sortable: true,
+      sortValue: (c) => c.boveda?.numero ?? null,
+      cell: (c) => (
+        <span className="text-sm text-slate-600">
+          {c.boveda?.numero}{' '}
+          <span className="text-xs text-slate-400">
+            ({c.boveda?.bloque?.nombre})
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: '',
+      align: 'right',
+      cell: (c) => (
+        <button
+          type="button"
+          onClick={() => relacionar(c.id)}
+          disabled={linking !== null}
+          className="rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+        >
+          {linking === c.id ? 'Vinculando…' : 'Relacionar'}
+        </button>
+      ),
+    },
+  ];
+
   return (
-    <ModalShell
-      title="Relacionar con otro contrato"
-      subtitle="Selecciona un contrato vigente de la misma bóveda con un difunto distinto."
+    <Modal
+      open
       onClose={onClose}
+      title="Relacionar con otro contrato"
+      description="Selecciona un contrato vigente de la misma bóveda con un difunto distinto."
       size="lg"
+      footer={
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onClose}
+          disabled={linking !== null}
+        >
+          Cancelar
+        </Button>
+      }
     >
       {error && (
         <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
@@ -267,7 +344,11 @@ function CandidatosModal({
       )}
 
       <div className="relative mb-3">
-        <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
         <input
           type="search"
           value={search}
@@ -279,126 +360,20 @@ function CandidatosModal({
       </div>
 
       <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50">
-            <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <th className="px-3 py-2">Contrato</th>
-              <th className="px-3 py-2">Difunto</th>
-              <th className="px-3 py-2">Bóveda</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
-                  Cargando candidatos…
-                </td>
-              </tr>
-            ) : candidatos.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
-                  No hay contratos elegibles en esta bóveda.
-                </td>
-              </tr>
-            ) : (
-              candidatos.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/50">
-                  <td className="px-3 py-2 font-mono text-xs font-semibold text-slate-700">
-                    {c.numeroSecuencial}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="text-sm text-slate-800">
-                      {c.difunto.nombre} {c.difunto.apellido}
-                    </div>
-                    {c.difunto.numeroIdentificacion && (
-                      <div className="text-xs text-slate-400">
-                        {c.difunto.numeroIdentificacion}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-sm text-slate-600">
-                    {c.boveda?.numero}{' '}
-                    <span className="text-xs text-slate-400">
-                      ({c.boveda?.bloque?.nombre})
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => relacionar(c.id)}
-                      disabled={linking !== null}
-                      className="rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600 disabled:opacity-50"
-                    >
-                      {linking === c.id ? 'Vinculando…' : 'Relacionar'}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <DataTable
+          columns={columns}
+          rows={candidatos}
+          rowKey={(c) => c.id}
+          loading={loading}
+          skeletonRows={3}
+          empty={
+            <EmptyState
+              title="No hay contratos elegibles en esta bóveda."
+              compact
+            />
+          }
+        />
       </div>
-
-      <div className="mt-5 flex justify-end">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={linking !== null}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-      </div>
-    </ModalShell>
-  );
-}
-
-// ----------------------------------------------------------------------------
-
-function ModalShell({
-  title,
-  subtitle,
-  size = 'md',
-  onClose,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  size?: 'md' | 'lg';
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const widthClass = size === 'lg' ? 'max-w-3xl' : 'max-w-md';
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
-      role="dialog"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        className={`w-full ${widthClass} rounded-xl bg-white shadow-lifted`}
-      >
-        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-3">
-          <div>
-            <h3 className="text-base font-semibold text-slate-800">{title}</h3>
-            {subtitle && (
-              <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Cerrar"
-          >
-            <i className="ti ti-x" />
-          </button>
-        </header>
-        <div className="px-5 py-4">{children}</div>
-      </div>
-    </div>
+    </Modal>
   );
 }

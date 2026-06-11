@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bovedasApi, contratosApi, difuntosApi } from '@/lib/api';
+import { DatePicker } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -113,31 +115,17 @@ export default function EditContratoPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg
+        <Loader2
           className="h-6 w-6 animate-spin text-primary-500"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          />
-        </svg>
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar contrato</h1>
@@ -149,7 +137,7 @@ export default function EditContratoPage() {
           href={`/contratos/${params.id}`}
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -202,29 +190,19 @@ export default function EditContratoPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <div>
-              <label className={LABEL_CLS}>Fecha inicio *</label>
-              <input
-                type="date"
-                required
-                value={formData.fechaInicio}
-                onChange={(e) =>
-                  setFormData({ ...formData, fechaInicio: e.target.value })
-                }
-                className={INPUT_CLS}
-              />
-            </div>
-            <div>
-              <label className={LABEL_CLS}>Fecha fin</label>
-              <input
-                type="date"
-                value={formData.fechaFin}
-                onChange={(e) =>
-                  setFormData({ ...formData, fechaFin: e.target.value })
-                }
-                className={INPUT_CLS}
-              />
-            </div>
+            <DatePicker
+              label="Fecha inicio"
+              required
+              value={formData.fechaInicio}
+              onChange={(iso) =>
+                setFormData({ ...formData, fechaInicio: iso })
+              }
+            />
+            <DatePicker
+              label="Fecha fin"
+              value={formData.fechaFin}
+              onChange={(iso) => setFormData({ ...formData, fechaFin: iso })}
+            />
             <div>
               <label className={LABEL_CLS}>Años *</label>
               <input
@@ -297,7 +275,7 @@ export default function EditContratoPage() {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
             >
-              <i className="ti ti-check" />
+              <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Guardando…' : 'Guardar cambios'}
             </button>
           </div>

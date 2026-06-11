@@ -3,6 +3,18 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  FilePlus,
+  Info,
+  List,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import { Button, DatePicker, Modal } from '@/components/ui';
 import { contratosApi, personasApi } from '@/lib/api';
 import { clearWizard, loadWizard, saveWizard } from '@/lib/wizardStorage';
 
@@ -127,44 +139,6 @@ function Card({
       )}
       <div className="p-5">{children}</div>
     </section>
-  );
-}
-
-function ModalShell({
-  title,
-  size = 'md',
-  onClose,
-  children,
-}: {
-  title: string;
-  size?: 'md' | 'lg';
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const widthClass = size === 'lg' ? 'max-w-3xl' : 'max-w-md';
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
-      role="dialog"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className={`w-full ${widthClass} rounded-xl bg-white shadow-lifted`}>
-        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h3 className="text-base font-semibold text-slate-800">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Cerrar"
-          >
-            <i className="ti ti-x" />
-          </button>
-        </header>
-        {children}
-      </div>
-    </div>
   );
 }
 
@@ -684,7 +658,7 @@ export default function CreateContratoPage() {
         <div className="flex flex-col items-start justify-between gap-3 px-5 py-4 text-white sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20">
-              <i className="ti ti-file-plus text-2xl" />
+              <FilePlus className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
             </span>
             <div>
               <h2 className="text-lg font-semibold">
@@ -699,7 +673,7 @@ export default function CreateContratoPage() {
             href="/contratos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
           >
-            <i className="ti ti-list" />
+            <List className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Ver todos
           </Link>
         </div>
@@ -725,7 +699,11 @@ export default function CreateContratoPage() {
                         : 'bg-slate-100 text-slate-400 ring-1 ring-slate-200'
                   }`}
                 >
-                  {completed ? <i className="ti ti-check" /> : index + 1}
+                  {completed ? (
+                    <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                  ) : (
+                    index + 1
+                  )}
                 </span>
                 <span
                   className={`text-sm font-medium ${
@@ -744,7 +722,12 @@ export default function CreateContratoPage() {
       {form.contrato.esRenovacion && form.contrato.contratoOrigenId ? (
         <div className="rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-800">
           <p className="font-semibold">
-            <i className="ti ti-info-circle mr-1" /> Este es un contrato de renovación
+            <Info
+              className="mr-1 inline h-4 w-4 align-text-bottom"
+              strokeWidth={2}
+              aria-hidden="true"
+            />{' '}
+            Este es un contrato de renovación
           </p>
           <p className="mt-1">
             Renueva el contrato original con ID:{' '}
@@ -791,56 +774,42 @@ export default function CreateContratoPage() {
                   onClick={() => setShowBovedaModal(true)}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-100"
                 >
-                  <i className="ti ti-search" />
+                  <Search className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                   Buscar
                 </button>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="contrato-fecha-inicio">Fecha de inicio</Label>
-              <input
-                id="contrato-fecha-inicio"
-                type="date"
-                className={INPUT_CLS}
-                value={form.contrato.fechaInicio}
-                onChange={(e) =>
-                  setForm((prev) => {
-                    const fechaInicio = e.target.value;
-                    return {
-                      ...prev,
-                      contrato: {
-                        ...prev.contrato,
-                        fechaInicio,
-                        numeroDeMeses: getYearDiff(fechaInicio, prev.contrato.fechaFin),
-                      },
-                    };
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="contrato-fecha-fin">Fecha de fin</Label>
-              <input
-                id="contrato-fecha-fin"
-                type="date"
-                className={INPUT_CLS}
-                value={form.contrato.fechaFin}
-                onChange={(e) =>
-                  setForm((prev) => {
-                    const fechaFin = e.target.value;
-                    return {
-                      ...prev,
-                      contrato: {
-                        ...prev.contrato,
-                        fechaFin,
-                        numeroDeMeses: getYearDiff(prev.contrato.fechaInicio, fechaFin),
-                      },
-                    };
-                  })
-                }
-              />
-            </div>
+            <DatePicker
+              id="contrato-fecha-inicio"
+              label="Fecha de inicio"
+              value={form.contrato.fechaInicio}
+              onChange={(fechaInicio) =>
+                setForm((prev) => ({
+                  ...prev,
+                  contrato: {
+                    ...prev.contrato,
+                    fechaInicio,
+                    numeroDeMeses: getYearDiff(fechaInicio, prev.contrato.fechaFin),
+                  },
+                }))
+              }
+            />
+            <DatePicker
+              id="contrato-fecha-fin"
+              label="Fecha de fin"
+              value={form.contrato.fechaFin}
+              onChange={(fechaFin) =>
+                setForm((prev) => ({
+                  ...prev,
+                  contrato: {
+                    ...prev.contrato,
+                    fechaFin,
+                    numeroDeMeses: getYearDiff(prev.contrato.fechaInicio, fechaFin),
+                  },
+                }))
+              }
+            />
 
             <div>
               <Label htmlFor="contrato-numero-anos">Número de años</Label>
@@ -951,36 +920,28 @@ export default function CreateContratoPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <Label htmlFor="difunto-fecha-nacimiento">Fecha de nacimiento</Label>
-              <input
-                id="difunto-fecha-nacimiento"
-                type="date"
-                className={INPUT_CLS}
-                value={form.difunto.fechaNacimiento}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    difunto: { ...prev.difunto, fechaNacimiento: e.target.value },
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="difunto-fecha-defuncion">Fecha de defunción</Label>
-              <input
-                id="difunto-fecha-defuncion"
-                type="date"
-                className={INPUT_CLS}
-                value={form.difunto.fechaFallecimiento}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    difunto: { ...prev.difunto, fechaFallecimiento: e.target.value },
-                  }))
-                }
-              />
-            </div>
+            <DatePicker
+              id="difunto-fecha-nacimiento"
+              label="Fecha de nacimiento"
+              value={form.difunto.fechaNacimiento}
+              onChange={(fechaNacimiento) =>
+                setForm((prev) => ({
+                  ...prev,
+                  difunto: { ...prev.difunto, fechaNacimiento },
+                }))
+              }
+            />
+            <DatePicker
+              id="difunto-fecha-defuncion"
+              label="Fecha de defunción"
+              value={form.difunto.fechaFallecimiento}
+              onChange={(fechaFallecimiento) =>
+                setForm((prev) => ({
+                  ...prev,
+                  difunto: { ...prev.difunto, fechaFallecimiento },
+                }))
+              }
+            />
           </div>
         ) : null}
 
@@ -988,7 +949,11 @@ export default function CreateContratoPage() {
           <div className="space-y-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
                 <input
                   type="search"
                   placeholder="Buscar responsable existente…"
@@ -1002,7 +967,7 @@ export default function CreateContratoPage() {
                 onClick={() => setShowResponsableModal(true)}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600"
               >
-                <i className="ti ti-plus" />
+                <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Nuevo
               </button>
             </div>
@@ -1064,7 +1029,7 @@ export default function CreateContratoPage() {
                               className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                               title="Quitar"
                             >
-                              <i className="ti ti-trash" />
+                              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                             </button>
                           </div>
                           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -1082,36 +1047,20 @@ export default function CreateContratoPage() {
                                 }
                               />
                             </div>
-                            <div>
-                              <Label>Fecha inicio</Label>
-                              <input
-                                type="date"
-                                className={INPUT_CLS}
-                                value={r.fechaInicio || ''}
-                                onChange={(e) =>
-                                  updateResponsable(
-                                    r.localId,
-                                    'fechaInicio',
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div>
-                              <Label>Fecha fin</Label>
-                              <input
-                                type="date"
-                                className={INPUT_CLS}
-                                value={r.fechaFin || ''}
-                                onChange={(e) =>
-                                  updateResponsable(
-                                    r.localId,
-                                    'fechaFin',
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
+                            <DatePicker
+                              label="Fecha inicio"
+                              value={r.fechaInicio || ''}
+                              onChange={(iso) =>
+                                updateResponsable(r.localId, 'fechaInicio', iso)
+                              }
+                            />
+                            <DatePicker
+                              label="Fecha fin"
+                              value={r.fechaFin || ''}
+                              onChange={(iso) =>
+                                updateResponsable(r.localId, 'fechaFin', iso)
+                              }
+                            />
                           </div>
                         </div>
                       ))}
@@ -1221,21 +1170,17 @@ export default function CreateContratoPage() {
                   }
                 />
               </div>
-              <div>
-                <Label htmlFor="pago-fecha">Fecha de pago</Label>
-                <input
-                  id="pago-fecha"
-                  type="date"
-                  className={INPUT_CLS}
-                  value={form.pago.fechaPago}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      pago: { ...prev.pago, fechaPago: e.target.value },
-                    }))
-                  }
-                />
-              </div>
+              <DatePicker
+                id="pago-fecha"
+                label="Fecha de pago"
+                value={form.pago.fechaPago}
+                onChange={(fechaPago) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    pago: { ...prev.pago, fechaPago },
+                  }))
+                }
+              />
               <div className="sm:col-span-2">
                 <Label htmlFor="pago-monto">Monto a cobrar (seleccionadas)</Label>
                 <input
@@ -1432,7 +1377,7 @@ export default function CreateContratoPage() {
             disabled={step === 0 || saving}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <i className="ti ti-arrow-left" /> Atrás
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Atrás
           </button>
           {step < stepTitles.length - 1 ? (
             <button
@@ -1441,7 +1386,8 @@ export default function CreateContratoPage() {
               disabled={loading || saving}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
             >
-              Siguiente <i className="ti ti-arrow-right" />
+              Siguiente{' '}
+              <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -1450,7 +1396,7 @@ export default function CreateContratoPage() {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
             >
-              <i className="ti ti-check" />
+              <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Guardando…' : 'Finalizar y guardar'}
             </button>
           )}
@@ -1458,14 +1404,14 @@ export default function CreateContratoPage() {
       </Card>
 
       {/* Modal: Buscar bóveda */}
-      {showBovedaModal ? (
-        <ModalShell
-          title="Seleccionar bóveda"
-          size="lg"
-          onClose={() => setShowBovedaModal(false)}
-        >
-          <div className="p-5">
-            <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <Modal
+        open={showBovedaModal}
+        onClose={() => setShowBovedaModal(false)}
+        title="Seleccionar bóveda"
+        size="lg"
+      >
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div className="sm:col-span-2">
                 <input
                   className={INPUT_CLS}
@@ -1524,13 +1470,9 @@ export default function CreateContratoPage() {
                             : 'Sin propietario'}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => selectBoveda(b)}
-                            className="rounded-md bg-green-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-600"
-                          >
+                          <Button size="sm" onClick={() => selectBoveda(b)}>
                             Seleccionar
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))
@@ -1549,7 +1491,7 @@ export default function CreateContratoPage() {
             </div>
 
             {bovedasMeta && bovedasMeta.totalPages > 1 && (
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>
                   Página <strong>{bovedasMeta.page}</strong> de{' '}
                   <strong>{bovedasMeta.totalPages}</strong>
@@ -1574,18 +1516,31 @@ export default function CreateContratoPage() {
                 </div>
               </div>
             )}
-          </div>
-        </ModalShell>
-      ) : null}
+        </div>
+      </Modal>
 
       {/* Modal: Nuevo responsable */}
-      {showResponsableModal ? (
-        <ModalShell
-          title="Crear nuevo responsable"
-          onClose={() => setShowResponsableModal(false)}
-        >
-          <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <Modal
+        open={showResponsableModal}
+        onClose={() => setShowResponsableModal(false)}
+        title="Crear nuevo responsable"
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowResponsableModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={addNewResponsable}>
+              Guardar
+            </Button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="responsable-nombres">Nombres</Label>
                 <input
@@ -1688,26 +1643,8 @@ export default function CreateContratoPage() {
                   }
                 />
               </div>
-            </div>
-          </div>
-          <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
-            <button
-              type="button"
-              onClick={() => setShowResponsableModal(false)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={addNewResponsable}
-              className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
-            >
-              Guardar
-            </button>
-          </footer>
-        </ModalShell>
-      ) : null}
+        </div>
+      </Modal>
     </div>
   );
 }

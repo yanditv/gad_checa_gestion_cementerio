@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Loader2, Pencil, Search, UserPlus, UserX } from 'lucide-react';
 import { bloquesApi, bovedasApi, personasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api';
+import { Button, Modal } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -130,10 +132,11 @@ export default function EditBovedaPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
+        <Loader2
+          className="h-6 w-6 animate-spin text-primary-500"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -149,7 +152,7 @@ export default function EditBovedaPage() {
           href={`/bovedas/${params.id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -340,14 +343,14 @@ export default function EditBovedaPage() {
                     onClick={() => setShowPropietarioModal(true)}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    <i className="ti ti-edit" /> Cambiar
+                    <Pencil className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Cambiar
                   </button>
                   <button
                     type="button"
                     onClick={quitarPropietario}
                     className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
                   >
-                    <i className="ti ti-user-off" /> Quitar
+                    <UserX className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Quitar
                   </button>
                 </div>
               </div>
@@ -359,7 +362,7 @@ export default function EditBovedaPage() {
                   onClick={() => setShowPropietarioModal(true)}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
                 >
-                  <i className="ti ti-user-plus" /> Asignar propietario
+                  <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Asignar propietario
                 </button>
               </div>
             )}
@@ -434,59 +437,55 @@ function PropietarioModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-fade-in" role="dialog"
-      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}>
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-lifted animate-scale-in">
-        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5">
-          <div>
-            <h3 className="text-base font-semibold text-slate-800">Asignar propietario</h3>
-            <p className="text-xs text-slate-500">Buscar por nombre, apellido o cédula.</p>
-          </div>
-          <button type="button" onClick={onClose} disabled={saving}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100" aria-label="Cerrar">
-            <i className="ti ti-x" />
-          </button>
-        </header>
-        <div className="p-6">
-          {error && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>}
-          <div className="relative mb-3">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-9`} />
-          </div>
-          <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
-            {loading ? (
-              <div className="py-6 text-center text-sm text-slate-400">Buscando…</div>
-            ) : results.length === 0 ? (
-              <div className="py-6 text-center text-sm text-slate-400">
-                {search.trim().length < 2 ? 'Escribe al menos 2 caracteres.' : 'No se encontraron personas.'}
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {results.map((p: any) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-slate-800">{p.nombre} {p.apellido}</div>
-                      <div className="text-xs text-slate-500">{p.numeroIdentificacion}</div>
-                    </div>
-                    <button type="button" disabled={saving || actualPersonaId === p.id}
-                      onClick={() => asignar(p.id)}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium ${actualPersonaId === p.id ? 'cursor-default bg-slate-100 text-slate-500' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
-                      {actualPersonaId === p.id ? 'Actual' : 'Asignar'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-        <footer className="flex justify-end border-t border-slate-100 px-6 py-3.5">
-          <button type="button" onClick={onClose} disabled={saving}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            Cerrar
-          </button>
-        </footer>
+    <Modal
+      open
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      title="Asignar propietario"
+      description="Buscar por nombre, apellido o cédula."
+      size="md"
+      footer={
+        <Button variant="secondary" onClick={onClose} disabled={saving}>
+          Cerrar
+        </Button>
+      }
+    >
+      {error && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">{error}</div>}
+      <div className="relative mb-3">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+        <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-9`} />
       </div>
-    </div>
+      <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
+        {loading ? (
+          <div className="py-6 text-center text-sm text-slate-400">Buscando…</div>
+        ) : results.length === 0 ? (
+          <div className="py-6 text-center text-sm text-slate-400">
+            {search.trim().length < 2 ? 'Escribe al menos 2 caracteres.' : 'No se encontraron personas.'}
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {results.map((p: any) => (
+              <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-800">{p.nombre} {p.apellido}</div>
+                  <div className="text-xs text-slate-500">{p.numeroIdentificacion}</div>
+                </div>
+                <button type="button" disabled={saving || actualPersonaId === p.id}
+                  onClick={() => asignar(p.id)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${actualPersonaId === p.id ? 'cursor-default bg-slate-100 text-slate-500' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
+                  {actualPersonaId === p.id ? 'Actual' : 'Asignar'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Modal>
   );
 }
