@@ -125,12 +125,14 @@ const weekdayMondayFirst = (y: number, m: number, d: number) =>
  * lunes, meses y días en español, display `dd/mm/aaaa`; hacia fuera el valor
  * viaja en ISO `yyyy-mm-dd` (compatible con la API y con `min`/`max`).
  *
- * Accesibilidad (WAI-ARIA date picker dialog): el input acepta tipeo
+ * Accesibilidad (WAI-ARIA APG date picker dialog): el input acepta tipeo
  * `dd/mm/aaaa`; el botón calendario (`aria-haspopup="dialog"`) abre un popover
- * `role="dialog"` con `role="grid"` y tabindex itinerante. Flechas mueven el
- * día (±1 / ±7), `RePág`/`AvPág` cambian de mes, `Inicio`/`Fin` saltan al
- * lunes/domingo, `Enter`/`Espacio` seleccionan, `Esc` cierra y devuelve el
- * foco. Cierra también al hacer click fuera.
+ * `role="dialog"` `aria-modal="true"` con `role="grid"` y tabindex itinerante.
+ * El foco entra al día activo al abrir, `Tab` cicla dentro del diálogo (focus
+ * trap) y vuelve al input al cerrar. Flechas mueven el día (±1 / ±7),
+ * `RePág`/`AvPág` cambian de mes, `Inicio`/`Fin` saltan al lunes/domingo,
+ * `Enter`/`Espacio` seleccionan, `Esc` cierra y devuelve el foco. Cierra
+ * también al hacer click fuera (light dismiss).
  */
 export function DatePicker({
   label,
@@ -171,6 +173,7 @@ export function DatePicker({
   const shouldFocusDay = useRef(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -315,11 +318,29 @@ export function DatePicker({
   };
 
   // `Esc` cierra sólo el popover (stopPropagation evita cerrar un Modal padre).
+  // `Tab` queda atrapado dentro del diálogo (requisito de `aria-modal="true"`,
+  // WAI-ARIA APG date picker dialog).
   const onDialogKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       close(true);
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled):not([tabindex="-1"])',
+      );
+      if (!focusables || focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
   };
 
@@ -418,9 +439,10 @@ export function DatePicker({
 
         {open && (
           <div
+            ref={dialogRef}
             id={dialogId}
             role="dialog"
-            aria-modal="false"
+            aria-modal="true"
             aria-label={`Calendario, ${monthLabel}`}
             onKeyDown={onDialogKeyDown}
             className="absolute left-0 top-full z-50 mt-1.5 w-[19rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lifted animate-fade-in"
