@@ -176,7 +176,7 @@ export default function PagosPage() {
                           className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
                           title="Ver factura PDF"
                         >
-                          <i className="ti ti-file-type-pdf" />
+                          <i className="ti ti-file-text" />
                         </a>
                         {getContrato(pago)?.id && (
                           <Link

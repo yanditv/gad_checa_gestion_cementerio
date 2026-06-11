@@ -263,7 +263,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
                     <tr key={d.id} className="hover:bg-slate-50/50">
                       <td className="px-3 py-2">
                         <span className="inline-flex items-center gap-2">
-                          <i className="ti ti-file-type-pdf text-red-500" />
+                          <i className="ti ti-file-text text-red-500" />
                           <span className="font-medium text-slate-700">
                             {d.nombreOriginal}
                           </span>

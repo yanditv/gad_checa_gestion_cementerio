@@ -14,7 +14,7 @@ export default function ManualPage() {
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 self-start rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
         >
-          <i className="ti ti-file-type-pdf" /> Abrir PDF
+          <i className="ti ti-file-text" /> Abrir PDF
         </a>
       </div>
 

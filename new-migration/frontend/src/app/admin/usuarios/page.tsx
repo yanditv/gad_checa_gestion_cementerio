@@ -207,7 +207,7 @@ export default function AdminUsuariosPage() {
               ) : usuarios.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
-                    <i className="ti ti-users-off text-3xl text-slate-300" />
+                    <i className="ti ti-users text-3xl text-slate-300" />
                     <div className="mt-2 text-sm">
                       No hay usuarios que coincidan con los filtros.
                     </div>

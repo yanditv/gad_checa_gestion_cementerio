@@ -187,7 +187,7 @@ export default function CobrosPage() {
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
             <div className="flex items-center gap-2">
-              <i className="ti ti-clock-exclamation text-amber-500" />
+              <i className="ti ti-clock text-amber-500" />
               <h3 className="text-sm font-semibold text-slate-700">
                 Contratos con cuotas pendientes
               </h3>
@@ -291,7 +291,7 @@ export default function CobrosPage() {
                         rel="noreferrer"
                         className="mt-1 inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
                       >
-                        <i className="ti ti-file-type-pdf" />
+                        <i className="ti ti-file-text" />
                         Recibo
                       </a>
                     </div>

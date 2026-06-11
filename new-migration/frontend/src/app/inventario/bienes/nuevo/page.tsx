@@ -126,7 +126,7 @@ export default function NuevoBienPage() {
         title="Nuevo bien"
         subtitle="Registrar (dar de alta) un bien institucional en el inventario."
         backHref="/inventario/bienes"
-        icon={<i className="ti ti-box-seam" aria-hidden="true" />}
+        icon={<i className="ti ti-package" aria-hidden="true" />}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

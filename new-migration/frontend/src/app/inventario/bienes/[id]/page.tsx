@@ -383,7 +383,7 @@ export default function BienDetailPage({
           </span>
         }
         backHref="/inventario/bienes"
-        icon={<i className="ti ti-box-seam" aria-hidden="true" />}
+        icon={<i className="ti ti-package" aria-hidden="true" />}
       />
 
       {error && (
@@ -581,7 +581,7 @@ export default function BienDetailPage({
                 block
                 disabled={bien.dadoDeBaja}
                 onClick={() => openModal('reasignar')}
-                leftIcon={<i className="ti ti-user-share" aria-hidden="true" />}
+                leftIcon={<i className="ti ti-user-plus" aria-hidden="true" />}
               >
                 Reasignar custodio
               </Button>
@@ -590,7 +590,7 @@ export default function BienDetailPage({
                 block
                 disabled={bien.dadoDeBaja}
                 onClick={() => openModal('mover')}
-                leftIcon={<i className="ti ti-arrows-move" aria-hidden="true" />}
+                leftIcon={<i className="ti ti-truck" aria-hidden="true" />}
               >
                 Mover de ubicación
               </Button>

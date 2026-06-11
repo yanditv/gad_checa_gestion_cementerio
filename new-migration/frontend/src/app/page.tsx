@@ -495,7 +495,7 @@ export default function Home() {
       {/* Sección: resumen operativo */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          <i className="ti ti-layout-dashboard text-info-600" />
+          <i className="ti ti-dashboard text-info-600" />
           Resumen operativo
         </h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -690,7 +690,7 @@ export default function Home() {
       {/* Sección: accesos rápidos */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          <i className="ti ti-layout-dashboard text-info-600" />
+          <i className="ti ti-dashboard text-info-600" />
           Accesos rápidos
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

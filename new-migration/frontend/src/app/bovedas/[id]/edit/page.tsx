@@ -340,7 +340,7 @@ export default function EditBovedaPage() {
                     onClick={() => setShowPropietarioModal(true)}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    <i className="ti ti-user-edit" /> Cambiar
+                    <i className="ti ti-edit" /> Cambiar
                   </button>
                   <button
                     type="button"

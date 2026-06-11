@@ -154,13 +154,13 @@ function ReporteIngresosInner() {
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
           >
-            <i className="ti ti-file-type-pdf" /> PDF
+            <i className="ti ti-file-text" /> PDF
           </a>
           <a
             href={exportUrl('excel')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-medium text-green-600 hover:bg-green-50"
           >
-            <i className="ti ti-file-spreadsheet" /> Excel
+            <i className="ti ti-table" /> Excel
           </a>
         </div>
       </form>

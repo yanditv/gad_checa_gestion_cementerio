@@ -107,19 +107,19 @@ const FORMATOS: {
   {
     formato: 'pdf',
     label: 'PDF',
-    icon: 'ti-file-type-pdf',
+    icon: 'ti-file-text',
     cls: 'bg-danger-50 text-danger-700 ring-danger-200 hover:bg-danger-100',
   },
   {
     formato: 'excel',
     label: 'Excel',
-    icon: 'ti-file-type-xls',
+    icon: 'ti-table',
     cls: 'bg-success-50 text-success-700 ring-success-200 hover:bg-success-100',
   },
   {
     formato: 'csv',
     label: 'CSV',
-    icon: 'ti-file-type-csv',
+    icon: 'ti-file-download',
     cls: 'bg-slate-100 text-slate-700 ring-slate-200 hover:bg-slate-200',
   },
 ];

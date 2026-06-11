@@ -210,14 +210,14 @@ export default function ExhumacionesPage() {
       <PageHeader
         title="Exhumaciones"
         subtitle="Historial de exhumaciones y traslados registrados."
-        icon={<i className="ti ti-grave-2" aria-hidden="true" />}
+        icon={<i className="ti ti-switch-horizontal" aria-hidden="true" />}
         actions={
           <>
             <Button
               variant="secondary"
               size="sm"
               loading={downloading}
-              leftIcon={<i className="ti ti-file-type-pdf" aria-hidden="true" />}
+              leftIcon={<i className="ti ti-file-text" aria-hidden="true" />}
               onClick={() => handleExport('pdf')}
             >
               PDF
@@ -226,7 +226,7 @@ export default function ExhumacionesPage() {
               variant="secondary"
               size="sm"
               loading={downloading}
-              leftIcon={<i className="ti ti-file-type-xls" aria-hidden="true" />}
+              leftIcon={<i className="ti ti-table" aria-hidden="true" />}
               onClick={() => handleExport('excel')}
             >
               Excel
@@ -235,7 +235,7 @@ export default function ExhumacionesPage() {
               variant="secondary"
               size="sm"
               loading={downloading}
-              leftIcon={<i className="ti ti-file-type-csv" aria-hidden="true" />}
+              leftIcon={<i className="ti ti-file-download" aria-hidden="true" />}
               onClick={() => handleExport('csv')}
             >
               CSV

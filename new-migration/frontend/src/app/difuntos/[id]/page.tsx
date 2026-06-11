@@ -403,7 +403,7 @@ export default function DifuntoDetailsPage({
             <span>{difunto.numeroIdentificacion ?? 'Sin identificación'}</span>
             {difunto.exhumado && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-700 ring-1 ring-warning-200">
-                <i className="ti ti-grave-2" />
+                <i className="ti ti-switch-horizontal" />
                 Exhumado
               </span>
             )}
@@ -421,7 +421,7 @@ export default function DifuntoDetailsPage({
               onClick={openExhumacionModal}
               className="inline-flex items-center gap-1.5 rounded-lg bg-warning-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-warning-600"
             >
-              <i className="ti ti-grave-2" />
+              <i className="ti ti-switch-horizontal" />
               Registrar exhumación/traslado
             </button>
           )}
