@@ -1,138 +1,82 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from './cn';
 import { Field, controlBase, controlInvalid } from './Field';
+import { usePopover } from './usePopover';
 
 export interface DatePickerProps {
   label?: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;
   required?: boolean;
-  /** Valor ISO `yyyy-mm-dd` (o `''` si está vacío). */
+  /** Valor ISO `yyyy-mm-dd` (o `''`). Se muestra como `dd/mm/aaaa`. */
   value: string;
   /** Recibe el nuevo valor ISO `yyyy-mm-dd` (o `''` al limpiar). */
   onChange: (value: string) => void;
-  /** Fecha mínima seleccionable (ISO `yyyy-mm-dd`). */
+  /** Fecha mínima seleccionable (ISO). */
   min?: string;
-  /** Fecha máxima seleccionable (ISO `yyyy-mm-dd`). */
+  /** Fecha máxima seleccionable (ISO). */
   max?: string;
   placeholder?: string;
   disabled?: boolean;
   id?: string;
-  name?: string;
-  className?: string;
-  /** Clase del contenedor `Field`. */
   wrapperClassName?: string;
 }
 
-/** Fecha desarmada en local (sin zonas horarias): `m` va de 1 a 12. */
-interface DateParts {
-  y: number;
-  m: number;
-  d: number;
-}
-
-const MONTHS_ES = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
+const DIAS = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'];
 
-/** Semana es-EC: lunes primero. */
-const WEEKDAYS_ES = [
-  { short: 'lun', long: 'lunes' },
-  { short: 'mar', long: 'martes' },
-  { short: 'mié', long: 'miércoles' },
-  { short: 'jue', long: 'jueves' },
-  { short: 'vie', long: 'viernes' },
-  { short: 'sáb', long: 'sábado' },
-  { short: 'dom', long: 'domingo' },
-];
+const pad = (n: number) => String(n).padStart(2, '0');
+const toISO = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const todayISO = () => {
+  const t = new Date();
+  return toISO(t.getFullYear(), t.getMonth(), t.getDate());
+};
+const fmtDisplay = (iso: string) => {
+  const [y, m, d] = iso.split('-');
+  return y && m && d ? `${d}/${m}/${y}` : '';
+};
+/** Comparación lexicográfica válida para ISO yyyy-mm-dd. */
+const inRange = (iso: string, min?: string, max?: string) =>
+  (!min || iso >= min) && (!max || iso <= max);
 
-const pad2 = (n: number) => String(n).padStart(2, '0');
-
-function isValidDate(y: number, m: number, d: number): boolean {
-  const dt = new Date(y, m - 1, d);
-  return (
-    dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d
-  );
+interface DayCell {
+  iso: string;
+  day: number;
+  outside: boolean;
 }
 
-/** `yyyy-mm-dd` → partes (o `null` si no es una fecha válida). */
-function parseIso(value: string): DateParts | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return null;
-  const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  return isValidDate(y, m, d) ? { y, m, d } : null;
+/** Semanas lunes-domingo del mes visible (es-EC), con días de relleno. */
+function monthGrid(year: number, month: number): DayCell[] {
+  const first = new Date(year, month, 1);
+  // getDay(): 0=domingo … queremos 0=lunes.
+  const lead = (first.getDay() + 6) % 7;
+  const start = new Date(year, month, 1 - lead);
+  const cells: DayCell[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    cells.push({
+      iso: toISO(d.getFullYear(), d.getMonth(), d.getDate()),
+      day: d.getDate(),
+      outside: d.getMonth() !== month,
+    });
+  }
+  return cells;
 }
-
-const toIso = ({ y, m, d }: DateParts) => `${y}-${pad2(m)}-${pad2(d)}`;
-
-/** Partes → display es-EC `dd/mm/aaaa`. */
-const toDisplay = ({ y, m, d }: DateParts) => `${pad2(d)}/${pad2(m)}/${y}`;
-
-/** Display `dd/mm/aaaa` (tolerante a `d/m/aaaa`) → partes. */
-function parseDisplay(text: string): DateParts | null {
-  const match = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/.exec(text);
-  if (!match) return null;
-  const [d, m, y] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  return isValidDate(y, m, d) ? { y, m, d } : null;
-}
-
-function todayParts(): DateParts {
-  const now = new Date();
-  return { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
-}
-
-function addDays(parts: DateParts, days: number): DateParts {
-  const dt = new Date(parts.y, parts.m - 1, parts.d + days);
-  return { y: dt.getFullYear(), m: dt.getMonth() + 1, d: dt.getDate() };
-}
-
-const daysInMonth = (y: number, m: number) => new Date(y, m, 0).getDate();
-
-/** Día de la semana con lunes = 0 (es-EC). */
-const weekdayMondayFirst = (y: number, m: number, d: number) =>
-  (new Date(y, m - 1, d).getDay() + 6) % 7;
 
 /**
- * Selector de fecha (DESIGN.md §6.1) construido a mano con React + Tailwind +
- * lucide-react, sin dependencias de calendario. Locale es-EC: semana inicia
- * lunes, meses y días en español, display `dd/mm/aaaa`; hacia fuera el valor
- * viaja en ISO `yyyy-mm-dd` (compatible con la API y con `min`/`max`).
+ * Selector de fecha propio (es-EC): input con calendario en popover.
  *
- * Accesibilidad (WAI-ARIA APG date picker dialog): el input acepta tipeo
- * `dd/mm/aaaa`; el botón calendario (`aria-haspopup="dialog"`) abre un popover
- * `role="dialog"` `aria-modal="true"` con `role="grid"` y tabindex itinerante.
- * El foco entra al día activo al abrir, `Tab` cicla dentro del diálogo (focus
- * trap) y vuelve al input al cerrar. Flechas mueven el día (±1 / ±7),
- * `RePág`/`AvPág` cambian de mes, `Inicio`/`Fin` saltan al lunes/domingo,
- * `Enter`/`Espacio` seleccionan, `Esc` cierra y devuelve el foco. Cierra
- * también al hacer click fuera (light dismiss).
+ * - El popover se monta por **portal** (no lo recorta ningún `overflow-hidden`).
+ * - Días sin bordes: hover suave, seleccionado en `primary-600`, hoy resaltado.
+ * - Teclado: flechas mueven el día, AvPág/RePág cambian de mes, Enter
+ *   selecciona, Esc cierra. `role="grid"` + `aria-selected`.
  */
 export function DatePicker({
   label,
@@ -146,249 +90,192 @@ export function DatePicker({
   placeholder = 'dd/mm/aaaa',
   disabled,
   id,
-  name,
-  className,
   wrapperClassName,
 }: DatePickerProps) {
-  const autoId = useId();
-  const inputId = id ?? autoId;
-  const describedById = `${inputId}-desc`;
-  const dialogId = `${inputId}-dialog`;
-  const hasDesc = error != null || hint != null;
+  const reactId = useId();
+  const inputId = id ?? `datepicker-${reactId}`;
+  const hintId = `${inputId}-hint`;
+  const { open, setOpen, triggerRef, popRef, style } = usePopover<HTMLButtonElement>({
+    estimatedHeight: 332,
+  });
 
-  const selected = parseIso(value);
-  const today = todayParts();
-  const todayIso = toIso(today);
+  const baseISO = value || todayISO();
+  const [viewYear, setViewYear] = useState(() => Number(baseISO.slice(0, 4)));
+  const [viewMonth, setViewMonth] = useState(() => Number(baseISO.slice(5, 7)) - 1);
+  const [focusISO, setFocusISO] = useState(baseISO);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState(selected ? toDisplay(selected) : '');
-  // Mes visible en el popover.
-  const [view, setView] = useState<{ y: number; m: number }>(() => ({
-    y: (selected ?? today).y,
-    m: (selected ?? today).m,
-  }));
-  // Día con tabindex 0 dentro de la grilla (tabindex itinerante).
-  const [active, setActive] = useState<DateParts>(selected ?? today);
-  // Sólo enfocar el día activo cuando el cambio nace del teclado/apertura.
-  const shouldFocusDay = useRef(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Sincroniza el texto visible cuando el valor cambia desde fuera
-  // (p. ej. "Limpiar filtros" del padre).
-  useEffect(() => {
-    const parts = parseIso(value);
-    setText(parts ? toDisplay(parts) : '');
-  }, [value]);
-
-  const inRange = useCallback(
-    (iso: string) => (!min || iso >= min) && (!max || iso <= max),
-    [min, max],
-  );
-
-  const openCalendar = useCallback(() => {
-    const base = parseIso(value) ?? todayParts();
-    setView({ y: base.y, m: base.m });
-    setActive(base);
-    shouldFocusDay.current = true;
-    setOpen(true);
-  }, [value]);
-
-  const close = useCallback(
-    (focusInput = false) => {
-      setOpen(false);
-      if (focusInput) inputRef.current?.focus();
-    },
-    [],
-  );
-
-  // Cierre al hacer click fuera del control.
+  // Al abrir, centrar la vista en el valor actual (o en hoy).
   useEffect(() => {
     if (!open) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) close();
-    };
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [open, close]);
+    const iso = value || todayISO();
+    setViewYear(Number(iso.slice(0, 4)));
+    setViewMonth(Number(iso.slice(5, 7)) - 1);
+    setFocusISO(iso);
+  }, [open, value]);
 
-  // Enfoca el día activo tras abrir o navegar con teclado.
+  // Mover el foco DOM al día focalizado cuando cambia (navegación por teclado).
   useEffect(() => {
-    if (!open || !shouldFocusDay.current) return;
-    shouldFocusDay.current = false;
-    const el = gridRef.current?.querySelector<HTMLElement>(
-      `[data-iso="${toIso(active)}"]`,
-    );
-    el?.focus();
-  }, [open, active]);
+    if (!open) return;
+    gridRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-iso="${focusISO}"]`)
+      ?.focus();
+  }, [open, focusISO]);
 
-  const selectDay = (parts: DateParts) => {
-    const iso = toIso(parts);
-    if (!inRange(iso)) return;
+  const moveView = (deltaMonths: number) => {
+    const d = new Date(viewYear, viewMonth + deltaMonths, 1);
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
+  };
+
+  const moveFocus = (deltaDays: number) => {
+    const [y, m, d] = focusISO.split('-').map(Number);
+    const next = new Date(y, m - 1, d + deltaDays);
+    const iso = toISO(next.getFullYear(), next.getMonth(), next.getDate());
+    setFocusISO(iso);
+    if (next.getFullYear() !== viewYear || next.getMonth() !== viewMonth) {
+      setViewYear(next.getFullYear());
+      setViewMonth(next.getMonth());
+    }
+  };
+
+  const select = (iso: string) => {
+    if (!inRange(iso, min, max)) return;
     onChange(iso);
-    close(true);
-  };
-
-  /** Aplica lo tipeado en el input (commit en blur / Enter). */
-  const commitText = () => {
-    const trimmed = text.trim();
-    if (trimmed === '') {
-      if (value !== '') onChange('');
-      return;
-    }
-    const parts = parseDisplay(trimmed);
-    if (parts && inRange(toIso(parts))) {
-      const iso = toIso(parts);
-      if (iso !== value) onChange(iso);
-      setText(toDisplay(parts));
-    } else {
-      // Entrada inválida o fuera de rango: revertir al último valor válido.
-      const prev = parseIso(value);
-      setText(prev ? toDisplay(prev) : '');
-    }
-  };
-
-  const moveActive = (next: DateParts) => {
-    setActive(next);
-    if (next.y !== view.y || next.m !== view.m) {
-      setView({ y: next.y, m: next.m });
-    }
-    shouldFocusDay.current = true;
-  };
-
-  const shiftMonth = (delta: number, base = view) => {
-    const total = base.y * 12 + (base.m - 1) + delta;
-    const y = Math.floor(total / 12);
-    const m = (total % 12) + 1;
-    return { y, m };
+    setOpen(false);
+    triggerRef.current?.focus();
   };
 
   const onGridKeyDown = (e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowRight':
-        e.preventDefault();
-        moveActive(addDays(active, 1));
-        break;
-      case 'ArrowLeft':
-        e.preventDefault();
-        moveActive(addDays(active, -1));
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        moveActive(addDays(active, 7));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        moveActive(addDays(active, -7));
-        break;
-      case 'Home':
-        e.preventDefault();
-        moveActive(
-          addDays(active, -weekdayMondayFirst(active.y, active.m, active.d)),
-        );
-        break;
-      case 'End':
-        e.preventDefault();
-        moveActive(
-          addDays(active, 6 - weekdayMondayFirst(active.y, active.m, active.d)),
-        );
-        break;
-      case 'PageUp':
-      case 'PageDown': {
-        e.preventDefault();
-        const next = shiftMonth(e.key === 'PageUp' ? -1 : 1, {
-          y: active.y,
-          m: active.m,
-        });
-        moveActive({
-          ...next,
-          d: Math.min(active.d, daysInMonth(next.y, next.m)),
-        });
-        break;
-      }
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        selectDay(active);
-        break;
+    const keys: Record<string, () => void> = {
+      ArrowLeft: () => moveFocus(-1),
+      ArrowRight: () => moveFocus(1),
+      ArrowUp: () => moveFocus(-7),
+      ArrowDown: () => moveFocus(7),
+      PageUp: () => moveView(-1),
+      PageDown: () => moveView(1),
+      Enter: () => select(focusISO),
+      ' ': () => select(focusISO),
+    };
+    const fn = keys[e.key];
+    if (fn) {
+      e.preventDefault();
+      fn();
     }
   };
 
-  // `Esc` cierra sólo el popover (stopPropagation evita cerrar un Modal padre).
-  // `Tab` queda atrapado dentro del diálogo (requisito de `aria-modal="true"`,
-  // WAI-ARIA APG date picker dialog).
-  const onDialogKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      close(true);
-      return;
-    }
-    if (e.key === 'Tab') {
-      const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button:not(:disabled):not([tabindex="-1"])',
-      );
-      if (!focusables || focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  };
+  const hoy = todayISO();
+  const cells = monthGrid(viewYear, viewMonth);
 
-  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' || (e.altKey && e.key === 'ArrowDown')) {
-      e.preventDefault();
-      openCalendar();
-    } else if (e.key === 'Enter') {
-      commitText();
-    } else if (e.key === 'Escape' && open) {
-      e.preventDefault();
-      e.stopPropagation();
-      close();
-    }
-  };
+  const popover = open && mounted
+    ? createPortal(
+        <div
+          ref={popRef}
+          style={style}
+          role="dialog"
+          aria-modal="false"
+          aria-label="Elegir fecha"
+          className="w-[19rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lifted"
+        >
+          {/* Cabecera: mes + navegación fantasma */}
+          <div className="mb-2 flex items-center justify-between px-1">
+            <button
+              type="button"
+              onClick={() => moveView(-1)}
+              aria-label="Mes anterior"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <span className="text-sm font-semibold text-slate-800" aria-live="polite">
+              {MESES[viewMonth]} {viewYear}
+            </span>
+            <button
+              type="button"
+              onClick={() => moveView(1)}
+              aria-label="Mes siguiente"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
 
-  // ─── Construcción de la grilla del mes visible ─────────────────────────
-  const totalDays = daysInMonth(view.y, view.m);
-  const leadingBlanks = weekdayMondayFirst(view.y, view.m, 1);
-  const cells: (DateParts | null)[] = [
-    ...Array.from({ length: leadingBlanks }, () => null),
-    ...Array.from({ length: totalDays }, (_, i) => ({
-      y: view.y,
-      m: view.m,
-      d: i + 1,
-    })),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
-  const weeks: (DateParts | null)[][] = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+          {/* Días de la semana */}
+          <div className="grid grid-cols-7" aria-hidden="true">
+            {DIAS.map((d) => (
+              <span
+                key={d}
+                className="flex h-8 items-center justify-center text-[11px] font-medium uppercase text-slate-400"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
 
-  const monthLabel = `${MONTHS_ES[view.m - 1]} ${view.y}`;
-  const activeInView = active.y === view.y && active.m === view.m;
+          {/* Grid de días — sin bordes; estados por color */}
+          <div ref={gridRef} role="grid" onKeyDown={onGridKeyDown} className="grid grid-cols-7">
+            {cells.map((c) => {
+              const selected = value === c.iso;
+              const isToday = c.iso === hoy;
+              const enabled = inRange(c.iso, min, max);
+              return (
+                <button
+                  key={c.iso}
+                  type="button"
+                  role="gridcell"
+                  data-iso={c.iso}
+                  tabIndex={c.iso === focusISO ? 0 : -1}
+                  aria-selected={selected || undefined}
+                  disabled={!enabled}
+                  onClick={() => select(c.iso)}
+                  className={cn(
+                    'mx-auto flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300',
+                    selected
+                      ? 'bg-primary-600 font-semibold text-white shadow-sm'
+                      : isToday
+                        ? 'font-semibold text-primary-600 ring-1 ring-inset ring-primary-200'
+                        : c.outside
+                          ? 'text-slate-300 hover:bg-slate-50'
+                          : 'text-slate-700 hover:bg-slate-100',
+                    !enabled && 'cursor-not-allowed text-slate-200 hover:bg-transparent',
+                  )}
+                >
+                  {c.day}
+                </button>
+              );
+            })}
+          </div>
 
-  const navButton = (
-    icon: ReactNode,
-    ariaLabel: string,
-    onClick: () => void,
-  ) => (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
-    >
-      {icon}
-    </button>
-  );
+          {/* Pie: atajos discretos */}
+          <div className="mt-2 flex items-center justify-between border-t border-slate-100 px-1 pt-2">
+            <button
+              type="button"
+              onClick={() => select(hoy)}
+              disabled={!inRange(hoy, min, max)}
+              className="rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+            >
+              Hoy
+            </button>
+            {value && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange('');
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                }}
+                className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )
+    : null;
 
   return (
     <Field
@@ -397,182 +284,45 @@ export function DatePicker({
       error={error}
       required={required}
       htmlFor={inputId}
-      describedById={hasDesc ? describedById : undefined}
+      describedById={hint != null || error != null ? hintId : undefined}
       className={wrapperClassName}
     >
-      <div ref={containerRef} className="relative">
-        <input
-          ref={inputRef}
-          id={inputId}
-          name={name}
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder={placeholder}
-          required={required}
-          disabled={disabled}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={commitText}
-          onKeyDown={onInputKeyDown}
-          aria-invalid={error != null || undefined}
-          aria-describedby={hasDesc ? describedById : undefined}
-          className={cn(
-            controlBase,
-            'h-10 px-3 py-2 pr-10 tabular-nums',
-            error != null && controlInvalid,
-            className,
-          )}
-        />
-        <button
-          type="button"
-          aria-label="Abrir calendario"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-controls={open ? dialogId : undefined}
-          disabled={disabled}
-          onClick={() => (open ? close() : openCalendar())}
-          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors duration-150 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 disabled:cursor-not-allowed disabled:text-slate-300"
-        >
-          <Calendar className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-        </button>
-
-        {open && (
-          <div
-            ref={dialogRef}
-            id={dialogId}
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Calendario, ${monthLabel}`}
-            onKeyDown={onDialogKeyDown}
-            className="absolute left-0 top-full z-50 mt-1.5 w-[19rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lifted animate-fade-in"
-          >
-            {/* Navegación de mes y año */}
-            <div className="flex items-center justify-between gap-1">
-              <div className="flex items-center">
-                {navButton(
-                  <ChevronsLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />,
-                  'Año anterior',
-                  () => setView((v) => ({ ...v, y: v.y - 1 })),
-                )}
-                {navButton(
-                  <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />,
-                  'Mes anterior',
-                  () => setView((v) => shiftMonth(-1, v)),
-                )}
-              </div>
-              <p
-                aria-live="polite"
-                className="text-sm font-semibold capitalize text-slate-900"
-              >
-                {monthLabel}
-              </p>
-              <div className="flex items-center">
-                {navButton(
-                  <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />,
-                  'Mes siguiente',
-                  () => setView((v) => shiftMonth(1, v)),
-                )}
-                {navButton(
-                  <ChevronsRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />,
-                  'Año siguiente',
-                  () => setView((v) => ({ ...v, y: v.y + 1 })),
-                )}
-              </div>
-            </div>
-
-            {/* Grilla mensual */}
-            <div
-              ref={gridRef}
-              role="grid"
-              aria-label={monthLabel}
-              onKeyDown={onGridKeyDown}
-              className="mt-2"
-            >
-              <div role="row" className="grid grid-cols-7">
-                {WEEKDAYS_ES.map((day) => (
-                  <div
-                    key={day.short}
-                    role="columnheader"
-                    aria-label={day.long}
-                    className="flex h-8 items-center justify-center text-xs font-medium uppercase text-slate-400"
-                  >
-                    {day.short}
-                  </div>
-                ))}
-              </div>
-              {weeks.map((week, wi) => (
-                <div key={wi} role="row" className="grid grid-cols-7">
-                  {week.map((day, di) => {
-                    if (!day) {
-                      return <div key={di} role="gridcell" className="h-9" />;
-                    }
-                    const iso = toIso(day);
-                    const isSelected = iso === value;
-                    const isToday = iso === todayIso;
-                    const isDisabled = !inRange(iso);
-                    const isActive =
-                      activeInView &&
-                      day.d === active.d &&
-                      day.m === active.m &&
-                      day.y === active.y;
-                    return (
-                      <div key={di} role="gridcell" className="flex h-9 items-center justify-center">
-                        <button
-                          type="button"
-                          data-iso={iso}
-                          tabIndex={isActive || (!activeInView && day.d === 1) ? 0 : -1}
-                          aria-label={`${day.d} de ${MONTHS_ES[day.m - 1]} de ${day.y}`}
-                          aria-pressed={isSelected}
-                          aria-disabled={isDisabled || undefined}
-                          aria-current={isToday ? 'date' : undefined}
-                          onClick={() => selectDay(day)}
-                          onFocus={() => setActive(day)}
-                          className={cn(
-                            'inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm tabular-nums transition-colors duration-150',
-                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300',
-                            isSelected
-                              ? 'bg-primary-600 font-semibold text-white hover:bg-primary-700'
-                              : isDisabled
-                                ? 'cursor-not-allowed text-slate-300'
-                                : isToday
-                                  ? 'font-semibold text-primary-700 ring-1 ring-inset ring-primary-200 hover:bg-primary-50'
-                                  : 'text-slate-700 hover:bg-slate-100',
-                          )}
-                        >
-                          {day.d}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {/* Acciones rápidas */}
-            <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
-              <button
-                type="button"
-                disabled={!inRange(todayIso)}
-                onClick={() => selectDay(today)}
-                className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-primary-600 transition-colors duration-150 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 disabled:cursor-not-allowed disabled:text-slate-300"
-              >
-                Hoy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onChange('');
-                  close(true);
-                }}
-                className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
-              >
-                Limpiar
-              </button>
-            </div>
-          </div>
+      <button
+        ref={triggerRef}
+        id={inputId}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          controlBase,
+          error != null && controlInvalid,
+          'flex h-10 items-center justify-between gap-2 px-3 text-left text-sm',
         )}
-      </div>
+      >
+        <span className={value ? 'text-slate-900' : 'text-slate-400'}>
+          {value ? fmtDisplay(value) : placeholder}
+        </span>
+        <span className="flex items-center gap-1">
+          {value && !disabled && (
+            <span
+              role="button"
+              tabIndex={-1}
+              aria-label="Limpiar fecha"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange('');
+              }}
+              className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
+          )}
+          <CalendarDays className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        </span>
+      </button>
+      {popover}
     </Field>
   );
 }
