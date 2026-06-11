@@ -73,6 +73,23 @@ body {
   cursor: not-allowed;
 }
 
+/* Mini-reset de listas: sin viñetas ni sangría del user-agent (menús,
+ * listados divide-y, etc.). Las listas de contenido que sí quieren viñetas
+ * declaran `list-disc pl-5` explícito y ganan por especificidad. */
+:where([data-app-surface]) :is(ul, ol) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Un overlay fijo a viewport completo nunca hereda márgenes de layout.
+ * Sin esto, un modal montado dentro de `space-y-6` baja 24px (la regla
+ * space-y gana a `mt-0` por especificidad) y el fondo difuminado deja la
+ * franja superior sin cubrir. */
+[data-app-surface] .fixed.inset-0 {
+  margin: 0 !important;
+}
+
 /* Skeleton: brillo de carga reutilizable por la librería de componentes. */
 .skeleton-shimmer {
   position: relative;

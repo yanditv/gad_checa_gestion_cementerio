@@ -611,13 +611,13 @@ function PropietarioModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-fade-in"
       role="dialog"
       onClick={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lifted">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lifted animate-scale-in">
         <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
           <div>
             <h3 className="text-base font-semibold text-slate-800">
