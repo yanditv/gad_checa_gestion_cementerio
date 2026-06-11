@@ -76,7 +76,8 @@ function monthGrid(year: number, month: number): DayCell[] {
  * - El popover se monta por **portal** (no lo recorta ningún `overflow-hidden`).
  * - Días sin bordes: hover suave, seleccionado en `primary-600`, hoy resaltado.
  * - Teclado: flechas mueven el día, AvPág/RePág cambian de mes, Enter
- *   selecciona, Esc cierra. `role="grid"` + `aria-selected`.
+ *   selecciona, Esc cierra, Tab queda atrapado dentro del diálogo
+ *   (`aria-modal="true"`, WAI-ARIA APG). `role="grid"` + `aria-selected`.
  */
 export function DatePicker({
   label,
@@ -166,6 +167,26 @@ export function DatePicker({
     }
   };
 
+  // Trampa de foco: Tab/Shift+Tab ciclan dentro del diálogo (aria-modal).
+  const onDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const root = popRef.current;
+    if (!root) return;
+    const focusables = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),
+    ).filter((el) => el.tabIndex >= 0);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   const hoy = todayISO();
   const cells = monthGrid(viewYear, viewMonth);
 
@@ -175,8 +196,9 @@ export function DatePicker({
           ref={popRef}
           style={style}
           role="dialog"
-          aria-modal="false"
+          aria-modal="true"
           aria-label="Elegir fecha"
+          onKeyDown={onDialogKeyDown}
           className="w-[19rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lifted"
         >
           {/* Cabecera: mes + navegación fantasma */}
