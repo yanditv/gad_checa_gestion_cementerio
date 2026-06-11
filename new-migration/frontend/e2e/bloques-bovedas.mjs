@@ -13,7 +13,7 @@ async function test(name, fn) {
 
 function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
-async function api(method, path, body?) {
+async function api(method, path, body) {
   const h = { 'Content-Type': 'application/json' };
   if (authToken) h['Authorization'] = 'Bearer ' + authToken;
   const r = await fetch(API + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
