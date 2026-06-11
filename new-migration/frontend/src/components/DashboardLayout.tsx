@@ -72,7 +72,7 @@ export function DashboardLayout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-700">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-700">
       <Sidebar
         user={user}
         open={sidebarOpen}

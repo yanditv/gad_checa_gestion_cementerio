@@ -22,10 +22,10 @@ const paddings: Record<NonNullable<CardProps['padding']>, string> = {
 };
 
 const surface =
-  'rounded-xl border border-slate-200 bg-white shadow-soft';
+  'rounded-xl border border-slate-200/80 bg-white shadow-md';
 
 /**
- * Panel base del CRM: `rounded-xl border-slate-200 bg-white shadow-soft`
+ * Panel base del CRM: `rounded-xl border-slate-200/80 bg-white shadow-md`
  * (DESIGN.md §6.2). Úsalo con `children` directos o con los subcomponentes
  * `Card.Header` / `Card.Body` / `Card.Footer` para estructurar header, cuerpo
  * y pie con separadores finos.
