@@ -344,7 +344,7 @@ componente:
 |------------|-------------|-------|
 | `Card` | `padding`, `header`, `footer` | `rounded-xl border-slate-200 bg-white shadow-soft`; subcomponentes `Card.Header` / `Card.Body` / `Card.Footer`. |
 | `PageHeader` | `title`, `subtitle`, `actions`, `backHref` | Encabezado inline de página (título `text-2xl` + CTA). |
-| `DataTable` | `columns`, `rows`, `loading`, `empty`, `onSort`, `rowKey` | Header `bg-slate-50` sticky, hover de fila, estados loading (skeleton) / empty (`EmptyState`), columna de acciones. |
+| `DataTable` | `columns`, `rows`, `loading`, `empty`, `sort`/`onSort`, `rowKey` | Header `bg-slate-50` sticky, hover de fila, estados loading (skeleton) / empty (`EmptyState`), columna de acciones. Orden por columna (`sortable` + `aria-sort`): controlado vía `onSort`, o autogestionado en cliente declarando `sortValue` en la columna (alterna asc/desc sobre las filas visibles). |
 | `Pagination` | `page`, `pageCount`, `total`, `onChange` | Resumen textual + ventana ±2; `aria-current` en página activa. |
 | `Modal` / `Dialog` | `open`, `onClose`, `title`, `size` | Focus-trap, cierre con `Esc`/overlay, `shadow-overlay`, `animate-scale-in`, `role="dialog"` `aria-modal`. |
 | `DropdownMenu` | `trigger`, `items`, `align` | React-controlado (sin Bootstrap JS), un solo abierto, navegable por teclado, `shadow-lifted`. |

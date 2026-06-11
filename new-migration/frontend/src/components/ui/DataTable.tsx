@@ -1,4 +1,6 @@
-import { type ReactNode, type Key } from 'react';
+'use client';
+
+import { useMemo, useState, type ReactNode, type Key } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { cn } from './cn';
 import { Skeleton } from './Skeleton';
@@ -15,8 +17,11 @@ export interface DataTableColumn<T> {
   cell: (row: T, index: number) => ReactNode;
   /** Alineación del contenido. */
   align?: 'left' | 'center' | 'right';
-  /** Habilita el ordenamiento por esta columna (requiere `onSort`). */
+  /** Habilita el ordenamiento por esta columna (requiere `onSort` o `sortValue`). */
   sortable?: boolean;
+  /** Valor por el que ordena la fila. Si se define y no hay `onSort`, la
+   * tabla ordena sola las filas visibles en el cliente. */
+  sortValue?: (row: T) => string | number | Date | null | undefined;
   /** Clases extra para la celda (`td`). */
   cellClassName?: string;
   /** Clases extra para el encabezado (`th`). */
@@ -58,11 +63,29 @@ const alignClass = {
   right: 'text-right',
 } as const;
 
+type SortPrimitive = string | number | Date | null | undefined;
+
+/** Orden natural es-EC: números como números, nulos al final. */
+function compareSortValues(a: SortPrimitive, b: SortPrimitive): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  const av = a instanceof Date ? a.getTime() : a;
+  const bv = b instanceof Date ? b.getTime() : b;
+  if (typeof av === 'number' && typeof bv === 'number') return av - bv;
+  return String(av).localeCompare(String(bv), 'es', {
+    numeric: true,
+    sensitivity: 'base',
+  });
+}
+
 /**
  * Tabla de datos del CRM (DESIGN.md §6.2): header `bg-slate-50` en mayúsculas,
  * hover de fila, orden por columna con indicador, cabecera sticky opcional y
- * estados de carga (skeleton) / vacío (`EmptyState`). El ordenamiento es
- * controlado: se notifica `onSort(key)` y el padre decide la nueva dirección.
+ * estados de carga (skeleton) / vacío (`EmptyState`). El ordenamiento admite
+ * dos modos: controlado (`onSort(key)` y el padre decide) o autogestionado
+ * (columna con `sortValue` y sin `onSort`: la tabla ordena en el cliente las
+ * filas visibles, alternando asc/desc).
  */
 export function DataTable<T>({
   columns,
@@ -80,6 +103,33 @@ export function DataTable<T>({
   const showEmpty = !loading && rows.length === 0;
   const clickable = typeof onRowClick === 'function';
 
+  // Orden autogestionado cuando no hay `onSort` (el prop `sort` manda si viene).
+  const [internalSort, setInternalSort] = useState<DataTableSort | null>(null);
+  const effectiveSort = sort !== undefined ? sort : internalSort;
+
+  const handleSort = (key: string) => {
+    if (onSort) {
+      onSort(key);
+      return;
+    }
+    setInternalSort((prev) =>
+      prev?.key === key
+        ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+        : { key, direction: 'asc' },
+    );
+  };
+
+  const sortedRows = useMemo(() => {
+    if (!effectiveSort) return rows;
+    const col = columns.find((c) => c.key === effectiveSort.key);
+    const accessor = col?.sortValue;
+    if (!accessor) return rows;
+    const dir = effectiveSort.direction === 'asc' ? 1 : -1;
+    return [...rows].sort(
+      (a, b) => dir * compareSortValues(accessor(a), accessor(b)),
+    );
+  }, [rows, columns, effectiveSort]);
+
   const emptyContent =
     empty ?? <EmptyState title="No hay registros para mostrar" compact />;
 
@@ -94,15 +144,18 @@ export function DataTable<T>({
         >
           <tr className="border-b border-slate-200">
             {columns.map((col) => {
-              const isSorted = sort?.key === col.key;
-              const sortable = col.sortable && typeof onSort === 'function';
+              const isSorted = effectiveSort?.key === col.key;
+              const sortable =
+                col.sortable &&
+                (typeof onSort === 'function' ||
+                  typeof col.sortValue === 'function');
               return (
                 <th
                   key={col.key}
                   scope="col"
                   aria-sort={
                     isSorted
-                      ? sort?.direction === 'asc'
+                      ? effectiveSort?.direction === 'asc'
                         ? 'ascending'
                         : 'descending'
                       : sortable
@@ -119,7 +172,7 @@ export function DataTable<T>({
                   {sortable ? (
                     <button
                       type="button"
-                      onClick={() => onSort?.(col.key)}
+                      onClick={() => handleSort(col.key)}
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded transition-colors duration-150 hover:text-slate-700',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 focus-visible:ring-offset-1',
@@ -134,7 +187,7 @@ export function DataTable<T>({
                           strokeWidth={2}
                           className="h-4 w-4 text-slate-300"
                         />
-                      ) : sort?.direction === 'asc' ? (
+                      ) : effectiveSort?.direction === 'asc' ? (
                         <ArrowUp
                           aria-hidden="true"
                           strokeWidth={2}
@@ -170,7 +223,7 @@ export function DataTable<T>({
                   ))}
                 </tr>
               ))
-            : rows.map((row, index) => (
+            : sortedRows.map((row, index) => (
                 <tr
                   key={rowKey(row, index)}
                   onClick={clickable ? () => onRowClick?.(row, index) : undefined}

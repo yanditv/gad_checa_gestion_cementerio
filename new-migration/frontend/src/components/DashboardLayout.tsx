@@ -83,8 +83,14 @@ export function DashboardLayout({ children }: LayoutProps) {
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
-      <main id="main-content" tabIndex={-1} className="lg:ml-64 pt-16 focus:outline-none">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      {/* Columna flex de alto mínimo viewport: el contenido empuja y el
+          footer queda anclado abajo aunque la página tenga poco contenido. */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-screen flex-col pt-16 focus:outline-none lg:ml-64"
+      >
+        <div className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </div>
         <Footer />

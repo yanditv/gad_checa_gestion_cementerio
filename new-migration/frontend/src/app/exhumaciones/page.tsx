@@ -138,6 +138,8 @@ export default function ExhumacionesPage() {
       key: 'numeroActa',
       header: 'Acta',
       width: 'w-28',
+      sortable: true,
+      sortValue: (row) => row.numeroActa,
       cell: (row) => (
         <span className="font-mono text-xs font-semibold text-slate-700">
           {row.numeroActa}
@@ -147,6 +149,8 @@ export default function ExhumacionesPage() {
     {
       key: 'fechaExhumacion',
       header: 'Fecha',
+      sortable: true,
+      sortValue: (row) => row.fechaExhumacion,
       cell: (row) => (
         <span className="text-slate-600">{formatDate(row.fechaExhumacion)}</span>
       ),
@@ -154,6 +158,9 @@ export default function ExhumacionesPage() {
     {
       key: 'difunto',
       header: 'Difunto',
+      sortable: true,
+      sortValue: (row) =>
+        row.difunto ? `${row.difunto.apellido} ${row.difunto.nombre}` : null,
       cell: (row) =>
         row.difunto ? (
           <Link
@@ -169,6 +176,8 @@ export default function ExhumacionesPage() {
     {
       key: 'motivo',
       header: 'Motivo',
+      sortable: true,
+      sortValue: (row) => MOTIVO_EXHUMACION_LABEL[row.motivo] ?? row.motivo,
       cell: (row) => (
         <span className="text-slate-600">
           {MOTIVO_EXHUMACION_LABEL[row.motivo] ?? row.motivo}
@@ -178,11 +187,15 @@ export default function ExhumacionesPage() {
     {
       key: 'destino',
       header: 'Destino',
+      sortable: true,
+      sortValue: (row) => row.destino,
       cell: (row) => <span className="text-slate-600">{row.destino}</span>,
     },
     {
       key: 'estado',
       header: 'Estado',
+      sortable: true,
+      sortValue: (row) => (row.estado ? 'Registrada' : 'Anulada'),
       cell: (row) =>
         row.estado ? (
           <Badge tone="warning" dot>
