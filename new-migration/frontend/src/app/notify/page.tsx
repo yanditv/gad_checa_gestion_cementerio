@@ -1,6 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
+import {
+  AlertTriangle,
+  Bell,
+  BellOff,
+  CalendarClock,
+  CheckCheck,
+  CircleDollarSign,
+  Coins,
+  Loader2,
+} from 'lucide-react';
+import { Button, EmptyState, Pagination } from '@/components/ui';
 import { notificacionesApi, PaginationMeta } from '@/lib/api';
 import { timeAgo } from '@/lib/timeago';
 
@@ -16,12 +27,14 @@ interface Notificacion {
   entidadId: number | null;
 }
 
-const TIPO_ICON: Record<string, string> = {
-  ContratoPorVencer: 'ti-calendar-exclamation',
-  ContratoVencido: 'ti-alert-triangle',
-  CuotaVencida: 'ti-coin-off',
-  PagoRegistrado: 'ti-coin',
-  Generico: 'ti-bell',
+type IconType = ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+
+const TIPO_ICON: Record<string, IconType> = {
+  ContratoPorVencer: CalendarClock,
+  ContratoVencido: AlertTriangle,
+  CuotaVencida: CircleDollarSign,
+  PagoRegistrado: Coins,
+  Generico: Bell,
 };
 
 const TIPO_TONE: Record<string, string> = {
@@ -76,13 +89,6 @@ export default function NotifyPage() {
     load();
   };
 
-  const visiblePages = (() => {
-    if (!meta) return [];
-    const start = Math.max(1, meta.page - 2);
-    const end = Math.min(meta.totalPages, meta.page + 2);
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  })();
-
   const unreadCount = notificaciones.filter((n) => !n.leida).length;
 
   return (
@@ -95,14 +101,15 @@ export default function NotifyPage() {
           </p>
         </div>
         {unreadCount > 0 && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleMarkAllRead}
-            className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            leftIcon={<CheckCheck className="h-4 w-4" aria-hidden="true" />}
+            className="self-start"
           >
-            <i className="ti ti-checks" />
             Marcar todas como leídas
-          </button>
+          </Button>
         )}
       </div>
 
@@ -124,106 +131,79 @@ export default function NotifyPage() {
         ))}
       </div>
 
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {error}
+        </div>
+      )}
+
       {/* Lista */}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
         {loading ? (
           <div className="flex min-h-[20vh] items-center justify-center">
-            <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
+            <Loader2 className="h-6 w-6 animate-spin text-primary-500" aria-hidden="true" />
           </div>
         ) : notificaciones.length === 0 ? (
-          <div className="px-5 py-16 text-center text-slate-400">
-            <i className="ti ti-bell-off text-3xl text-slate-300" />
-            <p className="mt-2 text-sm">No hay notificaciones.</p>
-          </div>
+          <EmptyState
+            icon={<BellOff className="h-7 w-7" aria-hidden="true" />}
+            title="No hay notificaciones."
+          />
         ) : (
           <ul>
-            {notificaciones.map((n) => (
-              <li
-                key={n.id}
-                className={`border-b border-slate-100 last:border-b-0 ${
-                  !n.leida ? 'bg-primary-50/20' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3 px-5 py-3">
-                  <div
-                    className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ${
-                      TIPO_TONE[n.tipo] ?? TIPO_TONE.Generico
-                    }`}
-                  >
-                    <i className={`ti ${TIPO_ICON[n.tipo] ?? 'ti-bell'} text-sm`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-700">{n.titulo}</p>
-                      {!n.leida && (
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-primary-500" />
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-sm text-slate-500">{n.mensaje}</p>
-                    <p className="mt-1 text-xs text-slate-400">{timeAgo(n.fechaCreacion)}</p>
-                  </div>
-                  {!n.leida && (
-                    <button
-                      type="button"
-                      onClick={() => handleMarkRead(n.id)}
-                      className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50"
+            {notificaciones.map((n) => {
+              const Icon = TIPO_ICON[n.tipo] ?? Bell;
+              return (
+                <li
+                  key={n.id}
+                  className={`border-b border-slate-100 last:border-b-0 ${
+                    !n.leida ? 'bg-primary-50/20' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-3 px-5 py-3">
+                    <div
+                      className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ${
+                        TIPO_TONE[n.tipo] ?? TIPO_TONE.Generico
+                      }`}
                     >
-                      Marcar leída
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
+                      <Icon className="h-4 w-4" aria-hidden={true} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-700">{n.titulo}</p>
+                        {!n.leida && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-primary-500" />
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-sm text-slate-500">{n.mensaje}</p>
+                      <p className="mt-1 text-xs text-slate-400">{timeAgo(n.fechaCreacion)}</p>
+                    </div>
+                    {!n.leida && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMarkRead(n.id)}
+                        className="shrink-0 text-primary-600 hover:bg-primary-50"
+                      >
+                        Marcar leída
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
 
       {/* Paginación */}
       {meta && meta.totalPages > 1 && (
-        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-          <p className="text-xs text-slate-500">
-            Página <strong className="text-slate-700">{meta.page}</strong> de{' '}
-            <strong className="text-slate-700">{meta.totalPages}</strong>
-            <span className="mx-1.5 text-slate-300">·</span>
-            <strong className="text-slate-700">{meta.total}</strong>{' '}
-            notificación{meta.total !== 1 ? 'es' : ''}
-          </p>
-          <nav className="inline-flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setPage(meta.page - 1)}
-              disabled={!meta.hasPrevPage}
-              className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <i className="ti ti-chevron-left" /> Anterior
-            </button>
-            {visiblePages.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPage(p)}
-                className={`rounded-md px-3 py-1 text-xs font-medium ${
-                  p === meta.page
-                    ? 'bg-primary-500 text-white'
-                    : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setPage(meta.page + 1)}
-              disabled={!meta.hasNextPage}
-              className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Siguiente <i className="ti ti-chevron-right" />
-            </button>
-          </nav>
-        </div>
+        <Pagination
+          page={meta.page}
+          pageCount={meta.totalPages}
+          total={meta.total}
+          pageSize={20}
+          onChange={setPage}
+        />
       )}
     </div>
   );

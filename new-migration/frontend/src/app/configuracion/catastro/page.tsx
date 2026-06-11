@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 import { catastroApi } from '@/lib/api';
 
 interface CatastroImport {
@@ -153,7 +154,7 @@ export default function CatastroImportPage() {
           href="/configuracion"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -171,7 +172,7 @@ export default function CatastroImportPage() {
         </header>
         <div className="space-y-4 p-5">
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 transition hover:border-primary-300 hover:bg-primary-50/40">
-            <i className="ti ti-upload text-3xl text-primary-500" />
+            <Upload className="h-8 w-8 text-primary-500" aria-hidden="true" />
             <span>
               <strong className="text-slate-700">Arrastra el archivo</strong> o
               haz clic para seleccionarlo
@@ -368,7 +369,7 @@ export default function CatastroImportPage() {
                 aria-label="Cerrar"
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               >
-                <i className="ti ti-x text-lg" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </header>
             <div className="space-y-4 p-5">

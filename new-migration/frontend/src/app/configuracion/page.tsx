@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   Building2,
@@ -14,6 +14,7 @@ import {
   Percent,
   Plus,
   Trash2,
+  X,
 } from 'lucide-react';
 import {
   Badge,
@@ -160,25 +161,25 @@ export default function ConfiguracionPage() {
           <TabButton
             active={tab === 'descuentos'}
             onClick={() => setTab('descuentos')}
-            icon="ti-discount"
+            icon={<Percent className="h-4 w-4" aria-hidden="true" />}
             label="Descuentos"
           />
           <TabButton
             active={tab === 'bancos'}
             onClick={() => setTab('bancos')}
-            icon="ti-building-bank"
+            icon={<Landmark className="h-4 w-4" aria-hidden="true" />}
             label="Bancos"
           />
           <TabButton
             active={tab === 'tipos'}
             onClick={() => setTab('tipos')}
-            icon="ti-layout-grid"
+            icon={<LayoutGrid className="h-4 w-4" aria-hidden="true" />}
             label="Tipos de espacio"
           />
           <TabButton
             active={tab === 'cementerio'}
             onClick={() => setTab('cementerio')}
-            icon="ti-building-community"
+            icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
             label="Cementerio"
           />
         </nav>
@@ -205,7 +206,7 @@ function TabButton({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: string;
+  icon: ReactNode;
   label: string;
 }) {
   return (
@@ -218,7 +219,7 @@ function TabButton({
           : 'border-transparent text-slate-500 hover:border-slate-200 hover:text-slate-700'
       }`}
     >
-      <i className={`ti ${icon}`} />
+      {icon}
       {label}
     </button>
   );
@@ -277,7 +278,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-plus" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo descuento
           </button>
         )}
@@ -351,7 +352,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                           className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
-                          <i className="ti ti-edit" />
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
                         </button>
                         {d.estado && (
                           <button
@@ -360,7 +361,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                             className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                             title="Desactivar"
                           >
-                            <i className="ti ti-trash" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                       </td>
@@ -566,7 +567,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-plus" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo banco
           </button>
         )}
@@ -636,7 +637,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                           className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
-                          <i className="ti ti-edit" />
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
                         </button>
                         {b.estado && (
                           <button
@@ -645,7 +646,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                             className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                             title="Desactivar"
                           >
-                            <i className="ti ti-trash" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                       </td>
@@ -839,7 +840,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-plus" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo tipo
           </button>
         )}
@@ -921,7 +922,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
                           className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
-                          <i className="ti ti-edit" />
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
                         </button>
                         {t.estado && (
                           <button
@@ -930,7 +931,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
                             className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                             title="Dar de baja"
                           >
-                            <i className="ti ti-trash" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                       </td>
@@ -1345,7 +1346,7 @@ function ModalShell({
             className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
             aria-label="Cerrar"
           >
-            <i className="ti ti-x" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </header>
         {children}

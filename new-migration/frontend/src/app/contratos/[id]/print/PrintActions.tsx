@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { ArrowLeft, FileText, Printer } from 'lucide-react';
+import { Button } from '@/components/ui';
 
 export function PrintActions({
   backHref,
@@ -30,7 +32,7 @@ export function PrintActions({
         href={backHref}
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
       >
-        <i className="ti ti-arrow-left" />
+        <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
         Volver
       </Link>
       <div className="flex gap-2">
@@ -40,17 +42,18 @@ export function PrintActions({
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-file-text" />
+          <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Ver PDF real
         </a>
-        <button
+        <Button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+          variant="primary"
+          size="sm"
+          leftIcon={<Printer className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
         >
-          <i className="ti ti-printer" />
           Imprimir
-        </button>
+        </Button>
       </div>
     </div>
   );

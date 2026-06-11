@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { bovedasApi, difuntosApi } from '@/lib/api';
+import { Button } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -195,7 +197,7 @@ export default function EditDifuntoPage() {
           href={`/difuntos/${params.id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -457,13 +459,9 @@ export default function EditDifuntoPage() {
           >
             Cancelar
           </Link>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button type="submit" loading={saving}>
             {saving ? 'Guardando…' : 'Guardar cambios'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -4,6 +4,16 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  ArrowLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  Download,
+  Pencil,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { Button } from '@/components/ui';
+import {
   authApi,
   contratosApi,
   difuntosApi,
@@ -143,8 +153,9 @@ function Modal({
             type="button"
             onClick={onClose}
             className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Cerrar"
           >
-            <i className="ti ti-x" />
+            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </button>
         </header>
         <div className="p-5">{children}</div>
@@ -383,7 +394,7 @@ export default function DifuntoDetailsPage({
           href="/difuntos"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -403,7 +414,7 @@ export default function DifuntoDetailsPage({
             <span>{difunto.numeroIdentificacion ?? 'Sin identificación'}</span>
             {difunto.exhumado && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-700 ring-1 ring-warning-200">
-                <i className="ti ti-switch-horizontal" />
+                <ArrowLeftRight className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
                 Exhumado
               </span>
             )}
@@ -421,7 +432,7 @@ export default function DifuntoDetailsPage({
               onClick={openExhumacionModal}
               className="inline-flex items-center gap-1.5 rounded-lg bg-warning-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-warning-600"
             >
-              <i className="ti ti-switch-horizontal" />
+              <ArrowLeftRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               Registrar exhumación/traslado
             </button>
           )}
@@ -429,14 +440,14 @@ export default function DifuntoDetailsPage({
             href={`/difuntos/${id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-edit" />
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar
           </Link>
           <Link
             href="/difuntos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" />
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Volver
           </Link>
         </div>
@@ -601,7 +612,7 @@ export default function DifuntoDetailsPage({
                               onClick={() => handleDescargarActa(e)}
                               className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline"
                             >
-                              <i className="ti ti-download" />
+                              <Download className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
                               Acta
                             </button>
                             {isAdmin && e.estado && (
@@ -660,7 +671,7 @@ export default function DifuntoDetailsPage({
               href={`/bovedas/${difunto.boveda.id}`}
               className="mt-3 inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
             >
-              <i className="ti ti-arrow-up-right" />
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
               Ver bóveda
             </Link>
           </Card>
@@ -672,7 +683,7 @@ export default function DifuntoDetailsPage({
               disabled={!difunto.estado}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <i className="ti ti-trash" />
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               Desactivar
             </button>
           </Card>
@@ -798,14 +809,14 @@ export default function DifuntoDetailsPage({
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-1">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => setModalOpen(false)}
                 disabled={submitting}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
                 Cancelar
-              </button>
+              </Button>
               <button
                 type="submit"
                 disabled={submitting}

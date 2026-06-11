@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check } from 'lucide-react';
 import { bovedasApi, difuntosApi } from '@/lib/api';
+import { Button } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -126,7 +128,7 @@ export default function CreateDifuntoPage() {
           href="/difuntos"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -391,40 +393,13 @@ export default function CreateDifuntoPage() {
           >
             Cancelar
           </Link>
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            loading={loading}
+            leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
           >
-            {loading ? (
-              <>
-                <svg
-                  className="h-4 w-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
-                Guardando…
-              </>
-            ) : (
-              <>
-                <i className="ti ti-check" /> Guardar
-              </>
-            )}
-          </button>
+            {loading ? 'Guardando…' : 'Guardar'}
+          </Button>
         </div>
       </form>
     </div>

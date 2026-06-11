@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { reportesApi } from '@/lib/api';
+import { Card, PageHeader, Spinner } from '@/components/ui';
 
 interface ComparativaData {
   anios: { actual: number; anterior: number };
@@ -42,21 +42,12 @@ export default function ComparativaMensualPage() {
     : 1;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Comparativa mensual</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Ingresos mes-a-mes último año vs. año anterior.
-          </p>
-        </div>
-        <Link
-          href="/reportes"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <i className="ti ti-arrow-left" /> Volver
-        </Link>
-      </div>
+    <div className="py-6 space-y-5">
+      <PageHeader
+        title="Comparativa mensual"
+        subtitle="Ingresos mes-a-mes último año vs. año anterior."
+        backHref="/reportes"
+      />
 
       {error && (
         <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
@@ -65,32 +56,29 @@ export default function ComparativaMensualPage() {
       )}
 
       {loading ? (
-        <div className="flex min-h-[20vh] items-center justify-center text-slate-400">
-          <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
+        <div className="flex min-h-[20vh] items-center justify-center">
+          <Spinner size="lg" className="text-primary-500" />
         </div>
       ) : data ? (
         <>
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+            <Card padding="sm">
               <p className="text-xs uppercase tracking-wide text-slate-400">
                 Total {data.anios.anterior}
               </p>
               <p className="mt-1 text-2xl font-bold text-slate-600">
                 {formatCurrency(data.totales.anioAnterior)}
               </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+            </Card>
+            <Card padding="sm">
               <p className="text-xs uppercase tracking-wide text-slate-400">
                 Total {data.anios.actual}
               </p>
               <p className="mt-1 text-2xl font-bold text-primary-600">
                 {formatCurrency(data.totales.anioActual)}
               </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+            </Card>
+            <Card padding="sm">
               <p className="text-xs uppercase tracking-wide text-slate-400">Variación</p>
               <p
                 className={`mt-1 text-2xl font-bold ${
@@ -105,10 +93,10 @@ export default function ComparativaMensualPage() {
                   ? '—'
                   : `${data.totales.variacionPct >= 0 ? '+' : ''}${data.totales.variacionPct}%`}
               </p>
-            </div>
+            </Card>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <Card padding="none">
             <header className="border-b border-slate-100 px-5 py-3">
               <h2 className="text-sm font-semibold text-slate-700">
                 Por mes · {data.anios.anterior} vs {data.anios.actual}
@@ -155,7 +143,7 @@ export default function ComparativaMensualPage() {
                 </span>
               </div>
             </div>
-          </section>
+          </Card>
         </>
       ) : null}
     </div>

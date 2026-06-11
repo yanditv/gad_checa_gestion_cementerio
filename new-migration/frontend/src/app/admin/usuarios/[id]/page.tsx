@@ -3,7 +3,19 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  Check,
+  KeyRound,
+  Loader2,
+  Settings,
+  ShieldCheck,
+  Trash2,
+  UserCheck,
+  UserX,
+} from 'lucide-react';
 import { usuariosApi, rolesApi } from '@/lib/api';
+import { Avatar, Badge, Button, Checkbox, Modal } from '@/components/ui';
 
 interface UsuarioRol {
   rolId: string;
@@ -168,10 +180,11 @@ export default function UsuarioDetallePage({
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
+        <Loader2
+          className="h-6 w-6 animate-spin text-primary-500"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -187,7 +200,7 @@ export default function UsuarioDetallePage({
           href="/admin/usuarios"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
     );
@@ -207,26 +220,18 @@ export default function UsuarioDetallePage({
       {/* Cabecera */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700">
-            {initials || 'U'}
-          </div>
+          <Avatar name={fullName} size="lg" />
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{fullName}</h1>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
               {usuario.email}
-              <span
-                className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
-                  usuario.estado
-                    ? 'bg-green-50 text-green-700 ring-green-200'
-                    : 'bg-red-50 text-red-700 ring-red-200'
-                }`}
-              >
+              <Badge tone={usuario.estado ? 'success' : 'danger'} size="sm">
                 {usuario.estado ? 'Activo' : 'Inactivo'}
-              </span>
+              </Badge>
               {usuario.mustChangePassword && (
-                <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+                <Badge tone="warning" size="sm">
                   Debe cambiar contraseña
-                </span>
+                </Badge>
               )}
             </p>
           </div>
@@ -236,7 +241,7 @@ export default function UsuarioDetallePage({
             href="/admin/usuarios"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" /> Volver
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
           </Link>
         </div>
       </div>
@@ -277,28 +282,29 @@ export default function UsuarioDetallePage({
           {assignedRoles.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {assignedRoles.map((rol) => (
-                <span
+                <Badge
                   key={rol.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700 ring-1 ring-primary-200"
+                  tone="primary"
+                  icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />}
                 >
-                  <i className="ti ti-shield-check text-xs" />
                   {rol.nombre}
-                </span>
+                </Badge>
               ))}
             </div>
           ) : (
             <p className="text-sm text-slate-400">Este usuario no tiene roles asignados.</p>
           )}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => {
               setSelectedRoleIds(usuario.usuarioRols?.map((ur) => ur.rolId) || []);
               setShowRoleModal(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            leftIcon={<Settings className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
           >
-            <i className="ti ti-settings" /> Gestionar roles
-          </button>
+            Gestionar roles
+          </Button>
         </div>
       </Card>
 
@@ -331,7 +337,7 @@ export default function UsuarioDetallePage({
               onClick={() => setConfirmingAction('reset')}
               className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-50"
             >
-              <i className="ti ti-key" /> Resetear contraseña
+              <KeyRound className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Resetear contraseña
             </button>
           )}
 
@@ -369,7 +375,11 @@ export default function UsuarioDetallePage({
                   : 'border-green-200 bg-white text-green-600 hover:bg-green-50'
               }`}
             >
-              <i className={`ti ${usuario.estado ? 'ti-user-off' : 'ti-user-check'}`} />
+              {usuario.estado ? (
+                <UserX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              ) : (
+                <UserCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              )}
               {usuario.estado ? 'Desactivar usuario' : 'Activar usuario'}
             </button>
           )}
@@ -402,81 +412,61 @@ export default function UsuarioDetallePage({
               onClick={() => setConfirmingAction('delete')}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
             >
-              <i className="ti ti-trash" /> Eliminar usuario
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Eliminar usuario
             </button>
           )}
         </div>
       </Card>
 
       {/* Modal de roles */}
-      {showRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setShowRoleModal(false)}
-          />
-          <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
-            <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">
-                Gestionar roles de {usuario.nombre}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowRoleModal(false)}
-                className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </header>
-            <div className="max-h-[60vh] overflow-y-auto p-5">
-              {roles.length === 0 ? (
-                <p className="text-sm text-slate-400">No hay roles disponibles.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {roles.map((rol) => {
-                    const checked = selectedRoleIds.includes(rol.id);
-                    return (
-                      <li key={rol.id}>
-                        <label className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => handleToggleRole(rol.id)}
-                            className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-200"
-                          />
-                          <span className="flex-1 text-sm font-medium text-slate-700">
-                            {rol.nombre}
-                          </span>
-                          {checked && (
-                            <i className="ti ti-check text-primary-500" />
-                          )}
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-            <footer className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-3">
-              <button
-                type="button"
-                onClick={() => setShowRoleModal(false)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveRoles}
-                disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
-              >
-                {saving ? 'Guardando…' : 'Guardar roles'}
-              </button>
-            </footer>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={showRoleModal}
+        onClose={() => setShowRoleModal(false)}
+        title={`Gestionar roles de ${usuario.nombre}`}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setShowRoleModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveRoles}
+              loading={saving}
+            >
+              Guardar roles
+            </Button>
+          </>
+        }
+      >
+        {roles.length === 0 ? (
+          <p className="text-sm text-slate-400">No hay roles disponibles.</p>
+        ) : (
+          <ul className="max-h-[60vh] space-y-1 overflow-y-auto">
+            {roles.map((rol) => {
+              const checked = selectedRoleIds.includes(rol.id);
+              return (
+                <li key={rol.id}>
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50">
+                    <Checkbox
+                      checked={checked}
+                      onChange={() => handleToggleRole(rol.id)}
+                      label={rol.nombre}
+                    />
+                    {checked && (
+                      <Check
+                        className="ml-auto h-4 w-4 text-primary-500"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Modal>
     </div>
   );
 }

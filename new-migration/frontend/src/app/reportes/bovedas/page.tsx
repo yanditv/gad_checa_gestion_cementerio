@@ -5,7 +5,9 @@ export const dynamic = 'force-dynamic';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Eraser, Filter } from 'lucide-react';
 import { reportesApi } from '@/lib/api';
+import { Button, Card, PageHeader, Select, Spinner } from '@/components/ui';
 
 interface BovedaItem {
   bovedaId: number;
@@ -123,32 +125,20 @@ function ReporteBovedasInner() {
     `/api/reportes/bovedas/${kind}${params.size ? `?${params.toString()}` : ''}`;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reporte de bóvedas</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Inventario filtrado con estado, propietario y contrato vigente.
-          </p>
-        </div>
-        <Link
-          href="/reportes"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <i className="ti ti-arrow-left" /> Volver
-        </Link>
-      </div>
+    <div className="py-6 space-y-5">
+      <PageHeader
+        title="Reporte de bóvedas"
+        subtitle="Inventario filtrado con estado, propietario y contrato vigente."
+        backHref="/reportes"
+      />
 
-      <form
-        onSubmit={applyFilters}
-        className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-soft sm:grid-cols-4"
-      >
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Tipo
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+      <Card padding="none">
+        <form
+          onSubmit={applyFilters}
+          className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-4"
+        >
+          <Select
+            label="Tipo"
             value={tipo}
             onChange={(e) => setTipo(e.target.value)}
           >
@@ -158,14 +148,9 @@ function ReporteBovedasInner() {
                 {t}
               </option>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Bloque
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          </Select>
+          <Select
+            label="Bloque"
             value={bloque}
             onChange={(e) => setBloque(e.target.value)}
           >
@@ -175,14 +160,9 @@ function ReporteBovedasInner() {
                 {b}
               </option>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Estado
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          </Select>
+          <Select
+            label="Estado"
             value={estado}
             onChange={(e) => setEstado(e.target.value)}
           >
@@ -191,38 +171,40 @@ function ReporteBovedasInner() {
             <option value="ocupada">Ocupada</option>
             <option value="por_caducar">Por caducar</option>
             <option value="vencida">Vencida</option>
-          </select>
-        </div>
-        <div className="flex items-end gap-2">
-          <button
-            type="submit"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-600"
-          >
-            <i className="ti ti-filter" /> Aplicar
-          </button>
-          <button
-            type="button"
-            onClick={reset}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <i className="ti ti-eraser" /> Limpiar
-          </button>
-          <a
-            href={exportUrl('pdf')}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-          >
-            PDF
-          </a>
-          <a
-            href={exportUrl('excel')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-medium text-green-600 hover:bg-green-50"
-          >
-            Excel
-          </a>
-        </div>
-      </form>
+          </Select>
+          <div className="flex items-end gap-2">
+            <Button
+              type="submit"
+              variant="primary"
+              leftIcon={<Filter className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+            >
+              Aplicar
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={reset}
+              leftIcon={<Eraser className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+            >
+              Limpiar
+            </Button>
+            <a
+              href={exportUrl('pdf')}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            >
+              PDF
+            </a>
+            <a
+              href={exportUrl('excel')}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-medium text-green-600 hover:bg-green-50"
+            >
+              Excel
+            </a>
+          </div>
+        </form>
+      </Card>
 
       {error && (
         <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
@@ -231,11 +213,8 @@ function ReporteBovedasInner() {
       )}
 
       {loading ? (
-        <div className="flex min-h-[20vh] items-center justify-center text-slate-400">
-          <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
+        <div className="flex min-h-[20vh] items-center justify-center">
+          <Spinner size="lg" className="text-primary-500" />
         </div>
       ) : data ? (
         <>
@@ -247,17 +226,14 @@ function ReporteBovedasInner() {
               ['Por caducar', data.totales.por_caducar ?? 0, 'text-amber-600'],
               ['Vencidas', data.totales.vencida ?? 0, 'text-red-600'],
             ].map(([label, value, cls]) => (
-              <div
-                key={label as string}
-                className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft"
-              >
+              <Card key={label as string} padding="sm">
                 <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
                 <p className={`mt-1 text-2xl font-bold ${cls}`}>{value as number}</p>
-              </div>
+              </Card>
             ))}
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+          <Card padding="none">
             <header className="border-b border-slate-100 px-5 py-3">
               <h2 className="text-sm font-semibold text-slate-700">
                 Bóvedas · {data.items.length}
@@ -341,7 +317,7 @@ function ReporteBovedasInner() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </Card>
         </>
       ) : null}
     </div>

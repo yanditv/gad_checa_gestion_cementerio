@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, CircleCheck, Mail } from 'lucide-react';
 import { AuthShell } from '../AuthShell';
-
-const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+import { Button, Input } from '@/components/ui';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -41,14 +40,14 @@ export default function ForgotPasswordPage() {
       subtitle="Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para restablecerla."
       footer={
         <Link href="/auth/login" className="inline-flex items-center gap-1 text-primary-600 hover:underline">
-          <i className="ti ti-arrow-left" /> Volver al inicio de sesión
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al inicio de sesión
         </Link>
       }
     >
       {sent ? (
         <div className="rounded-lg border border-green-200 bg-green-50 p-4">
           <div className="flex gap-3">
-            <i className="ti ti-circle-check mt-0.5 text-lg text-green-600" />
+            <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-600" strokeWidth={2} aria-hidden="true" />
             <div>
               <p className="font-semibold text-green-800">Solicitud enviada</p>
               <p className="mt-1 text-sm text-green-700">
@@ -65,31 +64,20 @@ export default function ForgotPasswordPage() {
               {error}
             </div>
           )}
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-            >
-              Correo electrónico
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoFocus
-              className={INPUT_CLS}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !email}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Input
+            id="email"
+            type="email"
+            label="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            autoFocus
+            leftIcon={<Mail className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+          />
+          <Button type="submit" block loading={loading} disabled={!email}>
             {loading ? 'Enviando…' : 'Enviar enlace'}
-          </button>
+          </Button>
         </form>
       )}
     </AuthShell>

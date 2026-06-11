@@ -3,10 +3,9 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ArrowLeft, CircleCheck, Lock } from 'lucide-react';
 import { AuthShell } from '../AuthShell';
-
-const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+import { Button, Input } from '@/components/ui';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -54,13 +53,13 @@ function ResetPasswordForm() {
       subtitle="Define una nueva contraseña para tu cuenta."
       footer={
         <Link href="/auth/login" className="inline-flex items-center gap-1 text-primary-600 hover:underline">
-          <i className="ti ti-arrow-left" /> Volver al inicio de sesión
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al inicio de sesión
         </Link>
       }
     >
       {done ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-          <i className="ti ti-circle-check mr-1 text-lg" />
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          <CircleCheck className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
           Contraseña actualizada. Ya puedes iniciar sesión.
         </div>
       ) : (
@@ -70,53 +69,33 @@ function ResetPasswordForm() {
               {error}
             </div>
           )}
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-            >
-              Nueva contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-              autoComplete="new-password"
-              autoFocus
-              className={INPUT_CLS}
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Mínimo 6 caracteres, con una mayúscula, una minúscula y un dígito.
-            </p>
-          </div>
-          <div>
-            <label
-              htmlFor="confirm"
-              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-            >
-              Confirmar contraseña
-            </label>
-            <input
-              id="confirm"
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              minLength={6}
-              required
-              autoComplete="new-password"
-              className={INPUT_CLS}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !password || !confirm}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Input
+            id="password"
+            type="password"
+            label="Nueva contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={6}
+            required
+            autoComplete="new-password"
+            autoFocus
+            leftIcon={<Lock className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+            hint="Mínimo 6 caracteres, con una mayúscula, una minúscula y un dígito."
+          />
+          <Input
+            id="confirm"
+            type="password"
+            label="Confirmar contraseña"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            minLength={6}
+            required
+            autoComplete="new-password"
+            leftIcon={<Lock className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+          />
+          <Button type="submit" block loading={loading} disabled={!password || !confirm}>
             {loading ? 'Actualizando…' : 'Restablecer contraseña'}
-          </button>
+          </Button>
         </form>
       )}
     </AuthShell>
