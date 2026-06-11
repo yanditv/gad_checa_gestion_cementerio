@@ -107,12 +107,9 @@ al usuario** en vez de inventar.
 ### 2.3 De producto
 
 - **No** introduzcas dependencias UI nuevas (otra librería de componentes,
-  otro framework CSS) sin discutir. La UI se escribe en **Tailwind puro con
-  preflight activo** (desde 2026-06-11 el CSS global de Able Pro/Bootstrap
-  está retirado del layout: sus utilidades homónimas `.p-5`, `.mb-3`, … con
-  `!important` pisaban a las de Tailwind). Iconos: **lucide-react** en shell
-  y librería ui (las fuentes Tabler siguen cargadas solo para páginas aún no
-  migradas) + **ApexCharts** (`DESIGN.md`).
+  otro framework CSS) sin discutir. La UI actual se escribe en **Tailwind**,
+  reutilizando assets globales de Able Pro y usando **Tabler Icons** +
+  **ApexCharts** (`DESIGN.md`).
 - **No** rompas la URL ni el contenido visible de una pantalla migrada sólo
   por "refactor". Las pantallas migradas son el contrato visual con el GAD.
 - **No** agregues features fuera del scope de la fase activa

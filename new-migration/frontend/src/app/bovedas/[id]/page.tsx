@@ -618,7 +618,7 @@ function PropietarioModal({
       }}
     >
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-lifted animate-scale-in">
-        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5">
           <div>
             <h3 className="text-base font-semibold text-slate-800">
               Asignar propietario
@@ -638,7 +638,7 @@ function PropietarioModal({
           </button>
         </header>
 
-        <div className="p-5">
+        <div className="p-6">
           {error && (
             <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
               {error}
@@ -706,7 +706,7 @@ function PropietarioModal({
           </div>
         </div>
 
-        <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+        <footer className="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
           <button
             type="button"
             onClick={onClose}

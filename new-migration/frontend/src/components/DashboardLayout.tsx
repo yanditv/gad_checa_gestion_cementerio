@@ -26,6 +26,15 @@ export function DashboardLayout({ children }: LayoutProps) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Apaga el loader inicial del template Able Pro tras 500ms (paridad legado).
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const loader = document.querySelector('.loader-bg') as HTMLElement | null;
+      if (loader) loader.style.display = 'none';
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
   // Carga datos de sesión para Header y Sidebar.
   useEffect(() => {
     if (isAuthRoute) {

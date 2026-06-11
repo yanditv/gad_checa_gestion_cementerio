@@ -1,11 +1,9 @@
 /* ---------------------------------------------------------------------------
- * Tailwind con preflight ACTIVO (Tailwind puro desde 2026-06-11).
+ * Tailwind utilities y components (preflight desactivado en tailwind.config.js)
  *
- * El CSS global de Able Pro/Bootstrap fue retirado del layout: sus utilidades
- * homónimas (.p-5, .mb-3, … con !important y otra escala) pisaban a las de
- * Tailwind e inflaban el espaciado de toda la app. El reset global lo provee
- * el preflight; los mini-resets de abajo se conservan como red de seguridad
- * documentada (especificidad cero, no compiten con utilidades).
+ * Las pantallas migradas a Tailwind las usan libremente. Las pantallas que
+ * aún están en Bootstrap (Able Pro) no se ven afectadas porque no hay reset
+ * global.
  * ------------------------------------------------------------------------- */
 @tailwind base;
 @tailwind components;
@@ -18,11 +16,25 @@ body {
   min-height: 100%;
 }
 
+.pc-container .pc-content {
+  min-height: calc(100vh - 160px);
+}
+
+.pc-sidebar .m-header .b-brand .logo-lg {
+  max-height: 70px;
+}
+
 /* ---------------------------------------------------------------------------
  * Lenguaje visual CRM — utilidades base
+ *
+ * El preflight de Tailwind está desactivado para no chocar con Able Pro, así
+ * que aquí declaramos a mano lo que el reset cubriría: tipografía Inter,
+ * antialiasing y foco accesible para el contenido propio de la app.
  * ------------------------------------------------------------------------- */
 
 /* Tipografía de marca + suavizado en el contenido de la app. */
+.pc-container,
+.pc-container .pc-content,
 [data-app-surface] {
   font-family:
     'Inter', 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
