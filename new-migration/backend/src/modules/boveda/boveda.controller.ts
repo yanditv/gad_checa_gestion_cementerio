@@ -12,15 +12,20 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { BovedaService } from './boveda.service';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AuthUser,
   CurrentUser,
 } from '../../common/decorators/current-user.decorator';
 import { CreateBovedaDto, UpdateBovedaDto } from './dto/request/boveda.dto';
+import { QueryBovedaDto } from './dto/request/query-boveda.dto';
+import { IsOptional, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 class SetPropietarioDto {
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => (value != null ? Number(value) : null))
   personaId!: number | null;
 }
 
@@ -35,18 +40,12 @@ export class BovedaController {
   @ApiQuery({ name: 'tipoEspacioId', required: false, type: Number })
   @ApiQuery({ name: 'estado', required: false, type: String, description: 'disponible | ocupada' })
   @ApiQuery({ name: 'tienePropietario', required: false, type: String, description: 'con | sin' })
-  findAll(
-    @Query() query: PaginationQueryDto,
-    @Query('bloqueId') bloqueId?: string,
-    @Query('tipoEspacioId') tipoEspacioId?: string,
-    @Query('estado') estado?: string,
-    @Query('tienePropietario') tienePropietario?: string,
-  ) {
+  findAll(@Query() query: QueryBovedaDto) {
     return this.service.findAll(query, {
-      bloqueId: bloqueId ? Number(bloqueId) : undefined,
-      tipoEspacioId: tipoEspacioId ? Number(tipoEspacioId) : undefined,
-      estado,
-      tienePropietario,
+      bloqueId: query.bloqueId,
+      tipoEspacioId: query.tipoEspacioId,
+      estado: query.estado,
+      tienePropietario: query.tienePropietario,
     });
   }
 
