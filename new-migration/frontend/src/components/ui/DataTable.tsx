@@ -174,7 +174,9 @@ export function DataTable<T>({
                       type="button"
                       onClick={() => handleSort(col.key)}
                       className={cn(
-                        'inline-flex items-center gap-1.5 rounded transition-colors duration-150 hover:text-slate-700',
+                        // `uppercase tracking-wide` explícitos: el CSS global
+                        // (Able Pro) neutraliza el text-transform heredado en <button>.
+                        'inline-flex items-center gap-1.5 rounded uppercase tracking-wide transition-colors duration-150 hover:text-slate-700',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 focus-visible:ring-offset-1',
                         col.align === 'right' && 'flex-row-reverse',
                         isSorted && 'text-slate-700',
