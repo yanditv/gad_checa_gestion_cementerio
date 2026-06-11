@@ -18,6 +18,7 @@ import {
   UserX,
   X,
 } from 'lucide-react';
+import { bovedasApi, personasApi } from '@/lib/api';
 import { Button, DataTable, Modal, type DataTableColumn } from '@/components/ui';
 
 interface Persona {
@@ -569,11 +570,23 @@ function PropietarioModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const [tab, setTab] = useState<'buscar' | 'crear'>('buscar');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Formulario crear persona
+  const [formData, setFormData] = useState({
+    nombre: '',
+    apellido: '',
+    tipoIdentificacion: 'Cédula',
+    numeroIdentificacion: '',
+    telefono: '',
+    email: '',
+    direccion: '',
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -585,20 +598,9 @@ function PropietarioModal({
       }
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/personas/search?q=${encodeURIComponent(search.trim())}`,
-          {
-            credentials: 'same-origin',
-            signal: controller.signal,
-            cache: 'no-store',
-          },
-        );
-        if (!res.ok) throw new Error('No se pudo buscar');
-        const payload = await res.json();
+        const data = await personasApi.search(search.trim());
         if (cancelled) return;
-        setResults(
-          (Array.isArray(payload) ? payload : payload?.data ?? []) as Persona[],
-        );
+        setResults(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!cancelled && (err as Error).name !== 'AbortError') {
           setError(err instanceof Error ? err.message : 'Error');
@@ -618,19 +620,33 @@ function PropietarioModal({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/bovedas/${bovedaId}/propietario`, {
-        method: 'PATCH',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo asignar');
-      }
+      await bovedasApi.setPropietario(bovedaId, personaId);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function crearYAsignar() {
+    setSaving(true);
+    setError(null);
+    try {
+      const persona = await personasApi.create({
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        tipoIdentificacion: formData.tipoIdentificacion,
+        numeroIdentificacion: formData.numeroIdentificacion.trim(),
+        telefono: formData.telefono.trim() || undefined,
+        email: formData.email.trim() || undefined,
+        direccion: formData.direccion.trim() || undefined,
+      });
+      const p = persona.data || persona;
+      await bovedasApi.setPropietario(bovedaId, p.id);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al crear');
     } finally {
       setSaving(false);
     }
@@ -651,27 +667,141 @@ function PropietarioModal({
         </Button>
       }
     >
-      {error && (
-        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </div>
-      )}
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lifted animate-scale-in">
+        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5">
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">Asignar propietario</h3>
+            <p className="text-xs text-slate-500">Buscar existente o crear nuevo.</p>
+          </div>
+          <button type="button" onClick={onClose} disabled={saving}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100" aria-label="Cerrar">
+            <i className="ti ti-x" />
+          </button>
+        </header>
 
-      <div className="relative mb-3">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-          strokeWidth={2}
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Mínimo 2 caracteres…"
-          autoFocus
-          className={`${INPUT_CLS} pl-9`}
-        />
+        {/* Tabs */}
+        <div className="flex border-b border-slate-100 px-5">
+          <button type="button" onClick={() => setTab('buscar')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'buscar' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}>
+            <i className="ti ti-search mr-1.5" />Buscar existente
+          </button>
+          <button type="button" onClick={() => setTab('crear')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'crear' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}>
+            <i className="ti ti-user-plus mr-1.5" />Crear nuevo
+          </button>
+        </div>
+
+        <div className="p-5">
+          {error && (
+            <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+              {error}
+            </div>
+          )}
+
+          {tab === 'buscar' ? (
+            <>
+              <div className="relative mb-3">
+                <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-9`} />
+              </div>
+              <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
+                {loading ? <div className="py-6 text-center text-sm text-slate-400">Buscando…</div>
+                : results.length === 0 ? <div className="py-6 text-center text-sm text-slate-400">
+                    {search.trim().length < 2 ? 'Escribe al menos 2 caracteres.' : 'No se encontraron personas.'}
+                  </div>
+                : <ul className="divide-y divide-slate-100">
+                    {results.map((p) => (
+                      <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-slate-800">{p.nombre} {p.apellido}</div>
+                          <div className="text-xs text-slate-500">{p.numeroIdentificacion}</div>
+                        </div>
+                        <button type="button" disabled={saving || actualPersonaId === p.id}
+                          onClick={() => asignar(p.id)}
+                          className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                            actualPersonaId === p.id
+                              ? 'cursor-default bg-slate-100 text-slate-500'
+                              : 'bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-60'
+                          }`}>
+                          {actualPersonaId === p.id ? 'Actual' : 'Asignar'}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Nombres *</label>
+                  <input type="text" className={INPUT_CLS} value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Apellidos *</label>
+                  <input type="text" className={INPUT_CLS} value={formData.apellido}
+                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Tipo ID *</label>
+                  <select className={INPUT_CLS} value={formData.tipoIdentificacion}
+                    onChange={(e) => setFormData({ ...formData, tipoIdentificacion: e.target.value })}>
+                    <option value="Cédula">Cédula</option><option value="RUC">RUC</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Número ID *</label>
+                  <input type="text" className={INPUT_CLS} value={formData.numeroIdentificacion}
+                    onChange={(e) => setFormData({ ...formData, numeroIdentificacion: e.target.value })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Teléfono</label>
+                  <input type="text" className={INPUT_CLS} value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Email</label>
+                  <input type="email" className={INPUT_CLS} value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Dirección</label>
+                  <input type="text" className={INPUT_CLS} value={formData.direccion}
+                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })} />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button type="button" onClick={crearYAsignar}
+                  disabled={saving || !formData.nombre.trim() || !formData.apellido.trim() || !formData.numeroIdentificacion.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-success-500 px-4 py-2 text-sm font-medium text-white hover:bg-success-600 disabled:opacity-60">
+                  {saving ? 'Guardando…' : <><i className="ti ti-device-floppy" /> Crear y asignar</>}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+          <button type="button" onClick={onClose} disabled={saving}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Cerrar
+          </button>
+        </footer>
       </div>
+      )
+
+        <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+          <button type="button" onClick={onClose} disabled={saving}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Cerrar
+          </button>
+        </footer>
 
       <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
         {loading ? (
