@@ -10,6 +10,7 @@ import {
   EmptyState,
   type DataTableColumn,
 } from '@/components/ui';
+import { getEstadoBoveda } from '@/lib/boveda-estado';
 
 interface Piso {
   id: number;
@@ -65,26 +66,14 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
   );
 }
 
-// Determinar estado visual de una bóveda
-function getEstadoBoveda(b: Boveda): { label: string; color: string; bg: string } {
-  const tienePropietario = !!b.propietario;
-  const tieneContratoActivo = (b.contratos ?? []).length > 0;
-
-  // "por-liberar": contrato activo que vence en ≤ 3 meses
-  const contrato = (b.contratos ?? []).find(() => true);
-  const fechaFin = contrato?.fechaFin ? new Date(contrato.fechaFin) : null;
-  const dentroDe3Meses = fechaFin && (fechaFin.getTime() - Date.now()) < 90 * 24 * 60 * 60 * 1000 && fechaFin > new Date();
-
-  if (tieneContratoActivo && dentroDe3Meses) {
-    return { label: 'Por liberar', color: 'bg-yellow-400', bg: 'bg-yellow-50 ring-yellow-200 text-yellow-700' };
-  }
-  if (tieneContratoActivo) {
-    return { label: 'Ocupada', color: 'bg-red-500', bg: 'bg-red-50 ring-red-200 text-red-700' };
-  }
-  if (tienePropietario) {
+// Determinar estado visual de una bóveda (usa logica compartida para contratos)
+function estadoBovedaConPropietario(b: Boveda): { label: string; color: string; bg: string } {
+  const estadoContratos = getEstadoBoveda(b.contratos ?? []);
+  if (b.contratos?.length) return estadoContratos;
+  if (b.propietario) {
     return { label: 'Con propietario', color: 'bg-slate-500', bg: 'bg-slate-100 ring-slate-200 text-slate-600' };
   }
-  return { label: 'Disponible', color: 'bg-green-500', bg: 'bg-green-50 ring-green-200 text-green-700' };
+  return estadoContratos;
 }
 
 export default function BloqueDetailsPage() {
@@ -135,11 +124,11 @@ export default function BloqueDetailsPage() {
   const stats = useMemo(() => {
     const total = bloque?.bovedas?.length ?? 0;
     const disponibles = (bloque?.bovedas ?? []).filter((b) => {
-      const e = getEstadoBoveda(b);
+      const e = estadoBovedaConPropietario(b);
       return e.label === 'Disponible';
     }).length;
     const ocupadas = (bloque?.bovedas ?? []).filter((b) => {
-      const e = getEstadoBoveda(b);
+      const e = estadoBovedaConPropietario(b);
       return e.label === 'Ocupada' || e.label === 'Por liberar';
     }).length;
     return {
@@ -289,9 +278,9 @@ export default function BloqueDetailsPage() {
       key: 'estado',
       header: 'Estado',
       sortable: true,
-      sortValue: (b) => getEstadoBoveda(b).label,
+      sortValue: (b) => estadoBovedaConPropietario(b).label,
       cell: (b) => {
-        const estado = getEstadoBoveda(b);
+        const estado = estadoBovedaConPropietario(b);
         return (
           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${estado.bg}`}>
             {estado.label}
@@ -435,7 +424,7 @@ export default function BloqueDetailsPage() {
                         <p className="text-xs text-slate-600">Sin bóvedas</p>
                       ) : (
                         bovedas.map((b) => {
-                          const estado = getEstadoBoveda(b);
+                          const estado = estadoBovedaConPropietario(b);
                           return (
                             <div
                               key={b.id}
