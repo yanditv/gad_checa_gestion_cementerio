@@ -37,6 +37,7 @@ export default function BloquesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [filterTipo, setFilterTipo] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
