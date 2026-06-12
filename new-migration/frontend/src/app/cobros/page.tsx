@@ -118,7 +118,7 @@ export default function CobrosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-slate-400">
+      <div className="flex items-center justify-center py-20 text-slate-600">
         <div className="inline-flex items-center gap-2">
           <Loader2
             className="h-4 w-4 animate-spin text-primary-500"
@@ -136,7 +136,7 @@ export default function CobrosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Cobros</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Contratos con cuotas pendientes y últimos pagos registrados.
           </p>
         </div>
@@ -155,12 +155,12 @@ export default function CobrosPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por contrato, difunto o recibo..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-600">
               Estado
             </label>
             <select
@@ -202,7 +202,7 @@ export default function CobrosPage() {
           </header>
           <div className="max-h-[480px] overflow-y-auto p-5">
             {contratosFiltrados.length === 0 ? (
-              <div className="py-10 text-center text-slate-400">
+              <div className="py-10 text-center text-slate-600">
                 <Check
                   className="mx-auto h-8 w-8 text-slate-300"
                   strokeWidth={2}
@@ -231,7 +231,7 @@ export default function CobrosPage() {
                       <p className="mt-0.5 truncate text-xs text-slate-500">
                         {c.difunto}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-600">
                         Total pendiente:{' '}
                         <strong className="text-slate-700">
                           {formatCurrency(c.totalPendiente)}
@@ -240,7 +240,7 @@ export default function CobrosPage() {
                     </div>
                     <Link
                       href={`/cobros/${c.contratoId}/cobrar`}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600"
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-700"
                     >
                       <Coins
                         className="h-3.5 w-3.5"
@@ -275,7 +275,7 @@ export default function CobrosPage() {
           </header>
           <div className="max-h-[480px] overflow-y-auto p-5">
             {pagosFiltrados.length === 0 ? (
-              <div className="py-10 text-center text-slate-400">
+              <div className="py-10 text-center text-slate-600">
                 <FolderX
                   className="mx-auto h-8 w-8 text-slate-300"
                   strokeWidth={2}
@@ -297,7 +297,7 @@ export default function CobrosPage() {
                       <p className="mt-0.5 truncate text-xs text-slate-500">
                         {formatDate(pago.fechaPago)} · {pago.metodoPago}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-600">
                         {pago.referencia || 'Sin referencia'}
                       </p>
                     </div>

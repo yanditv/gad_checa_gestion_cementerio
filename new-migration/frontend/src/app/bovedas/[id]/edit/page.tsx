@@ -10,7 +10,7 @@ import { Button, Modal } from '@/components/ui';
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 function formatCurrency(value: number | string | null | undefined) {
   return `$${Number(value ?? 0).toFixed(2)}`;
@@ -146,7 +146,7 @@ export default function EditBovedaPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar Bóveda</h1>
-          <p className="mt-1 text-sm text-slate-500">Actualizar datos de la bóveda.</p>
+          <p className="mt-1 text-sm text-slate-600">Actualizar datos de la bóveda.</p>
         </div>
         <Link
           href={`/bovedas/${params.id}`}
@@ -173,15 +173,15 @@ export default function EditBovedaPage() {
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <p className="text-xs uppercase text-slate-400">Bloque</p>
+                    <p className="text-xs uppercase text-slate-600">Bloque</p>
                     <p className="font-medium text-slate-700">{bovedaInfo.bloque?.nombre || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase text-slate-400">Piso</p>
+                    <p className="text-xs uppercase text-slate-600">Piso</p>
                     <p className="font-medium text-slate-700">{bovedaInfo.piso?.numero != null ? `Piso ${bovedaInfo.piso.numero}` : '—'}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase text-slate-400">Precio</p>
+                    <p className="text-xs uppercase text-slate-600">Precio</p>
                     <p className="font-medium text-slate-700">{formatCurrency(bovedaInfo.precio)}</p>
                   </div>
                 </div>
@@ -313,7 +313,7 @@ export default function EditBovedaPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? 'Guardando…' : 'Guardar Cambios'}
               </button>
@@ -360,7 +360,7 @@ export default function EditBovedaPage() {
                 <button
                   type="button"
                   onClick={() => setShowPropietarioModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
                 >
                   <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Asignar propietario
                 </button>
@@ -463,9 +463,9 @@ function PropietarioModal({
       </div>
       <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
         {loading ? (
-          <div className="py-6 text-center text-sm text-slate-400">Buscando…</div>
+          <div className="py-6 text-center text-sm text-slate-600">Buscando…</div>
         ) : results.length === 0 ? (
-          <div className="py-6 text-center text-sm text-slate-400">
+          <div className="py-6 text-center text-sm text-slate-600">
             {search.trim().length < 2 ? 'Escribe al menos 2 caracteres.' : 'No se encontraron personas.'}
           </div>
         ) : (
@@ -478,7 +478,7 @@ function PropietarioModal({
                 </div>
                 <button type="button" disabled={saving || actualPersonaId === p.id}
                   onClick={() => asignar(p.id)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${actualPersonaId === p.id ? 'cursor-default bg-slate-100 text-slate-500' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${actualPersonaId === p.id ? 'cursor-default bg-slate-100 text-slate-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}>
                   {actualPersonaId === p.id ? 'Actual' : 'Asignar'}
                 </button>
               </li>

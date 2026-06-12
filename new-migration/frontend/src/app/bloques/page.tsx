@@ -160,14 +160,14 @@ export default function BloquesPage() {
         <div className="inline-flex items-center gap-1">
           <Link
             href={`/bloques/${row.id}`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Ver"
           >
             <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </Link>
           <Link
             href={`/bloques/${row.id}/edit`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -176,7 +176,7 @@ export default function BloquesPage() {
             type="button"
             onClick={() => handleDelete(row.id)}
             disabled={deletingId === row.id}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
             title="Eliminar"
           >
             {deletingId === row.id ? (
@@ -199,13 +199,13 @@ export default function BloquesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Lista de Bloques</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Administración de bloques del cementerio.
           </p>
         </div>
         <Link
           href="/bloques/create"
-          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
         >
           <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Nuevo Bloque
@@ -228,7 +228,7 @@ export default function BloquesPage() {
                 setPage(1);
                 setSearch(e.target.value);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
         </div>
@@ -289,7 +289,7 @@ export default function BloquesPage() {
                   onClick={() => setPage(p)}
                   className={`rounded-md px-3 py-1 text-xs font-medium ${
                     p === meta.page
-                      ? 'bg-primary-500 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >

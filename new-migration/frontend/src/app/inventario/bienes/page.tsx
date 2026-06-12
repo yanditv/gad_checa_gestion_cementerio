@@ -136,7 +136,7 @@ export default function BienesPage() {
           <span className="font-medium text-slate-900">
             {row.descripcion}
             {(row.marca || row.serie) && (
-              <span className="block text-xs font-normal text-slate-400">
+              <span className="block text-xs font-normal text-slate-600">
                 {[row.marca, row.serie].filter(Boolean).join(' · ')}
               </span>
             )}
@@ -191,7 +191,7 @@ export default function BienesPage() {
       cell: (row) => (
         <Link
           href={`/inventario/bienes/${row.id}`}
-          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
           title="Ver ficha"
         >
           <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -208,7 +208,7 @@ export default function BienesPage() {
         actions={
           <Link
             href="/inventario/bienes/nuevo"
-            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Nuevo bien

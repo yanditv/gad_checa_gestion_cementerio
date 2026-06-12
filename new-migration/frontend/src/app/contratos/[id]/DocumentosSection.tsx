@@ -208,7 +208,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
             href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Abrir"
           >
             <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -216,7 +216,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
           <a
             href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
             download={d.nombreOriginal}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Descargar"
           >
             <Download className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -225,7 +225,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
             type="button"
             disabled={deletingId === d.id}
             onClick={() => deleteDoc(d.id)}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
             title="Eliminar"
           >
             <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -241,7 +241,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
         <h3 className="text-sm font-semibold text-slate-700">
           Documentos adjuntos
         </h3>
-        <span className="text-xs text-slate-400">PDF · máx. 10 MB</span>
+        <span className="text-xs text-slate-600">PDF · máx. 10 MB</span>
       </header>
 
       <div className="p-5">
@@ -253,7 +253,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-12 sm:items-end">
           <div className="sm:col-span-4">
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-600">
               Tipo de documento
             </label>
             <select

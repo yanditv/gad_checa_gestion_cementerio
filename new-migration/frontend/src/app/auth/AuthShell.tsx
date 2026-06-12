@@ -23,7 +23,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           'linear-gradient(135deg, #f6f9ff 0%, #eef3ff 50%, #f7fbff 100%)',
       }}
     >
-      <div className="w-full max-w-md">
+      <main id="main-content" className="w-full max-w-md">
         <div className="mb-6 text-center">
           <Link
             href="/"
@@ -33,7 +33,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
               src="/logo.png"
               width={56}
               height={56}
-              alt="logo"
+              alt="Logo del GAD Parroquial de Checa"
               className="h-14 w-14 object-contain"
             />
             <span className="font-display text-2xl font-bold lowercase tracking-tight text-brand-dark">
@@ -49,7 +49,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           <div className="p-6 sm:p-8">
             <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
             {subtitle && (
-              <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+              <p className="mt-1 text-sm text-slate-600">{subtitle}</p>
             )}
             <div className="mt-6">{children}</div>
           </div>
@@ -58,7 +58,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         {footer && (
           <div className="mt-4 text-center text-sm text-slate-500">{footer}</div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

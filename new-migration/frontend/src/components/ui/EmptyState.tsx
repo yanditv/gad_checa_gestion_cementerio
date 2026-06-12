@@ -40,7 +40,7 @@ export function EmptyState({
         <span
           aria-hidden="true"
           className={cn(
-            'inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-400',
+            'inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600',
             compact ? 'h-12 w-12 text-2xl' : 'h-16 w-16 text-3xl',
           )}
         >

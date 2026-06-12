@@ -69,7 +69,7 @@ function Card({
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-slate-700">{value || '—'}</p>
     </div>
   );
@@ -292,7 +292,7 @@ export default function UsuarioDetallePage({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-slate-400">Este usuario no tiene roles asignados.</p>
+            <p className="text-sm text-slate-600">Este usuario no tiene roles asignados.</p>
           )}
           <Button
             variant="secondary"
@@ -440,7 +440,7 @@ export default function UsuarioDetallePage({
         }
       >
         {roles.length === 0 ? (
-          <p className="text-sm text-slate-400">No hay roles disponibles.</p>
+          <p className="text-sm text-slate-600">No hay roles disponibles.</p>
         ) : (
           <ul className="max-h-[60vh] space-y-1 overflow-y-auto">
             {roles.map((rol) => {

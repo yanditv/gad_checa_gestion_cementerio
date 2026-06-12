@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <AuthShell title="Restablecer contraseña">
-          <div className="py-3 text-center text-sm text-slate-400">Cargando…</div>
+          <div className="py-3 text-center text-sm text-slate-600">Cargando…</div>
         </AuthShell>
       }
     >

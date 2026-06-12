@@ -132,7 +132,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               type="search"
               aria-label="Buscar contratos, personas y bóvedas"
               placeholder="Buscar contratos, personas, bóvedas…"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
         </div>
@@ -153,7 +153,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
             >
               <Bell className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-600 px-1 text-[10px] font-bold text-white">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -164,7 +164,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                   <span className="font-semibold text-slate-700">
                     Notificaciones
                     {unreadCount > 0 && (
-                      <span className="ml-1.5 text-xs font-normal text-slate-400">
+                      <span className="ml-1.5 text-xs font-normal text-slate-600">
                         ({unreadCount} sin leer)
                       </span>
                     )}
@@ -179,7 +179,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {notificaciones.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-slate-400">
+                    <div className="px-4 py-8 text-center text-sm text-slate-600">
                       No hay notificaciones nuevas.
                     </div>
                   ) : (
@@ -199,7 +199,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                               <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
                                 {n.mensaje}
                               </p>
-                              <p className="mt-1 text-[10px] text-slate-400">
+                              <p className="mt-1 text-[10px] text-slate-600">
                                 {timeAgo(n.fechaCreacion)}
                               </p>
                             </div>
@@ -249,7 +249,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                   {displayName}
                 </div>
                 {role && (
-                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-600">
                     {role}
                   </div>
                 )}
@@ -268,7 +268,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                     <div className="truncate text-sm font-semibold text-slate-700">
                       {displayName}
                     </div>
-                    <div className="truncate text-xs text-slate-400">
+                    <div className="truncate text-xs text-slate-600">
                       {user?.email ?? ''}
                     </div>
                   </div>

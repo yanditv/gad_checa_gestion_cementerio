@@ -129,7 +129,7 @@ function Field({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-slate-700">
         {value === null || value === undefined || value === '' ? '—' : value}
       </p>
@@ -154,7 +154,7 @@ function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-md p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-600"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -447,7 +447,7 @@ export default function DifuntoDetailsPage({
           )}
           <Link
             href={`/difuntos/${id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar
@@ -526,7 +526,7 @@ export default function DifuntoDetailsPage({
               <div className="overflow-x-auto -m-5">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="px-5 py-2.5">Contrato</th>
                       <th className="px-5 py-2.5">Vigencia</th>
                       <th className="px-5 py-2.5">Estado</th>
@@ -579,7 +579,7 @@ export default function DifuntoDetailsPage({
               <div className="overflow-x-auto -m-5">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="px-5 py-2.5">Acta</th>
                       <th className="px-5 py-2.5">Fecha</th>
                       <th className="px-5 py-2.5">Motivo</th>
@@ -774,7 +774,7 @@ export default function DifuntoDetailsPage({
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-slate-600">
                   El traslado reasigna al difunto a la bóveda seleccionada.
                 </p>
               </div>

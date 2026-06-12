@@ -9,7 +9,7 @@ import { bloquesApi, cementeriosApi } from '@/lib/api';
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function CreateBloquePage() {
   const router = useRouter();
@@ -137,7 +137,7 @@ export default function CreateBloquePage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Nuevo Bloque</h1>
-          <p className="mt-1 text-sm text-slate-500">Registrar un nuevo bloque con sus pisos y bóvedas.</p>
+          <p className="mt-1 text-sm text-slate-600">Registrar un nuevo bloque con sus pisos y bóvedas.</p>
         </div>
         <Link
           href="/bloques"
@@ -270,7 +270,7 @@ export default function CreateBloquePage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs uppercase text-slate-500">
+                      <tr className="text-left text-xs uppercase text-slate-600">
                         <th className="px-3 py-2">Piso</th>
                         <th className="px-3 py-2">Bóvedas</th>
                         <th className="px-3 py-2">Usar tarifa base</th>
@@ -335,7 +335,7 @@ export default function CreateBloquePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   <>
@@ -358,23 +358,23 @@ export default function CreateBloquePage() {
           </header>
           <div className="space-y-3 p-5 text-sm">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Tipo</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Tipo</p>
               <p className="font-medium text-slate-700">{formData.tipo === 'Nichos' ? 'Nichos' : 'Bóvedas'}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Pisos</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Pisos</p>
               <p className="font-medium text-slate-700">{formData.numeroPisos}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Bóvedas por piso</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Bóvedas por piso</p>
               <p className="font-medium text-slate-700">{formData.bovedasPorPiso}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Total bóvedas</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Total bóvedas</p>
               <p className="text-lg font-bold text-primary-600">{totalBovedas}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Tarifa base</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Tarifa base</p>
               <p className="font-medium text-slate-700">${Number(formData.tarifaBase).toFixed(2)}</p>
             </div>
             <div className="border-t border-slate-100 pt-3 text-xs text-slate-500">

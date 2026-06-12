@@ -48,7 +48,7 @@ export function RelacionActions({
     return (
       <div className="flex flex-wrap items-center gap-3">
         <div className="text-sm">
-          <span className="text-xs uppercase tracking-wide text-slate-400">
+          <span className="text-xs uppercase tracking-wide text-slate-600">
             Comparte bóveda con:
           </span>
           <Link
@@ -281,7 +281,7 @@ function CandidatosModal({
             {c.difunto.nombre} {c.difunto.apellido}
           </div>
           {c.difunto.numeroIdentificacion && (
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-slate-600">
               {c.difunto.numeroIdentificacion}
             </div>
           )}
@@ -296,7 +296,7 @@ function CandidatosModal({
       cell: (c) => (
         <span className="text-sm text-slate-600">
           {c.boveda?.numero}{' '}
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-600">
             ({c.boveda?.bloque?.nombre})
           </span>
         </span>
@@ -311,7 +311,7 @@ function CandidatosModal({
           type="button"
           onClick={() => relacionar(c.id)}
           disabled={linking !== null}
-          className="rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+          className="rounded-md bg-primary-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
         >
           {linking === c.id ? 'Vinculando…' : 'Relacionar'}
         </button>
@@ -354,7 +354,7 @@ function CandidatosModal({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por número, nombre o apellido del difunto…"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
           autoFocus
         />
       </div>

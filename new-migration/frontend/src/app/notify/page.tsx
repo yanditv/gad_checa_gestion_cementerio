@@ -96,7 +96,7 @@ export default function NotifyPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Notificaciones</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Alertas del sistema sobre contratos, cuotas y vencimientos.
           </p>
         </div>
@@ -122,7 +122,7 @@ export default function NotifyPage() {
             onClick={() => { setPage(1); setFilter(f); }}
             className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               filter === f
-                ? 'bg-primary-500 text-white'
+                ? 'bg-primary-600 text-white'
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
@@ -175,7 +175,7 @@ export default function NotifyPage() {
                         )}
                       </div>
                       <p className="mt-0.5 text-sm text-slate-500">{n.mensaje}</p>
-                      <p className="mt-1 text-xs text-slate-400">{timeAgo(n.fechaCreacion)}</p>
+                      <p className="mt-1 text-xs text-slate-600">{timeAgo(n.fechaCreacion)}</p>
                     </div>
                     {!n.leida && (
                       <Button

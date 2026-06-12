@@ -100,7 +100,7 @@ function Field({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-slate-700">{value || '—'}</p>
     </div>
   );
@@ -178,7 +178,7 @@ export default function PersonaDetailsPage({
         <span className="text-slate-600">
           {b.bloque?.nombre ?? '—'}
           {b.bloque?.cementerio?.nombre && (
-            <span className="block text-xs text-slate-400">
+            <span className="block text-xs text-slate-600">
               {b.bloque.cementerio.nombre}
             </span>
           )}
@@ -247,7 +247,7 @@ export default function PersonaDetailsPage({
         <span className="text-slate-600">
           {c.boveda?.numero ?? '—'}
           {c.boveda?.bloque?.nombre && (
-            <span className="ml-1 text-xs text-slate-400">
+            <span className="ml-1 text-xs text-slate-600">
               ({c.boveda.bloque.nombre})
             </span>
           )}
@@ -391,7 +391,7 @@ export default function PersonaDetailsPage({
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`/personas/${id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar
@@ -481,7 +481,7 @@ export default function PersonaDetailsPage({
       {tab === 'bovedas' && (
         <Card title={`Bóvedas como propietario · ${bovedas.length}`}>
           {bovedas.length === 0 ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               Esta persona no es propietaria de ninguna bóveda.
             </p>
           ) : (
@@ -499,7 +499,7 @@ export default function PersonaDetailsPage({
       {tab === 'contratos' && (
         <Card title={`Contratos como responsable · ${contratos.length}`}>
           {contratos.length === 0 ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               Esta persona no figura como responsable en ningún contrato.
             </p>
           ) : (

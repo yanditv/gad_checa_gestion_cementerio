@@ -138,7 +138,7 @@ export default function AdminUsuariosPage() {
             <div className="font-medium text-slate-900">
               {u.nombre} {u.apellido}
             </div>
-            <div className="text-xs text-slate-400">{u.numeroIdentificacion}</div>
+            <div className="text-xs text-slate-600">{u.numeroIdentificacion}</div>
           </div>
         </div>
       ),
@@ -162,7 +162,7 @@ export default function AdminUsuariosPage() {
               </Badge>
             ))
           ) : (
-            <span className="text-xs text-slate-400">Sin roles</span>
+            <span className="text-xs text-slate-600">Sin roles</span>
           )}
         </div>
       ),
@@ -196,7 +196,7 @@ export default function AdminUsuariosPage() {
           <div className="inline-flex items-center gap-2">
             <Link
               href={`/admin/usuarios/${usuario.id}`}
-              className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+              className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
               title="Ver detalle"
             >
               <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -258,7 +258,7 @@ export default function AdminUsuariosPage() {
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
                 usuario.estado
                   ? 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                  : 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-primary-600 text-white hover:bg-primary-700'
               } disabled:opacity-60`}
             >
               {savingUserId === usuario.id ? (
@@ -280,7 +280,7 @@ export default function AdminUsuariosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Gestión de Usuarios</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           Administración de usuarios y asignación de roles.
         </p>
       </div>

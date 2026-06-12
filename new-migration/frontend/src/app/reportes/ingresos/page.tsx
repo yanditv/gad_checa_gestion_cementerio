@@ -168,17 +168,17 @@ function ReporteIngresosInner() {
         <>
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Card padding="sm">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Total ingresos</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Total ingresos</p>
               <p className="mt-1 text-2xl font-bold text-green-600">
                 {formatCurrency(data.totales.general)}
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Cantidad de pagos</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Cantidad de pagos</p>
               <p className="mt-1 text-2xl font-bold text-slate-900">{data.totales.cantidad}</p>
             </Card>
             <Card padding="sm">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Promedio por pago</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Promedio por pago</p>
               <p className="mt-1 text-2xl font-bold text-primary-600">
                 {formatCurrency(
                   data.totales.cantidad > 0
@@ -197,11 +197,11 @@ function ReporteIngresosInner() {
               <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
                 {data.totales.porMetodo.map((m) => (
                   <div key={m.metodo} className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{m.metodo}</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-600">{m.metodo}</p>
                     <p className="mt-1 text-lg font-bold text-slate-800">
                       {formatCurrency(m.total)}
                     </p>
-                    <p className="text-xs text-slate-400">{m.cantidad} pago(s)</p>
+                    <p className="text-xs text-slate-600">{m.cantidad} pago(s)</p>
                   </div>
                 ))}
               </div>
@@ -217,7 +217,7 @@ function ReporteIngresosInner() {
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                     <th className="px-5 py-2.5">Fecha</th>
                     <th className="px-5 py-2.5">Recibo</th>
                     <th className="px-5 py-2.5">Método</th>
@@ -230,7 +230,7 @@ function ReporteIngresosInner() {
                 <tbody className="divide-y divide-slate-100">
                   {data.items.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
+                      <td colSpan={7} className="px-5 py-10 text-center text-slate-600">
                         No hay ingresos en el rango seleccionado.
                       </td>
                     </tr>
@@ -252,7 +252,7 @@ function ReporteIngresosInner() {
                         <td className="px-5 py-2.5 text-xs text-slate-500">
                           {i.contrato?.numeroSecuencial ?? '—'}
                           {i.contrato?.tipoIngreso && (
-                            <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-400">
+                            <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-600">
                               · {i.contrato.tipoIngreso}
                             </span>
                           )}

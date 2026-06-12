@@ -209,7 +209,7 @@ export default function ReportesInventarioPage() {
           <h1 className="text-2xl font-bold text-slate-900">
             Reportes de inventario
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Aplica filtros y descarga cada reporte en PDF, Excel o CSV.
           </p>
         </div>
@@ -282,7 +282,7 @@ export default function ReportesInventarioPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">
               Fecha de corte
-              <span className="ml-1 text-slate-400">(depreciación)</span>
+              <span className="ml-1 text-slate-600">(depreciación)</span>
             </label>
             <input
               type="date"
@@ -295,7 +295,7 @@ export default function ReportesInventarioPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">
               Custodio saliente
-              <span className="ml-1 text-slate-400">(acta)</span>
+              <span className="ml-1 text-slate-600">(acta)</span>
             </label>
             <select
               className={INPUT_CLS}

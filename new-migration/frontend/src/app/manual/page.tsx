@@ -6,7 +6,7 @@ export default function ManualPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Manual de Usuario</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Guía funcional oficial del sistema de gestión del cementerio.
           </p>
         </div>
@@ -14,7 +14,7 @@ export default function ManualPage() {
           href="/Manual_de_Usuario.pdf"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 self-start rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          className="inline-flex items-center gap-1.5 self-start rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
         >
           <FileText className="h-4 w-4" aria-hidden="true" /> Abrir PDF
         </a>
@@ -35,7 +35,7 @@ export default function ManualPage() {
               href="/Manual_de_Usuario.pdf"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" /> Abrir en pestaña nueva
             </a>

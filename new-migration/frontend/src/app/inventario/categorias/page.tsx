@@ -119,7 +119,7 @@ export default function CategoriasBienPage() {
         <div className="inline-flex items-center gap-1">
           <Link
             href={`/inventario/categorias/${row.id}/edit`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -128,7 +128,7 @@ export default function CategoriasBienPage() {
             type="button"
             onClick={() => handleDelete(row.id)}
             disabled={deletingId === row.id || !row.estado}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
             title="Desactivar"
           >
             {deletingId === row.id ? (
@@ -150,7 +150,7 @@ export default function CategoriasBienPage() {
         actions={
           <Link
             href="/inventario/categorias/create"
-            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Nueva categoría

@@ -163,7 +163,7 @@ export function DataTable<T>({
                         : undefined
                   }
                   className={cn(
-                    'px-4 py-3 text-caption font-semibold uppercase tracking-wide text-slate-500',
+                    'px-4 py-3 text-caption font-semibold uppercase tracking-wide text-slate-600',
                     alignClass[col.align ?? 'left'],
                     col.width,
                     col.headerClassName,

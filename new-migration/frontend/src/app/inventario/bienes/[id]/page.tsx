@@ -142,11 +142,11 @@ function DataField({
     value === null || value === undefined || value === '';
   return (
     <div>
-      <p className="text-caption font-medium uppercase tracking-wide text-slate-400">
+      <p className="text-caption font-medium uppercase tracking-wide text-slate-600">
         {label}
       </p>
       <div className="mt-1 text-sm font-medium text-slate-700">
-        {isEmpty ? <span className="text-slate-400">—</span> : value}
+        {isEmpty ? <span className="text-slate-600">—</span> : value}
       </div>
     </div>
   );
@@ -500,7 +500,7 @@ export default function BienDetailPage({
             }
           >
             {historial.length === 0 ? (
-              <p className="text-sm text-slate-400">Sin movimientos registrados.</p>
+              <p className="text-sm text-slate-600">Sin movimientos registrados.</p>
             ) : (
               <ol className="relative space-y-5 border-l border-slate-200 pl-5">
                 {historial.map((h, idx) => (
@@ -510,7 +510,7 @@ export default function BienDetailPage({
                       <Badge tone={TIPO_TONE[h.tipo] ?? 'neutral'} size="sm">
                         {TIPO_LABEL[h.tipo] ?? h.tipo}
                       </Badge>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-600">
                         {formatDate(h.fecha)}
                       </span>
                     </div>
@@ -678,7 +678,7 @@ export default function BienDetailPage({
                 </Button>
               )}
               {!isAdmin && (
-                <p className="pt-1 text-xs text-slate-400">
+                <p className="pt-1 text-xs text-slate-600">
                   La baja y reactivación de bienes está reservada a Administradores.
                 </p>
               )}

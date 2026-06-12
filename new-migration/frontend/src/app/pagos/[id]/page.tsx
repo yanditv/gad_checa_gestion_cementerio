@@ -213,7 +213,7 @@ export default function PagoDetailPage({
               {pago.numeroRecibo}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Detalle del pago registrado.
           </p>
         </div>
@@ -274,7 +274,7 @@ export default function PagoDetailPage({
             <div className="overflow-x-auto -m-5">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                     <th className="px-5 py-2.5">Contrato</th>
                     <th className="px-5 py-2.5">Cuota</th>
                     <th className="px-5 py-2.5">Vencimiento</th>
@@ -298,7 +298,7 @@ export default function PagoDetailPage({
                             '—'
                           )}
                           {c.contrato?.difunto && (
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-slate-600">
                               {c.contrato.difunto.nombre}{' '}
                               {c.contrato.difunto.apellido}
                             </div>
@@ -325,7 +325,7 @@ export default function PagoDetailPage({
             <Card title="Contrato asociado">
               <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Número
                   </dt>
                   <dd className="mt-0.5 font-mono font-semibold text-slate-700">
@@ -333,7 +333,7 @@ export default function PagoDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Difunto
                   </dt>
                   <dd className="mt-0.5 text-slate-700">
@@ -341,7 +341,7 @@ export default function PagoDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Bóveda
                   </dt>
                   <dd className="mt-0.5 text-slate-700">
@@ -349,7 +349,7 @@ export default function PagoDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Bloque
                   </dt>
                   <dd className="mt-0.5 text-slate-700">
@@ -415,7 +415,7 @@ export default function PagoDetailPage({
               </div>
               {pago.observacion && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Observación
                   </dt>
                   <dd className="mt-0.5 text-slate-700">{pago.observacion}</dd>

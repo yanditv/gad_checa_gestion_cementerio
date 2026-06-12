@@ -183,7 +183,7 @@ export function DropdownMenu({
                   className={itemClass(item)}
                 >
                   {item.icon && (
-                    <span aria-hidden="true" className="inline-flex text-base text-slate-400">
+                    <span aria-hidden="true" className="inline-flex text-base text-slate-600">
                       {item.icon}
                     </span>
                   )}
@@ -203,7 +203,7 @@ export function DropdownMenu({
                 className={itemClass(item)}
               >
                 {item.icon && (
-                  <span aria-hidden="true" className="inline-flex text-base text-slate-400">
+                  <span aria-hidden="true" className="inline-flex text-base text-slate-600">
                     {item.icon}
                   </span>
                 )}

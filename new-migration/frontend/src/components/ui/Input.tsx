@@ -60,7 +60,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {leftIcon && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-base text-slate-400"
+              className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-base text-slate-600"
             >
               {leftIcon}
             </span>
@@ -82,7 +82,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...rest}
           />
           {rightSlot && (
-            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-600">
               {rightSlot}
             </span>
           )}

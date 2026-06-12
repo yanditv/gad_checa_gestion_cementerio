@@ -45,7 +45,7 @@ const ESTADO_ALERT: Record<string, { box: string; icon: LucideIcon }> = {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs uppercase tracking-wide text-slate-400">
+    <p className="text-xs uppercase tracking-wide text-slate-600">
       {children}
     </p>
   );
@@ -143,7 +143,7 @@ export default async function ContratoDetailsPage({
               {contrato.numeroSecuencial}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Detalle completo del contrato de arrendamiento.
           </p>
         </div>
@@ -167,7 +167,7 @@ export default async function ContratoDetailsPage({
           </Link>
           <Link
             href={`/contratos/${id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar
@@ -330,7 +330,7 @@ export default async function ContratoDetailsPage({
           {/* Responsables */}
           <Card title="Responsables">
             {(contrato.responsables || []).length === 0 ? (
-              <p className="text-sm text-slate-400">Sin responsables registrados.</p>
+              <p className="text-sm text-slate-600">Sin responsables registrados.</p>
             ) : (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {contrato.responsables.map((item: any) => {
@@ -376,7 +376,7 @@ export default async function ContratoDetailsPage({
             <div className="overflow-x-auto -m-5">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                     <th className="px-5 py-2.5">#</th>
                     <th className="px-5 py-2.5 text-right">Monto</th>
                     <th className="px-5 py-2.5">Vencimiento</th>
@@ -423,7 +423,7 @@ export default async function ContratoDetailsPage({
               <div className="overflow-x-auto -m-5">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="px-5 py-2.5">Recibo</th>
                       <th className="px-5 py-2.5">Fecha</th>
                       <th className="px-5 py-2.5">Método</th>
@@ -466,7 +466,7 @@ export default async function ContratoDetailsPage({
           <Card title="Vínculos del contrato">
             {contratoOrigen && (
               <div className="mb-3 flex items-baseline gap-2">
-                <span className="text-xs uppercase tracking-wide text-slate-400">
+                <span className="text-xs uppercase tracking-wide text-slate-600">
                   Renueva al contrato:
                 </span>
                 <Link
@@ -487,7 +487,7 @@ export default async function ContratoDetailsPage({
 
             {contratosHijos.length > 0 && (
               <div>
-                <p className="mb-1 text-xs uppercase tracking-wide text-slate-400">
+                <p className="mb-1 text-xs uppercase tracking-wide text-slate-600">
                   Renovaciones derivadas:
                 </p>
                 <ul className="space-y-1 text-sm">
@@ -542,7 +542,7 @@ export default async function ContratoDetailsPage({
                     style={{ width: `${pctPagado}%` }}
                   />
                 </div>
-                <p className="mt-1 text-right text-xs text-slate-400">
+                <p className="mt-1 text-right text-xs text-slate-600">
                   {pctPagado.toFixed(0)}% cobrado
                 </p>
               </div>
@@ -577,7 +577,7 @@ export default async function ContratoDetailsPage({
               </Link>
               <Link
                 href={`/contratos/${id}/renovar`}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-600"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700"
               >
                 <Copy className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Renovar contrato

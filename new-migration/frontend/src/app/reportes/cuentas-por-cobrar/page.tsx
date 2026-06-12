@@ -109,19 +109,19 @@ export default function CuentasPorCobrarPage() {
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card padding="sm">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Cuotas pendientes</p>
+          <p className="text-xs uppercase tracking-wide text-slate-600">Cuotas pendientes</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">
             {data?.totales.cantidad ?? 0}
           </p>
         </Card>
         <Card padding="sm">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Vencidas</p>
+          <p className="text-xs uppercase tracking-wide text-slate-600">Vencidas</p>
           <p className="mt-1 text-2xl font-bold text-red-600">
             {data?.totales.vencidas ?? 0}
           </p>
         </Card>
         <Card padding="sm">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Monto por cobrar</p>
+          <p className="text-xs uppercase tracking-wide text-slate-600">Monto por cobrar</p>
           <p className="mt-1 text-2xl font-bold text-amber-600">
             {formatCurrency(data?.totales.monto ?? 0)}
           </p>
@@ -163,7 +163,7 @@ export default function CuentasPorCobrarPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                   <th className="px-5 py-2.5">Contrato</th>
                   <th className="px-5 py-2.5">Responsable</th>
                   <th className="px-5 py-2.5">Difunto</th>
@@ -176,7 +176,7 @@ export default function CuentasPorCobrarPage() {
               <tbody className="divide-y divide-slate-100">
                 {itemsFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
+                    <td colSpan={7} className="px-5 py-10 text-center text-slate-600">
                       No hay cuentas por cobrar.
                     </td>
                   </tr>
@@ -194,14 +194,14 @@ export default function CuentasPorCobrarPage() {
                         ) : (
                           '—'
                         )}
-                        <p className="text-[10px] text-slate-400">Cuota #{i.numero}</p>
+                        <p className="text-[10px] text-slate-600">Cuota #{i.numero}</p>
                       </td>
                       <td className="px-5 py-2.5">
                         <span className="text-xs font-medium text-slate-700">
                           {i.responsable ?? '—'}
                         </span>
                         {i.telefono && (
-                          <p className="text-[10px] text-slate-400">{i.telefono}</p>
+                          <p className="text-[10px] text-slate-600">{i.telefono}</p>
                         )}
                       </td>
                       <td className="px-5 py-2.5 text-xs text-slate-500">
@@ -221,7 +221,7 @@ export default function CuentasPorCobrarPage() {
                             {i.diasMora} d
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-400">—</span>
+                          <span className="text-xs text-slate-600">—</span>
                         )}
                       </td>
                       <td className="px-5 py-2.5 text-right font-medium text-slate-700">

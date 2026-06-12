@@ -57,7 +57,7 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-sm font-semibold ring-1 ${tones[tone]}`}>
         {value}
       </span>
@@ -197,7 +197,7 @@ export default function BloqueDetailsPage() {
         <h1 className="text-xl font-semibold text-slate-900">Bloque no encontrado</h1>
         <p className="text-sm text-slate-600">El bloque solicitado no existe o ya no está disponible.</p>
         <div>
-          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600">
+          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
             <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al listado
           </Link>
         </div>
@@ -306,7 +306,7 @@ export default function BloqueDetailsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Bloque {bloque.nombre}</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             {bloque.tipo === 'Nichos' ? 'Nichos' : 'Bóvedas'}
             {bloque.cementerio?.nombre ? ` · ${bloque.cementerio.nombre}` : ''}
           </p>
@@ -314,7 +314,7 @@ export default function BloqueDetailsPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/bloques/${bloque.id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Editar
           </Link>
@@ -362,25 +362,25 @@ export default function BloqueDetailsPage() {
           </header>
           <div className="space-y-4 p-5 text-sm">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Nombre</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Nombre</p>
               <p className="mt-1 font-medium text-slate-800">{bloque.nombre}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Tipo</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Tipo</p>
               <p className="mt-1 font-medium text-slate-800">{bloque.tipo || '—'}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Tarifa base</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Tarifa base</p>
               <p className="mt-1 font-medium text-slate-800">{formatCurrency(bloque.tarifaBase)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Estado</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Estado</p>
               <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${bloque.estado ? 'bg-green-50 text-green-700 ring-green-200' : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
                 {bloque.estado ? 'Activo' : 'Inactivo'}
               </span>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Descripción</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Descripción</p>
               <p className="mt-1 text-slate-700">{bloque.descripcion || '—'}</p>
             </div>
           </div>
@@ -432,7 +432,7 @@ export default function BloqueDetailsPage() {
                     <p className="mb-2 text-sm font-semibold text-slate-700">Piso {piso.numero}</p>
                     <div className="flex flex-wrap gap-2">
                       {bovedas.length === 0 ? (
-                        <p className="text-xs text-slate-400">Sin bóvedas</p>
+                        <p className="text-xs text-slate-600">Sin bóvedas</p>
                       ) : (
                         bovedas.map((b) => {
                           const estado = getEstadoBoveda(b);

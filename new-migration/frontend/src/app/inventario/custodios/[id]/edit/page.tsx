@@ -78,7 +78,7 @@ export default function EditCustodioPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar custodio</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Actualizar los datos del responsable de bienes.
           </p>
         </div>
@@ -91,7 +91,7 @@ export default function EditCustodioPage() {
       </div>
 
       {fetching ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-400 shadow-soft">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-600 shadow-soft">
           <div className="inline-flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary-500" strokeWidth={2} aria-hidden="true" />
             Cargando custodio…
