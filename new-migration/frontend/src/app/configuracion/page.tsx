@@ -1,30 +1,48 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { cementeriosApi, gadInformacionApi, catastroApi } from '@/lib/api';
+import {
+  Building2,
+  ChevronRight,
+  Database,
+  Landmark,
+  LayoutGrid,
+  Loader2,
+  Lock,
+  Pencil,
+  Percent,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  Modal,
+  Tabs,
+  type DataTableColumn,
+} from '@/components/ui';
+import {
+  cementeriosApi,
+  gadInformacionApi,
+  catastroApi,
+  tiposEspacioApi,
+  descuentosApi,
+  bancosApi,
+  type TipoEspacio,
+  type Descuento,
+  type Banco,
+} from '@/lib/api';
 
-type Tab = 'descuentos' | 'bancos' | 'cementerio';
-
-interface Descuento {
-  id: number;
-  nombre: string;
-  porcentaje: number | string;
-  descripcion: string | null;
-  estado: boolean;
-}
-
-interface Banco {
-  id: number;
-  nombre: string;
-  cuenta: string | null;
-  estado: boolean;
-}
+type Tab = 'descuentos' | 'bancos' | 'tipos' | 'cementerio';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function ConfiguracionPage() {
   const [tab, setTab] = useState<Tab>('descuentos');
@@ -68,7 +86,7 @@ export default function ConfiguracionPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Configuración</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Gestión de descuentos y bancos disponibles al cobrar.
           </p>
         </div>
@@ -77,14 +95,19 @@ export default function ConfiguracionPage() {
             href="/configuracion/catastro"
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-white px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50"
           >
-            <i className="ti ti-database-import" /> Importar catastro
+            <Database className="h-4 w-4" strokeWidth={2} aria-hidden="true" />{' '}
+            Importar catastro
           </Link>
         )}
       </div>
 
       {!isAdmin && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <i className="ti ti-shield-lock mr-1" />
+          <Lock
+            className="mr-1 inline h-4 w-4 align-[-0.125em]"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
           Solo lectura. Para modificar la configuración se requiere rol{' '}
           <strong>Administrador</strong>.
         </div>
@@ -98,7 +121,7 @@ export default function ConfiguracionPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
-                <i className="ti ti-database-import text-lg" />
+                <Database className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-700">
@@ -112,45 +135,51 @@ export default function ConfiguracionPage() {
             <div className="flex items-center gap-4">
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-slate-700">{lastImport.registrosProcesados} registros</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   {lastImport.bloquesCreados} bloques · {lastImport.bovedasCreadas} bóvedas · {lastImport.contratosCreados} contratos
                 </p>
               </div>
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${
+              <Badge
+                tone={
                   lastImport.estado === 'COMPLETADO'
-                    ? 'bg-green-50 text-green-700 ring-green-200'
+                    ? 'success'
                     : lastImport.estado === 'ERROR'
-                      ? 'bg-red-50 text-red-700 ring-red-200'
-                      : 'bg-amber-50 text-amber-700 ring-amber-200'
-                }`}
+                      ? 'danger'
+                      : 'warning'
+                }
               >
                 {lastImport.estado === 'EN_PROGRESO' ? 'En progreso' : lastImport.estado === 'COMPLETADO' ? 'Completado' : 'Error'}
-              </span>
-              <i className="ti ti-chevron-right text-slate-300" />
+              </Badge>
+              <ChevronRight className="h-4 w-4 text-slate-300" strokeWidth={2} aria-hidden="true" />
             </div>
           </div>
         </Link>
       )}
 
-      <div className="border-b border-slate-200">
+      <div className="overflow-x-auto border-b border-slate-200">
         <nav className="-mb-px flex gap-4">
           <TabButton
             active={tab === 'descuentos'}
             onClick={() => setTab('descuentos')}
-            icon="ti-discount"
+            icon={<Percent className="h-4 w-4" aria-hidden="true" />}
             label="Descuentos"
           />
           <TabButton
             active={tab === 'bancos'}
             onClick={() => setTab('bancos')}
-            icon="ti-building-bank"
+            icon={<Landmark className="h-4 w-4" aria-hidden="true" />}
             label="Bancos"
+          />
+          <TabButton
+            active={tab === 'tipos'}
+            onClick={() => setTab('tipos')}
+            icon={<LayoutGrid className="h-4 w-4" aria-hidden="true" />}
+            label="Tipos de espacio"
           />
           <TabButton
             active={tab === 'cementerio'}
             onClick={() => setTab('cementerio')}
-            icon="ti-building-community"
+            icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
             label="Cementerio"
           />
         </nav>
@@ -160,6 +189,8 @@ export default function ConfiguracionPage() {
         <DescuentosPanel canEdit={isAdmin} />
       ) : tab === 'bancos' ? (
         <BancosPanel canEdit={isAdmin} />
+      ) : tab === 'tipos' ? (
+        <TiposEspacioPanel canEdit={isAdmin} />
       ) : (
         <CementerioPanel canEdit={isAdmin} />
       )}
@@ -175,20 +206,20 @@ function TabButton({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: string;
+  icon: ReactNode;
   label: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+      className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
         active
           ? 'border-primary-500 text-primary-700'
           : 'border-transparent text-slate-500 hover:border-slate-200 hover:text-slate-700'
       }`}
     >
-      <i className={`ti ${icon}`} />
+      {icon}
       {label}
     </button>
   );
@@ -206,16 +237,16 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/descuentos?includeInactive=true', {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error('No se pudieron cargar los descuentos');
-      const payload = await res.json();
-      setItems(Array.isArray(payload) ? payload : payload.data || []);
+      const res = await descuentosApi.findAll({ includeInactive: true });
+      setItems(res ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudieron cargar los descuentos',
+      );
     } finally {
       setLoading(false);
     }
@@ -228,17 +259,10 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
   async function handleDelete(id: number) {
     if (!window.confirm('¿Desactivar este descuento?')) return;
     try {
-      const res = await fetch(`/api/descuentos/${id}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo eliminar');
-      }
+      await descuentosApi.delete(id);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar');
     }
   }
 
@@ -252,9 +276,9 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
-            <i className="ti ti-plus" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo descuento
           </button>
         )}
@@ -270,7 +294,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <th scope="col" className="px-4 py-3">Nombre</th>
                 <th scope="col" className="px-4 py-3 text-right">Porcentaje</th>
                 <th scope="col" className="px-4 py-3">Descripción</th>
@@ -283,7 +307,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 5 : 4}
-                    className="px-4 py-8 text-center text-slate-400"
+                    className="px-4 py-8 text-center text-slate-600"
                   >
                     Cargando descuentos…
                   </td>
@@ -292,7 +316,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 5 : 4}
-                    className="px-4 py-10 text-center text-slate-400"
+                    className="px-4 py-10 text-center text-slate-600"
                   >
                     No hay descuentos registrados.
                   </td>
@@ -325,19 +349,19 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                         <button
                           type="button"
                           onClick={() => setEditing(d)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
-                          <i className="ti ti-edit" />
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
                         </button>
                         {d.estado && (
                           <button
                             type="button"
                             onClick={() => handleDelete(d.id)}
-                            className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            className="ml-1 rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
                             title="Desactivar"
                           >
-                            <i className="ti ti-trash" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                       </td>
@@ -390,29 +414,23 @@ function DescuentoModal({
     setError(null);
     setSaving(true);
     try {
-      const url = initial
-        ? `/api/descuentos/${initial.id}`
-        : '/api/descuentos';
-      const method = initial ? 'PATCH' : 'POST';
-      const body: Record<string, unknown> = {
-        nombre,
-        porcentaje: Number(porcentaje),
-        descripcion: descripcion || undefined,
-      };
-      if (initial) body.estado = estado;
-      const res = await fetch(url, {
-        method,
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo guardar');
+      if (initial) {
+        await descuentosApi.update(initial.id, {
+          nombre,
+          porcentaje: Number(porcentaje),
+          descripcion: descripcion || undefined,
+          estado,
+        });
+      } else {
+        await descuentosApi.create({
+          nombre,
+          porcentaje: Number(porcentaje),
+          descripcion: descripcion || undefined,
+        });
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo guardar');
     } finally {
       setSaving(false);
     }
@@ -488,7 +506,7 @@ function DescuentoModal({
           <button
             type="submit"
             disabled={saving || !nombre.trim()}
-            className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
@@ -510,16 +528,14 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/bancos?includeInactive=true', {
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error('No se pudieron cargar los bancos');
-      const payload = await res.json();
-      setItems(Array.isArray(payload) ? payload : payload.data || []);
+      const res = await bancosApi.findAll({ includeInactive: true });
+      setItems(res ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(
+        err instanceof Error ? err.message : 'No se pudieron cargar los bancos',
+      );
     } finally {
       setLoading(false);
     }
@@ -532,17 +548,10 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
   async function handleDelete(id: number) {
     if (!window.confirm('¿Desactivar este banco?')) return;
     try {
-      const res = await fetch(`/api/bancos/${id}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo eliminar');
-      }
+      await bancosApi.delete(id);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar');
     }
   }
 
@@ -556,9 +565,9 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
-            <i className="ti ti-plus" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo banco
           </button>
         )}
@@ -574,7 +583,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <th scope="col" className="px-4 py-3">Nombre</th>
                 <th scope="col" className="px-4 py-3">Cuenta</th>
                 <th scope="col" className="px-4 py-3">Estado</th>
@@ -586,7 +595,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 4 : 3}
-                    className="px-4 py-8 text-center text-slate-400"
+                    className="px-4 py-8 text-center text-slate-600"
                   >
                     Cargando bancos…
                   </td>
@@ -595,7 +604,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 4 : 3}
-                    className="px-4 py-10 text-center text-slate-400"
+                    className="px-4 py-10 text-center text-slate-600"
                   >
                     No hay bancos registrados.
                   </td>
@@ -625,19 +634,19 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                         <button
                           type="button"
                           onClick={() => setEditing(b)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
-                          <i className="ti ti-edit" />
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
                         </button>
                         {b.estado && (
                           <button
                             type="button"
                             onClick={() => handleDelete(b.id)}
-                            className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            className="ml-1 rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
                             title="Desactivar"
                           >
-                            <i className="ti ti-trash" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                       </td>
@@ -687,26 +696,21 @@ function BancoModal({
     setError(null);
     setSaving(true);
     try {
-      const url = initial ? `/api/bancos/${initial.id}` : '/api/bancos';
-      const method = initial ? 'PATCH' : 'POST';
-      const body: Record<string, unknown> = {
-        nombre,
-        cuenta: cuenta || undefined,
-      };
-      if (initial) body.estado = estado;
-      const res = await fetch(url, {
-        method,
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.message || 'No se pudo guardar');
+      if (initial) {
+        await bancosApi.update(initial.id, {
+          nombre,
+          cuenta: cuenta || undefined,
+          estado,
+        });
+      } else {
+        await bancosApi.create({
+          nombre,
+          cuenta: cuenta || undefined,
+        });
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : 'No se pudo guardar');
     } finally {
       setSaving(false);
     }
@@ -769,7 +773,349 @@ function BancoModal({
           <button
             type="submit"
             disabled={saving || !nombre.trim()}
-            className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
+          >
+            {saving ? 'Guardando…' : 'Guardar'}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// =============================================================================
+// Tipos de espacio (catálogo configurable: Bóveda, Nicho, Túmulo…)
+// =============================================================================
+function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
+  const [items, setItems] = useState<TipoEspacio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<TipoEspacio | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await tiposEspacioApi.findPage({
+        includeInactive: true,
+        limit: 100,
+      });
+      setItems(res?.data ?? []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudieron cargar los tipos de espacio',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('¿Dar de baja este tipo de espacio?')) return;
+    try {
+      await tiposEspacioApi.delete(id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo dar de baja');
+    }
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">
+          Tipos de espacio (Bóveda, Nicho, Túmulo…) con su tarifa, años de
+          arriendo, veces de renovación y prefijo de numeración.
+        </p>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nuevo tipo
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100 text-sm">
+            <thead className="bg-slate-50">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                <th scope="col" className="px-4 py-3">Nombre</th>
+                <th scope="col" className="px-4 py-3">Prefijo</th>
+                <th scope="col" className="px-4 py-3 text-right">Tarifa</th>
+                <th scope="col" className="px-4 py-3 text-right">Años</th>
+                <th scope="col" className="px-4 py-3 text-right">Renovaciones</th>
+                <th scope="col" className="px-4 py-3">Estado</th>
+                {canEdit && <th scope="col" className="px-4 py-3 text-right">Acciones</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={canEdit ? 7 : 6}
+                    className="px-4 py-8 text-center text-slate-600"
+                  >
+                    Cargando tipos de espacio…
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={canEdit ? 7 : 6}
+                    className="px-4 py-10 text-center text-slate-600"
+                  >
+                    No hay tipos de espacio registrados.
+                  </td>
+                </tr>
+              ) : (
+                items.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-2.5 font-medium text-slate-700">
+                      {t.nombre}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">
+                      {t.prefijoNumeracion || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      ${Number(t.tarifaArriendo).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      {t.aniosArriendo}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-sm">
+                      {t.vecesRenovacion}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                          t.estado
+                            ? 'bg-green-50 text-green-700 ring-green-200'
+                            : 'bg-slate-100 text-slate-600 ring-slate-200'
+                        }`}
+                      >
+                        {t.estado ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    {canEdit && (
+                      <td className="px-4 py-2.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setEditing(t)}
+                          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        {t.estado && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(t.id)}
+                            className="ml-1 rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
+                            title="Dar de baja"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {(creating || editing) && canEdit && (
+        <TipoEspacioModal
+          initial={editing}
+          onClose={() => {
+            setCreating(false);
+            setEditing(null);
+          }}
+          onSaved={() => {
+            setCreating(false);
+            setEditing(null);
+            void load();
+          }}
+        />
+      )}
+    </section>
+  );
+}
+
+function TipoEspacioModal({
+  initial,
+  onClose,
+  onSaved,
+}: {
+  initial: TipoEspacio | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [nombre, setNombre] = useState(initial?.nombre ?? '');
+  const [prefijoNumeracion, setPrefijoNumeracion] = useState(
+    initial?.prefijoNumeracion ?? '',
+  );
+  const [tarifaArriendo, setTarifaArriendo] = useState(
+    initial ? Number(initial.tarifaArriendo) : 0,
+  );
+  const [aniosArriendo, setAniosArriendo] = useState(
+    initial ? Number(initial.aniosArriendo) : 0,
+  );
+  const [vecesRenovacion, setVecesRenovacion] = useState(
+    initial ? Number(initial.vecesRenovacion) : 0,
+  );
+  const [estado, setEstado] = useState(initial?.estado ?? true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setError(null);
+    setSaving(true);
+    try {
+      if (initial) {
+        await tiposEspacioApi.update(initial.id, {
+          nombre,
+          prefijoNumeracion: prefijoNumeracion.trim() || undefined,
+          tarifaArriendo: Number(tarifaArriendo),
+          aniosArriendo: Number(aniosArriendo),
+          vecesRenovacion: Number(vecesRenovacion),
+          estado,
+        });
+      } else {
+        await tiposEspacioApi.create({
+          nombre,
+          prefijoNumeracion: prefijoNumeracion.trim() || undefined,
+          tarifaArriendo: Number(tarifaArriendo),
+          aniosArriendo: Number(aniosArriendo),
+          vecesRenovacion: Number(vecesRenovacion),
+        });
+      }
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <ModalShell
+      title={initial ? 'Editar tipo de espacio' : 'Nuevo tipo de espacio'}
+      onClose={onClose}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSubmit();
+        }}
+        className="space-y-4 p-5"
+      >
+        {error && (
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className={LABEL_CLS}>Nombre</label>
+          <input
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            placeholder="Bóveda, Nicho, Túmulo…"
+            className={INPUT_CLS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLS}>Prefijo de numeración</label>
+          <input
+            value={prefijoNumeracion}
+            onChange={(e) => setPrefijoNumeracion(e.target.value)}
+            placeholder="CTR, NCH, TML…"
+            className={INPUT_CLS}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label className={LABEL_CLS}>Tarifa arriendo</label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={tarifaArriendo}
+              onChange={(e) => setTarifaArriendo(Number(e.target.value))}
+              required
+              className={INPUT_CLS}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Años arriendo</label>
+            <input
+              type="number"
+              min={0}
+              step="1"
+              value={aniosArriendo}
+              onChange={(e) => setAniosArriendo(Number(e.target.value))}
+              required
+              className={INPUT_CLS}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Veces renovación</label>
+            <input
+              type="number"
+              min={0}
+              step="1"
+              value={vecesRenovacion}
+              onChange={(e) => setVecesRenovacion(Number(e.target.value))}
+              required
+              className={INPUT_CLS}
+            />
+          </div>
+        </div>
+        {initial && (
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={estado}
+              onChange={(e) => setEstado(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
+            />
+            Activo
+          </label>
+        )}
+        <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={saving || !nombre.trim()}
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
@@ -1017,17 +1363,15 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
             <Field label="Título presidente" value={cementerio?.abreviaturaTituloPresidente ?? ''} onChange={(v) => setField('abreviaturaTituloPresidente', v)} disabled={!canEdit} />
             <Field label="Presidente" value={cementerio?.presidente ?? ''} onChange={(v) => setField('presidente', v)} disabled={!canEdit} />
           </div>
-          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Tarifas y arriendos</h3>
+          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-600">Mora</h3>
+          <p className="mb-3 text-xs text-slate-600">
+            Las tarifas, años y veces de renovación por tipo de espacio se
+            administran en la pestaña <strong>Tipos de espacio</strong>.
+          </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Tarifa arriendo bóveda" value={cementerio?.tarifaArriendo ?? ''} onChange={(v) => setField('tarifaArriendo', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Tarifa arriendo nicho" value={cementerio?.tarifaArriendoNicho ?? ''} onChange={(v) => setField('tarifaArriendoNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Años arriendo bóveda" value={cementerio?.aniosArriendoBovedas ?? ''} onChange={(v) => setField('aniosArriendoBovedas', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Años arriendo nicho" value={cementerio?.aniosArriendoNicho ?? ''} onChange={(v) => setField('aniosArriendoNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Veces renovación bóveda" value={cementerio?.vecesRenovacionBovedas ?? ''} onChange={(v) => setField('vecesRenovacionBovedas', v ? Number(v) : null)} type="number" disabled={!canEdit} />
-            <Field label="Veces renovación nicho" value={cementerio?.vecesRenovacionNicho ?? ''} onChange={(v) => setField('vecesRenovacionNicho', v ? Number(v) : null)} type="number" disabled={!canEdit} />
             <Field label="Tasa mora diaria (%)" value={cementerio?.tasaMoraDiaria ?? ''} onChange={(v) => setField('tasaMoraDiaria', v ? Number(v) : null)} type="number" disabled={!canEdit} />
           </div>
-          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Datos bancarios</h3>
+          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-600">Datos bancarios</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Entidad financiera" value={cementerio?.entidadFinanciera ?? ''} onChange={(v) => setField('entidadFinanciera', v)} disabled={!canEdit} />
             <Field label="Nombre entidad" value={cementerio?.nombreEntidadFinanciera ?? ''} onChange={(v) => setField('nombreEntidadFinanciera', v)} disabled={!canEdit} />
@@ -1138,7 +1482,7 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
           {canEdit && (
             <div className="mt-4 flex justify-end">
               <button type="submit" disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60">
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60">
                 {saving ? 'Guardando…' : 'Guardar cementerio'}
               </button>
             </div>
@@ -1290,7 +1634,7 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
           {canEdit && (
             <div className="mt-4 flex justify-end">
               <button type="submit" disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60">
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60">
                 {saving ? 'Guardando…' : 'Guardar GAD'}
               </button>
             </div>
@@ -1343,10 +1687,10 @@ function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-md p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-700"
             aria-label="Cerrar"
           >
-            <i className="ti ti-x" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </header>
         {children}

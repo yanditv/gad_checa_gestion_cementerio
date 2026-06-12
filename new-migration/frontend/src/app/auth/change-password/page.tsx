@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthShell } from '../AuthShell';
 
 const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 interface SessionUser {
   id: string;
@@ -104,7 +104,7 @@ export default function ChangePasswordPage() {
       }
     >
       {loadingSession ? (
-        <div className="py-3 text-center text-sm text-slate-400">Cargando…</div>
+        <div className="py-3 text-center text-sm text-slate-600">Cargando…</div>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {success && (
@@ -119,7 +119,7 @@ export default function ChangePasswordPage() {
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
               Contraseña actual
             </label>
             <input
@@ -138,7 +138,7 @@ export default function ChangePasswordPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
               Nueva contraseña
             </label>
             <input
@@ -154,7 +154,7 @@ export default function ChangePasswordPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
               Confirmar nueva contraseña
             </label>
             <input
@@ -171,7 +171,7 @@ export default function ChangePasswordPage() {
           <button
             type="submit"
             disabled={saving || success}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Cambiar contraseña'}
           </button>

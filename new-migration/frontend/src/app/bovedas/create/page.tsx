@@ -3,22 +3,24 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { bloquesApi, bovedasApi } from '@/lib/api';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { bloquesApi, bovedasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function CreateBovedaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [bloques, setBloques] = useState<any[]>([]);
+  const [tiposEspacio, setTiposEspacio] = useState<TipoEspacio[]>([]);
   const [formData, setFormData] = useState({
     numero: '',
     bloqueId: '',
-    tipo: 'Boveda',
+    tipoEspacioId: '',
     capacidad: '1',
     precio: '',
     precioArrendamiento: '',
@@ -53,7 +55,7 @@ export default function CreateBovedaPage() {
     if (!numero) return 'El número de la bóveda es obligatorio';
     if (numero.length > 30) return 'El número de la bóveda no puede exceder 30 caracteres';
     if (!formData.bloqueId) return 'Seleccione un bloque';
-    if (!['Boveda', 'Nicho', 'Mausoleo'].includes(formData.tipo)) return 'Seleccione un tipo válido';
+    if (!formData.tipoEspacioId) return 'Seleccione un tipo de espacio';
     if (!Number.isInteger(capacidad) || capacidad < 1) return 'La capacidad debe ser un entero mayor o igual a 1';
     if (capacidad > 20) return 'La capacidad no puede ser mayor a 20';
     if (Number.isNaN(precio) || precio < 0) return 'El precio no puede ser negativo';
@@ -66,10 +68,15 @@ export default function CreateBovedaPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await loadAllBloques();
+        const [data, tipos] = await Promise.all([
+          loadAllBloques(),
+          tiposEspacioApi.findAll(),
+        ]);
         setBloques(data.filter((b: any) => b.estado));
+        setTiposEspacio(Array.isArray(tipos) ? tipos : []);
       } catch (err) {
         setBloques([]);
+        setTiposEspacio([]);
       }
     };
     loadData();
@@ -86,6 +93,7 @@ export default function CreateBovedaPage() {
         ...formData,
         numero: formData.numero.trim(),
         bloqueId: Number(formData.bloqueId),
+        tipoEspacioId: Number(formData.tipoEspacioId),
         capacidad: Number(formData.capacidad),
         precio: Number(formData.precio || 0),
         precioArrendamiento: Number(formData.precioArrendamiento || 0),
@@ -105,13 +113,13 @@ export default function CreateBovedaPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Nueva Bóveda</h1>
-          <p className="mt-1 text-sm text-slate-500">Registrar una nueva bóveda.</p>
+          <p className="mt-1 text-sm text-slate-600">Registrar una nueva bóveda.</p>
         </div>
         <Link
           href="/bovedas"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -161,12 +169,15 @@ export default function CreateBovedaPage() {
                 <select
                   className={INPUT_CLS}
                   required
-                  value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                  value={formData.tipoEspacioId}
+                  onChange={(e) => setFormData({ ...formData, tipoEspacioId: e.target.value })}
                 >
-                  <option value="Boveda">Bóveda</option>
-                  <option value="Nicho">Nicho</option>
-                  <option value="Mausoleo">Mausoleo</option>
+                  <option value="">Seleccionar tipo...</option>
+                  {tiposEspacio.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -250,34 +261,20 @@ export default function CreateBovedaPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   <>
-                    <svg
+                    <Loader2
                       className="h-4 w-4 animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
                     Guardando…
                   </>
                 ) : (
                   <>
-                    <i className="ti ti-check" /> Guardar
+                    <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Guardar
                   </>
                 )}
               </button>
@@ -292,20 +289,24 @@ export default function CreateBovedaPage() {
           <div className="space-y-3 p-5 text-sm text-slate-600">
             <p>Ingrese los datos de la bóveda. Los campos marcados con * son obligatorios.</p>
             <div className="border-t border-slate-100 pt-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Tipos de espacio
               </p>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>
-                  <strong className="text-slate-700">Bóveda:</strong> Espacio tradicional para entierro
-                </li>
-                <li>
-                  <strong className="text-slate-700">Nicho:</strong> Espacio reducido para cenizas
-                </li>
-                <li>
-                  <strong className="text-slate-700">Mausoleo:</strong> Construcción privada
-                </li>
-              </ul>
+              {tiposEspacio.length === 0 ? (
+                <p className="text-xs text-slate-600">
+                  No hay tipos de espacio configurados. Créelos en Parámetros.
+                </p>
+              ) : (
+                <ul className="list-disc space-y-1 pl-5">
+                  {tiposEspacio.map((tipo) => (
+                    <li key={tipo.id}>
+                      <strong className="text-slate-700">{tipo.nombre}:</strong>{' '}
+                      ${Number(tipo.tarifaArriendo).toFixed(2)} · {tipo.aniosArriendo} año
+                      {tipo.aniosArriendo === 1 ? '' : 's'} de arriendo
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </section>

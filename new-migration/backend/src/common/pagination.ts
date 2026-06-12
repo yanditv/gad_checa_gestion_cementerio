@@ -2,7 +2,7 @@ import { PaginationMeta } from './interfaces/paginated-result.interface';
 
 export function normalizePagination(page?: number, limit?: number) {
   const safePage = Number.isFinite(page) && page && page > 0 ? Math.floor(page) : 1;
-  const safeLimit = Number.isFinite(limit) && limit && limit > 0 ? Math.min(Math.floor(limit), 100) : 20;
+  const safeLimit = Number.isFinite(limit) && limit && limit > 0 ? Math.min(Math.floor(limit), 100) : 15;
   const skip = (safePage - 1) * safeLimit;
 
   return { page: safePage, limit: safeLimit, skip };

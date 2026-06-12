@@ -2,8 +2,20 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import {
+  Bell,
+  Check,
+  ChevronDown,
+  Lock,
+  Menu,
+  Power,
+  Search,
+  Settings,
+  User,
+} from 'lucide-react';
 import type { SessionUser } from './DashboardLayout';
-import { notificacionesApi } from '@/lib/api';
+import { Avatar } from '@/components/ui';
+import { notificacionesApi, mediaUrl } from '@/lib/api';
 import { timeAgo } from '@/lib/timeago';
 
 interface NotificacionItem {
@@ -93,7 +105,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
     .slice(0, 2)
     .join('');
   const role = user?.roles?.[0] ?? '';
-  const avatarSrc = '/images/user/avatar-2.jpg';
+  const avatarSrc = mediaUrl(user?.avatarUrl);
 
   return (
     <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-slate-200 bg-white/95 backdrop-blur lg:left-64">
@@ -105,18 +117,22 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
           onClick={onToggleSidebar}
           aria-label="Abrir menú"
         >
-          <i className="ti ti-menu-2 text-xl" />
+          <Menu className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
         </button>
 
         {/* Buscador (placeholder global, conectaremos al backend en fase posterior) */}
         <div className="hidden w-full max-w-md md:block lg:max-w-xl">
           <div className="relative">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             <input
               type="search"
               aria-label="Buscar contratos, personas y bóvedas"
               placeholder="Buscar contratos, personas, bóvedas…"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
         </div>
@@ -135,9 +151,9 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               className="relative flex h-10 w-10 items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 outline-none ring-0 hover:bg-slate-100 focus:outline-none focus:ring-0"
               aria-label="Notificaciones"
             >
-              <i className="ti ti-bell text-xl" />
+              <Bell className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-600 px-1 text-[10px] font-bold text-white">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -148,7 +164,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                   <span className="font-semibold text-slate-700">
                     Notificaciones
                     {unreadCount > 0 && (
-                      <span className="ml-1.5 text-xs font-normal text-slate-400">
+                      <span className="ml-1.5 text-xs font-normal text-slate-600">
                         ({unreadCount} sin leer)
                       </span>
                     )}
@@ -163,7 +179,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {notificaciones.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-slate-400">
+                    <div className="px-4 py-8 text-center text-sm text-slate-600">
                       No hay notificaciones nuevas.
                     </div>
                   ) : (
@@ -183,7 +199,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                               <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
                                 {n.mensaje}
                               </p>
-                              <p className="mt-1 text-[10px] text-slate-400">
+                              <p className="mt-1 text-[10px] text-slate-600">
                                 {timeAgo(n.fechaCreacion)}
                               </p>
                             </div>
@@ -197,7 +213,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                                 className="shrink-0 rounded-full p-1 text-primary-500 hover:bg-primary-50"
                                 title="Marcar como leída"
                               >
-                                <i className="ti ti-check text-xs" />
+                                <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                               </button>
                             )}
                           </div>
@@ -227,36 +243,32 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               }}
               className="flex items-center gap-2 rounded-lg border-0 bg-transparent px-2 py-1.5 outline-none ring-0 hover:bg-slate-100 focus:outline-none focus:ring-0"
             >
-              <img
-                src={avatarSrc}
-                alt={displayName}
-                className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
-              />
+              <Avatar src={avatarSrc} name={displayName} size="md" className="h-9 w-9" />
               <div className="hidden text-left sm:block">
                 <div className="text-sm font-semibold text-slate-700">
                   {displayName}
                 </div>
                 {role && (
-                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-600">
                     {role}
                   </div>
                 )}
               </div>
-              <i className="ti ti-chevron-down hidden text-slate-400 sm:block" />
+              <ChevronDown
+                className="hidden h-4 w-4 text-slate-400 sm:block"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
             </button>
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-                  <img
-                    src={avatarSrc}
-                    alt={displayName}
-                    className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200"
-                  />
+                  <Avatar src={avatarSrc} name={displayName} size="md" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-slate-700">
                       {displayName}
                     </div>
-                    <div className="truncate text-xs text-slate-400">
+                    <div className="truncate text-xs text-slate-600">
                       {user?.email ?? ''}
                     </div>
                   </div>
@@ -268,7 +280,8 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <i className="ti ti-user text-slate-400" /> Perfil
+                      <User className="h-4 w-4 text-slate-400" strokeWidth={2} aria-hidden="true" />{' '}
+                      Perfil
                     </Link>
                   </li>
                   <li>
@@ -277,7 +290,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <i className="ti ti-settings text-slate-400" />{' '}
+                      <Settings className="h-4 w-4 text-slate-400" strokeWidth={2} aria-hidden="true" />{' '}
                       Configuración
                     </Link>
                   </li>
@@ -287,8 +300,8 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-50"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <i className="ti ti-lock text-slate-400" /> Cambiar
-                      contraseña
+                      <Lock className="h-4 w-4 text-slate-400" strokeWidth={2} aria-hidden="true" />{' '}
+                      Cambiar contraseña
                     </Link>
                   </li>
                   <li className="border-t border-slate-100">
@@ -297,7 +310,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
                       onClick={handleLogout}
                       className="flex items-center gap-2 px-4 py-2 text-danger-600 hover:bg-danger-50"
                     >
-                      <i className="ti ti-power" />
+                      <Power className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                       {loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
                     </a>
                   </li>

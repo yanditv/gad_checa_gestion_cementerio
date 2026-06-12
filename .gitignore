@@ -381,3 +381,6 @@ new-migration/backend/storage/
 **/.kiro/
 **/.claude/skills/
 **/skills-lock.json
+# Documento confidencial de licitación — NUNCA versionar
+new-migration/TDR_Sistema_Informatico_v3 (1).pdf
+new-migration/*.pdf

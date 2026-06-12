@@ -2,49 +2,79 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Archive,
+  ArrowLeftRight,
+  BookOpen,
+  Boxes,
+  Building2,
+  ChartScatter,
+  Cloud,
+  Coins,
+  FileBarChart,
+  FolderPlus,
+  LayoutDashboard,
+  Package,
+  Settings,
+  ShieldCheck,
+  TextSearch,
+  TrendingDown,
+  User,
+  UserCheck,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import type { SessionUser } from './DashboardLayout';
 
 type NavItem =
-  | { type: 'item'; label: string; href: string; icon: string; roles?: string[]; match?: 'exact' | 'prefix' | 'contracts-list' }
+  | { type: 'item'; label: string; href: string; icon: LucideIcon; roles?: string[]; match?: 'exact' | 'prefix' | 'contracts-list' }
   | { type: 'section'; label: string };
 
 const navigation: NavItem[] = [
-  { type: 'item', label: 'Dashboard', href: '/', icon: 'ti-dashboard', match: 'exact' },
+  { type: 'item', label: 'Dashboard', href: '/', icon: LayoutDashboard, match: 'exact' },
 
   { type: 'section', label: 'Contratos' },
-  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: 'ti-folder-plus', match: 'prefix' },
-  { type: 'item', label: 'Listado', href: '/contratos', icon: 'ti-list-search', match: 'contracts-list' },
+  { type: 'item', label: 'Nuevo', href: '/contratos/create', icon: FolderPlus, match: 'prefix' },
+  { type: 'item', label: 'Listado', href: '/contratos', icon: TextSearch, match: 'contracts-list' },
 
   { type: 'section', label: 'Gestión' },
-  { type: 'item', label: 'Personas', href: '/personas', icon: 'ti-users' },
-  { type: 'item', label: 'Bloques', href: '/bloques', icon: 'ti-building' },
-  { type: 'item', label: 'Bóvedas', href: '/bovedas', icon: 'ti-box-multiple' },
-  { type: 'item', label: 'Cobros', href: '/cobros', icon: 'ti-coin' },
-  { type: 'item', label: 'Difuntos', href: '/difuntos', icon: 'ti-cloud' },
+  { type: 'item', label: 'Personas', href: '/personas', icon: Users },
+  { type: 'item', label: 'Bloques', href: '/bloques', icon: Building2 },
+  { type: 'item', label: 'Bóvedas', href: '/bovedas', icon: Boxes },
+  { type: 'item', label: 'Cobros', href: '/cobros', icon: Coins },
+  { type: 'item', label: 'Difuntos', href: '/difuntos', icon: Cloud },
+  { type: 'item', label: 'Exhumaciones', href: '/exhumaciones', icon: ArrowLeftRight },
+
+  { type: 'section', label: 'Inventario' },
+  { type: 'item', label: 'Bienes', href: '/inventario/bienes', icon: Package },
+  { type: 'item', label: 'Categorías', href: '/inventario/categorias', icon: Archive },
+  { type: 'item', label: 'Custodios', href: '/inventario/custodios', icon: UserCheck },
+  { type: 'item', label: 'Depreciación', href: '/inventario/depreciacion', icon: TrendingDown },
+  { type: 'item', label: 'Reportes', href: '/inventario/reportes', icon: FileBarChart },
 
   { type: 'section', label: 'Administración' },
-  { type: 'item', label: 'Mi Cuenta', href: '/cuenta', icon: 'ti-user' },
+  { type: 'item', label: 'Mi Cuenta', href: '/cuenta', icon: User },
   {
     type: 'item',
     label: 'Usuarios',
     href: '/admin/usuarios',
-    icon: 'ti-users',
+    icon: Users,
     roles: ['Admin', 'Administrador'],
   },
   {
     type: 'item',
     label: 'Roles',
     href: '/admin/roles',
-    icon: 'ti-shield-check',
+    icon: ShieldCheck,
     roles: ['Admin', 'Administrador'],
   },
 
   { type: 'section', label: 'Configuración' },
-  { type: 'item', label: 'Ajustes', href: '/configuracion', icon: 'ti-settings' },
-  { type: 'item', label: 'Reportes', href: '/reportes', icon: 'ti-chart-dots' },
+  { type: 'item', label: 'Ajustes', href: '/configuracion', icon: Settings },
+  { type: 'item', label: 'Reportes', href: '/reportes', icon: ChartScatter },
 
   { type: 'section', label: 'Ayuda' },
-  { type: 'item', label: 'Manual de usuario', href: '/manual', icon: 'ti-book' },
+  { type: 'item', label: 'Manual de usuario', href: '/manual', icon: BookOpen },
 ];
 
 interface SidebarProps {
@@ -91,7 +121,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 transition-transform duration-200 lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         aria-label="Menú principal"
@@ -122,7 +152,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                 return (
                   <li
                     key={`s-${idx}`}
-                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 first:mt-0"
+                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-600 first:mt-0"
                   >
                     {item.label}
                   </li>
@@ -137,19 +167,19 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                     {...(active ? { 'aria-current': 'page' as const } : {})}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                       active
-                        ? 'bg-primary-50 font-semibold text-primary-700'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-white font-semibold text-primary-700 shadow-sm ring-1 ring-slate-200'
+                        : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'
                     }`}
                   >
                     <span
                       aria-hidden="true"
-                      className={`flex h-5 w-5 items-center justify-center text-base ${
+                      className={`flex h-5 w-5 items-center justify-center ${
                         active
                           ? 'text-primary-600'
-                          : 'text-slate-400 group-hover:text-slate-600'
+                          : 'text-slate-600 group-hover:text-slate-600'
                       }`}
                     >
-                      <i className={`ti ${item.icon}`} />
+                      <item.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
                     </span>
                     <span className="flex-1">{item.label}</span>
                     {active && (
@@ -166,7 +196,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer del sidebar */}
-        <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-400">
+        <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
           <div className="flex items-center justify-between">
             <span>v1.0.0</span>
             <span className="inline-flex items-center gap-1">

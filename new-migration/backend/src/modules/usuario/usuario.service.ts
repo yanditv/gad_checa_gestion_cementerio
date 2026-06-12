@@ -13,6 +13,7 @@ import {
   normalizePagination,
 } from '../../common/pagination';
 import { EmailService } from '../../common/email/email.service';
+import { PhotoService } from '../../common/storage/photo.service';
 import { UpdateUsuarioDto } from './dto/request/update-usuario.dto';
 
 /**
@@ -33,7 +34,22 @@ export class UsuarioService {
   constructor(
     private prisma: PrismaService,
     private email: EmailService,
+    private photos: PhotoService,
   ) {}
+
+  /**
+   * Reemplaza `avatarStorageKey` por `avatarUrl` (ruta de servido) en la
+   * respuesta, de modo que nunca se expone la key cruda de almacenamiento.
+   */
+  private withAvatarUrl<
+    T extends { id: string; avatarStorageKey?: string | null },
+  >(usuario: T): Omit<T, 'avatarStorageKey'> & { avatarUrl: string | null } {
+    const { avatarStorageKey, ...rest } = usuario;
+    return {
+      ...rest,
+      avatarUrl: avatarStorageKey ? `/usuarios/${usuario.id}/avatar` : null,
+    };
+  }
 
   async findAll(query: PaginationQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
@@ -68,7 +84,7 @@ export class UsuarioService {
     ]);
 
     return {
-      items,
+      items: items.map((u) => this.withAvatarUrl(u)),
       meta: buildPaginationMeta(page, limit, total),
     };
   }
@@ -90,7 +106,7 @@ export class UsuarioService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    return usuario;
+    return this.withAvatarUrl(usuario);
   }
 
   async update(id: string, data: UpdateUsuarioDto) {
@@ -120,7 +136,7 @@ export class UsuarioService {
       }
     }
 
-    return this.prisma.usuario.update({
+    const actualizado = await this.prisma.usuario.update({
       where: { id },
       data: safeData,
       include: {
@@ -132,6 +148,7 @@ export class UsuarioService {
         passwordHash: true,
       },
     });
+    return this.withAvatarUrl(actualizado);
   }
 
   async updateEstado(id: string, estado: boolean) {
@@ -144,13 +161,14 @@ export class UsuarioService {
         'No se puede desactivar al super-administrador del sistema',
       );
     }
-    return this.prisma.usuario.update({
+    const actualizado = await this.prisma.usuario.update({
       where: { id },
       data: { estado },
       omit: {
         passwordHash: true,
       },
     });
+    return this.withAvatarUrl(actualizado);
   }
 
   async setRoles(id: string, roleIds: string[]) {
@@ -253,6 +271,78 @@ export class UsuarioService {
         fechaActualizacion: new Date(),
       },
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Avatar (foto de perfil, opcional). Cada usuario gestiona el suyo desde
+  // /cuenta. La imagen vive en StorageService; en BD solo la `avatarStorageKey`.
+  // ---------------------------------------------------------------------------
+  async uploadAvatar(userId: string, file: Express.Multer.File) {
+    const actual = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { id: true, avatarStorageKey: true },
+    });
+    if (!actual) throw new NotFoundException('Usuario no encontrado');
+
+    const key = await this.photos.store('avatares', userId, file);
+
+    const actualizado = await this.prisma.usuario.update({
+      where: { id: userId },
+      data: { avatarStorageKey: key, fechaActualizacion: new Date() },
+      include: { usuarioRols: { include: { rol: true } } },
+      omit: { passwordHash: true },
+    });
+
+    if (actual.avatarStorageKey && actual.avatarStorageKey !== key) {
+      try {
+        await this.photos.remove(actual.avatarStorageKey);
+      } catch {
+        // el registro ya apunta al nuevo; el huérfano no es crítico
+      }
+    }
+
+    return this.withAvatarUrl(actualizado);
+  }
+
+  async getAvatar(userId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { avatarStorageKey: true },
+    });
+    if (
+      !usuario?.avatarStorageKey ||
+      !(await this.photos.exists(usuario.avatarStorageKey))
+    ) {
+      throw new NotFoundException('El usuario no tiene avatar');
+    }
+    return this.photos.streamFor(usuario.avatarStorageKey);
+  }
+
+  async removeAvatar(userId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { id: true, avatarStorageKey: true },
+    });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+    if (!usuario.avatarStorageKey) {
+      throw new NotFoundException('El usuario no tiene avatar');
+    }
+    const key = usuario.avatarStorageKey;
+
+    const actualizado = await this.prisma.usuario.update({
+      where: { id: userId },
+      data: { avatarStorageKey: null, fechaActualizacion: new Date() },
+      include: { usuarioRols: { include: { rol: true } } },
+      omit: { passwordHash: true },
+    });
+
+    try {
+      await this.photos.remove(key);
+    } catch {
+      // best-effort
+    }
+
+    return this.withAvatarUrl(actualizado);
   }
 }
 

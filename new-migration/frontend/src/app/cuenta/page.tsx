@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { AvatarUpload } from '@/components/ui';
+import { mediaUrl } from '@/lib/api';
 
 interface Profile {
   nombre: string;
@@ -11,6 +13,7 @@ interface Profile {
   tipoIdentificacion: string;
   numeroIdentificacion: string;
   mustChangePassword?: boolean;
+  avatarUrl?: string | null;
   roles?: string[];
 }
 
@@ -20,7 +23,7 @@ const INPUT_CLS =
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-slate-700">{value || '—'}</p>
     </div>
   );
@@ -124,7 +127,7 @@ export default function CuentaPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Mi cuenta</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           Información personal y seguridad de la cuenta.
         </p>
       </div>
@@ -144,6 +147,15 @@ export default function CuentaPage() {
           <div className="p-5">
             {profile ? (
               <>
+                <div className="mb-5 border-b border-slate-100 pb-5">
+                  <AvatarUpload
+                    src={mediaUrl(profile.avatarUrl)}
+                    name={`${profile.nombre} ${profile.apellido}`}
+                    onChange={(avatarUrl) =>
+                      setProfile((p) => (p ? { ...p, avatarUrl } : p))
+                    }
+                  />
+                </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Nombres" value={profile.nombre} />
                   <Field label="Apellidos" value={profile.apellido} />
@@ -157,7 +169,7 @@ export default function CuentaPage() {
                 </div>
                 {profile.roles && profile.roles.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">
+                    <p className="text-xs uppercase tracking-wide text-slate-600">
                       Roles
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -174,7 +186,7 @@ export default function CuentaPage() {
                 )}
               </>
             ) : (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-600">
                 No se encontró información del usuario.
               </p>
             )}
@@ -207,7 +219,7 @@ export default function CuentaPage() {
               )}
 
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Contraseña actual
                 </label>
                 <input
@@ -221,7 +233,7 @@ export default function CuentaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Nueva contraseña
                 </label>
                 <input
@@ -239,7 +251,7 @@ export default function CuentaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Confirmar nueva contraseña
                 </label>
                 <input
@@ -256,7 +268,7 @@ export default function CuentaPage() {
               <button
                 type="submit"
                 disabled={pwLoading || !currentPassword || !newPassword || !confirm}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {pwLoading ? 'Guardando…' : 'Actualizar contraseña'}
               </button>

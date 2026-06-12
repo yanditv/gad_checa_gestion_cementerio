@@ -48,15 +48,16 @@ export interface ImportReport {
 }
 
 /**
- * Configuración del cementerio activa (cacheada al inicio del run).
- * Define tarifas y duración del arriendo para evitar valores hardcodeados.
+ * Tipo de espacio del catálogo cacheado al inicio del run. Reemplaza la
+ * configuración pareada del cementerio (tarifaBoveda/tarifaNicho…): la
+ * tarifa y los años de arriendo se leen del `TipoEspacio` que coincida con
+ * el string de tipo del Excel (match por nombre, insensible a mayúsculas).
  */
-interface CementerioConfig {
+interface TipoEspacioCache {
   id: number;
-  tarifaBoveda: number;
-  tarifaNicho: number;
-  aniosBoveda: number;
-  aniosNicho: number;
+  nombre: string;
+  tarifaArriendo: number;
+  aniosArriendo: number;
 }
 
 const DEFAULT_TARIFA = 240;
@@ -64,12 +65,13 @@ const DEFAULT_ANIOS = 5;
 
 export class CatastroImporter {
   private readonly logger = new Logger(CatastroImporter.name);
-  private config: CementerioConfig | null = null;
+  /** Catálogo de tipos de espacio activo, cargado una vez por run. */
+  private tiposEspacio: TipoEspacioCache[] = [];
 
   constructor(private prisma: PrismaService) {}
 
   async run(buffer: Buffer, adminUserId: string): Promise<ImportReport> {
-    this.config = await this.loadCementerioConfig();
+    this.tiposEspacio = await this.loadTiposEspacio();
     const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
 
     const report: ImportReport = {
@@ -297,12 +299,17 @@ export class CatastroImporter {
     });
     if (existing) return { boveda: existing, created: false };
 
-    const tarifa = this.tarifaPorTipo(registro.tipo);
+    const tipoEspacio = this.matchTipoEspacio(registro.tipo);
+    const tarifa = tipoEspacio?.tarifaArriendo ?? DEFAULT_TARIFA;
     const boveda = await this.prisma.boveda.create({
       data: {
         numero: numero.trim(),
         capacidad: 1,
+        // `tipo` (string libre) se mantiene durante la ventana de backfill
+        // aditivo; el DROP de la columna es un paso manual posterior. La FK
+        // `tipoEspacioId` apunta al catálogo y manda en tarifa/años.
         tipo: registro.tipo || 'Boveda',
+        tipoEspacioId: tipoEspacio?.id ?? null,
         estado: true,
         observaciones: registro.observaciones || 'Migrado de catastro',
         precio: tarifa,
@@ -425,14 +432,17 @@ export class CatastroImporter {
         (params.fin.getMonth() - params.inicio.getMonth()),
     );
 
-    // Recupera la tarifa del cementerio según el tipo de bóveda. Nunca
-    // hardcodear: el GAD puede ajustar el monto en `Cementerio` y la
-    // importación debe respetarlo.
+    // Recupera la tarifa del `TipoEspacio` de la bóveda. Nunca hardcodear:
+    // el GAD ajusta el monto en el catálogo de tipos de espacio y la
+    // importación debe respetarlo. Fallback al string legado durante el
+    // backfill (bóvedas aún sin FK).
     const boveda = await this.prisma.boveda.findUnique({
       where: { id: params.bovedaId },
-      select: { tipo: true },
+      select: { tipo: true, tipoEspacio: { select: { tarifaArriendo: true } } },
     });
-    const tarifa = this.tarifaPorTipo(boveda?.tipo);
+    const tarifa = boveda?.tipoEspacio
+      ? Number(boveda.tipoEspacio.tarifaArriendo)
+      : this.tarifaPorTipo(boveda?.tipo);
 
     const contrato = await this.prisma.contrato.create({
       data: {
@@ -604,47 +614,87 @@ export class CatastroImporter {
       .padStart(6, '0')}`;
   }
 
-  private async loadCementerioConfig(): Promise<CementerioConfig> {
-    const cementerio = await this.prisma.cementerio.findFirst({
-      orderBy: { id: 'asc' },
+  /**
+   * Carga el catálogo de tipos de espacio activo. Reemplaza las columnas
+   * pareadas del cementerio (tarifa/años Bóveda vs Nicho) por filas
+   * configurables. Cada bóveda/contrato resuelve su tarifa y años buscando
+   * el tipo cuyo `nombre` coincide con el string de tipo del Excel.
+   */
+  private async loadTiposEspacio(): Promise<TipoEspacioCache[]> {
+    const tipos = await this.prisma.tipoEspacio.findMany({
+      where: { estado: true },
       select: {
         id: true,
+        nombre: true,
         tarifaArriendo: true,
-        tarifaArriendoNicho: true,
-        aniosArriendoBovedas: true,
-        aniosArriendoNicho: true,
+        aniosArriendo: true,
       },
     });
-    if (!cementerio) {
-      throw new Error('No existe cementerio configurado');
+    return tipos.map((t) => ({
+      id: t.id,
+      nombre: t.nombre,
+      tarifaArriendo: Number(t.tarifaArriendo),
+      aniosArriendo: t.aniosArriendo,
+    }));
+  }
+
+  /**
+   * Empareja el string de tipo del Excel con un `TipoEspacio` del catálogo.
+   * Primero intenta igualdad exacta de nombre (insensible a mayúsculas y
+   * acentos); si no, coincidencia por substring en cualquier dirección
+   * (p. ej. "nicho doble" → "Nicho"). Devuelve `null` si no hay catálogo o
+   * no hay coincidencia, dejando que el caller aplique el fallback legado.
+   */
+  private matchTipoEspacio(tipo?: string | null): TipoEspacioCache | null {
+    if (!this.tiposEspacio.length) return null;
+    const objetivo = this.normalizeTipo(tipo);
+    if (!objetivo) {
+      // Sin tipo en el Excel: usa el primero que parezca "Bóveda".
+      return (
+        this.tiposEspacio.find(
+          (t) => this.normalizeTipo(t.nombre) === 'boveda',
+        ) ??
+        this.tiposEspacio[0] ??
+        null
+      );
     }
-    return {
-      id: cementerio.id,
-      tarifaBoveda: cementerio.tarifaArriendo
-        ? Number(cementerio.tarifaArriendo)
-        : DEFAULT_TARIFA,
-      tarifaNicho: cementerio.tarifaArriendoNicho
-        ? Number(cementerio.tarifaArriendoNicho)
-        : cementerio.tarifaArriendo
-          ? Number(cementerio.tarifaArriendo)
-          : DEFAULT_TARIFA,
-      aniosBoveda: cementerio.aniosArriendoBovedas || DEFAULT_ANIOS,
-      aniosNicho: cementerio.aniosArriendoNicho || DEFAULT_ANIOS,
-    };
+    const exacto = this.tiposEspacio.find(
+      (t) => this.normalizeTipo(t.nombre) === objetivo,
+    );
+    if (exacto) return exacto;
+    return (
+      this.tiposEspacio.find((t) => {
+        const nombre = this.normalizeTipo(t.nombre);
+        return nombre.includes(objetivo) || objetivo.includes(nombre);
+      }) ?? null
+    );
   }
 
+  /** Normaliza un string de tipo: minúsculas, sin acentos ni espacios extra. */
+  private normalizeTipo(value?: string | null): string {
+    return (value ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .trim();
+  }
+
+  /**
+   * Tarifa por tipo (string legado). Usado sólo como fallback cuando la
+   * bóveda aún no tiene FK al catálogo durante el backfill aditivo.
+   */
   private tarifaPorTipo(tipo?: string | null): number {
-    if (!this.config) return DEFAULT_TARIFA;
-    return this.esNicho(tipo) ? this.config.tarifaNicho : this.config.tarifaBoveda;
+    const match = this.matchTipoEspacio(tipo);
+    return match?.tarifaArriendo ?? DEFAULT_TARIFA;
   }
 
+  /**
+   * Años de arriendo por tipo (string legado). Usado para fijar el número de
+   * cuotas; lee el catálogo y cae a `DEFAULT_ANIOS` si no hay coincidencia.
+   */
   private aniosPorTipo(tipo?: string | null): number {
-    if (!this.config) return DEFAULT_ANIOS;
-    return this.esNicho(tipo) ? this.config.aniosNicho : this.config.aniosBoveda;
-  }
-
-  private esNicho(tipo?: string | null): boolean {
-    return (tipo ?? '').toLowerCase().includes('nicho');
+    const match = this.matchTipoEspacio(tipo);
+    return match?.aniosArriendo ?? DEFAULT_ANIOS;
   }
 
   private addYears(date: Date, years: number): Date {

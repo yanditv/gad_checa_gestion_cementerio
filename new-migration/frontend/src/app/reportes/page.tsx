@@ -104,7 +104,7 @@ export default function ReportesPage() {
       label: 'Bóvedas por caducar',
       value: formatNumber(resumen?.bovedas.porCaducar ?? 0),
       tone: 'bg-amber-50 text-amber-600 ring-amber-200',
-      icon: 'ti-clock-exclamation',
+      icon: 'ti-clock',
       valueClass: 'text-amber-600',
     },
     {
@@ -121,7 +121,7 @@ export default function ReportesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reportes</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Resumen del sistema y acceso a los 5 reportes principales.
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function ReportesPage() {
           >
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-xs uppercase tracking-wide text-slate-400">{kpi.label}</p>
+                <p className="text-xs uppercase tracking-wide text-slate-600">{kpi.label}</p>
                 <p
                   className={`mt-1 text-2xl font-bold ${
                     loading ? 'text-slate-300' : kpi.valueClass
@@ -167,21 +167,21 @@ export default function ReportesPage() {
           </header>
           <div className="p-5">
             {loading ? (
-              <div className="text-sm text-slate-400">Cargando resumen…</div>
+              <div className="text-sm text-slate-600">Cargando resumen…</div>
             ) : resumen?.ingresos.porMetodo?.length ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {resumen.ingresos.porMetodo.map((metodo) => (
                   <div key={metodo.metodo} className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{metodo.metodo}</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-600">{metodo.metodo}</p>
                     <p className="mt-1 text-lg font-bold text-slate-800">
                       {formatCurrency(metodo.total)}
                     </p>
-                    <p className="text-xs text-slate-400">{metodo.cantidad} pago(s)</p>
+                    <p className="text-xs text-slate-600">{metodo.cantidad} pago(s)</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-slate-400">No hay ingresos para resumir.</div>
+              <div className="text-sm text-slate-600">No hay ingresos para resumir.</div>
             )}
           </div>
         </section>
@@ -192,7 +192,7 @@ export default function ReportesPage() {
           </header>
           <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
             <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Total</p>
               <p className="mt-1 text-lg font-bold text-slate-800">
                 {formatNumber(resumen?.bovedas.total ?? 0)}
               </p>

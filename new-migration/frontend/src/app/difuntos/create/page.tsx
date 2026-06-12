@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check } from 'lucide-react';
 import { bovedasApi, difuntosApi } from '@/lib/api';
+import { Button, ImageUpload } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 interface FormState {
   nombre: string;
@@ -67,6 +69,7 @@ export default function CreateDifuntoPage() {
   const [error, setError] = useState('');
   const [bovedas, setBovedas] = useState<any[]>([]);
   const [formData, setFormData] = useState<FormState>(INITIAL);
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
 
   useEffect(() => {
     bovedasApi
@@ -83,7 +86,7 @@ export default function CreateDifuntoPage() {
     setLoading(true);
     setError('');
     try {
-      await difuntosApi.create({
+      const creado = await difuntosApi.create({
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
         bovedaId: Number(formData.bovedaId),
@@ -105,6 +108,13 @@ export default function CreateDifuntoPage() {
         entidadEmisora: toOptional(formData.entidadEmisora),
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
+      if (fotoFile && creado?.id) {
+        try {
+          await difuntosApi.uploadFoto(creado.id, fotoFile);
+        } catch {
+          // El difunto ya se creó; la foto es opcional y no debe bloquear la navegación.
+        }
+      }
       router.push('/difuntos');
     } catch (err: any) {
       setError(err.message || 'No se pudo guardar el difunto');
@@ -118,7 +128,7 @@ export default function CreateDifuntoPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Nuevo Difunto</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Registrar un nuevo difunto en una bóveda existente.
           </p>
         </div>
@@ -126,7 +136,7 @@ export default function CreateDifuntoPage() {
           href="/difuntos"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -142,6 +152,14 @@ export default function CreateDifuntoPage() {
             <h2 className="text-sm font-semibold text-slate-700">Datos personales</h2>
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-3">
+              <ImageUpload
+                shape="circle"
+                label="Foto (opcional)"
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+                onChange={setFotoFile}
+              />
+            </div>
             <div>
               <label className={LABEL_CLS}>Nombres *</label>
               <input
@@ -391,40 +409,13 @@ export default function CreateDifuntoPage() {
           >
             Cancelar
           </Link>
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            loading={loading}
+            leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
           >
-            {loading ? (
-              <>
-                <svg
-                  className="h-4 w-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
-                Guardando…
-              </>
-            ) : (
-              <>
-                <i className="ti ti-check" /> Guardar
-              </>
-            )}
-          </button>
+            {loading ? 'Guardando…' : 'Guardar'}
+          </Button>
         </div>
       </form>
     </div>

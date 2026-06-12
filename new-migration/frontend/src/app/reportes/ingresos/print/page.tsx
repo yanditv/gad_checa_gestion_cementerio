@@ -59,7 +59,7 @@ export default async function IngresosPrintPage({
             </div>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
               Total registros
             </div>
             <div className="mt-0.5 text-xl font-bold text-slate-800">{rows.length}</div>

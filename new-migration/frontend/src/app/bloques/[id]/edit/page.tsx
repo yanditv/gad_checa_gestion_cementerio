@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bloquesApi } from '@/lib/api';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function EditBloquePage() {
   const params = useParams<{ id: string }>();
@@ -18,20 +19,28 @@ export default function EditBloquePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notFoundState, setNotFoundState] = useState(false);
+  const [pisosActuales, setPisosActuales] = useState(0);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
+    tipo: 'Bovedas',
+    tarifaBase: 0,
     estado: true,
+    numeroPisos: 0,
+    bovedasPorPiso: 0,
   });
 
   const validateForm = () => {
     const nombre = formData.nombre.trim();
     const descripcion = formData.descripcion.trim();
+    const numeroPisos = Number(formData.numeroPisos);
 
     if (!nombre) return 'El nombre del bloque es obligatorio';
     if (nombre.length < 2) return 'El nombre del bloque debe tener al menos 2 caracteres';
     if (nombre.length > 80) return 'El nombre del bloque no puede exceder 80 caracteres';
     if (descripcion.length > 200) return 'La descripción no puede exceder 200 caracteres';
+    if (!Number.isInteger(numeroPisos) || numeroPisos < 0) return 'El número de pisos debe ser un entero mayor o igual a 0';
+    if (numeroPisos > 50) return 'El número de pisos no puede ser mayor a 50';
     return '';
   };
 
@@ -57,8 +66,13 @@ export default function EditBloquePage() {
         setFormData({
           nombre: data.nombre || '',
           descripcion: data.descripcion || '',
+          tipo: data.tipo || 'Bovedas',
+          tarifaBase: Number(data.tarifaBase ?? 0),
           estado: Boolean(data.estado),
+          numeroPisos: (data.pisos ?? []).length,
+          bovedasPorPiso: data.bovedasPorPiso ?? 0,
         });
+        setPisosActuales((data.pisos ?? []).length);
       } catch (err: any) {
         if (err.message?.includes('404') || err.message?.includes('no encontrado')) {
           if (active) setNotFoundState(true);
@@ -86,7 +100,11 @@ export default function EditBloquePage() {
       await bloquesApi.update(bloqueId, {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || undefined,
+        tipo: formData.tipo,
+        tarifaBase: Number(formData.tarifaBase) || undefined,
         estado: formData.estado,
+        numeroPisos: Number(formData.numeroPisos),
+        bovedasPorPiso: Number(formData.bovedasPorPiso) || undefined,
       });
       router.push(`/bloques/${bloqueId}`);
       router.refresh();
@@ -107,8 +125,8 @@ export default function EditBloquePage() {
         <h1 className="text-xl font-semibold text-slate-900">Bloque no encontrado</h1>
         <p className="text-sm text-slate-600">No se puede editar un bloque inexistente.</p>
         <div>
-          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600">
-            <i className="ti ti-arrow-left" /> Volver al listado
+          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al listado
           </Link>
         </div>
       </div>
@@ -120,13 +138,13 @@ export default function EditBloquePage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar Bloque</h1>
-          <p className="mt-1 text-sm text-slate-500">Actualice los datos básicos del bloque.</p>
+          <p className="mt-1 text-sm text-slate-600">Actualice los datos básicos del bloque.</p>
         </div>
         <Link
           href={bloqueId ? `/bloques/${bloqueId}` : '/bloques'}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -166,10 +184,63 @@ export default function EditBloquePage() {
                 </select>
               </div>
 
+              <div>
+                <label className={LABEL_CLS}>Tipo</label>
+                <select
+                  className={INPUT_CLS}
+                  value={formData.tipo}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, tipo: e.target.value }))}
+                >
+                  <option value="Bovedas">Bóvedas</option>
+                  <option value="Nichos">Nichos</option>
+                </select>
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Tarifa Base ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  className={INPUT_CLS}
+                  value={formData.tarifaBase}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, tarifaBase: Number(e.target.value) }))}
+                />
+              </div>
+
+              <div>
+                <label className={LABEL_CLS}>Número de pisos</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  className={INPUT_CLS}
+                  value={formData.numeroPisos}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, numeroPisos: Number(e.target.value) }))}
+                />
+                {formData.numeroPisos !== pisosActuales && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    {formData.numeroPisos > pisosActuales
+                      ? `Se crearán ${formData.numeroPisos - pisosActuales} piso(s) nuevo(s).`
+                      : `Se desactivarán ${pisosActuales - formData.numeroPisos} piso(s).`}
+                    {formData.numeroPisos < pisosActuales && ' Si tienen bóvedas con contratos, el cambio será rechazado.'}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Bóvedas por piso</label>
+                <input
+                  type="number"
+                  min={0}
+                  className={INPUT_CLS}
+                  value={formData.bovedasPorPiso}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, bovedasPorPiso: Number(e.target.value) }))}
+                />
+              </div>
+
               <div className="sm:col-span-2">
                 <label className={LABEL_CLS}>Descripción</label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   className={INPUT_CLS}
                   value={formData.descripcion}
                   onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
@@ -187,9 +258,13 @@ export default function EditBloquePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
               >
-                <i className={`ti ${saving ? 'ti-loader animate-spin' : 'ti-check'}`} />
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+                ) : (
+                  <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                )}
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </button>
             </div>

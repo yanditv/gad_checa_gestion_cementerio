@@ -1,6 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  CloudUpload,
+  Download,
+  Eye,
+  FileText,
+  FileX,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
+import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_MIME = 'application/pdf';
@@ -132,13 +142,106 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
     }
   }
 
+  const columns: DataTableColumn<Documento>[] = [
+    {
+      key: 'documento',
+      header: 'Documento',
+      sortable: true,
+      sortValue: (d) => d.nombreOriginal,
+      cell: (d) => (
+        <span className="inline-flex items-center gap-2">
+          <FileText className="h-4 w-4 text-red-500" strokeWidth={2} aria-hidden="true" />
+          <span className="font-medium text-slate-700">{d.nombreOriginal}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      sortable: true,
+      sortValue: (d) => tipoLabel(d.tipo),
+      cell: (d) => (
+        <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+          {tipoLabel(d.tipo)}
+        </span>
+      ),
+    },
+    {
+      key: 'peso',
+      header: 'Peso',
+      sortable: true,
+      sortValue: (d) => d.tamanioBytes,
+      cell: (d) => (
+        <span className="text-slate-600">{formatBytes(d.tamanioBytes)}</span>
+      ),
+    },
+    {
+      key: 'subido',
+      header: 'Subido',
+      sortable: true,
+      sortValue: (d) => d.fechaCreacion,
+      cell: (d) => (
+        <span className="text-slate-500">{formatDate(d.fechaCreacion)}</span>
+      ),
+    },
+    {
+      key: 'por',
+      header: 'Por',
+      sortable: true,
+      sortValue: (d) =>
+        d.subidoPor ? `${d.subidoPor.nombre} ${d.subidoPor.apellido}` : null,
+      cell: (d) => (
+        <span className="text-slate-600">
+          {d.subidoPor
+            ? `${d.subidoPor.nombre} ${d.subidoPor.apellido}`
+            : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      cell: (d) => (
+        <div className="inline-flex items-center gap-1">
+          <a
+            href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Abrir"
+          >
+            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </a>
+          <a
+            href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
+            download={d.nombreOriginal}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Descargar"
+          >
+            <Download className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </a>
+          <button
+            type="button"
+            disabled={deletingId === d.id}
+            onClick={() => deleteDoc(d.id)}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+            title="Eliminar"
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
       <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
         <h3 className="text-sm font-semibold text-slate-700">
           Documentos adjuntos
         </h3>
-        <span className="text-xs text-slate-400">PDF · máx. 10 MB</span>
+        <span className="text-xs text-slate-600">PDF · máx. 10 MB</span>
       </header>
 
       <div className="p-5">
@@ -150,7 +253,7 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-12 sm:items-end">
           <div className="sm:col-span-4">
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-600">
               Tipo de documento
             </label>
             <select
@@ -202,30 +305,20 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
               />
               {uploading ? (
                 <span className="inline-flex items-center gap-2 text-sm text-slate-600">
-                  <svg
+                  <Loader2
                     className="h-4 w-4 animate-spin text-primary-500"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                   Subiendo…
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-2 text-sm text-slate-500">
-                  <i className="ti ti-cloud-upload text-lg text-primary-500" />
+                  <CloudUpload
+                    className="h-5 w-5 text-primary-500"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                   Arrastra un PDF aquí o haz clic para seleccionarlo
                 </span>
               )}
@@ -234,93 +327,20 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
         </div>
 
         <div className="mt-4">
-          {loading ? (
-            <div className="py-6 text-center text-sm text-slate-400">
-              Cargando documentos…
-            </div>
-          ) : docs.length === 0 ? (
-            <div className="py-6 text-center text-sm text-slate-400">
-              <i className="ti ti-file-off text-2xl text-slate-300" />
-              <div className="mt-1">
-                Aún no hay documentos adjuntos a este contrato.
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100 text-sm">
-                <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-3 py-2">Documento</th>
-                    <th className="px-3 py-2">Tipo</th>
-                    <th className="px-3 py-2">Peso</th>
-                    <th className="px-3 py-2">Subido</th>
-                    <th className="px-3 py-2">Por</th>
-                    <th className="px-3 py-2 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {docs.map((d) => (
-                    <tr key={d.id} className="hover:bg-slate-50/50">
-                      <td className="px-3 py-2">
-                        <span className="inline-flex items-center gap-2">
-                          <i className="ti ti-file-type-pdf text-red-500" />
-                          <span className="font-medium text-slate-700">
-                            {d.nombreOriginal}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
-                          {tipoLabel(d.tipo)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-slate-600">
-                        {formatBytes(d.tamanioBytes)}
-                      </td>
-                      <td className="px-3 py-2 text-slate-500">
-                        {formatDate(d.fechaCreacion)}
-                      </td>
-                      <td className="px-3 py-2 text-slate-600">
-                        {d.subidoPor
-                          ? `${d.subidoPor.nombre} ${d.subidoPor.apellido}`
-                          : '—'}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <a
-                            href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                            title="Abrir"
-                          >
-                            <i className="ti ti-eye" />
-                          </a>
-                          <a
-                            href={`/api/contratos/${contratoId}/documentos/${d.id}/file`}
-                            download={d.nombreOriginal}
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                            title="Descargar"
-                          >
-                            <i className="ti ti-download" />
-                          </a>
-                          <button
-                            type="button"
-                            disabled={deletingId === d.id}
-                            onClick={() => deleteDoc(d.id)}
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                            title="Eliminar"
-                          >
-                            <i className="ti ti-trash" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            columns={columns}
+            rows={docs}
+            rowKey={(d) => d.id}
+            loading={loading}
+            skeletonRows={3}
+            empty={
+              <EmptyState
+                icon={<FileX className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />}
+                title="Aún no hay documentos adjuntos a este contrato."
+                compact
+              />
+            }
+          />
         </div>
       </div>
     </section>

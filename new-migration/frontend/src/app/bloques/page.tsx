@@ -2,7 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Layers,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
 import { bloquesApi, PaginationMeta } from '@/lib/api';
+import {
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface Bloque {
   id: number;
@@ -73,20 +89,125 @@ export default function BloquesPage() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   })();
 
+  const columns: DataTableColumn<Bloque>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      sortable: true,
+      sortValue: (row) => row.nombre,
+      cell: (row) => (
+        <span className="font-medium text-slate-900">{row.nombre}</span>
+      ),
+    },
+    {
+      key: 'cementerio',
+      header: 'Cementerio',
+      sortable: true,
+      sortValue: (row) => row.cementerio?.nombre ?? null,
+      cell: (row) => (
+        <span className="text-slate-600">{row.cementerio?.nombre || '-'}</span>
+      ),
+    },
+    {
+      key: 'pisos',
+      header: 'Pisos',
+      sortable: true,
+      sortValue: (row) => row.pisos?.length ?? 0,
+      cell: (row) => (
+        <span className="text-slate-600">{row.pisos?.length ?? 0}</span>
+      ),
+    },
+    {
+      key: 'bovedas',
+      header: 'Bóvedas',
+      sortable: true,
+      sortValue: (row) => row.bovedas?.length ?? 0,
+      cell: (row) => (
+        <span className="text-slate-600">{row.bovedas?.length ?? 0}</span>
+      ),
+    },
+    {
+      key: 'descripcion',
+      header: 'Descripción',
+      sortable: true,
+      sortValue: (row) => row.descripcion ?? null,
+      cell: (row) => (
+        <span className="text-slate-600">{row.descripcion || '-'}</span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortable: true,
+      sortValue: (row) => (row.estado ? 'Activo' : 'Inactivo'),
+      cell: (row) =>
+        row.estado ? (
+          <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
+            Activo
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+            Inactivo
+          </span>
+        ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      cellClassName: 'whitespace-nowrap',
+      cell: (row) => (
+        <div className="inline-flex items-center gap-1">
+          <Link
+            href={`/bloques/${row.id}`}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Ver"
+          >
+            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </Link>
+          <Link
+            href={`/bloques/${row.id}/edit`}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Editar"
+          >
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => handleDelete(row.id)}
+            disabled={deletingId === row.id}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
+            title="Eliminar"
+          >
+            {deletingId === row.id ? (
+              <Loader2
+                className="h-4 w-4 animate-spin"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+            ) : (
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Lista de Bloques</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Administración de bloques del cementerio.
           </p>
         </div>
         <Link
           href="/bloques/create"
-          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
         >
-          <i className="ti ti-plus" />
+          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Nuevo Bloque
         </Link>
       </div>
@@ -94,7 +215,11 @@ export default function BloquesPage() {
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1 sm:max-w-md">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             <input
               type="search"
               placeholder="Buscar bloques..."
@@ -103,7 +228,7 @@ export default function BloquesPage() {
                 setPage(1);
                 setSearch(e.target.value);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
         </div>
@@ -114,108 +239,25 @@ export default function BloquesPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th scope="col" className="px-4 py-3">Nombre</th>
-                <th scope="col" className="px-4 py-3">Cementerio</th>
-                <th scope="col" className="px-4 py-3">Pisos</th>
-                <th scope="col" className="px-4 py-3">Bóvedas</th>
-                <th scope="col" className="px-4 py-3">Descripción</th>
-                <th scope="col" className="px-4 py-3">Estado</th>
-                <th scope="col" className="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                    <div className="inline-flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4 animate-spin text-primary-500"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                      </svg>
-                      Cargando bloques…
-                    </div>
-                  </td>
-                </tr>
-              ) : bloques.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
-                    <i className="ti ti-stack-2 text-3xl text-slate-300" />
-                    <div className="mt-2 text-sm">No hay bloques registrados.</div>
-                  </td>
-                </tr>
-              ) : (
-                bloques.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{row.nombre}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.cementerio?.nombre || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.pisos?.length ?? 0}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.bovedas?.length ?? 0}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {row.descripcion || '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.estado ? (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
-                          Activo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
-                          Inactivo
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-1">
-                        <Link
-                          href={`/bloques/${row.id}`}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                          title="Ver"
-                        >
-                          <i className="ti ti-eye" />
-                        </Link>
-                        <Link
-                          href={`/bloques/${row.id}/edit`}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                          title="Editar"
-                        >
-                          <i className="ti ti-edit" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(row.id)}
-                          disabled={deletingId === row.id}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                          title="Eliminar"
-                        >
-                          <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={bloques}
+          rowKey={(row) => row.id}
+          loading={loading}
+          empty={
+            <EmptyState
+              icon={
+                <Layers
+                  className="h-6 w-6"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+              }
+              title="No hay bloques registrados."
+              compact
+            />
+          }
+        />
 
         {meta && meta.totalPages > 1 && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row">
@@ -231,9 +273,14 @@ export default function BloquesPage() {
                 type="button"
                 onClick={() => setPage(meta.page - 1)}
                 disabled={!meta.hasPrevPage}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <i className="ti ti-chevron-left" /> Anterior
+                <ChevronLeft
+                  className="h-3.5 w-3.5"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />{' '}
+                Anterior
               </button>
               {visiblePages.map((p) => (
                 <button
@@ -242,7 +289,7 @@ export default function BloquesPage() {
                   onClick={() => setPage(p)}
                   className={`rounded-md px-3 py-1 text-xs font-medium ${
                     p === meta.page
-                      ? 'bg-primary-500 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -253,9 +300,14 @@ export default function BloquesPage() {
                 type="button"
                 onClick={() => setPage(meta.page + 1)}
                 disabled={!meta.hasNextPage}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Siguiente <i className="ti ti-chevron-right" />
+                Siguiente{' '}
+                <ChevronRight
+                  className="h-3.5 w-3.5"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
               </button>
             </nav>
           </div>

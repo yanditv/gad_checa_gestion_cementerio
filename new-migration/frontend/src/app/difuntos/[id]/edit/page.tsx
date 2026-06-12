@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { bovedasApi, difuntosApi } from '@/lib/api';
+import { ArrowLeft } from 'lucide-react';
+import { bovedasApi, difuntosApi, mediaUrl } from '@/lib/api';
+import { Button, ImageUpload } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 interface FormState {
   nombre: string;
@@ -75,6 +77,9 @@ export default function EditDifuntoPage() {
   const [error, setError] = useState('');
   const [bovedas, setBovedas] = useState<any[]>([]);
   const [formData, setFormData] = useState<FormState>(INITIAL);
+  // undefined = sin cambios, File = nueva foto, null = quitar foto.
+  const [fotoChange, setFotoChange] = useState<File | null | undefined>(undefined);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,6 +90,7 @@ export default function EditDifuntoPage() {
         ]);
 
         setBovedas(bovedasData.filter((b: any) => b.estado));
+        setFotoUrl(difunto.fotoUrl ?? null);
         setFormData({
           nombre: difunto.nombre || '',
           apellido: difunto.apellido || '',
@@ -148,6 +154,16 @@ export default function EditDifuntoPage() {
         entidadEmisora: toOptional(formData.entidadEmisora),
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
+      // La foto es opcional: cualquier fallo aquí no debe bloquear la navegación.
+      try {
+        if (fotoChange instanceof File) {
+          await difuntosApi.uploadFoto(Number(params.id), fotoChange);
+        } else if (fotoChange === null && fotoUrl) {
+          await difuntosApi.deleteFoto(Number(params.id));
+        }
+      } catch {
+        // no-op
+      }
       router.push(`/difuntos/${params.id}`);
     } catch (err: any) {
       setError(err.message || 'No se pudo actualizar el difunto');
@@ -187,7 +203,7 @@ export default function EditDifuntoPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar Difunto</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Actualizar datos del difunto.
           </p>
         </div>
@@ -195,7 +211,7 @@ export default function EditDifuntoPage() {
           href={`/difuntos/${params.id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -211,6 +227,15 @@ export default function EditDifuntoPage() {
             <h2 className="text-sm font-semibold text-slate-700">Datos personales</h2>
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-3">
+              <ImageUpload
+                shape="circle"
+                value={mediaUrl(fotoUrl)}
+                onChange={setFotoChange}
+                label="Foto (opcional)"
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+              />
+            </div>
             <div>
               <label className={LABEL_CLS}>Nombres *</label>
               <input
@@ -457,13 +482,9 @@ export default function EditDifuntoPage() {
           >
             Cancelar
           </Link>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button type="submit" loading={saving}>
             {saving ? 'Guardando…' : 'Guardar cambios'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

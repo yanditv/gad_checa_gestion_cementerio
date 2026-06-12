@@ -17,6 +17,7 @@ model Usuario {
   telefono             String?
   direccion            String?
   tipoIdentificacion   String
+  avatarStorageKey     String? // foto de perfil (opcional); key relativa en StorageService
   estado               Boolean   @default(true)
   mustChangePassword   Boolean   @default(false)
   fechaCreacion        DateTime  @default(now())
@@ -30,6 +31,10 @@ model Usuario {
   difuntos             Difunto[] @relation("DifuntoUsuarioCreador")
   difuntosActualizados Difunto[] @relation("DifuntoUsuarioActualizador")
   difuntosEliminados   Difunto[] @relation("DifuntoUsuarioEliminador")
+
+  exhumacionesCreadas      Exhumacion[] @relation("ExhumacionUsuarioCreador")
+  exhumacionesActualizadas Exhumacion[] @relation("ExhumacionUsuarioActualizador")
+  exhumacionesEliminadas   Exhumacion[] @relation("ExhumacionUsuarioEliminador")
 
   contratos             Contrato[] @relation("ContratoUsuarioCreador")
   contratosActualizados Contrato[] @relation("ContratoUsuarioActualizador")
@@ -61,6 +66,28 @@ model Usuario {
   documentosSubidos   Documento[]
   notificaciones      Notificacion[]
   catastrosImportados CatastroImport[]
+
+  // Inventario de Bienes Institucionales (TDR Módulo 1)
+  categoriasBienCreadas      CategoriaBien[] @relation("CategoriaBienUsuarioCreador")
+  categoriasBienActualizadas CategoriaBien[] @relation("CategoriaBienUsuarioActualizador")
+  categoriasBienEliminadas   CategoriaBien[] @relation("CategoriaBienUsuarioEliminador")
+
+  custodiosCreados      Custodio[] @relation("CustodioUsuarioCreador")
+  custodiosActualizados Custodio[] @relation("CustodioUsuarioActualizador")
+  custodiosEliminados   Custodio[] @relation("CustodioUsuarioEliminador")
+
+  bienesCreados      Bien[] @relation("BienUsuarioCreador")
+  bienesActualizados Bien[] @relation("BienUsuarioActualizador")
+  bienesEliminados   Bien[] @relation("BienUsuarioEliminador")
+
+  movimientosBienRegistrados MovimientoBien[] @relation("MovimientoBienUsuarioCreador")
+
+  inventariosImportados InventarioImport[]
+
+  // Catálogo de tipos de espacio (Bóveda, Nicho, Túmulo…)
+  tiposEspacioCreados      TipoEspacio[] @relation("TipoEspacioUsuarioCreador")
+  tiposEspacioActualizados TipoEspacio[] @relation("TipoEspacioUsuarioActualizador")
+  tiposEspacioEliminados   TipoEspacio[] @relation("TipoEspacioUsuarioEliminador")
 
   usuarioRols UsuarioRol[]
 }
@@ -174,6 +201,9 @@ model Bloque {
   id            Int      @id @default(autoincrement())
   nombre        String
   descripcion   String?
+  tipo          String?  // "Bovedas" | "Nichos" | null (compatibilidad)
+  tarifaBase    Decimal? @db.Decimal(18, 2) // tarifa por defecto del bloque
+  bovedasPorPiso Int     @default(0)        // bóvedas que se auto-generan por piso
   estado        Boolean  @default(true)
   fechaCreacion DateTime @default(now())
 
@@ -192,10 +222,11 @@ model Bloque {
 }
 
 model Piso {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   numero      Int
   descripcion String?
-  estado      Boolean @default(true)
+  precio      Decimal? @db.Decimal(18, 2) // precio personalizado por piso (null = usar tarifaBase del bloque)
+  estado      Boolean  @default(true)
 
   bloqueId Int
   bloque   Bloque @relation(fields: [bloqueId], references: [id])
@@ -223,6 +254,10 @@ model Boveda {
   propietarioId Int?
   propietario   Propietario? @relation(fields: [propietarioId], references: [id])
 
+  // Tipo de espacio (catálogo configurable). Nullable durante backfill.
+  tipoEspacioId Int?
+  tipoEspacio   TipoEspacio? @relation(fields: [tipoEspacioId], references: [id])
+
   usuarioCreadorId      String?
   usuarioCreador        Usuario? @relation("BovedaUsuarioCreador", fields: [usuarioCreadorId], references: [id])
   usuarioActualizadorId String?
@@ -230,8 +265,36 @@ model Boveda {
   usuarioEliminadorId   String?
   usuarioEliminador     Usuario? @relation("BovedaUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
-  contratos Contrato[]
-  difuntos  Difunto[]
+  contratos    Contrato[]
+  difuntos     Difunto[]
+  exhumaciones Exhumacion[] @relation("ExhumacionBovedaOrigen")
+}
+
+// =============================================================================
+// Catálogo de tipos de espacio (Bóveda, Nicho, Túmulo, Mausoleo…)
+// Reemplaza la dualidad cableada Bóveda/Nicho por un catálogo configurable.
+// =============================================================================
+model TipoEspacio {
+  id                Int     @id @default(autoincrement())
+  nombre            String  @unique
+  prefijoNumeracion String? // CTR / NCH / TML para nº de contrato
+  tarifaArriendo    Decimal @db.Decimal(18, 2)
+  aniosArriendo     Int
+  vecesRenovacion   Int
+  estado            Boolean @default(true)
+
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("TipoEspacioUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("TipoEspacioUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("TipoEspacioUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+
+  bovedas Boveda[]
 }
 
 // =============================================================================
@@ -313,6 +376,7 @@ model Difunto {
   observaciones        String?
   edad                 Int?
   genero               String?
+  fotoStorageKey       String? // foto del difunto (opcional); key relativa en StorageService
 
   // Información complementaria (manual de usuario §5)
   nacionalidad    String?
@@ -331,6 +395,12 @@ model Difunto {
   estado        Boolean  @default(true)
   fechaCreacion DateTime @default(now())
 
+  // Exhumación / traslado (CAT-R4b…R4d). `exhumado=true` libera la plaza:
+  // las consultas de ocupación excluyen difuntos exhumados. No se usa
+  // `estado=false` (eso es borrado lógico).
+  exhumado        Boolean   @default(false)
+  fechaExhumacion DateTime?
+
   bovedaId Int
   boveda   Boveda @relation(fields: [bovedaId], references: [id])
 
@@ -341,7 +411,43 @@ model Difunto {
   usuarioEliminadorId   String?
   usuarioEliminador     Usuario? @relation("DifuntoUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 
-  contratos Contrato[]
+  contratos    Contrato[]
+  exhumaciones Exhumacion[]
+}
+
+// =============================================================================
+// Exhumacion — acto administrativo de retiro de restos / traslado (CAT-R4b…R4d)
+// Un difunto puede tener N eventos de exhumación a lo largo del tiempo.
+// =============================================================================
+model Exhumacion {
+  id         Int     @id @default(autoincrement())
+  numeroActa String  @unique // EXH-YYYY-NNNN
+
+  difuntoId Int
+  difunto   Difunto @relation(fields: [difuntoId], references: [id])
+
+  bovedaOrigenId Int
+  bovedaOrigen   Boveda @relation("ExhumacionBovedaOrigen", fields: [bovedaOrigenId], references: [id])
+
+  fechaExhumacion DateTime
+  // vencimiento_arriendo | traslado | orden_judicial | osario_comun | otro
+  motivo          String
+  destino         String
+  bovedaDestinoId Int?
+
+  numeroAutorizacion String?
+  entidadAutorizante String?
+  observaciones      String?
+
+  estado        Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("ExhumacionUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("ExhumacionUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("ExhumacionUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
 }
 
 // =============================================================================
@@ -543,16 +649,16 @@ model Notificacion {
 // Log persistido por cada subida de Excel para auditoría y vista de estado.
 // =============================================================================
 model CatastroImport {
-  id                  Int      @id @default(autoincrement())
+  id                  Int       @id @default(autoincrement())
   filename            String
-  estado              String   @default("EN_PROGRESO") // EN_PROGRESO | COMPLETADO | ERROR
-  registrosProcesados Int      @default(0)
-  bloquesCreados      Int      @default(0)
-  bovedasCreadas      Int      @default(0)
-  contratosCreados    Int      @default(0)
-  errores             String?  // JSON con la lista de errores (máx 100)
-  mensajeError        String?  // sólo si estado=ERROR (excepción global)
-  fechaInicio         DateTime @default(now())
+  estado              String    @default("EN_PROGRESO") // EN_PROGRESO | COMPLETADO | ERROR
+  registrosProcesados Int       @default(0)
+  bloquesCreados      Int       @default(0)
+  bovedasCreadas      Int       @default(0)
+  contratosCreados    Int       @default(0)
+  errores             String? // JSON con la lista de errores (máx 100)
+  mensajeError        String? // sólo si estado=ERROR (excepción global)
+  fechaInicio         DateTime  @default(now())
   fechaFin            DateTime?
 
   adminUserId String
@@ -561,3 +667,156 @@ model CatastroImport {
   @@index([fechaInicio])
 }
 
+// =============================================================================
+// Inventario de Bienes Institucionales (TDR El Valle — Módulo 1)
+// Anclado a Normas de Control Interno CGE 406-01 (PPE) y 406-03 (depreciación).
+// =============================================================================
+
+// Catálogo de categorías de activo con su vida útil y % de valor residual.
+model CategoriaBien {
+  id                 Int       @id @default(autoincrement())
+  nombre             String // ej. "Equipo informático", "Mueble y enser"
+  vidaUtilAnios      Int // tabla CGE 406-03
+  valorResidualPct   Decimal   @default(10) @db.Decimal(5, 2)
+  estado             Boolean   @default(true)
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("CategoriaBienUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("CategoriaBienUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("CategoriaBienUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+
+  bienes Bien[]
+}
+
+// Custodio responsable de los bienes (funcionario del GAD).
+model Custodio {
+  id                 Int       @id @default(autoincrement())
+  nombre             String
+  identificacion     String?
+  cargo              String?
+  estado             Boolean   @default(true)
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("CustodioUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("CustodioUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("CustodioUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+
+  bienes Bien[]
+}
+
+// Bien institucional (activo fijo).
+model Bien {
+  id                   Int      @id @default(autoincrement())
+  codigo               String   @unique // placa institucional, ej. BN-YYYY-NNNN
+  descripcion          String
+  marca                String?
+  modelo               String?
+  serie                String?
+  fechaAdquisicion     DateTime
+  valorAdquisicion     Decimal  @db.Decimal(18, 2)
+  fuenteFinanciamiento String?
+  estadoConservacion   String   @default("bueno") // bueno | regular | malo
+  ubicacion            String? // dependencia/oficina actual
+  fotoStorageKey       String? // foto del bien (opcional); key relativa en StorageService
+
+  // Overrides opcionales sobre la categoría para la depreciación
+  valorResidual         Decimal? @db.Decimal(18, 2)
+  vidaUtilMesesOverride Int?
+
+  // Baja de uso (lógica) — distinta de `estado` (borrado lógico)
+  dadoDeBaja Boolean   @default(false)
+  fechaBaja  DateTime?
+  motivoBaja String? // obsolescencia | robo | venta | donacion | otro
+
+  categoriaId Int
+  categoria   CategoriaBien @relation(fields: [categoriaId], references: [id])
+  custodioId  Int?
+  custodio    Custodio?     @relation(fields: [custodioId], references: [id])
+
+  movimientos    MovimientoBien[]
+  depreciaciones DepreciacionBien[]
+
+  estado             Boolean   @default(true)
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime?
+  fechaEliminacion   DateTime?
+
+  usuarioCreadorId      String?
+  usuarioCreador        Usuario? @relation("BienUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+  usuarioActualizadorId String?
+  usuarioActualizador   Usuario? @relation("BienUsuarioActualizador", fields: [usuarioActualizadorId], references: [id])
+  usuarioEliminadorId   String?
+  usuarioEliminador     Usuario? @relation("BienUsuarioEliminador", fields: [usuarioEliminadorId], references: [id])
+
+  @@index([categoriaId])
+  @@index([custodioId])
+}
+
+// Historial unificado de movimientos por bien (INV-R8).
+model MovimientoBien {
+  id      Int      @id @default(autoincrement())
+  bienId  Int
+  bien    Bien     @relation(fields: [bienId], references: [id])
+  tipo    String // alta | baja | reasignacion_custodio | cambio_ubicacion | depreciacion
+  fecha   DateTime @default(now())
+  detalle String?
+
+  custodioAnteriorId Int?
+  custodioNuevoId    Int?
+  ubicacionAnterior  String?
+  ubicacionNueva     String?
+  documento          String? // path del acta de respaldo
+
+  usuarioCreadorId String?
+  usuarioCreador   Usuario? @relation("MovimientoBienUsuarioCreador", fields: [usuarioCreadorId], references: [id])
+
+  @@index([bienId])
+}
+
+// Depreciación calculada por periodo (línea recta CGE 406-03) (INV-R7).
+model DepreciacionBien {
+  id                    Int      @id @default(autoincrement())
+  bienId                Int
+  bien                  Bien     @relation(fields: [bienId], references: [id])
+  anio                  Int
+  mes                   Int
+  valorDepreciado       Decimal  @db.Decimal(18, 2) // del periodo
+  depreciacionAcumulada Decimal  @db.Decimal(18, 2)
+  valorEnLibros         Decimal  @db.Decimal(18, 2)
+  fechaCalculo          DateTime @default(now())
+
+  @@unique([bienId, anio, mes])
+  @@index([bienId])
+}
+
+// Estado de cada importación on-demand del inventario de bienes (Fase 9 TDR,
+// análogo a CatastroImport). Persiste conteos y filas con error en JSON.
+model InventarioImport {
+  id                  Int       @id @default(autoincrement())
+  filename            String
+  estado              String    @default("EN_PROGRESO") // EN_PROGRESO | COMPLETADO | ERROR
+  registrosProcesados Int       @default(0)
+  categoriasCreadas   Int       @default(0)
+  custodiosCreados    Int       @default(0)
+  bienesCreados       Int       @default(0)
+  bienesActualizados  Int       @default(0)
+  errores             String? // JSON con la lista de errores (máx 100)
+  mensajeError        String? // sólo si estado=ERROR (excepción global)
+  fechaInicio         DateTime  @default(now())
+  fechaFin            DateTime?
+
+  adminUserId String
+  adminUser   Usuario @relation(fields: [adminUserId], references: [id])
+
+  @@index([fechaInicio])
+}

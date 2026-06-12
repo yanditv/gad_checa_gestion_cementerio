@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 import { catastroApi } from '@/lib/api';
 
 interface CatastroImport {
@@ -144,7 +145,7 @@ export default function CatastroImportPage() {
           <h1 className="text-2xl font-bold text-slate-900">
             Importación de catastro
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Subir Excel del catastro para actualizar bloques, bóvedas, difuntos
             y contratos. Solo upsert: nunca borra datos existentes.
           </p>
@@ -153,7 +154,7 @@ export default function CatastroImportPage() {
           href="/configuracion"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -171,12 +172,12 @@ export default function CatastroImportPage() {
         </header>
         <div className="space-y-4 p-5">
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 transition hover:border-primary-300 hover:bg-primary-50/40">
-            <i className="ti ti-upload text-3xl text-primary-500" />
+            <Upload className="h-8 w-8 text-primary-500" aria-hidden="true" />
             <span>
               <strong className="text-slate-700">Arrastra el archivo</strong> o
               haz clic para seleccionarlo
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-600">
               Formatos aceptados: .xlsx, .xls. Tamaño máximo 10 MB.
             </span>
             <input
@@ -249,7 +250,7 @@ export default function CatastroImportPage() {
           </h2>
         </header>
         {loadingHistory ? (
-          <div className="flex min-h-[12rem] items-center justify-center text-slate-400">
+          <div className="flex min-h-[12rem] items-center justify-center text-slate-600">
             <svg
               className="h-6 w-6 animate-spin text-primary-500"
               viewBox="0 0 24 24"
@@ -274,7 +275,7 @@ export default function CatastroImportPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                   <th className="px-5 py-2.5">Archivo</th>
                   <th className="px-5 py-2.5">Inicio</th>
                   <th className="px-5 py-2.5">Estado</th>
@@ -290,7 +291,7 @@ export default function CatastroImportPage() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-5 py-10 text-center text-slate-400"
+                      className="px-5 py-10 text-center text-slate-600"
                     >
                       Aún no se ha importado ningún catastro.
                     </td>
@@ -366,9 +367,9 @@ export default function CatastroImportPage() {
               <button
                 onClick={() => setSelected(null)}
                 aria-label="Cerrar"
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-600"
               >
-                <i className="ti ti-x text-lg" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </header>
             <div className="space-y-4 p-5">
@@ -398,7 +399,7 @@ export default function CatastroImportPage() {
               )}
 
               {loadingDetail ? (
-                <div className="flex items-center gap-2 text-sm text-slate-400">
+                <div className="flex items-center gap-2 text-sm text-slate-600">
                   <svg
                     className="h-4 w-4 animate-spin"
                     viewBox="0 0 24 24"
@@ -480,7 +481,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</p>
       <p className="text-sm text-slate-700">{value}</p>
     </div>
   );

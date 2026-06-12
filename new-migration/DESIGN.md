@@ -59,34 +59,54 @@ Cambiar el preset o `data-pc-theme` reemplaza los tokens — no se deben sobresc
 
 ## 3. Tokens
 
+> **Lenguaje visual: CRM profesional** (referencia Linear / HubSpot, pero
+> institucional). Se conserva la **esencia** — azul `primary #1890ff`, neutros
+> `slate`, los seis tonos semánticos, fuente Inter — y se sale del **diseño
+> plano**: profundidad sutil con sombras en capas, radios `xl`, jerarquía
+> tipográfica clara y micro-interacciones de 150–200 ms. Solo tema claro por
+> ahora; los tokens quedan preparados para dark mode.
+
+La **fuente única de verdad** de tokens es `frontend/tailwind.config.js`. Los
+CSS del template (`style.css`, `style-preset.css`) siguen cargados para
+compatibilidad, pero **no** son la referencia para autorar UI nueva.
+
 ### 3.1 Color
 
-**Paleta semántica** — en código nuevo usar siempre las utilidades Tailwind del
-repo (`bg-primary-500`, `text-slate-700`, `ring-primary-200`, `bg-danger-50`,
-etc.). Los CSS del template siguen cargados, pero no son la referencia para
-autorar componentes nuevos.
+**Tonos semánticos** — siempre vía utilidades Tailwind del repo
+(`bg-primary-500`, `text-secondary-600`, `ring-success-200`, `bg-danger-50`,
+…). Cada tono tiene rampa completa `50→900`. Convención de "pill" / fondo
+suave: `bg-{tono}-50 text-{tono}-700 ring-1 ring-{tono}-200`.
 
-| Token | Hex | Variante claro (`bg-light-*`) | Uso |
-|-------|-----|--------------------------------|-----|
-| `primary` | `#1890ff` | `#e8f4ff` | Acción principal, enlaces, KPIs financieros, navegación activa. |
-| `success` | (Bootstrap) `#1de9b6` / verde | — | Estado positivo: contratos activos, disponibilidad, "Conectado". |
-| `info` | (Bootstrap) cian | — | Información contextual, segundas acciones. |
-| `warning` | (Bootstrap) ámbar | — | Avisos (contratos por vencer, alertas). |
-| `danger` | (Bootstrap) rojo | — | Errores, eliminación, contratos vencidos, cerrar sesión. |
-| `secondary` | (Bootstrap) gris | — | Acciones neutras, "Cancelar", "Volver". |
+| Token | `500` | Uso | Pill suave |
+|-------|-------|-----|-----------|
+| `primary` | `#1890ff` | Acción principal, enlaces, navegación activa, KPIs financieros. | `bg-primary-50 text-primary-700 ring-primary-200` |
+| `success` | `#1de9b6` | Estado positivo: activo, disponible, "Conectado". | `bg-success-50 text-success-700 ring-success-200` |
+| `info` | `#13c2c2` | Información contextual, segundas acciones. | `bg-info-50 text-info-700 ring-info-200` |
+| `warning` | `#faad14` | Avisos, "Por vencer", alertas. | `bg-warning-50 text-warning-700 ring-warning-200` |
+| `danger` | `#ff4d4f` | Errores, eliminación, vencido, cerrar sesión. | `bg-danger-50 text-danger-700 ring-danger-200` |
+| `secondary` | `#64748b` | Acciones neutras, "Cancelar", "Volver", datos auxiliares. Alias de `slate`. | `bg-secondary-100 text-secondary-700 ring-secondary-200` |
 
-**Superficies y texto** (de `style-preset.css`):
+**Neutros: escala `slate`.** Es la columna vertebral del look CRM. Mapa de uso:
 
-| Variable | Valor | Uso |
-|----------|-------|-----|
-| `--bs-body-bg` | `#fafafb` | Fondo de aplicación. |
-| `--pc-heading-color` | `#343a40` | Color de títulos. |
-| `--pc-sidebar-background` | `#fff` | Fondo del sidebar. |
-| `--pc-sidebar-color` | `#141414` | Texto del sidebar. |
-| `--pc-header-background` | `#fff` | Fondo del header. |
-| `--pc-sidebar-caption-color` | `#495057` | Captions de sección del sidebar. |
+| Rol | Token |
+|-----|-------|
+| Fondo de aplicación | `surface-DEFAULT` (`#f8fafc`, = slate-50) |
+| Zona sutilmente hundida (header de tabla, filtros) | `surface-muted` / `slate-100` |
+| Superficie de tarjeta / panel | `surface-card` (`#ffffff`) |
+| Borde de tarjeta / separador | `slate-200` |
+| Separador interno fino | `slate-100` |
+| Texto principal | `slate-900` |
+| Texto cuerpo | `slate-700` |
+| Texto auxiliar / subtítulo | `slate-500` |
+| Texto deshabilitado / overline | `slate-400` |
 
-**Paleta de gráficos (ApexCharts)** — definida en el dashboard (`app/page.tsx`); reutilizar estos tonos al añadir nuevas series para mantener coherencia:
+`secondary-*` es un **alias** de `slate-*` para nombrar el sexto tono canónico
+sin perder la familia neutra; ambos pueden usarse indistintamente.
+
+**Acento de marca** (solo wordmark del logo): `brand-dark #1a237e`,
+`brand-accent #43a047`. No usar fuera del logotipo.
+
+**Paleta de gráficos (ApexCharts)** — reutilizar estos tonos al añadir series:
 
 | Color | Hex | Asignación habitual |
 |-------|-----|---------------------|
@@ -98,68 +118,94 @@ autorar componentes nuevos.
 | Amarillo | `#faad14` | Por vencer. |
 | Rojo | `#ff4d4f` | Deudas / vencidos. |
 
-**No usar:** colores hardcodeados en estilos inline (excepto el wordmark de marca y el rojo `#ef4444` específico del item "Cerrar Sesión"). Cualquier color nuevo debe pasar por una clase utilitaria semántica.
-
-`tailwind.config.js` ya está alineado con el azul institucional vigente:
-`primary-500 = #1890ff`.
+**No usar:** colores hardcodeados en estilos inline (salvo el wordmark de marca
+y anchos puntuales de barra de progreso). Cualquier color nuevo pasa por una
+clase utilitaria semántica.
 
 ### 3.2 Tipografía
 
+**Inter** es la fuente del cuerpo del CRM (cargada en `layout.tsx` junto a
+Public Sans como fallback; declarada como `font-sans`). **Montserrat 700** solo
+para el wordmark (`font-display`).
+
 | Familia | Pesos | Uso |
 |---------|-------|-----|
-| **Public Sans** | 300, 400, 500, 600, 700 | Texto general de la aplicación (cargada desde Google Fonts en `layout.tsx`; declarada también en `tailwind.config.js` como `font-sans`). |
-| **Montserrat** | 700 | Wordmark del logo. |
-| **Segoe UI / Arial** | — | Fallback del wordmark. |
+| **Inter** | 400, 500, 600, 700 | Texto general de la aplicación. |
+| **Public Sans** | 300–700 | Fallback compatible con el template. |
+| **Montserrat** | 700 | Wordmark del logo (`font-display`). |
 
-Convenciones tipográficas observadas en las páginas:
+**Escala tipográfica** (definida en `fontSize` del config; cuerpo base = 14 px,
+`line-height` 1.5–1.6):
+
+| Clase | Tamaño | Uso |
+|-------|--------|-----|
+| `text-caption` | 11px / `tracking` ancho | Overlines, etiquetas KPI, captions de sidebar. |
+| `text-xs` | 12px | Metadatos, badges, ayudas. |
+| `text-sm` | 13px | Texto secundario, celdas densas. |
+| `text-base` | 14px | Cuerpo por defecto. |
+| `text-md` | 15px | Énfasis de cuerpo. |
+| `text-lg` | 16px | Subtítulos de sección. |
+| `text-xl` | 18px | Encabezado de card. |
+| `text-2xl` | 22px / `tracking` negativo | **Título de página**. |
+| `text-3xl` | 28px | Cifras grandes. |
+| `text-4xl` | 34px | Display / KPI hero. |
+
+Convenciones por elemento:
 
 | Elemento | Estilo |
 |----------|--------|
-| Título de página | `<h1>` o `<h2>` con `text-2xl font-bold text-slate-900` + subtítulo `text-sm text-slate-500`. |
-| Subtítulo de página | `text-muted small`. |
-| Título de sección | `.section-title` — 1.1rem / 600 / `#495057` / borde inferior `2px #e9ecef`. |
-| Encabezado de card | `<h5 className="card-title">` o `<h5 className="mb-0">` precedido de icono. |
-| Texto auxiliar | `<small className="text-muted">`. |
-| Cifra KPI | `<h3 className="text-{tono}">`. |
-| Etiquetas de formulario | `<label className="form-label">`. Asterisco textual `*` en obligatorios. |
+| Título de página | `text-2xl font-bold text-slate-900` (+ subtítulo `text-sm text-slate-500`). |
+| Encabezado de card | `text-base font-semibold text-slate-900`, opcional con icono. |
+| Overline / etiqueta KPI | `text-caption font-medium uppercase text-slate-400`. |
+| Cifra KPI | `text-3xl font-bold text-{tono}-600 tabular-nums`. |
+| Cifras de dinero / tablas numéricas | añadir `tabular-nums`. |
+| Etiqueta de formulario | `text-sm font-medium text-slate-700`; asterisco `*` en obligatorios. |
+| Texto de ayuda / error de campo | `text-xs text-slate-500` / `text-xs text-danger-600`. |
 
 ### 3.3 Espaciado, radio y elevación
 
-- Sistema de espaciado: utilidades Tailwind (`space-y-*`, `gap-*`, `px-*`, `py-*`).
-- Radios: `rounded-md`, `rounded-lg`, `rounded-xl` según jerarquía visual.
-- Sombras del template:
-  - `shadow-sm` para todas las cards informativas del dashboard.
-  - Hover de card: `box-shadow: 0 2px 8px rgba(0,0,0,0.1)` (transición 0.3s, definido en `site.css`).
-  - `.hover-lift` para énfasis interactivo: `translateY(-2px)` + sombra más profunda.
+- **Espaciado**: utilidades Tailwind (`space-y-*`, `gap-*`, `px-*`, `py-*`).
+  Densidad CRM cómoda pero eficiente — padding de card `p-5`/`p-6`, celdas de
+  tabla `px-4 py-3`, gaps de grid `gap-4`/`gap-6`.
+- **Radios** (`borderRadius` del config): tarjetas y paneles → `rounded-xl`;
+  botones/inputs/badges → `rounded-lg`; modales → `rounded-2xl`; pills → `rounded-full`.
+- **Sombras en capas** (`boxShadow` del config) — esto es lo que saca al sistema
+  del plano:
 
-### 3.4 Tokens Tailwind (Fase 2.5+)
+  | Clase | Uso |
+  |-------|-----|
+  | `shadow-xs` | Borde elevado mínimo (inputs, chips). |
+  | `shadow-soft` | **Tarjetas/paneles por defecto** (dos capas suaves). |
+  | `shadow-md` | Hover de tarjeta interactiva, KPI destacado. |
+  | `shadow-lifted` | Drawers, popovers, dropdowns. |
+  | `shadow-overlay` | Modales / diálogos centrados. |
+  | `shadow-focus` | Anillo de foco azul (`0 0 0 3px rgba(24,144,255,.25)`). |
 
-Tailwind convive con los assets globales de Able Pro. Los tokens reflejan los
-mismos colores semánticos visibles para mantener continuidad con el sistema
-legado.
+- **Micro-interacciones**: `transition-colors`/`transition` con duración por
+  defecto 150 ms; hover de fila de tabla (`hover:bg-slate-50`); elevación al
+  hover (`hover:shadow-md`); animaciones `animate-fade-in` / `animate-scale-in`
+  para overlays. Todo respeta `prefers-reduced-motion` (apagado en `globals.css`).
+- **Foco accesible**: `focus-visible` global en `[data-app-surface]` aplica el
+  anillo azul; los componentes pueden reforzar con `focus-visible:ring-2`.
 
-| Bootstrap | Tailwind | Hex |
-|-----------|----------|-----|
-| `primary` | `primary` (`primary-500`) | `#1890ff` |
-| `bg-light-primary` | `primary-50` | `#e8f4ff` |
-| `success` | `success` | `#1de9b6` |
-| `info` | `info` | `#13c2c2` |
-| `warning` | `warning` | `#faad14` |
-| `danger` | `danger` | `#ff4d4f` |
-| Brand wordmark base | `brand-dark` | `#1a237e` |
-| Brand wordmark acento | `brand-accent` | `#43a047` |
-| `--bs-body-bg` | `surface-DEFAULT` | `#fafafb` |
-| Sombras `shadow-sm` / hover | `shadow-soft` / `shadow-lifted` | — |
+### 3.4 Resumen de tokens Tailwind
 
-Fuentes registradas:
+| Categoría | Tokens |
+|-----------|--------|
+| Tonos | `primary` `success` `info` `warning` `danger` `secondary` (rampas `50→900`) |
+| Neutros | `slate-*` (alias `secondary-*`) |
+| Superficies | `surface-DEFAULT` `surface-muted` `surface-card` |
+| Marca | `brand-dark` `brand-accent` (solo logo) |
+| Fuentes | `font-sans` (Inter) · `font-display` (Montserrat) |
+| Tamaños | `text-caption` … `text-4xl` |
+| Radios | `rounded-md` `lg` `xl` `2xl` `full` |
+| Sombras | `shadow-xs` `soft` `md` `lifted` `overlay` `focus` |
+| Animaciones | `animate-fade-in` `animate-scale-in` `animate-shimmer` |
 
-- `font-sans` → Public Sans (cuerpo).
-- `font-display` → Montserrat (marca, encabezados especiales).
-
-`preflight` está desactivado (`tailwind.config.js`): Tailwind no aplica reset
-global para no chocar con el reset de Bootstrap. Las pantallas Tailwind aplican
-normalización vía clases utilitarias (`box-border`, `m-0`, etc.) cuando hace
-falta.
+`preflight` está **desactivado** (`tailwind.config.js`) para no chocar con el
+reset de Bootstrap. La UI nueva normaliza vía clases utilitarias; la tipografía
+Inter, el suavizado y el foco accesible se aplican desde `globals.css` sobre
+`.pc-container` / `[data-app-surface]`.
 
 ---
 
@@ -218,7 +264,15 @@ Estructura global (montada en `app/layout.tsx` → `components/DashboardLayout.t
 
 ## 5. Iconografía
 
-- **Familia principal**: Tabler Icons. Sintaxis siempre `<i className="ti ti-{nombre}"></i>`.
+- **Familia única**: **Tabler Icons** (SVG vía webfont). Sintaxis siempre
+  `<i className="ti ti-{nombre}" aria-hidden="true"></i>`. **Nunca emojis** como
+  iconos.
+- **Tamaños canónicos**: `text-base` (16px) en acciones de fila, `text-lg`/`text-xl`
+  en headers de card y triggers, `text-2xl` en KPIs/empty states. Un icono y un
+  solo significado consistente en toda la app (ver tabla abajo).
+- **Accesibilidad**: iconos decorativos llevan `aria-hidden="true"` y van junto a
+  texto. Los botones icon-only exigen `aria-label` (o `title`) descriptivo — sin
+  excepción en la columna de **Acciones** de las tablas.
 - Convenciones de mapeo en uso:
 
 | Dominio | Icono |
@@ -240,84 +294,102 @@ Estructura global (montada en `app/layout.tsx` → `components/DashboardLayout.t
 
 ---
 
-## 6. Patrones UI actuales
+## 6. Librería de componentes (`components/ui/`)
 
-No existe `src/components/ui/`. La app actual compone la UI directamente en
-las páginas y solo extrae componentes cuando el patrón ya está repetido.
+> **Decisión vigente (2026-06-10):** se **reintroduce** `frontend/src/components/ui/`
+> como librería curada, tipada y accesible (antes prohibida en CLAUDE.md §6; la
+> regla se revirtió). Es la pieza central del lenguaje CRM: encapsula tokens,
+> variantes y estados para que las pantallas se compongan con primitivas
+> consistentes en vez de repetir Tailwind inline. Tailwind sigue siendo **puro**
+> (sin Bootstrap) dentro de los componentes.
 
-### 6.1 Encabezado de página
+**Reglas de la librería**
 
-Patrón actual en listados y formularios:
+- Tailwind puro, sin clases Bootstrap (`btn`, `card`, `form-control`, `col-*`,
+  `pc-*`, `badge bg-*`, …).
+- Tipados en TypeScript estricto; props con valores por defecto sensatos.
+- Accesibles: `focus-visible`, `aria-*`, roles correctos, `disabled`/`aria-busy`
+  en estado loading, `prefers-reduced-motion` respetado por las animaciones.
+- Variantes derivadas de los tokens de §3 (los seis tonos, sombras en capas,
+  radios `xl`). Sin colores hardcodeados.
+- Una sola fuente de iconos (Tabler) con `aria-hidden`/`aria-label` según §5.
+- Composición sobre configuración: preferir `children` y subcomponentes a
+  cascadas de props booleanas.
 
-```tsx
-<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-  <div>
-    <h1 className="text-2xl font-bold text-slate-900">Lista de Personas</h1>
-    <p className="mt-1 text-sm text-slate-500">Gestión de propietarios y responsables.</p>
-  </div>
-  <Link className="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft hover:bg-primary-600">
-    <i className="ti ti-plus" />
-    Nueva Persona
-  </Link>
-</div>
-```
+### 6.1 Catálogo
 
-### 6.2 Cards y contenedores
+El catálogo se construye en fases (ver `PLAN_frontend_ux.md`). Contrato de cada
+componente:
 
-- Contenedor principal: `rounded-xl border border-slate-200 bg-white shadow-soft`.
-- Header de card: `border-b border-slate-100 px-5 py-3`.
-- Cuerpo: `p-4` o `p-5`.
+**Primitivos (`Fase 1`)**
 
-### 6.3 Inputs y filtros
+| Componente | Props clave | Variantes / notas |
+|------------|-------------|-------------------|
+| `Button` | `variant`, `size`, `loading`, `leftIcon`/`rightIcon`, `as`/`href` | `variant`: `primary` `secondary` `ghost` `danger` `subtle`; `size`: `sm` `md` `lg`. `loading` muestra spinner y aplica `aria-busy`/`disabled`. |
+| `IconButton` | `icon`, `label` (obligatorio → `aria-label`), `variant`, `size` | Icon-only accesible; `tooltip` opcional. |
+| `Input` / `Field` | `label`, `hint`, `error`, `leftIcon`, `required` | `Field` envuelve label + control + hint/error con `aria-describedby`/`aria-invalid`. |
+| `Textarea` | `label`, `hint`, `error`, `rows` | Mismo contrato que `Field`. |
+| `Select` | `label`, `options`, `error`, `placeholder` | Nativo estilizado; chevron Tabler. |
+| `DatePicker` | `value` (ISO `yyyy-mm-dd`), `onChange`, `min`, `max`, `label`, `error`, `required`, `disabled` | Selector de fecha propio (sin dependencias de calendario): input tipeable `dd/mm/aaaa` + botón calendario (lucide) que abre popover `role="dialog"` con grilla mensual `role="grid"` (`shadow-lifted`). Locale es-EC: semana inicia lunes, meses/días en español; el valor viaja en ISO hacia la API. Teclado: flechas mueven el día, `RePág`/`AvPág` cambian de mes, `Inicio`/`Fin` lunes/domingo, `Enter` selecciona, `Esc` cierra (sin cerrar un `Modal` padre). Navegación de mes y año (chevrons dobles), botones **Hoy** y **Limpiar**, días fuera de `min`/`max` deshabilitados, día seleccionado `bg-primary-600`, hoy con anillo `primary-200`. Cierra al click fuera y devuelve el foco al input. |
+| `Checkbox` / `Switch` | `label`, `checked`, `onChange` | `Switch` con transición 150 ms y `role="switch"`. |
+| `Badge` | `tone`, `size`, `dot` | `tone`: los seis + `neutral`. Pill `bg-{tono}-50 text-{tono}-700 ring-{tono}-200`. |
+| `Avatar` | `src`, `name` (iniciales fallback), `size` | Tamaños `xs→lg`; círculo; `alt` desde `name`. |
+| `Spinner` | `size`, `label` | `role="status"`, `aria-label`. |
+| `Skeleton` | `className`, `lines` | Usa `.skeleton-shimmer`; respeta motion-reduce. |
+| `Tooltip` | `content`, `side` | Hover/focus, `role="tooltip"`. |
 
-- `input` / `select` usan borde `slate-200`, fondo claro y foco
-  `focus:ring-2 focus:ring-primary-200`.
-- Los buscadores con icono usan `relative` + icono absoluto a la izquierda.
-- Los filtros de listados viven dentro de la card, arriba de la tabla.
+**Compuestos (`Fase 2`)**
 
-### 6.4 Tablas y paginación
+| Componente | Props clave | Notas |
+|------------|-------------|-------|
+| `Card` | `padding`, `header`, `footer` | `rounded-xl border-slate-200 bg-white shadow-soft`; subcomponentes `Card.Header` / `Card.Body` / `Card.Footer`. |
+| `PageHeader` | `title`, `subtitle`, `actions`, `backHref` | Encabezado inline de página (título `text-2xl` + CTA). |
+| `DataTable` | `columns`, `rows`, `loading`, `empty`, `sort`/`onSort`, `rowKey` | Header `bg-slate-50` sticky, hover de fila, estados loading (skeleton) / empty (`EmptyState`), columna de acciones. Orden por columna (`sortable` + `aria-sort`): controlado vía `onSort`, o autogestionado en cliente declarando `sortValue` en la columna (alterna asc/desc sobre las filas visibles). |
+| `Pagination` | `page`, `pageCount`, `total`, `onChange` | Resumen textual + ventana ±2; `aria-current` en página activa. |
+| `Modal` / `Dialog` | `open`, `onClose`, `title`, `size` | Focus-trap, cierre con `Esc`/overlay, `shadow-overlay`, `animate-scale-in`, `role="dialog"` `aria-modal`. |
+| `DropdownMenu` | `trigger`, `items`, `align` | React-controlado (sin Bootstrap JS), un solo abierto, navegable por teclado, `shadow-lifted`. |
+| `Tabs` | `tabs`, `value`, `onChange` | `role="tablist"`, foco por flechas. |
+| `EmptyState` | `icon`, `title`, `description`, `action` | Icono Tabler grande + copy centrado + CTA opcional. |
+| `Toast` | `tone`, `title`, `description`, `duration` | Feedback no bloqueante; `aria-live="polite"`. |
+| `SearchFilters` | `search`, `onSearch`, children (filtros) | Buscador con icono + filtros compactos dentro de la card. |
+| `FormSection` | `title`, `description`, children | Agrupa campos con título y separador. |
+| `KpiCard` | `label`, `value`, `icon`, `tone`, `progress`, `trend` | Tarjeta KPI del dashboard (overline + cifra `tabular-nums` + chip de icono + barra opcional). |
+| `StatusPill` | `tone`, `label` | Atajo de `Badge` para estados de dominio (Activo/Vencido/Disponible…). |
+| `ImageUpload` | `value`, `onChange(file\|null)`, `label`, `hint`, `shape` (`square`\|`circle`), `disabled` | **Opcional** (`Fase 4`). Control **diferido**: emite el `File` elegido (o `null` al quitar) con preview + drag&drop; valida jpg/png/webp ≤5MB en cliente. El formulario sube tras crear/actualizar. Usado en Bien y Difunto. |
+| `AvatarUpload` | `src`, `name`, `onChange(avatarUrl\|null)` | **Opcional** (`Fase 4`). Avatar de la cuenta propia con **subida inmediata** vía `authApi`; cae a iniciales (`Avatar`) y notifica la nueva `avatarUrl` para refrescar el topbar. Usado en `/cuenta`. |
 
-- Tabla: `min-w-full divide-y divide-slate-100 text-sm`.
-- Header: `bg-slate-50`, títulos `text-xs uppercase tracking-wider`.
-- Estado vacío: icono Tabler + copy centrado.
-- Estado de carga: spinner SVG inline dentro de una fila o bloque centrado.
-- Paginación: resumen textual + botones inline con ventana ±2 páginas.
+### 6.2 Patrones de composición de referencia
 
-### 6.5 KPI cards y dashboard
+Mientras se construye el catálogo, estos son los patrones canónicos que cada
+componente encapsula (se conservan como contrato visual):
 
-Patrón reutilizable:
+- **Encabezado de página** (`PageHeader`): `flex` responsivo con `h1 text-2xl
+  font-bold text-slate-900` + subtítulo `text-sm text-slate-500` y CTA primaria
+  a la derecha.
+- **Card** (`Card`): `rounded-xl border border-slate-200 bg-white shadow-soft`;
+  header `border-b border-slate-100 px-5 py-3`; cuerpo `p-5`/`p-6`.
+- **Inputs y filtros** (`Field`/`SearchFilters`): borde `slate-200`, fondo claro,
+  foco con anillo `primary`; buscador con icono absoluto a la izquierda; filtros
+  dentro de la card, arriba de la tabla.
+- **Tabla** (`DataTable`): `min-w-full divide-y divide-slate-100 text-sm`, header
+  `bg-slate-50` `text-caption uppercase`, hover de fila `hover:bg-slate-50`,
+  estados loading (skeleton) y empty (`EmptyState`), paginación al pie.
+- **KPI card** (`KpiCard`): overline `text-caption uppercase text-slate-400` +
+  cifra `text-3xl font-bold text-{tono}-600 tabular-nums` + chip de icono con
+  `ring-1` + barra de progreso opcional.
 
-```tsx
-<div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
-  <div className="flex items-start justify-between">
-      <div>
-        <p className="text-xs uppercase tracking-wide text-slate-400">Título</p>
-        <p className="mt-1 text-2xl font-bold text-primary-600">Valor</p>
-        <p className="mt-0.5 text-xs text-slate-500">Subtítulo</p>
-      </div>
-      <span className="flex h-10 w-10 items-center justify-center rounded-lg ring-1 bg-primary-50 text-primary-600 ring-primary-200">
-        <i className="ti ti-{icono} text-xl"></i>
-      </span>
-    </div>
-    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
-      <div className="h-full bg-primary-500" style={{ width: '75%' }}></div>
-    </div>
-</div>
-```
+### 6.3 QuickCard
 
-Si el patrón se repite 3+ veces fuera del dashboard, extraer un componente
-compartido en `src/components/`.
+Atajo navegable del dashboard: superficie `bg-{tono}-50`, icono grande y
+etiqueta corta. Útil como shortcut; no reemplaza el menú principal. (Candidato a
+absorberse en `KpiCard`/`Card` durante la migración.)
 
-### 6.6 QuickCard
+### 6.4 Stepper / Wizard
 
-Atajo navegable en el dashboard. Se renderiza con `bg-light-{tono}`, ícono grande (1.8rem) y etiqueta corta. Útil para shortcuts; no usar como reemplazo de un menú principal.
-
-### 6.7 Stepper / Wizard
-
-El wizard de contratos ya no depende de clases Bootstrap o wrappers: está
-maquetado inline con pills circulares Tailwind. Mantener el orden actual de
-pasos: *Datos del contrato → Datos del difunto → Datos de los responsables →
-Pago → Verificación*.
+El wizard de contratos se maqueta con pills circulares Tailwind (sin Bootstrap).
+Mantener el orden de pasos: *Datos del contrato → Datos del difunto → Datos de
+los responsables → Pago → Verificación*. Candidato a componente `Stepper` si se
+reutiliza.
 
 ---
 
@@ -424,14 +496,14 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 
 1. **Idioma de la UI**: español; textos en código fuente también en español (variables permanecen en español/inglés según campo de dominio).
 2. **No introducir nuevas dependencias UI** sin discutir. La pila visible es Tailwind + Tabler Icons + ApexCharts, apoyada en assets globales de Able Pro.
-3. **No reintroducir Bootstrap en `src/app` o `src/components`**. Las clases `btn`, `card`, `form-control`, `row`, `col-*`, `pc-*` quedan reservadas para assets heredados, no para UI nueva.
+3. **No reintroducir Bootstrap en `src/app` o `src/components`**. Las clases `btn`, `card`, `form-control`, `row`, `col-*`, `pc-*`, `badge bg-*` quedan reservadas para assets heredados, no para UI nueva.
 4. Tailwind tiene `corePlugins.preflight = false` para no resetear los estilos globales heredados.
-5. Tokens compartidos en `tailwind.config.js` (primary `#1890ff`). Si cambian aquí, sincronizar este documento.
-6. **Tonos**: usar siempre los tonos canónicos (`primary`, `success`, `info`, `warning`, `danger`) y neutrales `slate-*` del repo.
+5. Tokens compartidos en `tailwind.config.js` (primary `#1890ff`, fuente Inter). Si cambian aquí, sincronizar §3 de este documento.
+6. **Tonos**: usar siempre los seis tonos canónicos (`primary`, `success`, `info`, `warning`, `danger`, `secondary`) y neutrales `slate-*` del repo.
 7. **Cards**: por defecto `rounded-xl border border-slate-200 bg-white shadow-soft`.
 8. **Iconos**: una sola familia visible en componentes propios: Tabler. Mantener el mismo icono para el mismo significado (ver tabla §5).
 9. **Páginas Client**: marcar con `'use client'` cuando usen `useState`, `useEffect` o hooks de cliente. La mayor parte de la UI actual es client-rendered.
-10. **Extracción de componentes**: si un patrón Tailwind se repite 3+ veces, extraerlo en `src/components/`; si no, dejarlo inline.
+10. **Librería de componentes**: la UI nueva se compone con `components/ui/` (ver §6). Si un patrón no existe aún en la librería y se repite 3+ veces, créalo allí (Tailwind puro, tipado, accesible) en vez de duplicar inline.
 11. **Estilos inline**: aceptables solo para valores puntuales (por ejemplo ancho de barra de progreso). Si se repite, moverlo a utilidades o componente.
 12. **Spinner inicial**: respetar los 500 ms de `loader-bg`; no añadir loaders globales adicionales.
 
@@ -441,8 +513,9 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 
 | Archivo | Contenido |
 |---------|-----------|
-| `frontend/src/app/layout.tsx` | Carga de fuentes, CSS global, scripts, atributos del preset. |
-| `frontend/src/app/globals.css` | Reset mínimo + ajustes de altura del template. |
+| `frontend/src/app/layout.tsx` | Carga de fuentes (Inter + Public Sans), CSS global, scripts, atributos del preset. |
+| `frontend/src/app/globals.css` | Tipografía Inter + foco accesible + skeleton + `prefers-reduced-motion` para la app. |
+| `frontend/src/components/ui/` | Librería de componentes CRM (Tailwind puro, tipada, accesible). Ver §6. |
 | `frontend/src/components/DashboardLayout.tsx` | Composición Sidebar + Header + Main + Footer. |
 | `frontend/src/components/Sidebar.tsx` | Definición de navegación. |
 | `frontend/src/components/Header.tsx` | Barra superior + dropdowns de notificaciones y usuario. |
@@ -460,10 +533,13 @@ A reforzar en futuras iteraciones: foco visible consistente (Bootstrap por defec
 - [ ] Marca `'use client'` si necesita hooks.
 - [ ] Usa encabezado inline con título, subtítulo y acción principal.
 - [ ] Estructura con grids y spacing Tailwind responsivos.
+- [ ] Compón con `components/ui/` (§6); no duplicar Tailwind inline si existe el componente.
 - [ ] No introduzcas clases Bootstrap en la UI nueva.
-- [ ] Tonos solo dentro del set canónico.
-- [ ] Iconos Tabler con el significado de la tabla §5.
-- [ ] Estados: loading / vacío / error cubiertos.
+- [ ] Tonos solo dentro del set canónico (los seis).
+- [ ] Iconos Tabler con el significado de la tabla §5 (`aria-hidden`/`aria-label`).
+- [ ] Profundidad: tarjetas con `shadow-soft` + `rounded-xl`; hover en filas/acciones.
+- [ ] Estados: loading (skeleton) / vacío (`EmptyState`) / error cubiertos.
+- [ ] Foco visible (`focus-visible`) y `prefers-reduced-motion` respetados.
 - [ ] Listados: 15 por página, búsqueda/filtros inline, paginación inline.
 - [ ] Formularios: layout `lg:grid-cols-3`, alertas dentro del form, botones Cancelar + Guardar al pie.
-- [ ] Si introduces un patrón nuevo repetido, extráelo a `src/components/`.
+- [ ] Si introduces un patrón nuevo repetido, créalo en `components/ui/`.

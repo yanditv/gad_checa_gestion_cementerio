@@ -152,6 +152,41 @@ export class SeedService {
       },
     });
 
+    // Catálogo de tipos de espacio (reemplaza la dualidad cableada Bóveda/Nicho).
+    // Valores alineados con los parámetros semilla del Cementerio id=1.
+    const tiposEspacio = [
+      {
+        nombre: 'Bóveda',
+        prefijoNumeracion: 'CTR',
+        tarifaArriendo: 240.0,
+        aniosArriendo: 5,
+        vecesRenovacion: 1,
+      },
+      {
+        nombre: 'Nicho',
+        prefijoNumeracion: 'NCH',
+        tarifaArriendo: 240.0,
+        aniosArriendo: 5,
+        vecesRenovacion: 1,
+      },
+    ];
+
+    for (const tipo of tiposEspacio) {
+      await this.prisma.tipoEspacio.upsert({
+        where: { nombre: tipo.nombre },
+        update: {},
+        create: {
+          nombre: tipo.nombre,
+          prefijoNumeracion: tipo.prefijoNumeracion,
+          tarifaArriendo: tipo.tarifaArriendo,
+          aniosArriendo: tipo.aniosArriendo,
+          vecesRenovacion: tipo.vecesRenovacion,
+          estado: true,
+          usuarioCreadorId: adminUserId,
+        },
+      });
+    }
+
     const descuentos = [
       { nombre: 'Ninguno', porcentaje: 0 },
       { nombre: '50%', porcentaje: 50 },
@@ -178,6 +213,43 @@ export class SeedService {
       }
     }
 
+    await this.seedCategoriasBien(adminUserId);
+
     this.logger.log('Datos iniciales verificados');
+  }
+
+  // Catálogo de categorías de bienes para el Módulo de Inventario (TDR Módulo 1).
+  // Vidas útiles y valor residual según Norma de Control Interno CGE 406-03.
+  // PROVISIONAL: confirmar la tabla oficial con el GAD El Valle / Contraloría
+  // antes de la entrega; estos valores son los estándar del sector público.
+  private async seedCategoriasBien(adminUserId: string) {
+    const categorias = [
+      { nombre: 'Mueble y enser', vidaUtilAnios: 10 },
+      { nombre: 'Maquinaria y equipo', vidaUtilAnios: 10 },
+      { nombre: 'Equipo de cómputo', vidaUtilAnios: 3 },
+      { nombre: 'Equipo de comunicación', vidaUtilAnios: 10 },
+      { nombre: 'Vehículo', vidaUtilAnios: 5 },
+      { nombre: 'Herramienta', vidaUtilAnios: 10 },
+      { nombre: 'Equipo médico', vidaUtilAnios: 10 },
+    ];
+
+    for (const categoria of categorias) {
+      const exists = await this.prisma.categoriaBien.findFirst({
+        where: { nombre: categoria.nombre },
+        select: { id: true },
+      });
+
+      if (!exists) {
+        await this.prisma.categoriaBien.create({
+          data: {
+            nombre: categoria.nombre,
+            vidaUtilAnios: categoria.vidaUtilAnios,
+            valorResidualPct: 10,
+            estado: true,
+            usuarioCreadorId: adminUserId,
+          },
+        });
+      }
+    }
   }
 }

@@ -3,6 +3,8 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, CircleCheck, Coins, Loader2 } from 'lucide-react';
+import { DatePicker } from '@/components/ui';
 
 interface CuotaPreview {
   id: number;
@@ -40,7 +42,7 @@ const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 function formatCurrency(value: number | string | null | undefined) {
   return new Intl.NumberFormat('es-EC', {
@@ -216,25 +218,11 @@ export default function CobrarPage({
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg
+        <Loader2
           className="h-6 w-6 animate-spin text-primary-500"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          />
-        </svg>
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -250,7 +238,7 @@ export default function CobrarPage({
           href="/cobros"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -271,7 +259,7 @@ export default function CobrarPage({
               {preview.contrato.numeroSecuencial}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Selecciona las cuotas a cobrar y registra el pago.
           </p>
         </div>
@@ -279,14 +267,18 @@ export default function CobrarPage({
           href="/cobros"
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
 
       {preview.cuotas.length === 0 ? (
         <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <i className="ti ti-circle-check mr-1" />
+          <CircleCheck
+            className="mr-1 inline h-4 w-4 align-[-0.125em]"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
           Este contrato no tiene cuotas pendientes.
         </div>
       ) : null}
@@ -299,14 +291,14 @@ export default function CobrarPage({
         <div className="space-y-6 lg:col-span-8">
           <Card title="Cuotas a cobrar">
             {preview.cuotas.length === 0 ? (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-600">
                 Sin cuotas pendientes.
               </p>
             ) : (
               <div className="overflow-x-auto -m-5">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="w-12 px-5 py-2.5">
                         <input
                           type="checkbox"
@@ -340,7 +332,7 @@ export default function CobrarPage({
                           </td>
                           <td className="px-5 py-2.5 font-medium text-slate-700">
                             #{c.numero}
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-slate-600">
                               {formatCurrency(c.monto)}
                             </div>
                           </td>
@@ -403,18 +395,15 @@ export default function CobrarPage({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className={LABEL_CLS}>Fecha de pago</label>
-                <input
-                  type="date"
-                  value={form.fechaPago}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, fechaPago: e.target.value }))
-                  }
-                  required
-                  className={INPUT_CLS}
-                />
-              </div>
+              <DatePicker
+                id="cobro-fecha-pago"
+                label="Fecha de pago"
+                value={form.fechaPago}
+                onChange={(iso) =>
+                  setForm((p) => ({ ...p, fechaPago: iso }))
+                }
+                required
+              />
               <div>
                 <label className={LABEL_CLS}>Descuento</label>
                 <select
@@ -493,7 +482,7 @@ export default function CobrarPage({
                 <dt className="text-slate-500">Bóveda</dt>
                 <dd className="text-slate-700 text-right">
                   {preview.contrato.boveda?.numero}
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-slate-600">
                     {preview.contrato.boveda?.bloque?.nombre}
                   </div>
                 </dd>
@@ -555,9 +544,9 @@ export default function CobrarPage({
             <button
               type="submit"
               disabled={saving || cuotasSeleccionadas.length === 0}
-              className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <i className="ti ti-coin" />
+              <Coins className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Registrando…' : 'Registrar cobro'}
             </button>
           </Card>

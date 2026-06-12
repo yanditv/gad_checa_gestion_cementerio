@@ -17,6 +17,13 @@ import {
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
+import {
+  resolverPrefijoBase,
+  resolverTarifaContrato,
+  resolverAniosContrato,
+  validarLimiteRenovacion,
+  type TipoEspacioParams,
+} from './contrato-tipo-espacio.helper';
 
 type Tx = Prisma.TransactionClient;
 
@@ -338,6 +345,26 @@ export class ContratoService {
   //   atomic*   → dentro de transacción; garantiza unicidad.
   // ---------------------------------------------------------------------------
 
+  /** Convierte un `TipoEspacio` de Prisma (Decimal) al shape puro del helper. */
+  private toTipoEspacioParams(
+    tipoEspacio: {
+      nombre: string;
+      prefijoNumeracion: string | null;
+      tarifaArriendo: Prisma.Decimal;
+      aniosArriendo: number;
+      vecesRenovacion: number;
+    } | null,
+  ): TipoEspacioParams | null {
+    if (!tipoEspacio) return null;
+    return {
+      nombre: tipoEspacio.nombre,
+      prefijoNumeracion: tipoEspacio.prefijoNumeracion,
+      tarifaArriendo: Number(tipoEspacio.tarifaArriendo),
+      aniosArriendo: tipoEspacio.aniosArriendo,
+      vecesRenovacion: tipoEspacio.vecesRenovacion,
+    };
+  }
+
   private async resolveNumberPrefix(
     bovedaId?: number,
     isRenovacion = false,
@@ -346,20 +373,20 @@ export class ContratoService {
     const boveda = bovedaId
       ? await this.prisma.boveda.findUnique({
           where: { id: Number(bovedaId) },
-          include: { piso: { include: { bloque: true } } },
+          include: {
+            tipoEspacio: true,
+            piso: { include: { bloque: true } },
+          },
         })
       : null;
 
-    const tipo = (
-      boveda?.tipo ||
-      boveda?.piso?.bloque?.nombre ||
-      'Boveda'
-    ).toLowerCase();
-    const basePrefix = tipo.includes('nicho')
-      ? 'NCH'
-      : tipo.includes('tumulo') || tipo.includes('tumul')
-        ? 'TML'
-        : 'CTR';
+    // El catálogo TipoEspacio manda; mientras dure el backfill, se cae al
+    // string legado `boveda.tipo` o al nombre del bloque.
+    const basePrefix = resolverPrefijoBase({
+      tipoEspacio: this.toTipoEspacioParams(boveda?.tipoEspacio ?? null),
+      tipoLegado: boveda?.tipo ?? null,
+      nombreBloque: boveda?.piso?.bloque?.nombre ?? null,
+    });
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
     const gadInfo = await this.prisma.gADInformacion.findFirst({
@@ -462,11 +489,12 @@ export class ContratoService {
 
     const boveda = await this.prisma.boveda.findUnique({
       where: { id: Number(contrato.bovedaId) },
-      include: { bloque: { include: { cementerio: true } } },
+      include: { tipoEspacio: true, bloque: { include: { cementerio: true } } },
     });
     if (!boveda || !boveda.estado) {
       throw new BadRequestException('La bóveda seleccionada no existe o está inactiva');
     }
+    const tipoEspacio = this.toTipoEspacioParams(boveda.tipoEspacio ?? null);
 
     // Sólo se permite reutilizar bóveda si esta nueva contrato apunta a un
     // contratoRelacionado explícito o si es una renovación.
@@ -498,21 +526,28 @@ export class ContratoService {
       if (!origen) {
         throw new BadRequestException('El contrato origen no existe');
       }
-      const cementerio = boveda.bloque.cementerio;
-      const maxRenovaciones =
-        (boveda.tipo || '').toLowerCase().includes('nicho')
-          ? cementerio.vecesRenovacionNicho
-          : cementerio.vecesRenovacionBovedas;
-      if (origen.vecesRenovado + 1 > maxRenovaciones) {
+      const { permitido, max } = validarLimiteRenovacion({
+        vecesRenovado: origen.vecesRenovado,
+        tipoEspacio,
+        tipoLegado: boveda.tipo ?? null,
+        cementerioLegado: boveda.bloque.cementerio,
+      });
+      if (!permitido) {
         throw new UnprocessableEntityException(
-          `El contrato no puede renovarse más de ${maxRenovaciones} vez(ces) (límite del cementerio).`,
+          `El contrato no puede renovarse más de ${max} vez(ces) (límite del tipo de espacio).`,
         );
       }
     }
 
-    // -- Cálculo de montos server-side: el subtotal es el precio de
-    // arrendamiento de la bóveda. El cliente no puede manipularlo.
-    const montoSubtotal = Number(boveda.precioArrendamiento);
+    // -- Cálculo de montos server-side. El tipo de espacio manda: la tarifa
+    // por defecto sale de `tipoEspacio.tarifaArriendo`. La bóveda puede tener
+    // un precio de arrendamiento propio (override editable por bóveda); si lo
+    // tiene (> 0) prevalece, manteniendo paridad con el legado. El cliente
+    // nunca controla el monto directamente.
+    const montoSubtotal = resolverTarifaContrato(
+      Number(boveda.precioArrendamiento),
+      tipoEspacio,
+    );
     let descuentoPorcentaje = 0;
     if (contrato.descuentoId) {
       const descuento = await this.prisma.descuento.findUnique({
@@ -530,13 +565,16 @@ export class ContratoService {
     );
     const montoTotal = round2(montoSubtotal - montoDescuento);
 
-    // -- Generación de cuotas según el plan.
+    // -- Generación de cuotas según el plan. Los años los elige el operador en
+    // el wizard; si no envía un valor válido, se usa el default del tipo de
+    // espacio (`tipoEspacio.aniosArriendo`).
+    const anios = resolverAniosContrato(contrato.numeroDeMeses, tipoEspacio);
     const fechaInicio = new Date(contrato.fechaInicio);
-    const fechaFin = addYears(fechaInicio, contrato.numeroDeMeses);
+    const fechaFin = addYears(fechaInicio, anios);
     const cuotasPlan = this.generarCuotasPlan(
       pago.plan,
       fechaInicio,
-      contrato.numeroDeMeses,
+      anios,
       montoTotal,
     );
 
@@ -625,7 +663,7 @@ export class ContratoService {
           numeroSecuencial,
           fechaInicio,
           fechaFin,
-          numeroDeMeses: contrato.numeroDeMeses,
+          numeroDeMeses: anios,
           montoSubtotal: new Prisma.Decimal(montoSubtotal),
           montoDescuento: new Prisma.Decimal(montoDescuento),
           montoTotal: new Prisma.Decimal(montoTotal),
@@ -827,7 +865,12 @@ export class ContratoService {
     const origen = await this.prisma.contrato.findUnique({
       where: { id: origenId },
       include: {
-        boveda: { include: { bloque: { include: { cementerio: true } } } },
+        boveda: {
+          include: {
+            tipoEspacio: true,
+            bloque: { include: { cementerio: true } },
+          },
+        },
         difunto: true,
         responsables: { select: { responsable: { select: { personaId: true } } } },
       },
@@ -838,20 +881,27 @@ export class ContratoService {
       );
     }
 
-    const cementerio = origen.boveda.bloque.cementerio;
-    const maxRenovaciones = (origen.boveda.tipo || '')
-      .toLowerCase()
-      .includes('nicho')
-      ? cementerio.vecesRenovacionNicho
-      : cementerio.vecesRenovacionBovedas;
-    if (origen.vecesRenovado + 1 > maxRenovaciones) {
+    const tipoEspacio = this.toTipoEspacioParams(
+      origen.boveda.tipoEspacio ?? null,
+    );
+    const { permitido, max } = validarLimiteRenovacion({
+      vecesRenovado: origen.vecesRenovado,
+      tipoEspacio,
+      tipoLegado: origen.boveda.tipo ?? null,
+      cementerioLegado: origen.boveda.bloque.cementerio,
+    });
+    if (!permitido) {
       throw new UnprocessableEntityException(
-        `Este contrato ya alcanzó el máximo de ${maxRenovaciones} renovación(es) permitido por el cementerio.`,
+        `Este contrato ya alcanzó el máximo de ${max} renovación(es) permitido por el tipo de espacio.`,
       );
     }
 
-    // Cálculo de montos server-side.
-    const montoSubtotal = Number(origen.boveda.precioArrendamiento);
+    // Cálculo de montos server-side. El tipo de espacio manda; la bóveda puede
+    // tener tarifa propia (override) que prevalece.
+    const montoSubtotal = resolverTarifaContrato(
+      Number(origen.boveda.precioArrendamiento),
+      tipoEspacio,
+    );
     let descuentoPorcentaje = 0;
     if (dto.descuentoId) {
       const descuento = await this.prisma.descuento.findUnique({
@@ -869,12 +919,13 @@ export class ContratoService {
     );
     const montoTotal = round2(montoSubtotal - montoDescuento);
 
+    const anios = resolverAniosContrato(dto.numeroDeMeses, tipoEspacio);
     const fechaInicio = new Date(dto.fechaInicio);
-    const fechaFin = addYears(fechaInicio, dto.numeroDeMeses);
+    const fechaFin = addYears(fechaInicio, anios);
     const cuotasPlan = this.generarCuotasPlan(
       dto.pago.plan,
       fechaInicio,
-      dto.numeroDeMeses,
+      anios,
       montoTotal,
     );
     const numerosValidos = new Set(cuotasPlan.map((c) => c.numero));
@@ -919,7 +970,7 @@ export class ContratoService {
           numeroSecuencial,
           fechaInicio,
           fechaFin,
-          numeroDeMeses: dto.numeroDeMeses,
+          numeroDeMeses: anios,
           montoSubtotal: new Prisma.Decimal(montoSubtotal),
           montoDescuento: new Prisma.Decimal(montoDescuento),
           montoTotal: new Prisma.Decimal(montoTotal),

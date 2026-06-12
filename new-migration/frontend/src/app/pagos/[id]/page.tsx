@@ -3,6 +3,8 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Ban, FileText } from 'lucide-react';
+import { Button } from '@/components/ui';
 
 interface Pago {
   id: number;
@@ -189,7 +191,7 @@ export default function PagoDetailPage({
           href="/pagos"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -211,7 +213,7 @@ export default function PagoDetailPage({
               {pago.numeroRecibo}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Detalle del pago registrado.
           </p>
         </div>
@@ -222,7 +224,7 @@ export default function PagoDetailPage({
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-file-type-pdf" />
+            <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Factura PDF
           </a>
           {puedeAnular && (
@@ -231,7 +233,7 @@ export default function PagoDetailPage({
               onClick={() => setConfirmAnular(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
             >
-              <i className="ti ti-ban" />
+              <Ban className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               Anular
             </button>
           )}
@@ -239,21 +241,23 @@ export default function PagoDetailPage({
             href="/pagos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" />
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Volver
           </Link>
         </div>
       </div>
 
       {!pago.estado && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <i className="ti ti-ban mr-1" />
+        <div className="flex items-start gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <Ban className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <div>
           <strong>Pago anulado.</strong> Las cuotas asociadas fueron revertidas
           a pendientes.
           {pago.usuarioEliminador && (
             <> Anulado por {pago.usuarioEliminador.nombre}{' '}
               {pago.usuarioEliminador.apellido}.</>
           )}
+          </div>
         </div>
       )}
 
@@ -270,7 +274,7 @@ export default function PagoDetailPage({
             <div className="overflow-x-auto -m-5">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                     <th className="px-5 py-2.5">Contrato</th>
                     <th className="px-5 py-2.5">Cuota</th>
                     <th className="px-5 py-2.5">Vencimiento</th>
@@ -294,7 +298,7 @@ export default function PagoDetailPage({
                             '—'
                           )}
                           {c.contrato?.difunto && (
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-slate-600">
                               {c.contrato.difunto.nombre}{' '}
                               {c.contrato.difunto.apellido}
                             </div>
@@ -321,7 +325,7 @@ export default function PagoDetailPage({
             <Card title="Contrato asociado">
               <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Número
                   </dt>
                   <dd className="mt-0.5 font-mono font-semibold text-slate-700">
@@ -329,7 +333,7 @@ export default function PagoDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Difunto
                   </dt>
                   <dd className="mt-0.5 text-slate-700">
@@ -337,7 +341,7 @@ export default function PagoDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Bóveda
                   </dt>
                   <dd className="mt-0.5 text-slate-700">
@@ -345,7 +349,7 @@ export default function PagoDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Bloque
                   </dt>
                   <dd className="mt-0.5 text-slate-700">
@@ -411,7 +415,7 @@ export default function PagoDetailPage({
               </div>
               {pago.observacion && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-400">
+                  <dt className="text-xs uppercase tracking-wide text-slate-600">
                     Observación
                   </dt>
                   <dd className="mt-0.5 text-slate-700">{pago.observacion}</dd>
@@ -470,22 +474,24 @@ export default function PagoDetailPage({
               </p>
             </div>
             <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setConfirmAnular(false)}
                 disabled={anulando}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
+                size="sm"
                 onClick={handleAnular}
-                disabled={anulando}
-                className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-60"
+                loading={anulando}
               >
                 {anulando ? 'Anulando…' : 'Anular pago'}
-              </button>
+              </Button>
             </footer>
           </div>
         </div>

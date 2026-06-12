@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check } from 'lucide-react';
 import { personasApi } from '@/lib/api';
+import { DatePicker } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function CreatePersonaPage() {
   const router = useRouter();
@@ -48,17 +50,17 @@ export default function CreatePersonaPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Nueva Persona</h1>
-          <p className="mt-1 text-sm text-slate-500">Registrar una nueva persona.</p>
+          <p className="mt-1 text-sm text-slate-600">Registrar una nueva persona.</p>
         </div>
         <Link
           href="/personas"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -149,15 +151,11 @@ export default function CreatePersonaPage() {
                 />
               </div>
 
-              <div>
-                <label className={LABEL_CLS}>Fecha de Nacimiento</label>
-                <input
-                  type="date"
-                  className={INPUT_CLS}
-                  value={formData.fechaNacimiento}
-                  onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
-                />
-              </div>
+              <DatePicker
+                label="Fecha de Nacimiento"
+                value={formData.fechaNacimiento}
+                onChange={(iso) => setFormData({ ...formData, fechaNacimiento: iso })}
+              />
               <div>
                 <label className={LABEL_CLS}>Género</label>
                 <select
@@ -215,7 +213,7 @@ export default function CreatePersonaPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   <>
@@ -242,7 +240,8 @@ export default function CreatePersonaPage() {
                   </>
                 ) : (
                   <>
-                    <i className="ti ti-check" /> Guardar
+                    <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />{' '}
+                    Guardar
                   </>
                 )}
               </button>

@@ -1,8 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  Eye,
+  FileText,
+  FolderX,
+  Loader2,
+  Pencil,
+  Plus,
+  Repeat,
+  Search,
+  Trash2,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import { contratosApi } from '@/lib/api';
+import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
 
 type EstadoFiltro = '' | 'activos' | 'porvencer' | 'vencidos' | 'inactivos';
 
@@ -174,28 +191,203 @@ export default function ContratosPage() {
   const contratosRenovados = contratos.filter((row) => row.esRenovacion).length;
   const contratosPorVencer = contratos.filter((row) => estadoVisual(row).label === 'Por vencer').length;
 
+  const columns: DataTableColumn<Contrato>[] = [
+    {
+      key: 'numero',
+      header: 'Número',
+      sortable: true,
+      sortValue: (row) => row.numeroSecuencial,
+      cell: (row) => (
+        <span className="whitespace-nowrap font-mono text-xs font-semibold text-slate-700">
+          {row.numeroSecuencial}
+        </span>
+      ),
+    },
+    {
+      key: 'difunto',
+      header: 'Difunto',
+      sortable: true,
+      sortValue: (row) =>
+        `${row.difunto?.nombre ?? ''} ${row.difunto?.apellido ?? ''}`.trim(),
+      cell: (row) => (
+        <>
+          <div className="font-medium text-slate-900">
+            {`${row.difunto?.nombre ?? ''} ${row.difunto?.apellido ?? ''}`.trim()}
+          </div>
+          {row.difunto?.numeroIdentificacion && (
+            <div className="text-xs text-slate-600">
+              {row.difunto.numeroIdentificacion}
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'boveda',
+      header: 'Bóveda',
+      sortable: true,
+      sortValue: (row) => row.boveda?.numero ?? null,
+      cell: (row) => (
+        <>
+          <div className="text-slate-700">{row.boveda?.numero ?? '-'}</div>
+          <div className="text-xs text-slate-600">
+            {row.boveda?.bloque?.nombre ?? '-'}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: 'propietario',
+      header: 'Propietario',
+      sortable: true,
+      sortValue: (row) =>
+        row.boveda?.propietario?.persona
+          ? `${row.boveda.propietario.persona.nombre} ${row.boveda.propietario.persona.apellido}`
+          : null,
+      cell: (row) => (
+        <span className="text-slate-600">
+          {row.boveda?.propietario?.persona
+            ? `${row.boveda.propietario.persona.nombre} ${row.boveda.propietario.persona.apellido}`
+            : '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'monto',
+      header: 'Monto',
+      align: 'right',
+      sortable: true,
+      sortValue: (row) => Number(row.montoTotal ?? 0),
+      cell: (row) => (
+        <span className="whitespace-nowrap font-medium text-slate-700">
+          {formatCurrency(row.montoTotal)}
+        </span>
+      ),
+    },
+    {
+      key: 'vigencia',
+      header: 'Vigencia',
+      sortable: true,
+      sortValue: (row) => row.fechaInicio,
+      cell: (row) => (
+        <div className="whitespace-nowrap text-xs text-slate-500">
+          <div>{formatDate(row.fechaInicio)}</div>
+          <div className="text-slate-600">→ {formatDate(row.fechaFin)}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      sortable: true,
+      sortValue: (row) => (row.esRenovacion ? 'Renovación' : 'Nuevo'),
+      cell: (row) =>
+        row.esRenovacion ? (
+          <span className="inline-flex items-center rounded-full bg-info-50 px-2 py-0.5 text-xs font-medium text-info-600 ring-1 ring-info-200">
+            Renovación
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+            Nuevo
+          </span>
+        ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortable: true,
+      sortValue: (row) => estadoVisual(row).label,
+      cell: (row) => {
+        const e = estadoVisual(row);
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${e.classes}`}
+          >
+            {e.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      cell: (row) => (
+        <div className="inline-flex items-center gap-1 whitespace-nowrap">
+          <Link
+            href={`/contratos/${row.id}`}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Ver detalle"
+          >
+            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </Link>
+          <Link
+            href={`/contratos/${row.id}/edit`}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Editar"
+          >
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => handleDelete(row.id)}
+            disabled={deletingId === row.id}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
+            title="Eliminar"
+          >
+            {deletingId === row.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="Total de contratos" value={meta?.total ?? contratos.length} icon="ti-file-text" tone="primary" />
-        <SummaryCard label="Contratos activos" value={contratosActivos} icon="ti-check-circle" tone="success" />
-        <SummaryCard label="Renovaciones" value={contratosRenovados} icon="ti-repeat" tone="info" />
-        <SummaryCard label="Por vencer" value={contratosPorVencer} icon="ti-alert-triangle" tone="warning" />
+        <SummaryCard
+          label="Total de contratos"
+          value={meta?.total ?? contratos.length}
+          icon={<FileText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
+          tone="primary"
+        />
+        <SummaryCard
+          label="Contratos activos"
+          value={contratosActivos}
+          icon={<CircleCheck className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
+          tone="success"
+        />
+        <SummaryCard
+          label="Renovaciones"
+          value={contratosRenovados}
+          icon={<Repeat className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
+          tone="info"
+        />
+        <SummaryCard
+          label="Por vencer"
+          value={contratosPorVencer}
+          icon={<TriangleAlert className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
+          tone="warning"
+        />
       </div>
 
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Contratos</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Gestión de contratos de arrendamiento de bóvedas y nichos.
           </p>
         </div>
         <Link
           href="/contratos/create"
-          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
         >
-          <i className="ti ti-plus" />
+          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Nuevo contrato
         </Link>
       </div>
@@ -205,7 +397,11 @@ export default function ContratosPage() {
         {/* Filtros */}
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1 sm:max-w-md">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             <input
               type="search"
               placeholder="Buscar por número, difunto o identificación…"
@@ -214,14 +410,14 @@ export default function ContratosPage() {
                 setPage(1);
                 setSearchTerm(e.target.value);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
 
           <div className="flex items-center gap-2">
             <label
               htmlFor="estado-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+              className="text-xs font-medium uppercase tracking-wide text-slate-600"
             >
               Estado
             </label>
@@ -247,7 +443,7 @@ export default function ContratosPage() {
             onClick={clearFilters}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-x" /> Limpiar
+            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Limpiar
           </button>
         </div>
 
@@ -258,149 +454,19 @@ export default function ContratosPage() {
         )}
 
         {/* Tabla */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th scope="col" className="px-4 py-3">Número</th>
-                <th scope="col" className="px-4 py-3">Difunto</th>
-                <th scope="col" className="px-4 py-3">Bóveda</th>
-                <th scope="col" className="px-4 py-3">Propietario</th>
-                <th scope="col" className="px-4 py-3 text-right">Monto</th>
-                <th scope="col" className="px-4 py-3">Vigencia</th>
-                <th scope="col" className="px-4 py-3">Tipo</th>
-                <th scope="col" className="px-4 py-3">Estado</th>
-                <th scope="col" className="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
-                    <div className="inline-flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4 animate-spin text-primary-500"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                      </svg>
-                      Cargando contratos…
-                    </div>
-                  </td>
-                </tr>
-              ) : contratos.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={9}
-                    className="px-4 py-12 text-center text-slate-400"
-                  >
-                    <i className="ti ti-folder-x text-3xl text-slate-300" />
-                    <div className="mt-2 text-sm">
-                      No hay contratos que coincidan con los filtros.
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                contratos.map((row) => {
-                  const e = estadoVisual(row);
-                  return (
-                    <tr key={row.id} className="hover:bg-slate-50/50">
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-semibold text-slate-700">
-                        {row.numeroSecuencial}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-slate-900">
-                          {`${row.difunto?.nombre ?? ''} ${row.difunto?.apellido ?? ''}`.trim()}
-                        </div>
-                        {row.difunto?.numeroIdentificacion && (
-                          <div className="text-xs text-slate-400">
-                            {row.difunto.numeroIdentificacion}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-slate-700">{row.boveda?.numero ?? '-'}</div>
-                        <div className="text-xs text-slate-400">
-                          {row.boveda?.bloque?.nombre ?? '-'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {row.boveda?.propietario?.persona
-                          ? `${row.boveda.propietario.persona.nombre} ${row.boveda.propietario.persona.apellido}`
-                          : '-'}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-slate-700">
-                        {formatCurrency(row.montoTotal)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
-                        <div>{formatDate(row.fechaInicio)}</div>
-                        <div className="text-slate-400">→ {formatDate(row.fechaFin)}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {row.esRenovacion ? (
-                          <span className="inline-flex items-center rounded-full bg-info-50 px-2 py-0.5 text-xs font-medium text-info-600 ring-1 ring-info-200">
-                            Renovación
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
-                            Nuevo
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${e.classes}`}
-                        >
-                          {e.label}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <Link
-                            href={`/contratos/${row.id}`}
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                            title="Ver detalle"
-                          >
-                            <i className="ti ti-eye" />
-                          </Link>
-                          <Link
-                            href={`/contratos/${row.id}/edit`}
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                            title="Editar"
-                          >
-                            <i className="ti ti-edit" />
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(row.id)}
-                            disabled={deletingId === row.id}
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                            title="Eliminar"
-                          >
-                            <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={contratos}
+          rowKey={(row) => row.id}
+          loading={loading}
+          empty={
+            <EmptyState
+              icon={<FolderX className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />}
+              title="No hay contratos que coincidan con los filtros."
+              compact
+            />
+          }
+        />
 
         {/* Paginación */}
         {meta && meta.totalPages > 1 && (
@@ -417,9 +483,9 @@ export default function ContratosPage() {
                 type="button"
                 onClick={() => setPage(meta.page - 1)}
                 disabled={!meta.hasPrevPage}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <i className="ti ti-chevron-left" /> Anterior
+                <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Anterior
               </button>
               {visiblePages.map((p) => (
                 <button
@@ -428,7 +494,7 @@ export default function ContratosPage() {
                   onClick={() => setPage(p)}
                   className={`rounded-md px-3 py-1 text-xs font-medium ${
                     p === meta.page
-                      ? 'bg-primary-500 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -439,9 +505,9 @@ export default function ContratosPage() {
                 type="button"
                 onClick={() => setPage(meta.page + 1)}
                 disabled={!meta.hasNextPage}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Siguiente <i className="ti ti-chevron-right" />
+                Siguiente <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
               </button>
             </nav>
           </div>
@@ -459,7 +525,7 @@ function SummaryCard({
 }: {
   label: string;
   value: number;
-  icon: string;
+  icon: ReactNode;
   tone: 'primary' | 'success' | 'info' | 'warning';
 }) {
   const tones = {
@@ -473,11 +539,14 @@ function SummaryCard({
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+          <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${tones[tone]}`}>
-          <i className={`ti ${icon} text-xl`} />
+        <span
+          aria-hidden="true"
+          className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${tones[tone]}`}
+        >
+          {icon}
         </span>
       </div>
     </div>
