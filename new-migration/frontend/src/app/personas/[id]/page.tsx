@@ -149,14 +149,19 @@ export default function PersonaDetailsPage({
 
   const bovedas: Boveda[] = useMemo(() => {
     if (!persona) return [];
-    return persona.propietarios.flatMap((p) => p.bovedas ?? []);
+    const all = persona.propietarios.flatMap((p) => p.bovedas ?? []);
+    // Una persona puede figurar como propietaria de la misma bóveda en más de
+    // un registro; deduplicamos por id para no repetir filas (ni keys React).
+    return Array.from(new Map(all.map((b) => [b.id, b])).values());
   }, [persona]);
 
   const contratos: ContratoRow[] = useMemo(() => {
     if (!persona) return [];
-    return persona.responsables.flatMap((r) =>
+    const all = persona.responsables.flatMap((r) =>
       r.contratoResponsables.map((cr) => cr.contrato),
     );
+    // Mismo contrato puede llegar vía varios registros de responsable.
+    return Array.from(new Map(all.map((c) => [c.id, c])).values());
   }, [persona]);
 
   const bovedaColumns: DataTableColumn<Boveda>[] = [
