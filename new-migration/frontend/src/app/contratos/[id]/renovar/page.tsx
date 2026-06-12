@@ -330,7 +330,7 @@ export default function RenovarContratoPage({
               <>
                 <span className="text-slate-400 mx-2">→</span>
                 <span className="font-mono text-green-600">
-                  Nuevo: {nuevoNumeroSecuencial}
+                  Nuevo (Estimado): {nuevoNumeroSecuencial}
                 </span>
               </>
             )}

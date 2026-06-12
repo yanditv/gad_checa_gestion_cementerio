@@ -1,5 +1,6 @@
 import { getContratoById, getGADInformacion } from '@/lib/contratos-server';
 import { buildContratoPdfBuffer } from '@/lib/contrato-pdf';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error generating contrato PDF', error);
+    logger.error('Error generating contrato PDF', error);
     return new Response('No se pudo generar el PDF del contrato.', {
       status: 500,
       headers: {

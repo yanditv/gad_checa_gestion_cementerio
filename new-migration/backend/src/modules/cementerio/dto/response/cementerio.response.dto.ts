@@ -132,3 +132,11 @@ export class GADInformacionResponseDto {
   @ApiPropertyOptional()
   fechaActualizacion?: string;
 }
+
+export class GADImageUploadResponseDto {
+  @ApiProperty()
+  url: string;
+
+  @ApiProperty()
+  logoUrl: string;
+}

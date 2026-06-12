@@ -560,11 +560,7 @@ export class CatastroImporter {
         : 'CTR';
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    const gadInfo = await this.prisma.gADInformacion.findFirst({
-      select: { nombre: true },
-    });
-    const gadName = gadInfo?.nombre || 'GAD CHECA';
-    const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
+    const gadCode = 'GADCHECA';
 
     const lastContrato = await this.prisma.contrato.findFirst({
       where: {

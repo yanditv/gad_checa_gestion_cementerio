@@ -117,15 +117,7 @@ export class SeedService {
 
     await this.prisma.cementerio.upsert({
       where: { id: 1 },
-      update: {
-        contratoPreambulo,
-        contratoClausula1,
-        contratoClausula2,
-        contratoClausula3,
-        contratoClausula4,
-        contratoClausula5,
-        contratoClausula6,
-      },
+      update: {},
       create: {
         nombre: 'Cementerio de checa',
         direccion: 'Eloy Riera, Parroquia Checa',

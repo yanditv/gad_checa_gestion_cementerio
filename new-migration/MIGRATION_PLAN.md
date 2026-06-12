@@ -381,6 +381,7 @@ este archivo.
 | Identidad y JWT | `@nestjs/jwt` + `passport-jwt`. Tokens válidos 7 d. Refresh manual (re-login). Sin OAuth externo. |
 | Hash de contraseña | `bcrypt`, cost 10. |
 | Almacenamiento de PDFs firmados | Driver pluggable: `local` (filesystem `STORAGE_PATH=/app/storage`) o `s3` (variables `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`). Default: `local`. |
+| Almacenamiento de imágenes de GAD (logo, banners) | **`PhotoService` y backend `StorageService`**. Se suben mediante `POST /cementerios/gad-informacion/image` (solo Administrador) y se sirven vía `GET /cementerios/gad-informacion/image` (público) desde el almacenamiento persistente configurado del backend, previniendo SSRF y evitando el almacenamiento efímero del frontend. |
 | Generador de PDF | `pdfkit`. Quedó descartado QuestPDF (.NET) y Rotativa (requiere wkhtmltopdf). |
 | Cron | `@nestjs/schedule`. Job principal: `0 7 * * *` America/Guayaquil. |
 | Idioma del código | Identificadores y comentarios en **inglés**; literales de UI y mensajes al usuario en **español**. Excepción: nombres de dominio (`Boveda`, `Difunto`, `Cementerio`) se mantienen en español por consistencia con el cliente. |

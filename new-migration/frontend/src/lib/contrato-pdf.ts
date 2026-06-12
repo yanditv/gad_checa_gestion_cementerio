@@ -14,6 +14,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import PDFDocument from 'pdfkit';
+import { logger } from './logger';
+import {
+  DEFAULT_PREAMBULO,
+  DEFAULT_CLAUSULA1,
+  DEFAULT_CLAUSULA2,
+  DEFAULT_CLAUSULA3,
+  DEFAULT_CLAUSULA4,
+  DEFAULT_CLAUSULA5,
+  DEFAULT_CLAUSULA6,
+} from './default-contrato-templates';
 
 const PAGE_MARGIN_HORIZONTAL = 60;
 const PAGE_MARGIN_VERTICAL = 60;
@@ -78,20 +88,59 @@ function joinNombre(persona?: {
 
 async function getImageBufferOrPath(imgUrl?: string | null): Promise<string | Buffer | null> {
   if (!imgUrl) return null;
-  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+
+  // Si es una ruta local del frontend (anterior o fallback uploads)
+  if (imgUrl.startsWith('/uploads/')) {
+    const localPath = path.join(process.cwd(), 'public', imgUrl);
+    if (fs.existsSync(localPath)) {
+      return localPath;
+    }
+  }
+
+  // Si es la ruta de imágenes del GAD servida por el backend
+  if (imgUrl.startsWith('/api/cementerios/gad-informacion/image') || imgUrl.startsWith('api/cementerios/gad-informacion/image')) {
+    const cleanUrl = imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
+    const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Mapeamos /api/* a la URL interna del backend (removiendo el /api de Next.js BFF)
+    const targetUrl = `${backendBase}${cleanUrl.replace(/^\/api/, '')}`;
     try {
+      const res = await fetch(targetUrl);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+    } catch (e) {
+      logger.error('Error fetching GAD image from backend:', e, targetUrl);
+    }
+    return null;
+  }
+
+  // Si es una URL completa
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    // Validar contra allowlist de dominios autorizados para prevenir SSRF.
+    const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    try {
+      const parsedUrl = new URL(imgUrl);
+      const parsedBackend = new URL(backendBase);
+      
+      const isAllowedHost = parsedUrl.host === parsedBackend.host;
+      
+      if (!isAllowedHost) {
+        logger.warn('Blocked SSRF attempt: URL host not in allowlist', imgUrl);
+        return null;
+      }
+
       const res = await fetch(imgUrl);
       if (res.ok) {
         const arrayBuffer = await res.arrayBuffer();
         return Buffer.from(arrayBuffer);
       }
     } catch (e) {
-      console.error('Error downloading remote image:', e, imgUrl);
+      logger.error('Error downloading remote image:', e, imgUrl);
     }
   } else {
-    const relativePath = imgUrl.startsWith('/') 
-      ? imgUrl 
-      : `/${imgUrl}`;
+    // Fallback original para archivos locales
+    const relativePath = imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
     const localPath = path.join(process.cwd(), 'public', relativePath);
     if (fs.existsSync(localPath)) {
       return localPath;
@@ -195,7 +244,7 @@ function drawHeader(
       doc.image(logo, x, 16, { width: imgWidth, height: 56 });
     }
   } catch (err) {
-    console.error('Error rendering PDF header image:', err);
+    logger.error('Error rendering PDF header image:', err);
   }
 }
 
@@ -242,7 +291,7 @@ function drawFooter(
         });
     }
   } catch (err) {
-    console.error('Error rendering PDF footer image:', err);
+    logger.error('Error rendering PDF footer image:', err);
   }
 
   // Restore bottom margin
@@ -445,33 +494,13 @@ export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Prom
     };
 
     // Plantillas con fallbacks si no están configuradas en la base de datos
-    const tPreambulo =
-      cementerio.contratoPreambulo ||
-      'En la Parroquia de {parroquia}, a los **{fechaInicioDia}** días del mes de **{fechaInicioMes}** del **{fechaInicioAnio}**, comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el {gadNombre}, debidamente representado por el **{presidente}**; por otro lado, el/la Sr/Sra. **{responsableNombre}** con número de identidad **{responsableCI}**, número de teléfono **{responsableTelefono}**, correo electrónico **{responsableEmail}**, los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:';
-
-    const tClausula1 =
-      cementerio.contratoClausula1 ||
-      '**PRIMERA COMPARECIENTES. -** Comparecen por una parte el {gadNombre} representada por su presidente el **{presidente}**; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. **{responsableNombre}** a quien en lo posterior se le llamará Arrendatario.';
-
-    const tClausula2 =
-      cementerio.contratoClausula2 ||
-      '**SEGUNDA ANTECEDENTE. -** El {gadNombre} es la Institución Pública que administra el {cementerioNombre}, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.';
-
-    const tClausula3 =
-      cementerio.contratoClausula3 ||
-      '**TERCER OBJETO. -** El {gadNombre}, en su calidad de Administrador del {cementerioNombre}, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: **{difuntoNombre}** con número de cédula **{difuntoCI}**, restos que serán depositados en la bóveda número **{bovedaNumero}** en el bloque **{bloqueDescripcion}**{pisoTexto}.';
-
-    const tClausula4 =
-      cementerio.contratoClausula4 ||
-      '**CUARTA: PRECIO. -** El valor por arriendo de la Bóveda es de **{montoTotal}** valor que fue cancelado con depósito en {bancoTexto} cta. # **{numeroCuenta}**';
-
-    const tClausula5 =
-      cementerio.contratoClausula5 ||
-      '**QUINTA: OTRA. -** La parte arrendadora aclara que una vez que el {gadNombre} entrega el derecho de uso por **{aniosArriendo} años** a partir de la fecha del **{fechaInicioDia} de {fechaInicioMes} del {fechaInicioAnio}**, la parte arrendataria. Vence el contrato el **{fechaFinDia} de {fechaFinMes} del {fechaFinAnio}**.';
-
-    const tClausula6 =
-      cementerio.contratoClausula6 ||
-      '**SEXTA: -** Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.';
+    const tPreambulo = cementerio.contratoPreambulo || DEFAULT_PREAMBULO;
+    const tClausula1 = cementerio.contratoClausula1 || DEFAULT_CLAUSULA1;
+    const tClausula2 = cementerio.contratoClausula2 || DEFAULT_CLAUSULA2;
+    const tClausula3 = cementerio.contratoClausula3 || DEFAULT_CLAUSULA3;
+    const tClausula4 = cementerio.contratoClausula4 || DEFAULT_CLAUSULA4;
+    const tClausula5 = cementerio.contratoClausula5 || DEFAULT_CLAUSULA5;
+    const tClausula6 = cementerio.contratoClausula6 || DEFAULT_CLAUSULA6;
 
     // -----------------------------------------------------------------------
     // Renderizado del Contenido del PDF
