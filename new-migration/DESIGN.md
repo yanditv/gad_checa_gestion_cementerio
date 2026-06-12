@@ -355,7 +355,8 @@ componente:
 | `FormSection` | `title`, `description`, children | Agrupa campos con título y separador. |
 | `KpiCard` | `label`, `value`, `icon`, `tone`, `progress`, `trend` | Tarjeta KPI del dashboard (overline + cifra `tabular-nums` + chip de icono + barra opcional). |
 | `StatusPill` | `tone`, `label` | Atajo de `Badge` para estados de dominio (Activo/Vencido/Disponible…). |
-| `ImageUpload` / `AvatarUpload` | `value`, `onChange`, `onRemove` | **Opcional** (`Fase 4`): preview, quitar, drag&drop; fallback a iniciales en avatar. |
+| `ImageUpload` | `value`, `onChange(file\|null)`, `label`, `hint`, `shape` (`square`\|`circle`), `disabled` | **Opcional** (`Fase 4`). Control **diferido**: emite el `File` elegido (o `null` al quitar) con preview + drag&drop; valida jpg/png/webp ≤5MB en cliente. El formulario sube tras crear/actualizar. Usado en Bien y Difunto. |
+| `AvatarUpload` | `src`, `name`, `onChange(avatarUrl\|null)` | **Opcional** (`Fase 4`). Avatar de la cuenta propia con **subida inmediata** vía `authApi`; cae a iniciales (`Avatar`) y notifica la nueva `avatarUrl` para refrescar el topbar. Usado en `/cuenta`. |
 
 ### 6.2 Patrones de composición de referencia
 
