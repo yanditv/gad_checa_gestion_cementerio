@@ -536,18 +536,25 @@ export class CatastroImportService {
     const basePrefix = tipo.includes('nicho') ? 'NCH' : tipo.includes('tumulo') || tipo.includes('tumul') ? 'TML' : 'CTR';
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
+    const gadInfo = await this.prisma.gADInformacion.findFirst({
+      select: { nombre: true },
+    });
+    const gadName = gadInfo?.nombre || 'GAD CHECA';
+    const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
+
     const lastContrato = await this.prisma.contrato.findFirst({
       where: {
-        numeroSecuencial: {
-          startsWith: `${prefix}-GADCHECA-${year}-`,
-        },
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
       },
       orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },
     });
 
     const nextNumber = lastContrato ? Number(lastContrato.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
-    return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
+    return `${prefix}-${gadCode}-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 
   private str(value: unknown): string {

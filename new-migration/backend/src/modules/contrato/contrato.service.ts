@@ -389,7 +389,11 @@ export class ContratoService {
     });
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    const gadCode = 'GADCHECA';
+    const gadInfo = await this.prisma.gADInformacion.findFirst({
+      select: { nombre: true },
+    });
+    const gadName = gadInfo?.nombre || 'GAD CHECA';
+    const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
 
     return { prefix, year, pattern: `${prefix}-${gadCode}-${year}-`, gadCode };
   }
@@ -407,14 +411,19 @@ export class ContratoService {
     bovedaId?: number,
     isRenovacion = false,
   ): Promise<string> {
-    const { prefix, year, pattern, gadCode } = await this.resolveNumberPrefix(
+    const { prefix, year, gadCode } = await this.resolveNumberPrefix(
       bovedaId,
       isRenovacion,
     );
 
     const last = await this.prisma.contrato.findFirst({
-      where: { numeroSecuencial: { startsWith: pattern } },
-      orderBy: { numeroSecuencial: 'desc' },
+      where: {
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
+      },
+      orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },
     });
 
@@ -429,7 +438,7 @@ export class ContratoService {
     bovedaId?: number,
     isRenovacion = false,
   ): Promise<string> {
-    const { prefix, year, pattern, gadCode } = await this.resolveNumberPrefix(
+    const { prefix, year, gadCode } = await this.resolveNumberPrefix(
       bovedaId,
       isRenovacion,
     );
@@ -438,8 +447,13 @@ export class ContratoService {
     await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${lockKey})`);
 
     const last = await tx.contrato.findFirst({
-      where: { numeroSecuencial: { startsWith: pattern } },
-      orderBy: { numeroSecuencial: 'desc' },
+      where: {
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
+      },
+      orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },
     });
 
