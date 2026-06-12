@@ -37,12 +37,13 @@ export default function BloquesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [filterTipo, setFilterTipo] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadBloques();
-  }, [page, search]);
+  }, [page, search, filterTipo]);
 
   const loadBloques = async () => {
     setLoading(true);
@@ -52,8 +53,8 @@ export default function BloquesPage() {
         page,
         limit: 15,
         search: search.trim() || undefined,
+        ...(filterTipo ? { tipo: filterTipo } : {}),
       });
-
       setBloques(payload.data || []);
       setMeta(payload.meta);
     } catch (error: any) {
@@ -62,6 +63,12 @@ export default function BloquesPage() {
       setLoading(false);
     }
   };
+
+  function limpiarFiltros() {
+    setSearch('');
+    setFilterTipo('');
+    setPage(1);
+  }
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Desactivar este bloque?')) return;

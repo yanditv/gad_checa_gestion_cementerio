@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { QueryBloqueDto } from './dto/query-bloque.dto';
 import {
   buildPaginationMeta,
   normalizePagination,
@@ -16,12 +16,13 @@ import { CreateBloqueDto, UpdateBloqueDto } from './dto/bloque.dto';
 export class BloqueService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: PaginationQueryDto) {
+  async findAll(query: QueryBloqueDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 
     const where: any = {
       estado: true,
+      ...(query.tipo ? { tipo: query.tipo } : {}),
       ...(search
         ? {
             OR: [

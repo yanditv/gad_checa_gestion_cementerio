@@ -6,12 +6,12 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   buildPaginationMeta,
   normalizePagination,
 } from '../../common/pagination';
 import { CreateBovedaDto, UpdateBovedaDto } from './dto/request/boveda.dto';
+import { QueryBovedaDto } from './dto/request/query-boveda.dto';
 
 interface BovedaFilters {
   bloqueId?: number;
@@ -24,7 +24,7 @@ interface BovedaFilters {
 export class BovedaService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: PaginationQueryDto, filters?: BovedaFilters) {
+  async findAll(query: QueryBovedaDto, filters?: BovedaFilters) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 
@@ -93,7 +93,14 @@ export class BovedaService {
           tipoEspacio: true,
           propietario: { include: { persona: true } },
           contratos: {
-            where: { estado: true },
+            where: {
+              estado: true,
+              fechaInicio: { lte: new Date() },
+              OR: [
+                { fechaFin: null },
+                { fechaFin: { gte: new Date() } },
+              ],
+            },
             select: { id: true, numeroSecuencial: true },
           },
         },

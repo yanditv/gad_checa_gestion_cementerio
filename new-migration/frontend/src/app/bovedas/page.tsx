@@ -13,7 +13,8 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { bovedasApi, tiposEspacioApi, PaginationMeta, TipoEspacio } from '@/lib/api';
+import { bloquesApi, bovedasApi, tiposEspacioApi, PaginationMeta, TipoEspacio } from '@/lib/api';
+import { getEstadoBoveda } from '@/lib/boveda-estado';
 import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
 
 interface Boveda {
@@ -51,12 +52,20 @@ export default function BovedasPage() {
   const [filterTipo, setFilterTipo] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [filterPropietario, setFilterPropietario] = useState('');
+  const [filterBloqueId, setFilterBloqueId] = useState('');
+  const [bloques, setBloques] = useState<{ id: number; nombre: string; estado: boolean }[]>([]);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
 
   useEffect(() => {
     loadBovedas();
-  }, [page, searchTerm, filterEstado, filterTipo, filterPropietario]);
+  }, [page, searchTerm, filterEstado, filterTipo, filterPropietario, filterBloqueId]);
+
+  useEffect(() => {
+    bloquesApi.findPage({ page: 1, limit: 100 }).then((r) => {
+      setBloques((r.data || []).filter((b: { estado: boolean }) => b.estado));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     tiposEspacioApi
@@ -76,6 +85,7 @@ export default function BovedasPage() {
         ...(filterTipo ? { tipoEspacioId: filterTipo } : {}),
         ...(filterEstado ? { estado: filterEstado } : {}),
         ...(filterPropietario ? { tienePropietario: filterPropietario } : {}),
+        ...(filterBloqueId ? { bloqueId: Number(filterBloqueId) } : {}),
       });
 
       setBovedas(payload.data || []);
@@ -106,12 +116,13 @@ export default function BovedasPage() {
     }
   };
 
-  const visiblePages = (() => {
+  function calcVisiblePages() {
     if (!meta) return [];
     const start = Math.max(1, meta.page - 2);
     const end = Math.min(meta.totalPages, meta.page + 2);
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  })();
+  }
+  const visiblePages = calcVisiblePages();
 
   const columns: DataTableColumn<Boveda>[] = [
     {
@@ -203,18 +214,15 @@ export default function BovedasPage() {
       key: 'estado',
       header: 'Estado',
       sortable: true,
-      sortValue: (row) =>
-        (row.contratos?.length ?? 0) === 0 ? 'Disponible' : 'Ocupada',
-      cell: (row) =>
-        (row.contratos?.length ?? 0) === 0 ? (
-          <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-200">
-            Disponible
+      sortValue: (row) => getEstadoBoveda(row.contratos).label,
+      cell: (row) => {
+        const estado = getEstadoBoveda(row.contratos);
+        return (
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${estado.bg}`}>
+            {estado.label}
           </span>
-        ) : (
-          <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-red-200">
-            Ocupada
-          </span>
-        ),
+        );
+      },
     },
     {
       key: 'acciones',
@@ -340,6 +348,25 @@ export default function BovedasPage() {
               <option value="">Todos los estados</option>
               <option value="disponible">Disponibles</option>
               <option value="ocupada">Ocupadas</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Bloque
+            </label>
+            <select
+              value={filterBloqueId}
+              onChange={(e) => {
+                setPage(1);
+                setFilterBloqueId(e.target.value);
+              }}
+              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              <option value="">Todos los bloques</option>
+              {bloques.map((b) => (
+                <option key={b.id} value={b.id}>{b.nombre}</option>
+              ))}
             </select>
           </div>
 

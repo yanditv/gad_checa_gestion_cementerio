@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "smoke": "node scripts/smoke.mjs",
+    "e2e": "node e2e/bloques-bovedas.mjs",
     "responsive": "node scripts/responsive-check.mjs"
   },
   "dependencies": {
