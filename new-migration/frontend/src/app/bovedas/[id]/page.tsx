@@ -12,6 +12,7 @@ import {
   FilePlus2,
   Loader2,
   Pencil,
+  Save,
   Search,
   Trash2,
   UserPlus,
@@ -675,23 +676,23 @@ function PropietarioModal({
           </div>
           <button type="button" onClick={onClose} disabled={saving}
             className="rounded-md p-1 text-slate-400 hover:bg-slate-100" aria-label="Cerrar">
-            <i className="ti ti-x" />
+            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </button>
         </header>
 
         {/* Tabs */}
         <div className="flex border-b border-slate-100 px-5">
           <button type="button" onClick={() => setTab('buscar')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === 'buscar' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}>
-            <i className="ti ti-search mr-1.5" />Buscar existente
+            <Search className="h-4 w-4" strokeWidth={2} aria-hidden="true" />Buscar existente
           </button>
           <button type="button" onClick={() => setTab('crear')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === 'crear' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}>
-            <i className="ti ti-user-plus mr-1.5" />Crear nuevo
+            <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />Crear nuevo
           </button>
         </div>
 
@@ -705,7 +706,7 @@ function PropietarioModal({
           {tab === 'buscar' ? (
             <>
               <div className="relative mb-3">
-                <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={2} aria-hidden="true" />
                 <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-9`} />
               </div>
@@ -780,7 +781,7 @@ function PropietarioModal({
                 <button type="button" onClick={crearYAsignar}
                   disabled={saving || !formData.nombre.trim() || !formData.apellido.trim() || !formData.numeroIdentificacion.trim()}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-success-500 px-4 py-2 text-sm font-medium text-white hover:bg-success-600 disabled:opacity-60">
-                  {saving ? 'Guardando…' : <><i className="ti ti-device-floppy" /> Crear y asignar</>}
+                  {saving ? 'Guardando…' : <><Save className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Crear y asignar</>}
                 </button>
               </div>
             </div>
