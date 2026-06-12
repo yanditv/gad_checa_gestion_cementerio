@@ -8,9 +8,21 @@ import {
   Post,
   Put,
   Query,
+  Res,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UsuarioService } from './usuario.service';
+import { MAX_IMAGE_SIZE_BYTES } from '../../common/storage/photo.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
@@ -29,6 +41,41 @@ export class UsuarioController {
   @Get()
   findAll(@Query() query: PaginationQueryDto) {
     return this.service.findAll(query);
+  }
+
+  // -------- Avatar de la cuenta propia (sin rol admin) --------
+
+  @Post('me/avatar')
+  @ApiOperation({
+    summary: 'Subir o reemplazar el avatar de la cuenta autenticada',
+    description: 'Multipart/form-data. Campo "file" (JPG/PNG/WEBP ≤ 5 MB).',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_SIZE_BYTES } }),
+  )
+  subirMiAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.uploadAvatar(user.id, file);
+  }
+
+  @Delete('me/avatar')
+  @ApiOperation({ summary: 'Eliminar el avatar de la cuenta autenticada' })
+  eliminarMiAvatar(@CurrentUser() user: AuthUser) {
+    return this.service.removeAvatar(user.id);
+  }
+
+  @Get(':id/avatar')
+  @ApiOperation({ summary: 'Servir el avatar de un usuario' })
+  async verAvatar(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const { stream, contentType } = await this.service.getAvatar(id);
+    res.set({ 'Content-Type': contentType, 'Cache-Control': 'no-cache' });
+    return new StreamableFile(stream);
   }
 
   @Get(':id')

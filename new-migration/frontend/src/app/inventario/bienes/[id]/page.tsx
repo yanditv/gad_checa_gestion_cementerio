@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
+  Camera,
   Check,
   CircleX,
   ClipboardList,
@@ -16,10 +17,12 @@ import {
   UserPlus,
 } from 'lucide-react';
 import {
+  Avatar,
   Badge,
   Button,
   Card,
   DatePicker,
+  ImageUpload,
   Input,
   Modal,
   PageHeader,
@@ -27,7 +30,7 @@ import {
   Spinner,
   type Tone,
 } from '@/components/ui';
-import { inventarioBienesApi, inventarioCustodiosApi } from '@/lib/api';
+import { inventarioBienesApi, inventarioCustodiosApi, mediaUrl } from '@/lib/api';
 
 interface CategoriaResumen {
   id: number;
@@ -53,6 +56,7 @@ interface Bien {
   motivoBaja: string | null;
   estado: boolean;
   fechaCreacion: string;
+  fotoUrl: string | null;
   categoria: CategoriaResumen | null;
   custodio: { id: number; nombre: string } | null;
 }
@@ -169,6 +173,9 @@ export default function BienDetailPage({
   const [modal, setModal] = useState<ModalKind>(null);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  const [fotoBusy, setFotoBusy] = useState(false);
+  const [fotoError, setFotoError] = useState('');
 
   // form state for modals
   const [nuevoCustodioId, setNuevoCustodioId] = useState('');
@@ -329,6 +336,23 @@ export default function BienDetailPage({
     }
   };
 
+  const handleFotoChange = async (file: File | null) => {
+    setFotoBusy(true);
+    setFotoError('');
+    try {
+      if (file) {
+        await inventarioBienesApi.uploadFoto(bienId, file);
+      } else {
+        await inventarioBienesApi.deleteFoto(bienId);
+      }
+      await loadAll();
+    } catch (err: any) {
+      setFotoError(err.message || 'No se pudo actualizar la foto del bien');
+    } finally {
+      setFotoBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -381,6 +405,7 @@ export default function BienDetailPage({
         title={bien.descripcion}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
+            <Avatar src={mediaUrl(bien.fotoUrl)} name={bien.descripcion} size="sm" />
             <span className="font-mono font-semibold text-slate-600">
               {bien.codigo}
             </span>
@@ -519,6 +544,26 @@ export default function BienDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card
+            padding="md"
+            header={
+              <Card.Title icon={<Camera className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+                Fotografía
+              </Card.Title>
+            }
+          >
+            <ImageUpload
+              shape="square"
+              value={mediaUrl(bien.fotoUrl)}
+              disabled={fotoBusy}
+              hint="JPG, PNG o WEBP, máx. 5 MB"
+              onChange={handleFotoChange}
+            />
+            {fotoError && (
+              <p className="mt-2 text-caption text-danger-600">{fotoError}</p>
+            )}
+          </Card>
+
           <Card
             padding="md"
             header={

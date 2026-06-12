@@ -14,7 +14,8 @@ import {
   User,
 } from 'lucide-react';
 import type { SessionUser } from './DashboardLayout';
-import { notificacionesApi } from '@/lib/api';
+import { Avatar } from '@/components/ui';
+import { notificacionesApi, mediaUrl } from '@/lib/api';
 import { timeAgo } from '@/lib/timeago';
 
 interface NotificacionItem {
@@ -104,7 +105,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
     .slice(0, 2)
     .join('');
   const role = user?.roles?.[0] ?? '';
-  const avatarSrc = '/images/user/avatar-2.jpg';
+  const avatarSrc = mediaUrl(user?.avatarUrl);
 
   return (
     <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-slate-200 bg-white/95 backdrop-blur lg:left-64">
@@ -242,11 +243,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               }}
               className="flex items-center gap-2 rounded-lg border-0 bg-transparent px-2 py-1.5 outline-none ring-0 hover:bg-slate-100 focus:outline-none focus:ring-0"
             >
-              <img
-                src={avatarSrc}
-                alt={displayName}
-                className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
-              />
+              <Avatar src={avatarSrc} name={displayName} size="md" className="h-9 w-9" />
               <div className="hidden text-left sm:block">
                 <div className="text-sm font-semibold text-slate-700">
                   {displayName}
@@ -266,11 +263,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lifted">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-                  <img
-                    src={avatarSrc}
-                    alt={displayName}
-                    className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200"
-                  />
+                  <Avatar src={avatarSrc} name={displayName} size="md" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-slate-700">
                       {displayName}

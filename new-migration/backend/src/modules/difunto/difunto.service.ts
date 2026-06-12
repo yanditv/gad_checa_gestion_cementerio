@@ -5,6 +5,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PhotoService } from '../../common/storage/photo.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import {
   buildPaginationMeta,
@@ -14,7 +15,24 @@ import { CreateDifuntoDto, UpdateDifuntoDto } from './dto/difunto.dto';
 
 @Injectable()
 export class DifuntoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private photos: PhotoService,
+  ) {}
+
+  /**
+   * Reemplaza `fotoStorageKey` por `fotoUrl` (ruta de servido) en la respuesta,
+   * de modo que nunca se expone la key cruda de almacenamiento.
+   */
+  private withFotoUrl<T extends { id: number; fotoStorageKey?: string | null }>(
+    difunto: T,
+  ): Omit<T, 'fotoStorageKey'> & { fotoUrl: string | null } {
+    const { fotoStorageKey, ...rest } = difunto;
+    return {
+      ...rest,
+      fotoUrl: fotoStorageKey ? `/difuntos/${difunto.id}/foto` : null,
+    };
+  }
 
   async findAll(query: PaginationQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
@@ -70,16 +88,17 @@ export class DifuntoService {
     ]);
 
     return {
-      items,
+      items: items.map((d) => this.withFotoUrl(d)),
       meta: buildPaginationMeta(page, limit, total),
     };
   }
 
   async findByBoveda(bovedaId: number) {
     // Excluye difuntos exhumados: la plaza queda liberada (CAT-R4c).
-    return this.prisma.difunto.findMany({
+    const items = await this.prisma.difunto.findMany({
       where: { bovedaId, estado: true, exhumado: false },
     });
+    return items.map((d) => this.withFotoUrl(d));
   }
 
   async findOne(id: number) {
@@ -103,14 +122,14 @@ export class DifuntoService {
       },
     });
     if (!difunto) throw new NotFoundException('Difunto no encontrado');
-    return difunto;
+    return this.withFotoUrl(difunto);
   }
 
   async create(dto: CreateDifuntoDto, userId?: string) {
     await this.assertBovedaExists(dto.bovedaId);
     this.assertFechas(dto.fechaNacimiento, dto.fechaDefuncion);
 
-    return this.prisma.difunto.create({
+    const creado = await this.prisma.difunto.create({
       data: {
         nombre: dto.nombre,
         apellido: dto.apellido,
@@ -142,6 +161,7 @@ export class DifuntoService {
         usuarioCreadorId: userId ?? null,
       },
     });
+    return this.withFotoUrl(creado);
   }
 
   async update(id: number, dto: UpdateDifuntoDto, userId?: string) {
@@ -177,21 +197,91 @@ export class DifuntoService {
       data.edad = computeEdad(fechaNac, fechaDef);
     }
 
-    return this.prisma.difunto.update({
+    const actualizado = await this.prisma.difunto.update({
       where: { id },
       data,
     });
+    return this.withFotoUrl(actualizado);
   }
 
   async remove(id: number, userId?: string) {
     await this.findOne(id);
-    return this.prisma.difunto.update({
+    const eliminado = await this.prisma.difunto.update({
       where: { id },
       data: {
         estado: false,
         usuarioEliminadorId: userId ?? null,
       },
     });
+    return this.withFotoUrl(eliminado);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Foto del difunto (opcional). La imagen vive en StorageService; en BD solo
+  // guardamos la `fotoStorageKey`.
+  // ---------------------------------------------------------------------------
+  async uploadFoto(id: number, file: Express.Multer.File, userId?: string) {
+    const actual = await this.prisma.difunto.findUnique({
+      where: { id },
+      select: { id: true, fotoStorageKey: true },
+    });
+    if (!actual) throw new NotFoundException('Difunto no encontrado');
+
+    const key = await this.photos.store('difuntos', id, file);
+
+    const actualizado = await this.prisma.difunto.update({
+      where: { id },
+      data: { fotoStorageKey: key, usuarioActualizadorId: userId ?? null },
+    });
+
+    if (actual.fotoStorageKey && actual.fotoStorageKey !== key) {
+      try {
+        await this.photos.remove(actual.fotoStorageKey);
+      } catch {
+        // el registro ya apunta a la nueva; el huérfano no es crítico
+      }
+    }
+
+    return this.withFotoUrl(actualizado);
+  }
+
+  async getFoto(id: number) {
+    const difunto = await this.prisma.difunto.findUnique({
+      where: { id },
+      select: { fotoStorageKey: true },
+    });
+    if (
+      !difunto?.fotoStorageKey ||
+      !(await this.photos.exists(difunto.fotoStorageKey))
+    ) {
+      throw new NotFoundException('El difunto no tiene foto');
+    }
+    return this.photos.streamFor(difunto.fotoStorageKey);
+  }
+
+  async removeFoto(id: number, userId?: string) {
+    const difunto = await this.prisma.difunto.findUnique({
+      where: { id },
+      select: { id: true, fotoStorageKey: true },
+    });
+    if (!difunto) throw new NotFoundException('Difunto no encontrado');
+    if (!difunto.fotoStorageKey) {
+      throw new NotFoundException('El difunto no tiene foto');
+    }
+    const key = difunto.fotoStorageKey;
+
+    const actualizado = await this.prisma.difunto.update({
+      where: { id },
+      data: { fotoStorageKey: null, usuarioActualizadorId: userId ?? null },
+    });
+
+    try {
+      await this.photos.remove(key);
+    } catch {
+      // best-effort
+    }
+
+    return this.withFotoUrl(actualizado);
   }
 
   // ---------------------------------------------------------------------------
