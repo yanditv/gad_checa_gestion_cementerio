@@ -81,13 +81,17 @@ export class SeedService {
   }
 
   private async seedInitialData(adminUserId: string) {
+    const gadNombre = process.env.GAD_NOMBRE || 'GAD CHECA';
+    const gadDireccion = process.env.GAD_DIRECCION || 'Eloy Riera, Parroquia Checa';
+    const gadTelefono = process.env.GAD_TELEFONO || '0987654321';
+    
     await this.prisma.gADInformacion.upsert({
       where: { id: 1 },
       update: {},
       create: {
-        nombre: 'GAD CHECA',
-        direccion: 'Eloy Riera, Parroquia Checa',
-        telefono: '0987654321',
+        nombre: gadNombre,
+        direccion: gadDireccion,
+        telefono: gadTelefono,
         email: '',
         ruc: '',
         slogan: '',
@@ -99,32 +103,44 @@ export class SeedService {
       },
     });
 
-    // Valores semilla idénticos al legado (Program.cs:461-481).
+    // Valores semilla idénticos al legado (Program.cs:461-481) con correcciones.
     const contratoPreambulo =
       'En la Parroquia de {parroquia}, a los **{fechaInicioDia}** días del mes de **{fechaInicioMes}** del **{fechaInicioAnio}**, comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el {gadNombre}, debidamente representado por el **{presidente}**; por otro lado, el/la Sr/Sra. **{responsableNombre}** con número de identidad **{responsableCI}**, número de teléfono **{responsableTelefono}**, correo electrónico **{responsableEmail}**, los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:';
     const contratoClausula1 =
-      '**PRIMERA COMPARECIENTES. -** Comparecen por una parte el {gadNombre} representada por su presidente el **{presidente}**; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. **{responsableNombre}** a quien en lo posterior se le llamará Arrendatario.';
+      '**PRIMERA COMPARECIENTES. -** Comparecen por una parte el {gadNombre} representado por su presidente el **{presidente}**; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. **{responsableNombre}** a quien en lo posterior se le llamará Arrendatario.';
     const contratoClausula2 =
       '**SEGUNDA ANTECEDENTE. -** El {gadNombre} es la Institución Pública que administra el {cementerioNombre}, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.';
     const contratoClausula3 =
       '**TERCER OBJETO. -** El {gadNombre}, en su calidad de Administrador del {cementerioNombre}, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: **{difuntoNombre}** con número de cédula **{difuntoCI}**, restos que serán depositados en la bóveda número **{bovedaNumero}** en el bloque **{bloqueDescripcion}**{pisoTexto}.';
     const contratoClausula4 =
-      '**CUARTA: PRECIO. -** El valor por arriendo de la Bóveda es de **{montoTotal}** valor que fue cancelado con depósito en {bancoTexto} cta. # **{numeroCuenta}**';
+      '**CUARTA: PRECIO. -** El valor por arriendo de la Bóveda es de **{montoTotal}**, valor que fue cancelado con depósito en {bancoTexto} cta. # **{numeroCuenta}**.';
     const contratoClausula5 =
-      '**QUINTA: OTRA. -** La parte arrendadora aclara que una vez que el {gadNombre} entrega el derecho de uso por **{aniosArriendo} años** a partir de la fecha del **{fechaInicioDia} de {fechaInicioMes} del {fechaInicioAnio}**, la parte arrendataria. Vence el contrato el **{fechaFinDia} de {fechaFinMes} del {fechaFinAnio}**.';
+      '**QUINTA: OTRA. -** La parte arrendadora aclara que una vez que el {gadNombre} entrega el derecho de uso por **{aniosArriendo} años** a partir de la fecha del **{fechaInicioDia} de {fechaInicioMes} del {fechaInicioAnio}**, la parte arrendataria declara recibir la bóveda a entera satisfacción. Vence el contrato el **{fechaFinDia} de {fechaFinMes} del {fechaFinAnio}**.';
     const contratoClausula6 =
       '**SEXTA: -** Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.';
+
+    const cementerioNombre = process.env.CEMENTERIO_NOMBRE || 'Cementerio de checa';
+    const cementerioDireccion = process.env.CEMENTERIO_DIRECCION || 'Eloy Riera, Parroquia Checa';
+    const cementerioTelefono = process.env.CEMENTERIO_TELEFONO || '0987654321';
+    const cementerioEmail = process.env.CEMENTERIO_EMAIL || 'jpcheca0@gmail.com';
+    const presidenteNombre = process.env.CEMENTERIO_PRESIDENTE || 'Bolívar Robles Iñamagua';
+    const presidenteTitulo = process.env.CEMENTERIO_PRESIDENTE_TITULO || 'Sr.';
+    const bancoNombre = process.env.CEMENTERIO_BANCO_NOMBRE || 'Banco del Austro';
+    const cuentaNumero = process.env.CEMENTERIO_CUENTA_NUMERO || '2000324704';
 
     await this.prisma.cementerio.upsert({
       where: { id: 1 },
       update: {},
       create: {
-        nombre: 'Cementerio de checa',
-        direccion: 'Eloy Riera, Parroquia Checa',
-        telefono: '0987654321',
-        email: 'jpcheca0@gmail.com',
-        abreviaturaTituloPresidente: 'Sr.',
-        presidente: 'Bolívar Robles Iñamagua',
+        nombre: cementerioNombre,
+        direccion: cementerioDireccion,
+        telefono: cementerioTelefono,
+        email: cementerioEmail,
+        abreviaturaTituloPresidente: presidenteTitulo,
+        presidente: presidenteNombre,
+        nombreEntidadFinanciera: bancoNombre,
+        numeroCuenta: cuentaNumero,
+        entidadFinanciera: 'BANCO',
         vecesRenovacionBovedas: 1,
         vecesRenovacionNicho: 1,
         aniosArriendoBovedas: 5,

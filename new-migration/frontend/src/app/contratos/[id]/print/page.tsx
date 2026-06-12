@@ -2,8 +2,75 @@ import {
   formatCurrency,
   formatDate,
   getContratoById,
+  getGADInformacion,
 } from '@/lib/contratos-server';
 import { PrintActions } from './PrintActions';
+import {
+  DEFAULT_PREAMBULO,
+  DEFAULT_CLAUSULA1,
+  DEFAULT_CLAUSULA2,
+  DEFAULT_CLAUSULA3,
+  DEFAULT_CLAUSULA4,
+  DEFAULT_CLAUSULA5,
+  DEFAULT_CLAUSULA6,
+} from '@/lib/default-contrato-templates';
+
+const MESES_ES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+function parseDate(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatFechaLarga(value: string | Date | null | undefined) {
+  const date = parseDate(value);
+  if (!date) return { dia: '--', mes: '--------', anio: '----' };
+  return {
+    dia: String(date.getDate()).padStart(2, '0'),
+    mes: MESES_ES[date.getMonth()] ?? '--------',
+    anio: String(date.getFullYear()),
+  };
+}
+
+function joinNombre(persona?: {
+  nombre?: string | null;
+  apellido?: string | null;
+} | null): string {
+  if (!persona) return '';
+  return `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim();
+}
+
+function compileTemplate(template: string, vars: Record<string, string>): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val ?? '');
+  }
+  return result;
+}
+
+function renderFormattedText(text: string) {
+  const parts = text.split('**');
+  return parts.map((part, idx) => {
+    if (idx % 2 === 1) {
+      return <strong key={idx}>{part}</strong>;
+    }
+    return part;
+  });
+}
 
 export default async function ContratoPrintPage({
   params,
@@ -14,40 +81,120 @@ export default async function ContratoPrintPage({
 }) {
   const { id } = await params;
   const { autoprint } = await searchParams;
-  const contrato = await getContratoById(id);
-  const cementerio = contrato.boveda?.bloque?.cementerio;
-  const responsablePrincipal =
-    contrato.responsables?.[0]?.responsable?.persona;
+
+  const [contrato, gadInfo] = await Promise.all([
+    getContratoById(id),
+    getGADInformacion().catch(() => null),
+  ]);
+
+  const cementerio = contrato.boveda?.bloque?.cementerio ?? {};
+  const difunto = contrato.difunto ?? {};
+  const responsablePrincipal = contrato.responsables?.[0]?.responsable?.persona ?? {};
 
   const responsables = contrato.responsables || [];
   const cuotas = contrato.cuotas || [];
-  const nombreDifunto = `${contrato.difunto?.nombre || 'No especificado'} ${
-    contrato.difunto?.apellido || ''
-  }`.trim();
-  const nombreResponsable = `${
-    responsablePrincipal?.nombre || '________________'
-  } ${responsablePrincipal?.apellido || ''}`.trim();
-  const identidadResponsable =
-    responsablePrincipal?.numeroIdentificacion || '__________';
-  const telefonoResponsable = responsablePrincipal?.telefono || '__________';
-  const correoResponsable =
-    responsablePrincipal?.email || '________________';
-  const presidente =
-    cementerio?.presidente || 'Presidente del GAD Parroquial de Checa';
-  const direccion = cementerio?.direccion || 'Checa, Ecuador';
-  const telefono = cementerio?.telefono || '02-XXXXXXX';
-  const correo = cementerio?.email || 'checa@example.gob.ec';
-  const numeroCuenta = cementerio?.numeroCuenta || '2000324704';
-  const nombreEntidadFinanciera =
-    cementerio?.nombreEntidadFinanciera || 'Banco del Austro';
-  const plazoTexto = `${cuotas.length || contrato.numeroDeMeses || 0} años`;
-  const totalContrato =
-    cuotas.length > 0
-      ? cuotas.reduce(
-          (sum: number, cuota: any) => sum + Number(cuota.monto || 0),
-          0,
-        )
-      : Number(contrato.montoTotal || 0);
+
+  const presidenteTitulo = cementerio.abreviaturaTituloPresidente || 'Sr.';
+  const presidenteNombre = cementerio.presidente || 'Presidente';
+  const presidente = `${presidenteTitulo} ${presidenteNombre}`.trim();
+
+  const gadNombre = gadInfo?.nombre || 'Gobierno Parroquial';
+  const parroquia = gadNombre
+    .replace(/gobierno\s+(autónomo\s+descentralizado\s+)?parroquial\s+(de\s+)?/gi, '')
+    .replace(/gad\s+/gi, '')
+    .trim();
+
+  const direccion = cementerio.direccion || gadInfo?.direccion || 'Ecuador';
+  const telefono = cementerio.telefono || gadInfo?.telefono || '02-XXXXXXX';
+  const correo = cementerio.email || gadInfo?.email || 'info@cementerio.gob.ec';
+  const numeroCuenta = cementerio.numeroCuenta || '2000324704';
+  const nombreEntidadFinanciera = cementerio.nombreEntidadFinanciera || 'Banco del Austro';
+  const entidadFinanciera = cementerio.entidadFinanciera || 'BANCO';
+
+  let bancoTexto = nombreEntidadFinanciera;
+  if (String(entidadFinanciera).toUpperCase() === 'BANCO') {
+    if (!nombreEntidadFinanciera.toLowerCase().startsWith('banco')) {
+      bancoTexto = `el Banco ${nombreEntidadFinanciera}`;
+    } else {
+      bancoTexto = `el ${nombreEntidadFinanciera}`;
+    }
+  } else {
+    if (!nombreEntidadFinanciera.toLowerCase().startsWith('cooperativa')) {
+      bancoTexto = `la Cooperativa ${nombreEntidadFinanciera}`;
+    } else {
+      bancoTexto = `la ${nombreEntidadFinanciera}`;
+    }
+  }
+
+  const nombreCementerioRaw = cementerio.nombre || 'de la Parroquia';
+  const nombreCementerioUpper = nombreCementerioRaw.toUpperCase();
+  const cementerioTexto = nombreCementerioUpper.startsWith('CEMENTERIO')
+    ? nombreCementerioUpper
+    : `CEMENTERIO ${nombreCementerioUpper}`;
+
+  const nombreResponsable = joinNombre(responsablePrincipal) || '________________';
+  const identidadResponsable = responsablePrincipal.numeroIdentificacion || '__________';
+  const telefonoResponsable = responsablePrincipal.telefono || '__________';
+  const correoResponsable = responsablePrincipal.email || '________________';
+
+  const difuntoNombre = joinNombre(difunto) || 'No especificado';
+  const difuntoCI = difunto.numeroIdentificacion || '__________';
+
+  const boveda = contrato.boveda ?? {};
+  const piso = boveda.piso ?? null;
+  const bloque = boveda.bloque ?? {};
+  const bovedaNumero = boveda.numero || '________________';
+  
+  // Preferir bloque.nombre si está disponible
+  const bloqueDescripcion = bloque.nombre || bloque.descripcion || '________________';
+
+  const numeroContrato = contrato.numeroSecuencial || `CTR-${contrato.id}`;
+  const totalCuotas = cuotas.reduce(
+    (sum: number, c: any) => sum + Number(c.monto ?? 0),
+    0,
+  );
+  const montoTotal = totalCuotas > 0 ? totalCuotas : Number(contrato.montoTotal ?? 0);
+
+  const fechaInicio = formatFechaLarga(contrato.fechaInicio);
+  const fechaFin = formatFechaLarga(contrato.fechaFin);
+  const aniosArriendo = cuotas.length || Number(contrato.numeroDeMeses) || 0;
+  const pisoTexto = piso?.numero != null ? `, piso ${piso.numero}` : '';
+
+  const vars: Record<string, string> = {
+    parroquia,
+    fechaInicioDia: fechaInicio.dia,
+    fechaInicioMes: fechaInicio.mes,
+    fechaInicioAnio: fechaInicio.anio,
+    fechaFinDia: fechaFin.dia,
+    fechaFinMes: fechaFin.mes,
+    fechaFinAnio: fechaFin.anio,
+    gadNombre,
+    presidente,
+    responsableNombre: nombreResponsable,
+    responsableCI: identidadResponsable,
+    responsableTelefono: telefonoResponsable,
+    responsableEmail: correoResponsable,
+    difuntoNombre,
+    difuntoCI,
+    bovedaNumero,
+    bloqueDescripcion,
+    pisoTexto,
+    pisoNumero: piso?.numero != null ? String(piso.numero) : '',
+    montoTotal: formatCurrency(montoTotal),
+    bancoTexto,
+    numeroCuenta,
+    aniosArriendo: String(aniosArriendo),
+    cementerioNombre: cementerio.nombre || 'Cementerio de la Parroquia',
+    numeroContrato,
+  };
+
+  const tPreambulo = cementerio.contratoPreambulo || DEFAULT_PREAMBULO;
+  const tClausula1 = cementerio.contratoClausula1 || DEFAULT_CLAUSULA1;
+  const tClausula2 = cementerio.contratoClausula2 || DEFAULT_CLAUSULA2;
+  const tClausula3 = cementerio.contratoClausula3 || DEFAULT_CLAUSULA3;
+  const tClausula4 = cementerio.contratoClausula4 || DEFAULT_CLAUSULA4;
+  const tClausula5 = cementerio.contratoClausula5 || DEFAULT_CLAUSULA5;
+  const tClausula6 = cementerio.contratoClausula6 || DEFAULT_CLAUSULA6;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 print:p-0">
@@ -73,12 +220,12 @@ export default async function ContratoPrintPage({
             <div className="flex items-center gap-3">
               <img
                 src="/images/logo.jpeg"
-                alt="GAD Checa"
+                alt="Logo GAD"
                 className="h-16 w-16 rounded-lg object-cover"
               />
               <div>
                 <div className="font-display text-xl font-bold text-brand-dark">
-                  GAD Parroquial de Checa
+                  {gadNombre}
                 </div>
                 <div className="text-sm text-slate-500">
                   Sistema de Gestión de Cementerio
@@ -90,7 +237,7 @@ export default async function ContratoPrintPage({
                 Contrato de arrendamiento
               </div>
               <div className="font-mono text-sm text-primary-600">
-                {contrato.numeroSecuencial}
+                {numeroContrato}
               </div>
               <div className="text-xs text-slate-500">
                 Fecha de impresión: {formatDate(new Date())}
@@ -99,94 +246,17 @@ export default async function ContratoPrintPage({
           </header>
 
           <h1 className="mb-5 text-center text-base font-bold uppercase tracking-wide text-slate-900">
-            Contrato de arriendo de bóveda del cementerio de la parroquia
-            Checa Nro. {contrato.numeroSecuencial || 'S/N'}
+            Contrato de arriendo de bóveda del {cementerioTexto} Nro. {numeroContrato}
           </h1>
 
           <div className="space-y-3 text-justify text-sm leading-7 text-slate-700">
-            <p>
-              En la Parroquia de Checa, a los{' '}
-              <strong>{new Date(contrato.fechaInicio).getDate()}</strong> días
-              del mes de{' '}
-              <strong>
-                {new Date(contrato.fechaInicio).toLocaleDateString('es-EC', {
-                  month: 'long',
-                })}
-              </strong>{' '}
-              del{' '}
-              <strong>{new Date(contrato.fechaInicio).getFullYear()}</strong>,
-              comparecen a celebrar el presente contrato de arrendamiento, por
-              una parte y en calidad de arrendador, el Gobierno Parroquial de
-              Checa, debidamente representado por el{' '}
-              <strong>{presidente}</strong>; por otro lado, el/la Sr/Sra.{' '}
-              <strong>{nombreResponsable}</strong> con número de identidad{' '}
-              <strong>{identidadResponsable}</strong>, número de teléfono{' '}
-              <strong>{telefonoResponsable}</strong>, correo electrónico{' '}
-              <strong>{correoResponsable}</strong>, los comparecientes son
-              mayores de edad, capaces ante la ley para celebrar todo acto y
-              contrato quienes celebran el presente contrato de arrendamiento
-              de acuerdo con las siguientes cláusulas:
-            </p>
-
-            <p>
-              <strong>PRIMERA COMPARECIENTES. —</strong> Comparecen por una
-              parte el Gobierno Parroquial de Checa representada por su
-              presidente el <strong>{presidente}</strong>; a quien en lo
-              posterior se lo llamará arrendador, y por otra parte comparece
-              el/la Sr/Sra. <strong>{nombreResponsable}</strong> a quien en lo
-              posterior se le llamará Arrendatario.
-            </p>
-
-            <p>
-              <strong>SEGUNDA ANTECEDENTE. —</strong> El Gobierno Parroquial
-              de Checa es la Institución Pública que administra el Cementerio
-              General de la Parroquia, es por ello que se encuentra facultado
-              para suscribir todo contrato de arrendamiento o venta de bóveda
-              del cementerio.
-            </p>
-
-            <p>
-              <strong>TERCER OBJETO. —</strong> El Gobierno Parroquial de
-              Checa, en su calidad de Administrador del Cementerio General de
-              la Parroquia, por el presente contrato da en arriendo una bóveda
-              a favor de quien en vida fue: <strong>{nombreDifunto}</strong>{' '}
-              con número de cédula{' '}
-              <strong>
-                {contrato.difunto?.numeroIdentificacion || 'No especificado'}
-              </strong>
-              , restos que serán depositados en la bóveda número{' '}
-              <strong>
-                {contrato.boveda?.numero || '________________'}
-              </strong>{' '}
-              en el bloque{' '}
-              <strong>
-                {contrato.boveda?.bloque?.nombre || '________________'}
-              </strong>
-              .
-            </p>
-
-            <p>
-              <strong>CUARTA: PRECIO. —</strong> El valor por arriendo de la
-              Bóveda es de <strong>{formatCurrency(totalContrato)}</strong>,
-              valor que fue cancelado con depósito en la entidad financiera{' '}
-              <strong>{nombreEntidadFinanciera}</strong> cta. #{' '}
-              <strong>{numeroCuenta}</strong>.
-            </p>
-
-            <p>
-              <strong>QUINTA: OTRA. —</strong> La parte arrendadora aclara que
-              una vez que el Gobierno Parroquial entrega el derecho de uso por{' '}
-              <strong>{plazoTexto}</strong> a partir de la fecha del{' '}
-              <strong>{formatDate(contrato.fechaInicio)}</strong>, la parte
-              arrendataria. Vence el contrato el{' '}
-              <strong>{formatDate(contrato.fechaFin)}</strong>.
-            </p>
-
-            <p>
-              <strong>SEXTA: —</strong> Las partes por estar conforme con las
-              estipulaciones del presente contrato, firman al pie del mismo y
-              por duplicado para constancia de lo actuado suscriben.
-            </p>
+            <p>{renderFormattedText(compileTemplate(tPreambulo, vars))}</p>
+            <p>{renderFormattedText(compileTemplate(tClausula1, vars))}</p>
+            <p>{renderFormattedText(compileTemplate(tClausula2, vars))}</p>
+            <p>{renderFormattedText(compileTemplate(tClausula3, vars))}</p>
+            <p>{renderFormattedText(compileTemplate(tClausula4, vars))}</p>
+            <p>{renderFormattedText(compileTemplate(tClausula5, vars))}</p>
+            <p>{renderFormattedText(compileTemplate(tClausula6, vars))}</p>
 
             {contrato.observaciones ? (
               <p>
@@ -340,7 +410,9 @@ export default async function ContratoPrintPage({
                 Firma administración
               </div>
               <div className="mt-2 font-semibold">{presidente}</div>
-              <div className="text-xs text-slate-500">PRESIDENTE GAD CHECA</div>
+              <div className="text-xs text-slate-500">
+                PRESIDENTE DEL {gadNombre.toUpperCase()}
+              </div>
               <div className="text-xs text-slate-500">ARRENDADOR</div>
             </div>
           </section>
