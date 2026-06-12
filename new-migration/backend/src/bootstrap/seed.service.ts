@@ -164,19 +164,33 @@ export class SeedService {
     ];
 
     for (const tipo of tiposEspacio) {
-      await this.prisma.tipoEspacio.upsert({
+      const existing = await this.prisma.tipoEspacio.findUnique({
         where: { nombre: tipo.nombre },
-        update: {},
-        create: {
-          nombre: tipo.nombre,
-          prefijoNumeracion: tipo.prefijoNumeracion,
-          tarifaArriendo: tipo.tarifaArriendo,
-          aniosArriendo: tipo.aniosArriendo,
-          vecesRenovacion: tipo.vecesRenovacion,
-          estado: true,
-          usuarioCreadorId: adminUserId,
-        },
       });
+
+      if (existing) {
+        if (Number(existing.tarifaArriendo) === 0) {
+          await this.prisma.tipoEspacio.update({
+            where: { id: existing.id },
+            data: {
+              tarifaArriendo: tipo.tarifaArriendo,
+              usuarioActualizadorId: adminUserId,
+            },
+          });
+        }
+      } else {
+        await this.prisma.tipoEspacio.create({
+          data: {
+            nombre: tipo.nombre,
+            prefijoNumeracion: tipo.prefijoNumeracion,
+            tarifaArriendo: tipo.tarifaArriendo,
+            aniosArriendo: tipo.aniosArriendo,
+            vecesRenovacion: tipo.vecesRenovacion,
+            estado: true,
+            usuarioCreadorId: adminUserId,
+          },
+        });
+      }
     }
 
     const descuentos = [
