@@ -116,12 +116,13 @@ export default function BovedasPage() {
     }
   };
 
-  const visiblePages = (() => {
+  function calcVisiblePages() {
     if (!meta) return [];
     const start = Math.max(1, meta.page - 2);
     const end = Math.min(meta.totalPages, meta.page + 2);
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  })();
+  }
+  const visiblePages = calcVisiblePages();
 
   const columns: DataTableColumn<Boveda>[] = [
     {
@@ -398,7 +399,6 @@ export default function BovedasPage() {
           </div>
         )}
 
-<<<<<<< HEAD
         <DataTable
           columns={columns}
           rows={bovedas}
@@ -417,116 +417,6 @@ export default function BovedasPage() {
             />
           }
         />
-=======
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th scope="col" className="px-4 py-3">Número</th>
-                <th scope="col" className="px-4 py-3">Bloque</th>
-                <th scope="col" className="px-4 py-3">Piso</th>
-                <th scope="col" className="px-4 py-3">Tipo</th>
-                <th scope="col" className="px-4 py-3">Capacidad</th>
-                <th scope="col" className="px-4 py-3">Propietario</th>
-                <th scope="col" className="px-4 py-3 text-right">Precio</th>
-                <th scope="col" className="px-4 py-3 text-right">Precio Arriendo</th>
-                <th scope="col" className="px-4 py-3">Estado</th>
-                <th scope="col" className="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {loading ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-slate-400">
-                    <div className="inline-flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4 animate-spin text-primary-500"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                      </svg>
-                      Cargando bóvedas…
-                    </div>
-                  </td>
-                </tr>
-              ) : bovedas.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
-                    <i className="ti ti-box text-3xl text-slate-300" />
-                    <div className="mt-2 text-sm">No hay bóvedas registradas.</div>
-                  </td>
-                </tr>
-              ) : (
-                bovedas.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-medium text-slate-900">{row.numero}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.bloque?.nombre || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.piso?.numero || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.tipoEspacio?.nombre || row.tipo || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.capacidad}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {row.propietario
-                        ? `${row.propietario.persona.nombre} ${row.propietario.persona.apellido}`
-                        : '-'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-slate-700">
-                      ${Number(row.precio).toFixed(2)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-slate-700">
-                      ${Number(row.precioArrendamiento).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${getEstadoBoveda(row.contratos).bg}`}>
-                        {getEstadoBoveda(row.contratos).label}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-1">
-                        <Link
-                          href={`/bovedas/${row.id}`}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                          title="Ver"
-                        >
-                          <i className="ti ti-eye" />
-                        </Link>
-                        <Link
-                          href={`/bovedas/${row.id}/edit`}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
-                          title="Editar"
-                        >
-                          <i className="ti ti-edit" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(row.id)}
-                          disabled={deletingId === row.id}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                          title="Eliminar"
-                        >
-                          <i className={`ti ${deletingId === row.id ? 'ti-loader animate-spin' : 'ti-trash'}`} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
->>>>>>> 2409f31 (fix: funcion compartida getEstadoBoveda, priorizar contrato vigente sobre vencido en renovaciones)
 
         {meta && meta.totalPages > 1 && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row">
