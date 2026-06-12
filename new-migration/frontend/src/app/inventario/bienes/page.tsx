@@ -7,9 +7,11 @@ import {
   inventarioBienesApi,
   inventarioCategoriasApi,
   inventarioCustodiosApi,
+  mediaUrl,
   PaginationMeta,
 } from '@/lib/api';
 import {
+  Avatar,
   Badge,
   Button,
   Card,
@@ -38,6 +40,7 @@ interface BienListItem {
   estadoConservacion: string;
   ubicacion: string | null;
   dadoDeBaja: boolean;
+  fotoUrl: string | null;
   categoria: CategoriaResumen | null;
   custodio: { id: number; nombre: string } | null;
 }
@@ -128,14 +131,17 @@ export default function BienesPage() {
       key: 'descripcion',
       header: 'Descripción',
       cell: (row) => (
-        <span className="font-medium text-slate-900">
-          {row.descripcion}
-          {(row.marca || row.serie) && (
-            <span className="block text-xs font-normal text-slate-400">
-              {[row.marca, row.serie].filter(Boolean).join(' · ')}
-            </span>
-          )}
-        </span>
+        <div className="flex items-center gap-2.5">
+          <Avatar src={mediaUrl(row.fotoUrl)} name={row.descripcion} size="sm" />
+          <span className="font-medium text-slate-900">
+            {row.descripcion}
+            {(row.marca || row.serie) && (
+              <span className="block text-xs font-normal text-slate-400">
+                {[row.marca, row.serie].filter(Boolean).join(' · ')}
+              </span>
+            )}
+          </span>
+        </div>
       ),
     },
     {

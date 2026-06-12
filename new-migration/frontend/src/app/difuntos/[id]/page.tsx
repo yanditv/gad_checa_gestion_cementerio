@@ -12,12 +12,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Avatar, Button } from '@/components/ui';
 import {
   authApi,
   contratosApi,
   difuntosApi,
   exhumacionesApi,
+  mediaUrl,
   MOTIVOS_EXHUMACION,
   MOTIVO_EXHUMACION_LABEL,
   type ExhumacionResponse,
@@ -58,6 +59,7 @@ interface Difunto {
   numeroCertificadoDefuncion: string | null;
   entidadEmisora: string | null;
   fechaEmisionCertificado: string | null;
+  fotoUrl: string | null;
   estado: boolean;
   exhumado?: boolean;
   fechaExhumacion?: string | null;
@@ -406,7 +408,13 @@ export default function DifuntoDetailsPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="flex items-center gap-4">
+          <Avatar
+            src={mediaUrl(difunto.fotoUrl)}
+            name={`${difunto.nombre} ${difunto.apellido}`}
+            size="lg"
+          />
+          <div>
           <h1 className="text-2xl font-bold text-slate-900">
             {difunto.nombre} {difunto.apellido}
           </h1>
@@ -424,6 +432,7 @@ export default function DifuntoDetailsPage({
               </span>
             )}
           </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {isAdmin && difunto.estado && !difunto.exhumado && (

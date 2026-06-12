@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check } from 'lucide-react';
 import { bovedasApi, difuntosApi } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { Button, ImageUpload } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -69,6 +69,7 @@ export default function CreateDifuntoPage() {
   const [error, setError] = useState('');
   const [bovedas, setBovedas] = useState<any[]>([]);
   const [formData, setFormData] = useState<FormState>(INITIAL);
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
 
   useEffect(() => {
     bovedasApi
@@ -85,7 +86,7 @@ export default function CreateDifuntoPage() {
     setLoading(true);
     setError('');
     try {
-      await difuntosApi.create({
+      const creado = await difuntosApi.create({
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
         bovedaId: Number(formData.bovedaId),
@@ -107,6 +108,13 @@ export default function CreateDifuntoPage() {
         entidadEmisora: toOptional(formData.entidadEmisora),
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
+      if (fotoFile && creado?.id) {
+        try {
+          await difuntosApi.uploadFoto(creado.id, fotoFile);
+        } catch {
+          // El difunto ya se creó; la foto es opcional y no debe bloquear la navegación.
+        }
+      }
       router.push('/difuntos');
     } catch (err: any) {
       setError(err.message || 'No se pudo guardar el difunto');
@@ -144,6 +152,14 @@ export default function CreateDifuntoPage() {
             <h2 className="text-sm font-semibold text-slate-700">Datos personales</h2>
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-3">
+              <ImageUpload
+                shape="circle"
+                label="Foto (opcional)"
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+                onChange={setFotoFile}
+              />
+            </div>
             <div>
               <label className={LABEL_CLS}>Nombres *</label>
               <input

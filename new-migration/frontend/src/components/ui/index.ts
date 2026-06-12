@@ -42,6 +42,10 @@ export { Badge } from './Badge';
 export type { BadgeProps } from './Badge';
 export { Avatar } from './Avatar';
 export type { AvatarProps, AvatarSize } from './Avatar';
+export { ImageUpload } from './ImageUpload';
+export type { ImageUploadProps } from './ImageUpload';
+export { AvatarUpload } from './AvatarUpload';
+export type { AvatarUploadProps } from './AvatarUpload';
 
 // Estado / feedback
 export { Spinner } from './Spinner';

@@ -13,8 +13,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { difuntosApi, PaginationMeta } from '@/lib/api';
-import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
+import { difuntosApi, mediaUrl, PaginationMeta } from '@/lib/api';
+import { Avatar, DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
 
 interface Difunto {
   id: number;
@@ -26,6 +26,7 @@ interface Difunto {
   fechaInhumacion: string | null;
   causaMuerte: string | null;
   estado: boolean;
+  fotoUrl: string | null;
   boveda: { numero: string; bloque: { nombre: string } };
 }
 
@@ -132,9 +133,16 @@ export default function DifuntosPage() {
       sortable: true,
       sortValue: (row) => `${row.apellido} ${row.nombre}`,
       cell: (row) => (
-        <span className="font-medium text-slate-900">
-          {row.nombre} {row.apellido}
-        </span>
+        <div className="flex items-center gap-2.5">
+          <Avatar
+            src={mediaUrl(row.fotoUrl)}
+            name={`${row.nombre} ${row.apellido}`}
+            size="sm"
+          />
+          <span className="font-medium text-slate-900">
+            {row.nombre} {row.apellido}
+          </span>
+        </div>
       ),
     },
     {

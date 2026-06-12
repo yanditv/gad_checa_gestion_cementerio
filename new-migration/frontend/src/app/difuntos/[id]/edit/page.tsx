@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { bovedasApi, difuntosApi } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { bovedasApi, difuntosApi, mediaUrl } from '@/lib/api';
+import { Button, ImageUpload } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -77,6 +77,9 @@ export default function EditDifuntoPage() {
   const [error, setError] = useState('');
   const [bovedas, setBovedas] = useState<any[]>([]);
   const [formData, setFormData] = useState<FormState>(INITIAL);
+  // undefined = sin cambios, File = nueva foto, null = quitar foto.
+  const [fotoChange, setFotoChange] = useState<File | null | undefined>(undefined);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -87,6 +90,7 @@ export default function EditDifuntoPage() {
         ]);
 
         setBovedas(bovedasData.filter((b: any) => b.estado));
+        setFotoUrl(difunto.fotoUrl ?? null);
         setFormData({
           nombre: difunto.nombre || '',
           apellido: difunto.apellido || '',
@@ -150,6 +154,16 @@ export default function EditDifuntoPage() {
         entidadEmisora: toOptional(formData.entidadEmisora),
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
+      // La foto es opcional: cualquier fallo aquí no debe bloquear la navegación.
+      try {
+        if (fotoChange instanceof File) {
+          await difuntosApi.uploadFoto(Number(params.id), fotoChange);
+        } else if (fotoChange === null && fotoUrl) {
+          await difuntosApi.deleteFoto(Number(params.id));
+        }
+      } catch {
+        // no-op
+      }
       router.push(`/difuntos/${params.id}`);
     } catch (err: any) {
       setError(err.message || 'No se pudo actualizar el difunto');
@@ -213,6 +227,15 @@ export default function EditDifuntoPage() {
             <h2 className="text-sm font-semibold text-slate-700">Datos personales</h2>
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-3">
+              <ImageUpload
+                shape="circle"
+                value={mediaUrl(fotoUrl)}
+                onChange={setFotoChange}
+                label="Foto (opcional)"
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+              />
+            </div>
             <div>
               <label className={LABEL_CLS}>Nombres *</label>
               <input
