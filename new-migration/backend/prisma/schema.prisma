@@ -17,6 +17,7 @@ model Usuario {
   telefono             String?
   direccion            String?
   tipoIdentificacion   String
+  avatarStorageKey     String? // foto de perfil (opcional); key relativa en StorageService
   estado               Boolean   @default(true)
   mustChangePassword   Boolean   @default(false)
   fechaCreacion        DateTime  @default(now())
@@ -361,6 +362,7 @@ model Difunto {
   observaciones        String?
   edad                 Int?
   genero               String?
+  fotoStorageKey       String? // foto del difunto (opcional); key relativa en StorageService
 
   // Información complementaria (manual de usuario §5)
   nacionalidad    String?
@@ -711,6 +713,7 @@ model Bien {
   fuenteFinanciamiento String?
   estadoConservacion   String   @default("bueno") // bueno | regular | malo
   ubicacion            String? // dependencia/oficina actual
+  fotoStorageKey       String? // foto del bien (opcional); key relativa en StorageService
 
   // Overrides opcionales sobre la categoría para la depreciación
   valorResidual         Decimal? @db.Decimal(18, 2)

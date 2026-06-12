@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PhotoService } from '../../common/storage/photo.service';
 import {
   buildPaginationMeta,
   normalizePagination,
@@ -37,7 +38,10 @@ const BIEN_INCLUDE = {
 
 @Injectable()
 export class BienService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private photos: PhotoService,
+  ) {}
 
   // ---------------------------------------------------------------------------
   // Listado paginado (INV-R9)
@@ -212,6 +216,70 @@ export class BienService {
       },
       include: BIEN_INCLUDE,
     });
+
+    return toBienResponse(actualizado as BienConRelaciones);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Foto del bien (opcional). Sube/reemplaza, sirve y elimina. La imagen vive
+  // en StorageService; en BD solo guardamos la `fotoStorageKey`.
+  // ---------------------------------------------------------------------------
+  async uploadFoto(id: number, file: Express.Multer.File, userId?: string) {
+    const bien = await this.findEntity(id);
+    const key = await this.photos.store('bienes', id, file);
+
+    const actualizado = await this.prisma.bien.update({
+      where: { id },
+      data: {
+        fotoStorageKey: key,
+        fechaActualizacion: new Date(),
+        usuarioActualizadorId: userId ?? null,
+      },
+      include: BIEN_INCLUDE,
+    });
+
+    // Borrar la imagen anterior (best-effort) tras persistir la nueva.
+    if (bien.fotoStorageKey && bien.fotoStorageKey !== key) {
+      try {
+        await this.photos.remove(bien.fotoStorageKey);
+      } catch {
+        // El registro ya apunta a la nueva; el huérfano no es crítico.
+      }
+    }
+
+    return toBienResponse(actualizado as BienConRelaciones);
+  }
+
+  async getFoto(id: number) {
+    const bien = await this.findEntity(id);
+    if (!bien.fotoStorageKey || !(await this.photos.exists(bien.fotoStorageKey))) {
+      throw new NotFoundException('El bien no tiene foto');
+    }
+    return this.photos.streamFor(bien.fotoStorageKey);
+  }
+
+  async removeFoto(id: number, userId?: string) {
+    const bien = await this.findEntity(id);
+    if (!bien.fotoStorageKey) {
+      throw new NotFoundException('El bien no tiene foto');
+    }
+    const key = bien.fotoStorageKey;
+
+    const actualizado = await this.prisma.bien.update({
+      where: { id },
+      data: {
+        fotoStorageKey: null,
+        fechaActualizacion: new Date(),
+        usuarioActualizadorId: userId ?? null,
+      },
+      include: BIEN_INCLUDE,
+    });
+
+    try {
+      await this.photos.remove(key);
+    } catch {
+      // best-effort
+    }
 
     return toBienResponse(actualizado as BienConRelaciones);
   }

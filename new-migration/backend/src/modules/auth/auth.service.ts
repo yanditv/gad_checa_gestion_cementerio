@@ -250,6 +250,9 @@ export class AuthService {
       tipoIdentificacion: usuario.tipoIdentificacion,
       numeroIdentificacion: usuario.numeroIdentificacion,
       mustChangePassword: usuario.mustChangePassword,
+      avatarUrl: usuario.avatarStorageKey
+        ? `/usuarios/${usuario.id}/avatar`
+        : null,
       roles: usuario.usuarioRols.map((ur) => ur.rol.nombre),
     };
   }
@@ -281,6 +284,9 @@ export class AuthService {
         apellido: usuario.apellido,
         email: usuario.email,
         mustChangePassword: usuario.mustChangePassword,
+        avatarUrl: usuario.avatarStorageKey
+          ? `/usuarios/${usuario.id}/avatar`
+          : null,
         roles: usuario.usuarioRols.map((ur) => ur.rol.nombre),
       },
       token,

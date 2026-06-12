@@ -8,14 +8,22 @@ import {
   Put,
   Post,
   Query,
+  Res,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { BienService } from './bien.service';
+import { MAX_IMAGE_SIZE_BYTES } from '../../common/storage/photo.service';
 import { DepreciacionService } from './depreciacion.service';
 import { DepreciacionBienResponseDto } from './dto/depreciacion.dto';
 import {
@@ -163,5 +171,46 @@ export class BienController {
   @ApiResponse({ type: BienResponseDto })
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     return this.service.remove(id, user.id);
+  }
+
+  // -------- Foto del bien (opcional) --------
+
+  @Post(':id/foto')
+  @ApiOperation({
+    summary: 'Subir o reemplazar la foto del bien',
+    description: 'Multipart/form-data. Campo "file" (JPG/PNG/WEBP ≤ 5 MB).',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_SIZE_BYTES } }),
+  )
+  @ApiResponse({ type: BienResponseDto })
+  subirFoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.uploadFoto(id, file, user.id);
+  }
+
+  @Get(':id/foto')
+  @ApiOperation({ summary: 'Servir la foto del bien' })
+  async verFoto(
+    @Param('id', ParseIntPipe) id: number,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const { stream, contentType } = await this.service.getFoto(id);
+    res.set({ 'Content-Type': contentType, 'Cache-Control': 'no-cache' });
+    return new StreamableFile(stream);
+  }
+
+  @Delete(':id/foto')
+  @ApiOperation({ summary: 'Eliminar la foto del bien' })
+  @ApiResponse({ type: BienResponseDto })
+  eliminarFoto(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.service.removeFoto(id, user.id);
   }
 }
