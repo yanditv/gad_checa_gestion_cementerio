@@ -51,8 +51,8 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FieldValue({ children }: { children: React.ReactNode }) {
-  return <p className="mt-0.5 text-sm font-medium text-slate-700">{children}</p>;
+function FieldValue({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <p className={`mt-0.5 text-sm font-medium text-slate-700 ${className}`}>{children}</p>;
 }
 
 function Card({
@@ -226,8 +226,22 @@ export default async function ContratoDetailsPage({
                 <FieldValue>{formatDate(contrato.fechaFin)}</FieldValue>
               </div>
               <div>
+                <FieldLabel>Subtotal</FieldLabel>
+                <FieldValue>{formatCurrency(contrato.montoSubtotal || contrato.montoTotal)}</FieldValue>
+              </div>
+              {contrato.descuento && (
+                <div>
+                  <FieldLabel>Descuento ({Number(contrato.descuento.porcentaje)}%)</FieldLabel>
+                  <FieldValue className="text-green-600">
+                    -{formatCurrency(contrato.montoDescuento || 0)}
+                  </FieldValue>
+                </div>
+              )}
+              <div>
                 <FieldLabel>Monto total</FieldLabel>
-                <FieldValue>{formatCurrency(contrato.montoTotal)}</FieldValue>
+                <FieldValue className="font-semibold text-slate-900">
+                  {formatCurrency(contrato.montoTotal)}
+                </FieldValue>
               </div>
               <div>
                 <FieldLabel>Tipo</FieldLabel>

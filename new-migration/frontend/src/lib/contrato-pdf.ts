@@ -14,6 +14,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import PDFDocument from 'pdfkit';
+import { logger } from './logger';
+import {
+  DEFAULT_PREAMBULO,
+  DEFAULT_CLAUSULA1,
+  DEFAULT_CLAUSULA2,
+  DEFAULT_CLAUSULA3,
+  DEFAULT_CLAUSULA4,
+  DEFAULT_CLAUSULA5,
+  DEFAULT_CLAUSULA6,
+} from './default-contrato-templates';
 
 const PAGE_MARGIN_HORIZONTAL = 60;
 const PAGE_MARGIN_VERTICAL = 60;
@@ -76,7 +86,75 @@ function joinNombre(persona?: {
   return `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim();
 }
 
-function findContractLogo(): string | null {
+async function getImageBufferOrPath(imgUrl?: string | null): Promise<string | Buffer | null> {
+  if (!imgUrl) return null;
+
+  // Si es una ruta local del frontend (anterior o fallback uploads)
+  if (imgUrl.startsWith('/uploads/')) {
+    const localPath = path.join(process.cwd(), 'public', imgUrl);
+    if (fs.existsSync(localPath)) {
+      return localPath;
+    }
+  }
+
+  // Si es la ruta de imágenes del GAD servida por el backend
+  if (imgUrl.startsWith('/api/cementerios/gad-informacion/image') || imgUrl.startsWith('api/cementerios/gad-informacion/image')) {
+    const cleanUrl = imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
+    const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Mapeamos /api/* a la URL interna del backend (removiendo el /api de Next.js BFF)
+    const targetUrl = `${backendBase}${cleanUrl.replace(/^\/api/, '')}`;
+    try {
+      const res = await fetch(targetUrl);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+    } catch (e) {
+      logger.error('Error fetching GAD image from backend:', e, targetUrl);
+    }
+    return null;
+  }
+
+  // Si es una URL completa
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    // Validar contra allowlist de dominios autorizados para prevenir SSRF.
+    const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    try {
+      const parsedUrl = new URL(imgUrl);
+      const parsedBackend = new URL(backendBase);
+      
+      const isAllowedHost = parsedUrl.host === parsedBackend.host;
+      
+      if (!isAllowedHost) {
+        logger.warn('Blocked SSRF attempt: URL host not in allowlist', imgUrl);
+        return null;
+      }
+
+      const res = await fetch(imgUrl);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+    } catch (e) {
+      logger.error('Error downloading remote image:', e, imgUrl);
+    }
+  } else {
+    // Fallback original para archivos locales
+    const relativePath = imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
+    const localPath = path.join(process.cwd(), 'public', relativePath);
+    if (fs.existsSync(localPath)) {
+      return localPath;
+    }
+  }
+  return null;
+}
+
+async function getLogoBufferOrPath(gadInfo?: any): Promise<string | Buffer | null> {
+  if (gadInfo?.logoUrl) {
+    const customLogo = await getImageBufferOrPath(gadInfo.logoUrl);
+    if (customLogo) return customLogo;
+  }
+
   const candidates = [
     path.join(process.cwd(), 'public', 'logo.png'),
     path.join(process.cwd(), 'public', 'images', 'logo_gad.png'),
@@ -92,16 +170,47 @@ function findContractLogo(): string | null {
 // Helpers de dibujo
 // ---------------------------------------------------------------------------
 
+function compileTemplate(template: string, vars: Record<string, string>): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val ?? '');
+  }
+  return result;
+}
+
 function richParagraph(
   doc: PDFKit.PDFDocument,
-  segments: RichSegment[],
+  input: RichSegment[] | string,
   contentWidth: number,
 ) {
+  let segments: RichSegment[];
+  if (typeof input === 'string') {
+    // Parse Markdown-style **bold**
+    const parts = input.split('**');
+    segments = parts.map((part, idx) => {
+      // Even indexes are normal, odd indexes are bold
+      const isBold = idx % 2 === 1;
+      return { text: part, bold: isBold };
+    }).filter(s => s.text !== '');
+  } else {
+    segments = input;
+  }
+
   const normalized = segments.map<{ text: string; bold: boolean }>((s) =>
     typeof s === 'string'
       ? { text: s, bold: false }
       : { text: s.text ?? '', bold: !!s.bold },
   );
+
+  // PDFKit space collapse prevention: 
+  // If a segment starts with a space and there is a previous segment,
+  // append the space to the end of the previous segment instead.
+  for (let i = 1; i < normalized.length; i++) {
+    if (normalized[i].text.startsWith(' ') && !normalized[i - 1].text.endsWith(' ')) {
+      normalized[i - 1].text += ' ';
+      normalized[i].text = normalized[i].text.slice(1);
+    }
+  }
 
   doc.fontSize(10.5).fillColor('#1f2937');
   normalized.forEach((seg, idx) => {
@@ -117,53 +226,77 @@ function richParagraph(
   doc.moveDown(0.4);
 }
 
-function drawHeader(doc: PDFKit.PDFDocument, logoPath: string | null) {
-  if (!logoPath) return;
+function drawHeader(
+  doc: PDFKit.PDFDocument,
+  logo: string | Buffer | null,
+  headerBanner: string | Buffer | null,
+  usarHeaderImagen: boolean,
+) {
   try {
-    const pageWidth = doc.page.width;
-    const imgWidth = 56;
-    const x = (pageWidth - imgWidth) / 2;
-    doc.image(logoPath, x, 16, { width: imgWidth, height: 56 });
-  } catch {
-    // ignorar errores de imagen
+    if (usarHeaderImagen && headerBanner) {
+      const pageWidth = doc.page.width;
+      const height = 80;
+      doc.image(headerBanner, 0, 0, { width: pageWidth, height: height });
+    } else if (logo) {
+      const pageWidth = doc.page.width;
+      const imgWidth = 56;
+      const x = (pageWidth - imgWidth) / 2;
+      doc.image(logo, x, 16, { width: imgWidth, height: 56 });
+    }
+  } catch (err) {
+    logger.error('Error rendering PDF header image:', err);
   }
 }
 
 function drawFooter(
   doc: PDFKit.PDFDocument,
+  gadInfo: any,
   cementerio: {
     direccion?: string | null;
     telefono?: string | null;
     email?: string | null;
   },
+  footerBanner: string | Buffer | null,
+  usarFooterImagen: boolean,
 ) {
   const left = doc.page.margins.left;
   const right = doc.page.width - doc.page.margins.right;
-  const y = doc.page.height - FOOTER_HEIGHT + 8;
-
-  const direccion = truncate(cementerio.direccion || 'Checa, Ecuador', 60);
-  const telefono = truncate(cementerio.telefono || '02-XXXXXXX', 15);
-  const email = truncate(cementerio.email || 'checa@example.gob.ec', 40);
+  const pageHeight = doc.page.height;
+  const y = pageHeight - FOOTER_HEIGHT + 8;
 
   doc.save();
-  doc.fontSize(8.4).fillColor('#475569');
-  doc
-    .font('Helvetica-Bold')
-    .text('Dirección: ', left, y, {
-      continued: true,
-      width: right - left,
-      align: 'center',
-    })
-    .font('Helvetica')
-    .text(`${direccion}  |  `, { continued: true })
-    .font('Helvetica-Bold')
-    .text('Teléfono: ', { continued: true })
-    .font('Helvetica')
-    .text(`${telefono}  |  `, { continued: true })
-    .font('Helvetica-Bold')
-    .text('Correo: ', { continued: true })
-    .font('Helvetica')
-    .text(email);
+  
+  // Temporarily disable bottom margin to prevent recursive page breaks
+  const oldBottomMargin = doc.page.margins.bottom;
+  doc.page.margins.bottom = -1000;
+
+  try {
+    if (usarFooterImagen && footerBanner) {
+      const pageWidth = doc.page.width;
+      const height = 60;
+      doc.image(footerBanner, 0, pageHeight - height, { width: pageWidth, height: height });
+    } else {
+      const direccion = truncate(cementerio.direccion || gadInfo?.direccion || 'Checa, Ecuador', 60);
+      const telefono = truncate(cementerio.telefono || gadInfo?.telefono || '02-XXXXXXX', 15);
+      const email = truncate(cementerio.email || gadInfo?.email || 'checa@example.gob.ec', 40);
+
+      doc.fontSize(8.4).fillColor('#475569');
+      const footerText = `Dirección: ${direccion}  |  Teléfono: ${telefono}  |  Correo: ${email}`;
+      doc
+        .font('Helvetica')
+        .text(footerText, left, y, {
+          width: right - left,
+          align: 'center',
+          lineGap: 2,
+        });
+    }
+  } catch (err) {
+    logger.error('Error rendering PDF footer image:', err);
+  }
+
+  // Restore bottom margin
+  doc.page.margins.bottom = oldBottomMargin;
+
   doc.restore();
 }
 
@@ -171,7 +304,15 @@ function drawFooter(
 // Generación
 // ---------------------------------------------------------------------------
 
-export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
+export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Promise<Buffer> {
+  const logo = await getLogoBufferOrPath(gadInfo);
+  const headerBanner = gadInfo?.usarHeaderImagen
+    ? await getImageBufferOrPath(gadInfo.headerImagenUrl)
+    : null;
+  const footerBanner = gadInfo?.usarFooterImagen
+    ? await getImageBufferOrPath(gadInfo.footerImagenUrl)
+    : null;
+
   return await new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
@@ -183,7 +324,7 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       },
       info: {
         Title: `Contrato ${contrato.numeroSecuencial || contrato.id}`,
-        Author: 'GAD Parroquial de Checa',
+        Author: gadInfo?.nombre || 'Gobierno Parroquial de Checa',
         Subject: 'Contrato de arrendamiento de bóveda',
       },
     });
@@ -204,20 +345,45 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     const bloque = boveda.bloque ?? {};
     const cuotas: Array<{ monto: number | string }> = contrato.cuotas ?? [];
 
+    const presidenteTitulo = cementerio.abreviaturaTituloPresidente || 'Presidente';
+    const presidenteNombre = cementerio.presidente || 'Presidente del GAD Parroquial de Checa';
     const presidente = truncate(
-      cementerio.presidente || 'Presidente del GAD Parroquial de Checa',
+      `${presidenteTitulo} ${presidenteNombre}`.trim(),
       60,
     );
+    const gadNombre = gadInfo?.nombre || 'Gobierno Parroquial de Checa';
+    const parroquia = gadNombre
+      .replace(/gobierno\s+(autónomo\s+descentralizado\s+)?parroquial\s+(de\s+)?/gi, '')
+      .replace(/gad\s+/gi, '')
+      .trim();
+
     const entidadFinanciera = cementerio.entidadFinanciera || 'BANCO';
     const nombreEntidadFinanciera = truncate(
       cementerio.nombreEntidadFinanciera || 'Banco del Austro',
       40,
     );
     const numeroCuenta = truncate(cementerio.numeroCuenta || '2000324704', 20);
-    const abreviaturaBanco =
-      String(entidadFinanciera).toUpperCase() === 'BANCO'
-        ? 'el banco'
-        : 'la Cooperativa de Ahorro y Crédito';
+
+    let bancoTexto = nombreEntidadFinanciera;
+    if (String(entidadFinanciera).toUpperCase() === 'BANCO') {
+      if (!nombreEntidadFinanciera.toLowerCase().startsWith('banco')) {
+        bancoTexto = `el Banco ${nombreEntidadFinanciera}`;
+      } else {
+        bancoTexto = `el ${nombreEntidadFinanciera}`;
+      }
+    } else {
+      if (!nombreEntidadFinanciera.toLowerCase().startsWith('cooperativa')) {
+        bancoTexto = `la Cooperativa ${nombreEntidadFinanciera}`;
+      } else {
+        bancoTexto = `la ${nombreEntidadFinanciera}`;
+      }
+    }
+
+    const nombreCementerioRaw = cementerio.nombre || 'de la Parroquia Checa';
+    const nombreCementerioUpper = nombreCementerioRaw.toUpperCase();
+    const cementerioTexto = nombreCementerioUpper.startsWith('CEMENTERIO')
+      ? nombreCementerioUpper
+      : `CEMENTERIO ${nombreCementerioUpper}`;
 
     const responsableNombre = truncate(
       joinNombre(responsable) || '________________',
@@ -265,10 +431,13 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     // -----------------------------------------------------------------------
     // Decoración por página (header + footer en cada página, incl. saltos)
     // -----------------------------------------------------------------------
-    const logoPath = findContractLogo();
     const decoratePage = () => {
-      drawHeader(doc, logoPath);
-      drawFooter(doc, cementerio);
+      const savedX = doc.x;
+      const savedY = doc.y;
+      drawHeader(doc, logo, headerBanner, !!gadInfo?.usarHeaderImagen);
+      drawFooter(doc, gadInfo, cementerio, footerBanner, !!gadInfo?.usarFooterImagen);
+      doc.x = savedX;
+      doc.y = savedY;
     };
     doc.on('pageAdded', decoratePage);
     decoratePage(); // primera página
@@ -285,7 +454,7 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
       .fillColor('#0f172a')
       .text(
         truncate(
-          `CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. ${numeroContrato}`,
+          `CONTRATO DE ARRIENDO DE BÓVEDA DEL ${cementerioTexto} NRO. ${numeroContrato}`,
           100,
         ),
         { align: 'center', width: contentWidth },
@@ -293,117 +462,56 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     doc.moveDown(0.8);
 
     // -----------------------------------------------------------------------
-    // Preámbulo
+    // Variables para compilación de plantillas
     // -----------------------------------------------------------------------
-    richParagraph(
-      doc,
-      [
-        'En la Parroquia de Checa, a los ',
-        { text: fechaInicio.dia, bold: true },
-        ' días del mes de ',
-        { text: fechaInicio.mes, bold: true },
-        ' del ',
-        { text: fechaInicio.anio, bold: true },
-        ', comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ',
-        { text: presidente, bold: true },
-        '; por otro lado, el/la Sr/Sra. ',
-        { text: responsableNombre, bold: true },
-        ' con número de identidad ',
-        { text: responsableCI, bold: true },
-        ', número de teléfono ',
-        { text: responsableTelefono, bold: true },
-        ', correo electrónico ',
-        { text: responsableEmail, bold: true },
-        ', los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:',
-      ],
-      contentWidth,
-    );
+    const pisoTexto = piso?.numero != null ? `, piso ${piso.numero}` : '';
+    const vars: Record<string, string> = {
+      parroquia,
+      fechaInicioDia: fechaInicio.dia,
+      fechaInicioMes: fechaInicio.mes,
+      fechaInicioAnio: fechaInicio.anio,
+      fechaFinDia: fechaFin.dia,
+      fechaFinMes: fechaFin.mes,
+      fechaFinAnio: fechaFin.anio,
+      gadNombre,
+      presidente,
+      responsableNombre,
+      responsableCI,
+      responsableTelefono,
+      responsableEmail,
+      difuntoNombre,
+      difuntoCI,
+      bovedaNumero,
+      bloqueDescripcion,
+      pisoTexto,
+      pisoNumero: piso?.numero != null ? String(piso.numero) : '',
+      montoTotal: formatCurrencyUsd(montoTotal),
+      bancoTexto,
+      numeroCuenta,
+      aniosArriendo: String(aniosArriendo),
+      cementerioNombre: cementerio.nombre || 'Cementerio de la Parroquia',
+      numeroContrato,
+    };
+
+    // Plantillas con fallbacks si no están configuradas en la base de datos
+    const tPreambulo = cementerio.contratoPreambulo || DEFAULT_PREAMBULO;
+    const tClausula1 = cementerio.contratoClausula1 || DEFAULT_CLAUSULA1;
+    const tClausula2 = cementerio.contratoClausula2 || DEFAULT_CLAUSULA2;
+    const tClausula3 = cementerio.contratoClausula3 || DEFAULT_CLAUSULA3;
+    const tClausula4 = cementerio.contratoClausula4 || DEFAULT_CLAUSULA4;
+    const tClausula5 = cementerio.contratoClausula5 || DEFAULT_CLAUSULA5;
+    const tClausula6 = cementerio.contratoClausula6 || DEFAULT_CLAUSULA6;
 
     // -----------------------------------------------------------------------
-    // Cláusulas
+    // Renderizado del Contenido del PDF
     // -----------------------------------------------------------------------
-    richParagraph(
-      doc,
-      [
-        { text: 'PRIMERA COMPARECIENTES. -', bold: true },
-        ' Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ',
-        { text: presidente, bold: true },
-        '; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ',
-        { text: responsableNombre, bold: true },
-        ' a quien en lo posterior se le llamará Arrendatario.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'SEGUNDA ANTECEDENTE. -', bold: true },
-        ' El Gobierno Parroquial de Checa es la Institución Pública que administra el Cementerio General de la Parroquia, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'TERCER OBJETO. -', bold: true },
-        ' El Gobierno Parroquial de Checa, en su calidad de Administrador del Cementerio General de la Parroquia, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: ',
-        { text: difuntoNombre, bold: true },
-        ' con número de cédula ',
-        { text: difuntoCI, bold: true },
-        ', restos que serán depositados en la bóveda número ',
-        { text: bovedaNumero, bold: true },
-        ' en el bloque ',
-        { text: bloqueDescripcion, bold: true },
-        piso?.numero != null
-          ? `, piso ${piso.numero}.`
-          : '.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'CUARTA: PRECIO. -', bold: true },
-        ' El valor por arriendo de la Bóveda es de ',
-        { text: formatCurrencyUsd(montoTotal), bold: true },
-        `, valor que fue cancelado con depósito en ${abreviaturaBanco} del ${nombreEntidadFinanciera} cta. # `,
-        { text: numeroCuenta, bold: true },
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'QUINTA: OTRA. -', bold: true },
-        ' La parte arrendadora aclara que una vez que el Gobierno Parroquial entrega el derecho de uso por ',
-        { text: `${aniosArriendo} años`, bold: true },
-        ' a partir de la fecha del ',
-        {
-          text: `${fechaInicio.dia} de ${fechaInicio.mes} del ${fechaInicio.anio}`,
-          bold: true,
-        },
-        ', la parte arrendataria. Vence el contrato el ',
-        {
-          text: `${fechaFin.dia} de ${fechaFin.mes} del ${fechaFin.anio}`,
-          bold: true,
-        },
-        '.',
-      ],
-      contentWidth,
-    );
-
-    richParagraph(
-      doc,
-      [
-        { text: 'SEXTA: -', bold: true },
-        ' Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.',
-      ],
-      contentWidth,
-    );
+    richParagraph(doc, compileTemplate(tPreambulo, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula1, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula2, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula3, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula4, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula5, vars), contentWidth);
+    richParagraph(doc, compileTemplate(tClausula6, vars), contentWidth);
 
     if (observaciones) {
       richParagraph(
@@ -419,13 +527,14 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     // -----------------------------------------------------------------------
     // Firmas
     // -----------------------------------------------------------------------
-    const signatureMinHeight = 110;
+    const signatureMinHeight = 160;
     const availableHeight =
       doc.page.height - doc.page.margins.bottom - doc.y;
     if (availableHeight < signatureMinHeight) {
       doc.addPage();
+      doc.moveDown(3);
     } else {
-      doc.moveDown(1.5);
+      doc.moveDown(4.5);
     }
 
     const left = doc.page.margins.left;
@@ -449,9 +558,13 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     const labelStyle = (size = 9.5, bold = true) =>
       doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(size).fillColor('#111827');
 
+    const cargoPresidente = 'PRESIDENTE';
+    const nombreEntidad = (gadInfo?.nombre || 'GAD CHECA').toUpperCase();
+    const firmaCargo = `${cargoPresidente} DEL ${nombreEntidad}`;
+
     labelStyle().text(presidente, leftX, textY, { width: colWidth, align: 'center' });
     labelStyle(8.6, false).text(
-      'PRESIDENTE GAD CHECA',
+      firmaCargo,
       leftX,
       textY + 14,
       { width: colWidth, align: 'center' },
@@ -462,7 +575,7 @@ export async function buildContratoPdfBuffer(contrato: any): Promise<Buffer> {
     });
 
     labelStyle().text(
-      truncate(`Sr/Sra. ${responsableNombre}`, 40),
+      truncate(responsableNombre, 40),
       rightX,
       textY,
       { width: colWidth, align: 'center' },

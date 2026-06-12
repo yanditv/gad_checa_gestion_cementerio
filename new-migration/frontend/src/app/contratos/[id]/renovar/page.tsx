@@ -115,6 +115,7 @@ export default function RenovarContratoPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [nuevoNumeroSecuencial, setNuevoNumeroSecuencial] = useState<string>('');
 
   const [form, setForm] = useState({
     fechaInicio: today,
@@ -159,6 +160,21 @@ export default function RenovarContratoPage({
             (r) => r.responsable.personaId,
           ),
         }));
+
+        if (origenData?.boveda?.id) {
+          try {
+            const previewRes = await fetch(`/api/contratos/numero-secuencial?bovedaId=${origenData.boveda.id}&isRenovacion=true`, {
+              credentials: 'same-origin',
+              cache: 'no-store',
+            });
+            if (previewRes.ok) {
+              const previewJson = await previewRes.json();
+              setNuevoNumeroSecuencial(previewJson?.numeroSecuencial || '');
+            }
+          } catch (e) {
+            console.error('Error loading new sequential contract number preview:', e);
+          }
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Error');
       } finally {
@@ -310,6 +326,14 @@ export default function RenovarContratoPage({
             <span className="font-mono text-primary-600">
               {origen.numeroSecuencial}
             </span>
+            {nuevoNumeroSecuencial && (
+              <>
+                <span className="text-slate-400 mx-2">→</span>
+                <span className="font-mono text-green-600">
+                  Nuevo (Estimado): {nuevoNumeroSecuencial}
+                </span>
+              </>
+            )}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             Crea una renovación heredando bóveda, difunto y responsables del

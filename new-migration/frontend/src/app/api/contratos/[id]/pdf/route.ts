@@ -1,5 +1,6 @@
-import { getContratoById } from '@/lib/contratos-server';
+import { getContratoById, getGADInformacion } from '@/lib/contratos-server';
 import { buildContratoPdfBuffer } from '@/lib/contrato-pdf';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,8 +15,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const contrato = await getContratoById(id);
-    const pdfBuffer = await buildContratoPdfBuffer(contrato);
+    const [contrato, gadInfo] = await Promise.all([
+      getContratoById(id),
+      getGADInformacion().catch(() => null),
+    ]);
+    const pdfBuffer = await buildContratoPdfBuffer(contrato, gadInfo);
     const numeroContrato = contrato.numeroSecuencial || `CTR-${id}`;
     const fileName = `${sanitizeFileName(`Contrato_${numeroContrato}`)}.pdf`;
 
@@ -27,7 +31,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error generating contrato PDF', error);
+    logger.error('Error generating contrato PDF', error);
     return new Response('No se pudo generar el PDF del contrato.', {
       status: 500,
       headers: {

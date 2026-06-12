@@ -22,6 +22,13 @@ export function toCementerioResponse(entity: Cementerio): CementerioResponseDto 
     numeroCuenta: entity.numeroCuenta ?? undefined,
     tasaMoraDiaria: Number(entity.tasaMoraDiaria),
     estado: entity.estado,
+    contratoPreambulo: entity.contratoPreambulo ?? undefined,
+    contratoClausula1: entity.contratoClausula1 ?? undefined,
+    contratoClausula2: entity.contratoClausula2 ?? undefined,
+    contratoClausula3: entity.contratoClausula3 ?? undefined,
+    contratoClausula4: entity.contratoClausula4 ?? undefined,
+    contratoClausula5: entity.contratoClausula5 ?? undefined,
+    contratoClausula6: entity.contratoClausula6 ?? undefined,
   };
 }
 
@@ -38,6 +45,10 @@ export function toGADInformacionResponse(entity: GADInformacion): GADInformacion
     mision: entity.mision ?? undefined,
     vision: entity.vision ?? undefined,
     slogan: entity.slogan ?? undefined,
+    usarHeaderImagen: entity.usarHeaderImagen,
+    headerImagenUrl: entity.headerImagenUrl ?? undefined,
+    usarFooterImagen: entity.usarFooterImagen,
+    footerImagenUrl: entity.footerImagenUrl ?? undefined,
     fechaCreacion: entity.fechaCreacion.toISOString(),
     fechaActualizacion: entity.fechaActualizacion?.toISOString(),
   };

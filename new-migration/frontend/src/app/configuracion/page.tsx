@@ -37,6 +37,16 @@ import {
   type Banco,
 } from '@/lib/api';
 
+import {
+  DEFAULT_PREAMBULO,
+  DEFAULT_CLAUSULA1,
+  DEFAULT_CLAUSULA2,
+  DEFAULT_CLAUSULA3,
+  DEFAULT_CLAUSULA4,
+  DEFAULT_CLAUSULA5,
+  DEFAULT_CLAUSULA6,
+} from '@/lib/default-contrato-templates';
+
 type Tab = 'descuentos' | 'bancos' | 'tipos' | 'cementerio';
 
 const INPUT_CLS =
@@ -1125,6 +1135,8 @@ function TipoEspacioModal({
   );
 }
 
+// El preámbulo y las cláusulas predeterminadas se importan de '@/lib/default-contrato-templates'
+
 // =============================================================================
 // Cementerio + GADInformacion
 // =============================================================================
@@ -1135,6 +1147,81 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [headerUploadError, setHeaderUploadError] = useState<string | null>(null);
+  const [uploadingFooter, setUploadingFooter] = useState(false);
+  const [footerUploadError, setFooterUploadError] = useState<string | null>(null);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setLogoUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/cementerios/gad-informacion/image?type=logo', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Error al subir el logo');
+      const payload = await res.json();
+      setGadField('logoUrl', payload.url);
+    } catch (err) {
+      setLogoUploadError(err instanceof Error ? err.message : 'Error al subir');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleHeaderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHeader(true);
+    setHeaderUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/cementerios/gad-informacion/image?type=header', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Error al subir la cabecera');
+      const payload = await res.json();
+      setGadField('headerImagenUrl', payload.url);
+    } catch (err) {
+      setHeaderUploadError(err instanceof Error ? err.message : 'Error al subir');
+    } finally {
+      setUploadingHeader(false);
+    }
+  };
+
+  const handleFooterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFooter(true);
+    setFooterUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/cementerios/gad-informacion/image?type=footer', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('Error al subir el pie de página');
+      const payload = await res.json();
+      setGadField('footerImagenUrl', payload.url);
+    } catch (err) {
+      setFooterUploadError(err instanceof Error ? err.message : 'Error al subir');
+    } finally {
+      setUploadingFooter(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -1145,7 +1232,17 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
         gadInformacionApi.get(),
       ]) as [any, any];
       const list = Array.isArray(cemList) ? cemList : cemList?.data ?? [];
-      setCementerio(Array.isArray(list) ? list[0] : list);
+      const cem = Array.isArray(list) ? list[0] : list;
+      if (cem) {
+        if (!cem.contratoPreambulo) cem.contratoPreambulo = DEFAULT_PREAMBULO;
+        if (!cem.contratoClausula1) cem.contratoClausula1 = DEFAULT_CLAUSULA1;
+        if (!cem.contratoClausula2) cem.contratoClausula2 = DEFAULT_CLAUSULA2;
+        if (!cem.contratoClausula3) cem.contratoClausula3 = DEFAULT_CLAUSULA3;
+        if (!cem.contratoClausula4) cem.contratoClausula4 = DEFAULT_CLAUSULA4;
+        if (!cem.contratoClausula5) cem.contratoClausula5 = DEFAULT_CLAUSULA5;
+        if (!cem.contratoClausula6) cem.contratoClausula6 = DEFAULT_CLAUSULA6;
+      }
+      setCementerio(cem);
       setGad((gadData as any)?.data ?? gadData);
     } catch (err) {
       setError('No se pudieron cargar los datos de configuración');
@@ -1162,7 +1259,22 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
     setError(null);
     setSaving(true);
     try {
-      await cementeriosApi.update(cementerio.id, cementerio);
+      const {
+        id,
+        estado,
+        fechaCreacion,
+        fechaActualizacion,
+        fechaEliminacion,
+        usuarioCreador,
+        usuarioCreadorId,
+        usuarioActualizador,
+        usuarioActualizadorId,
+        usuarioEliminador,
+        usuarioEliminadorId,
+        bloques,
+        ...updatePayload
+      } = cementerio;
+      await cementeriosApi.update(cementerio.id, updatePayload);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -1178,7 +1290,17 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
     setError(null);
     setSaving(true);
     try {
-      await gadInformacionApi.update(gad);
+      const {
+        id,
+        fechaCreacion,
+        fechaActualizacion,
+        usuarioCreador,
+        usuarioCreadorId,
+        usuarioActualizador,
+        usuarioActualizadorId,
+        ...updatePayload
+      } = gad;
+      await gadInformacionApi.update(updatePayload);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -1246,6 +1368,108 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
             <Field label="Nombre entidad" value={cementerio?.nombreEntidadFinanciera ?? ''} onChange={(v) => setField('nombreEntidadFinanciera', v)} disabled={!canEdit} />
             <Field label="Número de cuenta" value={cementerio?.numeroCuenta ?? ''} onChange={(v) => setField('numeroCuenta', v)} disabled={!canEdit} />
           </div>
+
+          <details className="group mt-6 rounded-lg border border-slate-200 bg-slate-50/50">
+            <summary className="flex cursor-pointer items-center justify-between px-4 py-3 font-semibold text-slate-700 select-none">
+              <span className="text-sm flex items-center gap-1.5">
+                <i className="ti ti-file-text text-lg text-primary-500" />
+                Plantillas del Contrato PDF (Cláusulas y Preámbulo)
+              </span>
+              <i className="ti ti-chevron-down text-slate-400 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-slate-200 p-4 space-y-4 bg-white">
+              <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-800">
+                <p className="font-semibold mb-1">Guía de formato y variables:</p>
+                <p className="mb-1">
+                  1. Usa <code>**texto**</code> para formatear cualquier palabra en <strong>negrita</strong>.
+                </p>
+                <p>
+                  2. Placeholders disponibles: <code>{`{presidente}`}</code>, <code>{`{responsableNombre}`}</code>, <code>{`{difuntoNombre}`}</code>, <code>{`{bovedaNumero}`}</code>, <code>{`{bloqueDescripcion}`}</code>, <code>{`{pisoNumero}`}</code>, <code>{`{montoTotal}`}</code>, <code>{`{bancoTexto}`}</code>, <code>{`{numeroCuenta}`}</code>, <code>{`{aniosArriendo}`}</code>, <code>{`{fechaInicioDia}`}</code>, <code>{`{fechaInicioMes}`}</code>, <code>{`{fechaInicioAnio}`}</code>, <code>{`{fechaFinDia}`}</code>, <code>{`{fechaFinMes}`}</code>, <code>{`{fechaFinAnio}`}</code>, <code>{`{gadNombre}`}</code>, <code>{`{parroquia}`}</code>.
+                </p>
+              </div>
+
+              <div>
+                <label className={LABEL_CLS}>Preámbulo del Contrato</label>
+                <textarea
+                  value={cementerio?.contratoPreambulo ?? ''}
+                  onChange={(e) => setField('contratoPreambulo', e.target.value)}
+                  disabled={!canEdit}
+                  rows={4}
+                  className={INPUT_CLS}
+                  placeholder="Texto del preámbulo..."
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={LABEL_CLS}>Cláusula Primera (Comparecientes)</label>
+                  <textarea
+                    value={cementerio?.contratoClausula1 ?? ''}
+                    onChange={(e) => setField('contratoClausula1', e.target.value)}
+                    disabled={!canEdit}
+                    rows={4}
+                    className={INPUT_CLS}
+                    placeholder="Texto de la cláusula..."
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Cláusula Segunda (Antecedentes)</label>
+                  <textarea
+                    value={cementerio?.contratoClausula2 ?? ''}
+                    onChange={(e) => setField('contratoClausula2', e.target.value)}
+                    disabled={!canEdit}
+                    rows={4}
+                    className={INPUT_CLS}
+                    placeholder="Texto de la cláusula..."
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Cláusula Tercera (Objeto)</label>
+                  <textarea
+                    value={cementerio?.contratoClausula3 ?? ''}
+                    onChange={(e) => setField('contratoClausula3', e.target.value)}
+                    disabled={!canEdit}
+                    rows={4}
+                    className={INPUT_CLS}
+                    placeholder="Texto de la cláusula..."
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Cláusula Cuarta (Precio)</label>
+                  <textarea
+                    value={cementerio?.contratoClausula4 ?? ''}
+                    onChange={(e) => setField('contratoClausula4', e.target.value)}
+                    disabled={!canEdit}
+                    rows={4}
+                    className={INPUT_CLS}
+                    placeholder="Texto de la cláusula..."
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Cláusula Quinta (Plazo)</label>
+                  <textarea
+                    value={cementerio?.contratoClausula5 ?? ''}
+                    onChange={(e) => setField('contratoClausula5', e.target.value)}
+                    disabled={!canEdit}
+                    rows={4}
+                    className={INPUT_CLS}
+                    placeholder="Texto de la cláusula..."
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>Cláusula Sexta (Suscripción)</label>
+                  <textarea
+                    value={cementerio?.contratoClausula6 ?? ''}
+                    onChange={(e) => setField('contratoClausula6', e.target.value)}
+                    disabled={!canEdit}
+                    rows={4}
+                    className={INPUT_CLS}
+                    placeholder="Texto de la cláusula..."
+                  />
+                </div>
+              </div>
+            </div>
+          </details>
+
           {canEdit && (
             <div className="mt-4 flex justify-end">
               <button type="submit" disabled={saving}
@@ -1270,9 +1494,120 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
             <Field label="Email" value={gad?.email ?? ''} onChange={(v) => setGadField('email', v)} disabled={!canEdit} />
             <Field label="RUC" value={gad?.ruc ?? ''} onChange={(v) => setGadField('ruc', v)} disabled={!canEdit} />
             <Field label="Sitio web" value={gad?.website ?? ''} onChange={(v) => setGadField('website', v)} disabled={!canEdit} />
-            <Field label="Logo URL" value={gad?.logoUrl ?? ''} onChange={(v) => setGadField('logoUrl', v)} disabled={!canEdit} />
+            <div className="space-y-1">
+              <Field label="Logo URL" value={gad?.logoUrl ?? ''} onChange={(v) => setGadField('logoUrl', v)} disabled={!canEdit} />
+              {canEdit && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 w-fit">
+                    <i className="ti ti-upload" /> Subir archivo de logo
+                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                  </label>
+                  {uploadingLogo && <span className="text-[10px] text-primary-500 animate-pulse">Subiendo logo...</span>}
+                  {logoUploadError && <span className="text-[10px] text-red-500">{logoUploadError}</span>}
+                </div>
+              )}
+              <div className="mt-2">
+                <span className="block text-xs font-medium text-slate-500 mb-1">Vista previa del logo:</span>
+                <div className="h-24 w-24 relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
+                  <img
+                    src={gad?.logoUrl || '/logo.png'}
+                    alt="Logo del GAD / Cementerio"
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/logo.png';
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
             <Field label="Eslogan" value={gad?.slogan ?? ''} onChange={(v) => setGadField('slogan', v)} disabled={!canEdit} />
           </div>
+
+          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Banners del Contrato PDF (Cabecera y Pie)
+          </h3>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 border border-slate-200 rounded-lg p-4 bg-slate-50/50 mb-4">
+            {/* Cabecera (Header Image) */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 select-none cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gad?.usarHeaderImagen ?? false}
+                  onChange={(e) => setGadField('usarHeaderImagen', e.target.checked)}
+                  disabled={!canEdit}
+                  className="rounded border-slate-300 text-primary-500 focus:ring-primary-500 h-4 w-4"
+                />
+                Usar imagen de cabecera personalizada (Banner)
+              </label>
+
+              {gad?.usarHeaderImagen && (
+                <div className="space-y-2 pl-6">
+                  <Field label="URL Cabecera" value={gad?.headerImagenUrl ?? ''} onChange={(v) => setGadField('headerImagenUrl', v)} disabled={!canEdit} />
+                  {canEdit && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 w-fit">
+                        <i className="ti ti-upload" /> Subir banner de cabecera
+                        <input type="file" accept="image/*" className="hidden" onChange={handleHeaderUpload} disabled={uploadingHeader} />
+                      </label>
+                      {uploadingHeader && <span className="text-[10px] text-primary-500 animate-pulse">Subiendo cabecera...</span>}
+                      {headerUploadError && <span className="text-[10px] text-red-500">{headerUploadError}</span>}
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <span className="block text-xs font-medium text-slate-500 mb-1">Vista previa del banner:</span>
+                    <div className="h-16 w-full relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
+                      {gad?.headerImagenUrl ? (
+                        <img src={gad.headerImagenUrl} alt="Cabecera Contrato" className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <span className="text-[10px] text-slate-400">Sin imagen de cabecera</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pie de Página (Footer Image) */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 select-none cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gad?.usarFooterImagen ?? false}
+                  onChange={(e) => setGadField('usarFooterImagen', e.target.checked)}
+                  disabled={!canEdit}
+                  className="rounded border-slate-300 text-primary-500 focus:ring-primary-500 h-4 w-4"
+                />
+                Usar imagen de pie de página personalizada (Banner)
+              </label>
+
+              {gad?.usarFooterImagen && (
+                <div className="space-y-2 pl-6">
+                  <Field label="URL Pie de Página" value={gad?.footerImagenUrl ?? ''} onChange={(v) => setGadField('footerImagenUrl', v)} disabled={!canEdit} />
+                  {canEdit && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 w-fit">
+                        <i className="ti ti-upload" /> Subir banner de pie
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} disabled={uploadingFooter} />
+                      </label>
+                      {uploadingFooter && <span className="text-[10px] text-primary-500 animate-pulse">Subiendo pie...</span>}
+                      {footerUploadError && <span className="text-[10px] text-red-500">{footerUploadError}</span>}
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <span className="block text-xs font-medium text-slate-500 mb-1">Vista previa del banner:</span>
+                    <div className="h-16 w-full relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
+                      {gad?.footerImagenUrl ? (
+                        <img src={gad.footerImagenUrl} alt="Pie de Página Contrato" className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <span className="text-[10px] text-slate-400">Sin imagen de pie de página</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="mt-4 space-y-4">
             <div>
               <label className={LABEL_CLS}>Misión</label>

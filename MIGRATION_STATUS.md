@@ -14,6 +14,13 @@ secciones marcadas en §6.1 del plan vivo.
 
 ## Avances aplicados en esta iteración
 
+### 2026-06-12 — Fase 2: Módulo de Contratos y Renovación PDF Completo (Revisión y Ajustes)
+
+- **Corrección de Banners y Logo GAD**: Migración del endpoint de carga local del frontend a un controlador del backend seguro y auditado bajo `@Roles('Administrador')`. Las imágenes se validan rigurosamente por tipo (JPG/PNG/WEBP) y tamaño (≤5MB) y se persisten en el driver de almacenamiento configurado (`StorageService` del backend).
+- **Mitigación de SSRF**: Restricción y saneamiento del recuperador de imágenes en el generador de PDF del BFF, verificando el host contra un allowlist estricto (permitiendo solo la URL del backend) y resolviendo URLs locales de API directamente sin realizar llamadas HTTP externas.
+- **Parametrización Segura**: Configuración del seed de base de datos para no sobrescribir las cláusulas personalizadas en cada inicio del servidor (moviendo los valores predeterminados solo al bloque `create`). Centralización de cláusulas predeterminadas en `default-contrato-templates.ts`.
+- **Prevención de Colisión de Secuenciales**: Fijación del código de GAD (`gadCode = 'GADCHECA'`) en la resolución del número secuencial para evitar reinicios accidentales del contador y colisiones en caso de cambios en el nombre del GAD.
+
 ### 2026-05-14 — Fase 9.2: Importador de catastro on-demand
 
 - Nuevo modelo Prisma `CatastroImport` (log de cada importación: estado,

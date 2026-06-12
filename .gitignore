@@ -384,3 +384,5 @@ new-migration/backend/storage/
 # Documento confidencial de licitación — NUNCA versionar
 new-migration/TDR_Sistema_Informatico_v3 (1).pdf
 new-migration/*.pdf
+*.tsbuildinfo
+

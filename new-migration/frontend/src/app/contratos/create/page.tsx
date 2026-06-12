@@ -169,6 +169,11 @@ export default function CreateContratoPage() {
   const [bovedasDisponibles, setBovedasDisponibles] = useState<any[]>([]);
   const [bovedasMeta, setBovedasMeta] = useState<any>(null);
   const [bovedasPage, setBovedasPage] = useState(1);
+  const [showContratosModal, setShowContratosModal] = useState(false);
+  const [contratoSearch, setContratoSearch] = useState('');
+  const [contratosList, setContratosList] = useState<any[]>([]);
+  const [contratosMeta, setContratosMeta] = useState<any>(null);
+  const [contratosPage, setContratosPage] = useState(1);
 
   const [newResponsable, setNewResponsable] = useState<ResponsableWizard>({
     localId: '',
@@ -309,6 +314,42 @@ export default function CreateContratoPage() {
     loadBovedasDisponibles();
   }, [showBovedaModal, bovedasPage, bovedaSearch, bovedaTipo]);
 
+  async function refreshNumeroSecuencial(bovedaId: number, esRenovacion: boolean) {
+    if (!bovedaId) return;
+    try {
+      const preview = await contratosApi.getNumeroSecuencial(bovedaId, esRenovacion);
+      setForm((prev) => ({
+        ...prev,
+        contrato: {
+          ...prev.contrato,
+          numeroSecuencial: preview.numeroSecuencial,
+          montoTotal: Number(preview.montoTotal || 0),
+        },
+      }));
+    } catch (err: any) {
+      console.error('Error refreshing sequential number:', err);
+    }
+  }
+
+  useEffect(() => {
+    if (!showContratosModal) return;
+    async function loadContratos() {
+      try {
+        const result = await contratosApi.findPage({
+          page: contratosPage,
+          limit: 10,
+          search: contratoSearch,
+          estado: 'activos',
+        });
+        setContratosList(result.data || []);
+        setContratosMeta(result.meta);
+      } catch (err: any) {
+        setError(err.message || 'No se pudo cargar la lista de contratos');
+      }
+    }
+    loadContratos();
+  }, [showContratosModal, contratosPage, contratoSearch]);
+
   useEffect(() => {
     const years = Number(form.contrato.numeroDeMeses) || 0;
     const cuotas = generateCuotas(
@@ -399,7 +440,7 @@ export default function CreateContratoPage() {
 
   async function selectBoveda(boveda: any) {
     try {
-      const preview = await contratosApi.getNumeroSecuencial(boveda.id, false);
+      const preview = await contratosApi.getNumeroSecuencial(boveda.id, form.contrato.esRenovacion);
       setForm((prev) => ({
         ...prev,
         contrato: {
@@ -413,6 +454,55 @@ export default function CreateContratoPage() {
       setShowBovedaModal(false);
     } catch (err: any) {
       setError(err.message || 'No se pudo seleccionar la bóveda');
+    }
+  }
+
+  async function selectContratoOrigen(origenContrato: any) {
+    try {
+      const fullContrato = await contratosApi.findOne(origenContrato.id);
+      const difunto = fullContrato.difunto ?? {};
+      const responsables = (fullContrato.responsables ?? []).map((r: any) => ({
+        localId: `existing-${r.responsable.persona.id}`,
+        id: r.responsable.persona.id,
+        esExistente: true,
+        nombres: r.responsable.persona.nombre,
+        apellidos: r.responsable.persona.apellido,
+        tipoIdentificacion: r.responsable.persona.tipoIdentificacion || 'Cedula',
+        numeroIdentificacion: r.responsable.persona.numeroIdentificacion,
+        telefono: r.responsable.persona.telefono || '',
+        email: r.responsable.persona.email || '',
+        direccion: r.responsable.persona.direccion || '',
+        parentesco: r.parentesco || '',
+        fechaInicio: today,
+        fechaFin: '',
+      }));
+
+      const boveda = fullContrato.boveda ?? {};
+      const preview = await contratosApi.getNumeroSecuencial(boveda.id, true);
+
+      setForm((prev) => ({
+        ...prev,
+        contrato: {
+          ...prev.contrato,
+          bovedaId: boveda.id,
+          bovedaLabel: `${boveda.numero} - ${boveda.bloque?.nombre || 'Sin bloque'}`,
+          numeroSecuencial: preview.numeroSecuencial,
+          montoTotal: Number(preview.montoTotal || 0),
+          contratoOrigenId: fullContrato.id,
+        },
+        difunto: {
+          numeroIdentificacion: difunto.numeroIdentificacion || '',
+          nombres: difunto.nombre || '',
+          apellidos: difunto.apellido || '',
+          fechaNacimiento: difunto.fechaNacimiento ? difunto.fechaNacimiento.slice(0, 10) : '',
+          fechaFallecimiento: difunto.fechaDefuncion ? difunto.fechaDefuncion.slice(0, 10) : '',
+          descuentoId: fullContrato.descuentoId || 0,
+        },
+        responsables,
+      }));
+      setShowContratosModal(false);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo seleccionar el contrato de origen');
     }
   }
 
@@ -779,6 +869,61 @@ export default function CreateContratoPage() {
                 </button>
               </div>
             </div>
+
+            <div className="sm:col-span-2 flex items-center gap-2 py-2">
+              <input
+                id="contrato-es-renovacion"
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-300"
+                checked={form.contrato.esRenovacion}
+                onChange={async (e) => {
+                  const checked = e.target.checked;
+                  setForm((prev) => ({
+                    ...prev,
+                    contrato: {
+                      ...prev.contrato,
+                      esRenovacion: checked,
+                      ...(!checked ? { contratoOrigenId: null } : {}),
+                    },
+                  }));
+                  if (form.contrato.bovedaId) {
+                    await refreshNumeroSecuencial(form.contrato.bovedaId, checked);
+                  }
+                }}
+              />
+              <label
+                htmlFor="contrato-es-renovacion"
+                className="text-sm font-medium text-slate-700 select-none cursor-pointer"
+              >
+                ¿Es una renovación de contrato?
+              </label>
+            </div>
+
+            {form.contrato.esRenovacion && (
+              <div className="sm:col-span-2">
+                <Label htmlFor="contrato-origen">Contrato anterior (Origen)</Label>
+                <div className="flex gap-2">
+                  <input
+                    id="contrato-origen"
+                    className={`${INPUT_CLS} flex-1`}
+                    value={
+                      form.contrato.contratoOrigenId
+                        ? `Contrato #${form.contrato.contratoOrigenId}`
+                        : 'Seleccionar contrato anterior'
+                    }
+                    readOnly
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowContratosModal(true)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-100"
+                  >
+                    <Search className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                    Buscar contrato
+                  </button>
+                </div>
+              </div>
+            )}
 
             <DatePicker
               id="contrato-fecha-inicio"
@@ -1283,7 +1428,15 @@ export default function CreateContratoPage() {
                   {form.contrato.fechaFin}
                 </p>
                 <p>
-                  <strong>Monto:</strong> ${Number(form.contrato.montoTotal).toFixed(2)}
+                  <strong>Subtotal:</strong> ${Number(form.contrato.montoTotal).toFixed(2)}
+                </p>
+                {descuentoPorcentaje > 0 && (
+                  <p className="text-green-600 font-medium">
+                    <strong>Descuento ({descuentoPorcentaje}%):</strong> -${montoDescuento.toFixed(2)}
+                  </p>
+                )}
+                <p className="text-slate-900 font-bold">
+                  <strong>Total Neto:</strong> ${montoFinalConDescuento.toFixed(2)}
                 </p>
                 <p>
                   <strong>Observaciones:</strong>{' '}
@@ -1402,6 +1555,107 @@ export default function CreateContratoPage() {
           )}
         </div>
       </Card>
+
+      {/* Modal: Buscar contrato anterior */}
+      <Modal
+        open={showContratosModal}
+        title="Seleccionar contrato anterior"
+        size="lg"
+        onClose={() => setShowContratosModal(false)}
+      >
+        <div className="space-y-3">
+          <div>
+            <input
+              className={INPUT_CLS}
+              placeholder="Buscar por número o difunto…"
+              value={contratoSearch}
+              onChange={(e) => {
+                setContratosPage(1);
+                setContratoSearch(e.target.value);
+              }}
+            />
+          </div>
+
+          <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+            <table className="min-w-full divide-y divide-slate-100 text-sm">
+              <thead className="bg-slate-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-3 py-2">Secuencial</th>
+                  <th className="px-3 py-2">Bóveda</th>
+                  <th className="px-3 py-2">Difunto</th>
+                  <th className="px-3 py-2">Fin Contrato</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {contratosList.length > 0 ? (
+                  contratosList.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50/50">
+                      <td className="px-3 py-2 font-medium text-slate-700">
+                        {c.numeroSecuencial}
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {c.boveda?.numero || '—'}
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {c.difunto ? `${c.difunto.nombre} ${c.difunto.apellido}` : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {c.fechaFin ? new Date(c.fechaFin).toLocaleDateString('es-EC') : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => selectContratoOrigen(c)}
+                          className="rounded-md bg-green-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-600"
+                        >
+                          Seleccionar
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-3 py-6 text-center text-sm text-slate-400"
+                    >
+                      No se encontraron contratos activos.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {contratosMeta && contratosMeta.totalPages > 1 && (
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+              <span>
+                Página <strong>{contratosMeta.page}</strong> de{' '}
+                <strong>{contratosMeta.totalPages}</strong>
+              </span>
+              <div className="inline-flex gap-1">
+                <button
+                  type="button"
+                  disabled={!contratosMeta.hasPrevPage}
+                  onClick={() => setContratosPage(contratosMeta.page - 1)}
+                  className="rounded-md border border-slate-200 px-2 py-1 enabled:hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                <button
+                  type="button"
+                  disabled={!contratosMeta.hasNextPage}
+                  onClick={() => setContratosPage(contratosMeta.page + 1)}
+                  className="rounded-md border border-slate-200 px-2 py-1 enabled:hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal: Buscar bóveda */}
       <Modal

@@ -368,7 +368,7 @@ export class ContratoService {
   private async resolveNumberPrefix(
     bovedaId?: number,
     isRenovacion = false,
-  ): Promise<{ prefix: string; year: number; pattern: string }> {
+  ): Promise<{ prefix: string; year: number; pattern: string; gadCode: string }> {
     const year = new Date().getFullYear();
     const boveda = bovedaId
       ? await this.prisma.boveda.findUnique({
@@ -389,7 +389,9 @@ export class ContratoService {
     });
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    return { prefix, year, pattern: `${prefix}-GADCHECA-${year}-` };
+    const gadCode = 'GADCHECA';
+
+    return { prefix, year, pattern: `${prefix}-${gadCode}-${year}-`, gadCode };
   }
 
   /** Hash determinista a int32 para clave de advisory lock. */
@@ -405,7 +407,7 @@ export class ContratoService {
     bovedaId?: number,
     isRenovacion = false,
   ): Promise<string> {
-    const { prefix, year, pattern } = await this.resolveNumberPrefix(
+    const { prefix, year, pattern, gadCode } = await this.resolveNumberPrefix(
       bovedaId,
       isRenovacion,
     );
@@ -419,7 +421,7 @@ export class ContratoService {
     const nextNumber = last
       ? Number(last.numeroSecuencial.split('-').pop() || '0') + 1
       : 1;
-    return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
+    return `${prefix}-${gadCode}-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 
   private async generateNumeroContratoAtomic(
@@ -427,7 +429,7 @@ export class ContratoService {
     bovedaId?: number,
     isRenovacion = false,
   ): Promise<string> {
-    const { prefix, year, pattern } = await this.resolveNumberPrefix(
+    const { prefix, year, pattern, gadCode } = await this.resolveNumberPrefix(
       bovedaId,
       isRenovacion,
     );
@@ -444,7 +446,7 @@ export class ContratoService {
     const nextNumber = last
       ? Number(last.numeroSecuencial.split('-').pop() || '0') + 1
       : 1;
-    return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
+    return `${prefix}-${gadCode}-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 
   /**
@@ -710,12 +712,21 @@ export class ContratoService {
           0,
         );
 
+        const pagoSubtotal = descuentoPorcentaje > 0
+          ? round2(montoSubtotal * (seleccionadas.length / cuotasPlan.length))
+          : round2(montoPago);
+        const pagoDescuento = descuentoPorcentaje > 0
+          ? round2(pagoSubtotal - montoPago)
+          : 0;
+
         const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
         const fechaPago = pago.fechaPago ? new Date(pago.fechaPago) : new Date();
         const pagoCreado = await tx.pago.create({
           data: {
             numeroRecibo,
             monto: new Prisma.Decimal(round2(montoPago)),
+            montoSubtotal: new Prisma.Decimal(pagoSubtotal),
+            montoDescuento: new Prisma.Decimal(pagoDescuento),
             fechaPago,
             metodoPago: pago.tipoPago,
             referencia: pago.numeroComprobante || null,
@@ -999,6 +1010,14 @@ export class ContratoService {
           (sum, c) => sum + Number(c.monto),
           0,
         );
+
+        const pagoSubtotal = descuentoPorcentaje > 0
+          ? round2(montoSubtotal * (seleccionadas.length / cuotasPlan.length))
+          : round2(montoPago);
+        const pagoDescuento = descuentoPorcentaje > 0
+          ? round2(pagoSubtotal - montoPago)
+          : 0;
+
         const numeroRecibo = await this.generateNumeroReciboAtomic(tx);
         const fechaPago = dto.pago.fechaPago
           ? new Date(dto.pago.fechaPago)
@@ -1007,6 +1026,8 @@ export class ContratoService {
           data: {
             numeroRecibo,
             monto: new Prisma.Decimal(round2(montoPago)),
+            montoSubtotal: new Prisma.Decimal(pagoSubtotal),
+            montoDescuento: new Prisma.Decimal(pagoDescuento),
             fechaPago,
             metodoPago: dto.pago.tipoPago,
             referencia: dto.pago.numeroComprobante || null,
