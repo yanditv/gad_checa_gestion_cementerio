@@ -20,6 +20,9 @@ export function toBienListItem(entity: BienConRelaciones): BienListItemDto {
     estadoConservacion: entity.estadoConservacion,
     ubicacion: entity.ubicacion,
     dadoDeBaja: entity.dadoDeBaja,
+    fotoUrl: entity.fotoStorageKey
+      ? `/inventario/bienes/${entity.id}/foto`
+      : null,
     categoria: entity.categoria
       ? { id: entity.categoria.id, nombre: entity.categoria.nombre }
       : null,

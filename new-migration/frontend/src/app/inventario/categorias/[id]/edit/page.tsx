@@ -3,12 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { inventarioCategoriasApi } from '@/lib/api';
-
-const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
-const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+import { Button, Card, Checkbox, Input } from '@/components/ui';
 
 interface FormState {
   nombre: string;
@@ -87,80 +84,59 @@ export default function EditCategoriaPage() {
           href="/inventario/categorias"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
       {fetching ? (
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-400 shadow-soft">
           <div className="inline-flex items-center gap-2">
-            <svg className="h-4 w-4 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
+            <Loader2 className="h-4 w-4 animate-spin text-primary-500" strokeWidth={2} aria-hidden="true" />
             Cargando categoría…
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft lg:col-span-2">
-            <header className="border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">
-                Datos de la categoría
-              </h2>
-            </header>
+          <Card padding="none" header="Datos de la categoría" className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-4 p-5">
               {error && (
-                <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+                <div className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
                   {error}
                 </div>
               )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  wrapperClassName="sm:col-span-2"
+                  label="Nombre"
+                  required
+                  value={formData.nombre}
+                  onChange={(e) => set('nombre', e.target.value)}
+                />
+                <Input
+                  label="Vida útil (años)"
+                  required
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={formData.vidaUtilAnios}
+                  onChange={(e) => set('vidaUtilAnios', e.target.value)}
+                />
+                <Input
+                  label="Valor residual (%)"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={formData.valorResidualPct}
+                  onChange={(e) => set('valorResidualPct', e.target.value)}
+                />
                 <div className="sm:col-span-2">
-                  <label className={LABEL_CLS}>Nombre *</label>
-                  <input
-                    type="text"
-                    className={INPUT_CLS}
-                    required
-                    value={formData.nombre}
-                    onChange={(e) => set('nombre', e.target.value)}
+                  <Checkbox
+                    label="Categoría activa"
+                    checked={formData.estado}
+                    onChange={(e) => set('estado', e.target.checked)}
                   />
-                </div>
-                <div>
-                  <label className={LABEL_CLS}>Vida útil (años) *</label>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    className={INPUT_CLS}
-                    required
-                    value={formData.vidaUtilAnios}
-                    onChange={(e) => set('vidaUtilAnios', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_CLS}>Valor residual (%)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="0.01"
-                    className={INPUT_CLS}
-                    value={formData.valorResidualPct}
-                    onChange={(e) => set('valorResidualPct', e.target.value)}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={formData.estado}
-                      onChange={(e) => set('estado', e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-200"
-                    />
-                    Categoría activa
-                  </label>
                 </div>
               </div>
 
@@ -171,33 +147,18 @@ export default function EditCategoriaPage() {
                 >
                   Cancelar
                 </Link>
-                <button
+                <Button
                   type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  loading={loading}
+                  leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                 >
-                  {loading ? (
-                    <>
-                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
-                      Guardando…
-                    </>
-                  ) : (
-                    <>
-                      <i className="ti ti-check" /> Guardar
-                    </>
-                  )}
-                </button>
+                  {loading ? 'Guardando…' : 'Guardar'}
+                </Button>
               </div>
             </form>
-          </section>
+          </Card>
 
-          <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-            <header className="border-b border-slate-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-700">Información</h2>
-            </header>
+          <Card padding="none" header="Información">
             <div className="p-5 text-sm text-slate-600">
               <p className="text-slate-500">
                 Cambiar la vida útil o el valor residual afecta el cálculo de
@@ -208,7 +169,7 @@ export default function EditCategoriaPage() {
                 para ocultarla sin eliminarla.
               </p>
             </div>
-          </aside>
+          </Card>
         </div>
       )}
     </div>

@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { AvatarUpload } from '@/components/ui';
+import { mediaUrl } from '@/lib/api';
 
 interface Profile {
   nombre: string;
@@ -11,6 +13,7 @@ interface Profile {
   tipoIdentificacion: string;
   numeroIdentificacion: string;
   mustChangePassword?: boolean;
+  avatarUrl?: string | null;
   roles?: string[];
 }
 
@@ -144,6 +147,15 @@ export default function CuentaPage() {
           <div className="p-5">
             {profile ? (
               <>
+                <div className="mb-5 border-b border-slate-100 pb-5">
+                  <AvatarUpload
+                    src={mediaUrl(profile.avatarUrl)}
+                    name={`${profile.nombre} ${profile.apellido}`}
+                    onChange={(avatarUrl) =>
+                      setProfile((p) => (p ? { ...p, avatarUrl } : p))
+                    }
+                  />
+                </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Nombres" value={profile.nombre} />
                   <Field label="Apellidos" value={profile.apellido} />

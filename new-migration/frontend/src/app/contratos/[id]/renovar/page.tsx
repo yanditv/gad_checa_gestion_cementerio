@@ -3,6 +3,8 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Copy, Loader2, TriangleAlert, User } from 'lucide-react';
+import { DatePicker } from '@/components/ui';
 
 type PlanCuota = 'unico' | 'mensual' | 'trimestral' | 'semestral' | 'anual';
 
@@ -278,10 +280,11 @@ export default function RenovarContratoPage({
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg className="h-6 w-6 animate-spin text-primary-500" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
+        <Loader2
+          className="h-6 w-6 animate-spin text-primary-500"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -298,7 +301,7 @@ export default function RenovarContratoPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -317,14 +320,18 @@ export default function RenovarContratoPage({
           href={`/contratos/${id}`}
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
 
       {!puedeRenovar && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <i className="ti ti-alert-triangle mr-1" />
+          <TriangleAlert
+            className="mr-1 inline h-4 w-4 align-[-2px]"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
           Este contrato ya alcanzó el máximo de{' '}
           <strong>{maxRenovaciones}</strong> renovación(es) permitido por el
           cementerio. No se puede renovar nuevamente.
@@ -342,18 +349,14 @@ export default function RenovarContratoPage({
                 </div>
               )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className={LABEL_CLS}>Fecha de inicio</label>
-                  <input
-                    type="date"
-                    required
-                    value={form.fechaInicio}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, fechaInicio: e.target.value }))
-                    }
-                    className={INPUT_CLS}
-                  />
-                </div>
+                <DatePicker
+                  label="Fecha de inicio"
+                  required
+                  value={form.fechaInicio}
+                  onChange={(iso) =>
+                    setForm((p) => ({ ...p, fechaInicio: iso }))
+                  }
+                />
                 <div>
                   <label className={LABEL_CLS}>Años de duración</label>
                   <input
@@ -466,17 +469,11 @@ export default function RenovarContratoPage({
                     className={INPUT_CLS}
                   />
                 </div>
-                <div>
-                  <label className={LABEL_CLS}>Fecha de pago</label>
-                  <input
-                    type="date"
-                    value={form.fechaPago}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, fechaPago: e.target.value }))
-                    }
-                    className={INPUT_CLS}
-                  />
-                </div>
+                <DatePicker
+                  label="Fecha de pago"
+                  value={form.fechaPago}
+                  onChange={(iso) => setForm((p) => ({ ...p, fechaPago: iso }))}
+                />
                 {form.tipoPago !== 'Efectivo' && metadata.bancos.length > 0 && (
                   <div className="sm:col-span-2">
                     <label className={LABEL_CLS}>Banco</label>
@@ -521,7 +518,7 @@ export default function RenovarContratoPage({
                 disabled={saving || !puedeRenovar}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <i className="ti ti-copy" />
+                <Copy className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 {saving ? 'Renovando…' : 'Crear renovación'}
               </button>
             </div>
@@ -594,7 +591,11 @@ export default function RenovarContratoPage({
                 {origen.responsables.map((r) => (
                   <li key={r.responsable.id}>
                     <div className="flex items-baseline gap-2">
-                      <i className="ti ti-user text-slate-400" />
+                      <User
+                        className="h-3.5 w-3.5 self-center text-slate-400"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
                       <strong className="text-slate-800">
                         {r.responsable.persona.nombre}{' '}
                         {r.responsable.persona.apellido}

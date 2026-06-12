@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Loader2, Package, Pencil, Trash2 } from 'lucide-react';
 import { bloquesApi } from '@/lib/api';
+import {
+  DataTable,
+  EmptyState,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface Piso {
   id: number;
@@ -192,7 +198,7 @@ export default function BloqueDetailsPage() {
         <p className="text-sm text-slate-600">El bloque solicitado no existe o ya no está disponible.</p>
         <div>
           <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600">
-            <i className="ti ti-arrow-left" /> Volver al listado
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al listado
           </Link>
         </div>
       </div>
@@ -200,6 +206,100 @@ export default function BloqueDetailsPage() {
   }
 
   if (!bloque) return null;
+
+  const pisosColumns: DataTableColumn<Piso>[] = [
+    {
+      key: 'piso',
+      header: 'Piso',
+      sortable: true,
+      sortValue: (piso) => piso.numero,
+      cell: (piso) => <span className="font-medium">Piso {piso.numero}</span>,
+    },
+    {
+      key: 'precio',
+      header: 'Precio',
+      sortable: true,
+      sortValue: (piso) => Number(piso.precio ?? bloque.tarifaBase ?? 0),
+      cell: (piso) => formatCurrency(piso.precio ?? bloque.tarifaBase),
+    },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      cell: (piso) => {
+        const esTarifaBase = piso.precio == null || Number(piso.precio) === Number(bloque.tarifaBase);
+        return (
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${esTarifaBase ? 'bg-info-50 text-info-700 ring-info-200' : 'bg-amber-50 text-amber-700 ring-amber-200'}`}>
+            {esTarifaBase ? 'Tarifa base' : 'Personalizado'}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const difuntosColumns: DataTableColumn<(typeof difuntos)[number]>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      sortable: true,
+      sortValue: (d) => `${d.nombre} ${d.apellido}`,
+      cell: (d) => (
+        <span className="font-medium text-slate-800">{d.nombre} {d.apellido}</span>
+      ),
+    },
+    {
+      key: 'fechaDefuncion',
+      header: 'F. defunción',
+      sortable: true,
+      sortValue: (d) => (d.fechaDefuncion ? new Date(d.fechaDefuncion) : null),
+      cell: (d) => (
+        <span className="text-slate-600">
+          {d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString('es-EC') : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'ubicacion',
+      header: 'Ubicación',
+      sortable: true,
+      sortValue: (d) => d.piso,
+      cell: (d) => (
+        <span className="text-slate-600">Piso {d.piso} · Bóveda {d.boveda}</span>
+      ),
+    },
+  ];
+
+  const bovedasColumns: DataTableColumn<Boveda>[] = [
+    {
+      key: 'numero',
+      header: 'Número',
+      sortable: true,
+      sortValue: (b) => b.numero,
+      cell: (b) => <span className="font-medium text-slate-800">{b.numero}</span>,
+    },
+    {
+      key: 'piso',
+      header: 'Piso',
+      sortable: true,
+      sortValue: (b) => b.piso?.numero ?? null,
+      cell: (b) => (
+        <span className="text-slate-600">{b.piso?.numero ? `Piso ${b.piso.numero}` : '-'}</span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      sortable: true,
+      sortValue: (b) => getEstadoBoveda(b).label,
+      cell: (b) => {
+        const estado = getEstadoBoveda(b);
+        return (
+          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${estado.bg}`}>
+            {estado.label}
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -216,7 +316,7 @@ export default function BloqueDetailsPage() {
             href={`/bloques/${bloque.id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-edit" /> Editar
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Editar
           </Link>
           <button
             type="button"
@@ -224,13 +324,18 @@ export default function BloqueDetailsPage() {
             disabled={deleting}
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
           >
-            <i className={`ti ${deleting ? 'ti-loader animate-spin' : 'ti-trash'}`} /> Desactivar
+            {deleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            )}{' '}
+            Desactivar
           </button>
           <Link
             href="/bloques"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" /> Volver
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
           </Link>
         </div>
       </div>
@@ -286,39 +391,12 @@ export default function BloqueDetailsPage() {
           <header className="border-b border-slate-100 px-5 py-3">
             <h2 className="text-sm font-semibold text-slate-700">Precios por piso</h2>
           </header>
-          <div className="p-5">
-            {(!bloque.pisos || bloque.pisos.length === 0) ? (
-              <p className="text-sm text-slate-500">No hay pisos registrados.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase text-slate-500">
-                      <th className="px-3 py-2">Piso</th>
-                      <th className="px-3 py-2">Precio</th>
-                      <th className="px-3 py-2">Tipo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(bloque.pisos ?? []).map((piso) => {
-                      const esTarifaBase = piso.precio == null || Number(piso.precio) === Number(bloque.tarifaBase);
-                      return (
-                        <tr key={piso.id} className="border-t border-slate-200">
-                          <td className="px-3 py-2 font-medium">Piso {piso.numero}</td>
-                          <td className="px-3 py-2">{formatCurrency(piso.precio ?? bloque.tarifaBase)}</td>
-                          <td className="px-3 py-2">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${esTarifaBase ? 'bg-info-50 text-info-700 ring-info-200' : 'bg-amber-50 text-amber-700 ring-amber-200'}`}>
-                              {esTarifaBase ? 'Tarifa base' : 'Personalizado'}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <DataTable
+            columns={pisosColumns}
+            rows={bloque.pisos ?? []}
+            rowKey={(piso) => piso.id}
+            empty={<EmptyState title="No hay pisos registrados." compact />}
+          />
         </section>
       </div>
 
@@ -364,7 +442,11 @@ export default function BloqueDetailsPage() {
                               className="relative flex h-20 w-20 flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-2 shadow-sm"
                               title={`Bóveda ${b.numero} — ${estado.label}`}
                             >
-                              <i className={`ti ti-box text-lg ${estado.color.replace('bg-', 'text-')}`} />
+                              <Package
+                                className={`h-5 w-5 ${estado.color.replace('bg-', 'text-')}`}
+                                strokeWidth={2}
+                                aria-hidden="true"
+                              />
                               <span className="mt-0.5 text-xs font-medium text-slate-700">{b.numero}</span>
                               {b.propietario && (
                                 <span className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-slate-500" title="Con propietario" />
@@ -389,28 +471,11 @@ export default function BloqueDetailsPage() {
             <h2 className="text-sm font-semibold text-slate-700">Difuntos en el bloque</h2>
             <span className="text-xs font-medium text-slate-500">{difuntos.length} registro(s)</span>
           </header>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">F. defunción</th>
-                  <th className="px-4 py-3">Ubicación</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {difuntos.map((d, i) => (
-                  <tr key={`${d.id}-${i}`} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{d.nombre} {d.apellido}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString('es-EC') : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">Piso {d.piso} · Bóveda {d.boveda}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={difuntosColumns}
+            rows={difuntos}
+            rowKey={(d, i) => `${d.id}-${i}`}
+          />
         </section>
       )}
 
@@ -420,39 +485,14 @@ export default function BloqueDetailsPage() {
           <h2 className="text-sm font-semibold text-slate-700">Bóvedas del bloque</h2>
           <span className="text-xs font-medium text-slate-500">{stats.totalBovedas} registradas</span>
         </header>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3">Número</th>
-                <th className="px-4 py-3">Piso</th>
-                <th className="px-4 py-3">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {(bloque.bovedas ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-4 py-10 text-center text-slate-400">No hay bóvedas registradas en este bloque.</td>
-                </tr>
-              ) : (
-                (bloque.bovedas ?? []).map((boveda) => {
-                  const estado = getEstadoBoveda(boveda);
-                  return (
-                    <tr key={boveda.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-3 font-medium text-slate-800">{boveda.numero}</td>
-                      <td className="px-4 py-3 text-slate-600">{boveda.piso?.numero ? `Piso ${boveda.piso.numero}` : '-'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${estado.bg}`}>
-                          {estado.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={bovedasColumns}
+          rows={bloque.bovedas ?? []}
+          rowKey={(boveda) => boveda.id}
+          empty={
+            <EmptyState title="No hay bóvedas registradas en este bloque." compact />
+          }
+        />
       </section>
     </div>
   );

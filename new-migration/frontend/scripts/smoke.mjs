@@ -44,10 +44,17 @@ const ROUTES = [
   '/inventario/depreciacion',
   '/inventario/reportes',
   '/reportes',
+  '/reportes/bloques',
+  '/reportes/bovedas',
+  '/reportes/ingresos',
+  '/reportes/cuentas-por-cobrar',
+  '/reportes/comparativa',
   '/configuracion',
+  '/configuracion/catastro',
   '/cuenta',
   '/admin/usuarios',
   '/admin/roles',
+  '/notify',
   '/manual',
 ];
 

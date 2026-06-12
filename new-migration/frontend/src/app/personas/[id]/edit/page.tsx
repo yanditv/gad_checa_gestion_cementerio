@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { personasApi } from '@/lib/api';
+import { DatePicker } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -104,7 +106,7 @@ export default function EditPersonaPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar Persona</h1>
@@ -114,7 +116,7 @@ export default function EditPersonaPage() {
           href={`/personas/${params.id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -200,15 +202,11 @@ export default function EditPersonaPage() {
                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
               />
             </div>
-            <div>
-              <label className={LABEL_CLS}>Fecha de Nacimiento</label>
-              <input
-                type="date"
-                className={INPUT_CLS}
-                value={formData.fechaNacimiento}
-                onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
-              />
-            </div>
+            <DatePicker
+              label="Fecha de Nacimiento"
+              value={formData.fechaNacimiento}
+              onChange={(iso) => setFormData({ ...formData, fechaNacimiento: iso })}
+            />
             <div>
               <label className={LABEL_CLS}>Género</label>
               <select

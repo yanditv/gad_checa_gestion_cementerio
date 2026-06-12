@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Camera,
   Check,
   ClipboardList,
   Info,
@@ -20,6 +21,7 @@ import {
   Card,
   DatePicker,
   FormSection,
+  ImageUpload,
   Input,
   PageHeader,
   Select,
@@ -77,6 +79,7 @@ export default function NuevoBienPage() {
   const [formData, setFormData] = useState<FormState>(INITIAL);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [custodios, setCustodios] = useState<{ id: number; nombre: string }[]>([]);
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
 
   useEffect(() => {
     inventarioCategoriasApi
@@ -101,7 +104,7 @@ export default function NuevoBienPage() {
     setLoading(true);
     setError('');
     try {
-      await inventarioBienesApi.create({
+      const creado = await inventarioBienesApi.create({
         codigo: toOptional(formData.codigo),
         descripcion: formData.descripcion.trim(),
         marca: toOptional(formData.marca),
@@ -121,6 +124,14 @@ export default function NuevoBienPage() {
         categoriaId: Number(formData.categoriaId),
         custodioId: formData.custodioId ? Number(formData.custodioId) : undefined,
       });
+      // El bien ya quedó creado; la foto es opcional y tolerante a fallos.
+      if (fotoFile && creado?.id) {
+        try {
+          await inventarioBienesApi.uploadFoto(creado.id, fotoFile);
+        } catch {
+          /* no-op: el bien se creó; la foto puede subirse luego desde la ficha */
+        }
+      }
       router.push('/inventario/bienes');
     } catch (err: any) {
       setError(err.message || 'No se pudo registrar el bien');
@@ -275,6 +286,15 @@ export default function NuevoBienPage() {
                   </option>
                 ))}
               </Select>
+            </FormSection>
+
+            <FormSection title="Fotografía" icon={<Camera className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+              <ImageUpload
+                shape="square"
+                label="Foto (opcional)"
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+                onChange={setFotoFile}
+              />
             </FormSection>
 
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">

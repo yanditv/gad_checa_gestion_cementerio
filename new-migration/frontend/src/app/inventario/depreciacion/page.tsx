@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  CalendarClock,
+  CheckCircle2,
+  FolderX,
+  RefreshCw,
+} from 'lucide-react';
+import {
   inventarioCategoriasApi,
   inventarioCustodiosApi,
   inventarioDepreciacionApi,
@@ -9,14 +15,23 @@ import {
   ReporteDepreciacion,
   RecalcularDepreciacionResult,
 } from '@/lib/api';
+import {
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  DataTable,
+  DatePicker,
+  EmptyState,
+  PageHeader,
+  Select,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface CategoriaResumen {
   id: number;
   nombre: string;
 }
-
-const SELECT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 const ADMIN_ROLES = ['Admin', 'Administrador'];
 
@@ -167,45 +182,103 @@ export default function DepreciacionPage() {
     (_, i) => now.getFullYear() - 4 + i,
   );
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          Depreciación de bienes
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Valor en libros de la propiedad, planta y equipo del GAD a una fecha
-          de corte (línea recta, CGE 406-03).
-        </p>
-      </div>
-
-      {/* Control de recálculo de periodo (solo Administrador) */}
-      {isAdmin && (
-        <section className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/60 shadow-soft">
-          <div className="flex items-center gap-2 border-b border-amber-100 px-4 py-3">
-            <i className="ti ti-refresh text-amber-600" />
-            <h2 className="text-sm font-semibold text-amber-900">
-              Recalcular depreciación del periodo
-            </h2>
-            <span className="ml-auto inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200">
-              Solo Administrador
+  const columns: DataTableColumn<DepreciacionFila>[] = [
+    {
+      key: 'codigo',
+      header: 'Código',
+      cell: (row) => (
+        <span className="font-mono text-xs font-semibold text-slate-700">
+          {row.codigo}
+        </span>
+      ),
+    },
+    {
+      key: 'descripcion',
+      header: 'Descripción',
+      cell: (row) => (
+        <span className="font-medium text-slate-900">
+          {row.descripcion}
+          {row.dadoDeBaja && (
+            <span className="ml-2 inline-flex">
+              <Badge tone="danger" size="sm">
+                Dado de baja
+              </Badge>
             </span>
-          </div>
-          <div className="flex flex-col gap-3 p-4">
-            <p className="text-xs text-amber-800/90">
-              Recorre los bienes activos no dados de baja y registra la
-              depreciación mensual del periodo seleccionado. Esta operación
-              persiste el cierre contable del mes.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="sm:w-44">
-                <label className="mb-1 block text-xs font-medium text-amber-900">
-                  Año
-                </label>
-                <select
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'categoria',
+      header: 'Categoría',
+      cell: (row) => (
+        <span className="text-slate-600">{row.categoriaNombre || '-'}</span>
+      ),
+    },
+    {
+      key: 'valorAdquisicion',
+      header: 'Valor adquisición',
+      align: 'right',
+      cell: (row) => (
+        <span className="font-medium text-slate-700">
+          {formatMoney(row.valorAdquisicion)}
+        </span>
+      ),
+    },
+    {
+      key: 'depreciacionAcumulada',
+      header: 'Deprec. acumulada',
+      align: 'right',
+      cell: (row) => (
+        <span className="text-slate-600">
+          {formatMoney(row.depreciacionAcumulada)}
+        </span>
+      ),
+    },
+    {
+      key: 'valorEnLibros',
+      header: 'Valor en libros',
+      align: 'right',
+      cell: (row) => (
+        <span className="font-semibold text-slate-900">
+          {formatMoney(row.valorEnLibros)}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <PageHeader
+        title="Depreciación de bienes"
+        subtitle="Valor en libros de la propiedad, planta y equipo del GAD a una fecha de corte (línea recta, CGE 406-03)."
+      />
+
+      <div className="space-y-6">
+        {/* Control de recálculo de periodo (solo Administrador) */}
+        {isAdmin && (
+          <section className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/60 shadow-soft">
+            <div className="flex items-center gap-2 border-b border-amber-100 px-4 py-3">
+              <RefreshCw className="h-4 w-4 text-amber-600" strokeWidth={2} aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-amber-900">
+                Recalcular depreciación del periodo
+              </h2>
+              <span className="ml-auto inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200">
+                Solo Administrador
+              </span>
+            </div>
+            <div className="flex flex-col gap-3 p-4">
+              <p className="text-xs text-amber-800/90">
+                Recorre los bienes activos no dados de baja y registra la
+                depreciación mensual del periodo seleccionado. Esta operación
+                persiste el cierre contable del mes.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Select
+                  label="Año"
+                  wrapperClassName="sm:w-44"
                   value={anio}
                   onChange={(e) => setAnio(Number(e.target.value))}
-                  className={SELECT_CLS}
                   disabled={recalculando}
                 >
                   {anioOptions.map((y) => (
@@ -213,16 +286,12 @@ export default function DepreciacionPage() {
                       {y}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div className="sm:w-52">
-                <label className="mb-1 block text-xs font-medium text-amber-900">
-                  Mes
-                </label>
-                <select
+                </Select>
+                <Select
+                  label="Mes"
+                  wrapperClassName="sm:w-52"
                   value={mes}
                   onChange={(e) => setMes(Number(e.target.value))}
-                  className={SELECT_CLS}
                   disabled={recalculando}
                 >
                   {MESES.map((label, i) => (
@@ -230,92 +299,59 @@ export default function DepreciacionPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </Select>
+                <Button
+                  onClick={handleRecalcular}
+                  loading={recalculando}
+                  leftIcon={
+                    <RefreshCw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                  }
+                  className="bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-300"
+                >
+                  {recalculando ? 'Recalculando…' : 'Recalcular periodo'}
+                </Button>
               </div>
-              <button
-                type="button"
-                onClick={handleRecalcular}
-                disabled={recalculando}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {recalculando ? (
-                  <>
-                    <svg
-                      className="h-4 w-4 animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Recalculando…
-                  </>
-                ) : (
-                  <>
-                    <i className="ti ti-calculator" /> Recalcular periodo
-                  </>
-                )}
-              </button>
+
+              {recalcError && (
+                <div className="rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
+                  {recalcError}
+                </div>
+              )}
+              {recalcResult && (
+                <div className="flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-800">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  <span>
+                    Periodo {String(recalcResult.mes).padStart(2, '0')}/
+                    {recalcResult.anio} recalculado:{' '}
+                    <strong>{recalcResult.bienesProcesados}</strong> bien
+                    {recalcResult.bienesProcesados === 1 ? '' : 'es'} procesado
+                    {recalcResult.bienesProcesados === 1 ? '' : 's'}, total
+                    depreciado del periodo{' '}
+                    <strong>
+                      {formatMoney(recalcResult.totalDepreciadoPeriodo)}
+                    </strong>
+                    .
+                  </span>
+                </div>
+              )}
             </div>
+          </section>
+        )}
 
-            {recalcError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {recalcError}
-              </div>
-            )}
-            {recalcResult && (
-              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-                <i className="ti ti-circle-check mr-1" />
-                Periodo {String(recalcResult.mes).padStart(2, '0')}/
-                {recalcResult.anio} recalculado:{' '}
-                <strong>{recalcResult.bienesProcesados}</strong> bien
-                {recalcResult.bienesProcesados === 1 ? '' : 'es'} procesado
-                {recalcResult.bienesProcesados === 1 ? '' : 's'}, total
-                depreciado del periodo{' '}
-                <strong>
-                  {formatMoney(recalcResult.totalDepreciadoPeriodo)}
-                </strong>
-                .
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Tabla de depreciación por bien */}
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">
-                Fecha de corte
-              </label>
-              <input
-                type="date"
+        {/* Tabla de depreciación por bien */}
+        <Card padding="none">
+          <div className="flex flex-col gap-3 border-b border-slate-100 p-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <DatePicker
+                id="dep-fecha-corte"
+                label="Fecha de corte"
                 value={fechaCorte}
-                onChange={(e) => setFechaCorte(e.target.value)}
-                className={SELECT_CLS}
+                onChange={(v) => setFechaCorte(v)}
               />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">
-                Categoría
-              </label>
-              <select
+              <Select
+                label="Categoría"
                 value={categoriaId}
                 onChange={(e) => setCategoriaId(e.target.value)}
-                className={SELECT_CLS}
               >
                 <option value="">Todas las categorías</option>
                 {categorias.map((c) => (
@@ -323,16 +359,11 @@ export default function DepreciacionPage() {
                     {c.nombre}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">
-                Custodio
-              </label>
-              <select
+              </Select>
+              <Select
+                label="Custodio"
                 value={custodioId}
                 onChange={(e) => setCustodioId(e.target.value)}
-                className={SELECT_CLS}
               >
                 <option value="">Todos los custodios</option>
                 {custodios.map((c) => (
@@ -340,156 +371,74 @@ export default function DepreciacionPage() {
                     {c.nombre}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="flex items-end">
-              <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
+              </Select>
+              <div className="flex items-end">
+                <Checkbox
+                  label="Incluir bienes dados de baja"
                   checked={incluirBajas}
                   onChange={(e) => setIncluirBajas(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-primary-500 focus:ring-primary-200"
                 />
-                Incluir bienes dados de baja
-              </label>
+              </div>
             </div>
+            {reporte && (
+              <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                <CalendarClock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                Depreciación calculada al{' '}
+                <strong className="text-slate-700">
+                  {formatDate(reporte.fechaCorte)}
+                </strong>
+                .
+              </p>
+            )}
           </div>
-          {reporte && (
-            <p className="text-xs text-slate-500">
-              Depreciación calculada al{' '}
-              <strong className="text-slate-700">
-                {formatDate(reporte.fechaCorte)}
-              </strong>
-              .
-            </p>
+
+          {error && (
+            <div className="border-t border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+              {error}
+            </div>
           )}
-        </div>
 
-        {error && (
-          <div className="border-t border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+          <DataTable
+            columns={columns}
+            rows={filas}
+            rowKey={(row) => row.id}
+            loading={loading}
+            empty={
+              <EmptyState
+                icon={
+                  <FolderX className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
+                }
+                title="No hay bienes para los filtros seleccionados."
+                compact
+              />
+            }
+          />
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th scope="col" className="px-4 py-3">
-                  Código
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Descripción
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Categoría
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
-                  Valor adquisición
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
-                  Deprec. acumulada
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
-                  Valor en libros
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-10 text-center text-slate-400"
-                  >
-                    <div className="inline-flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4 animate-spin text-primary-500"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                      </svg>
-                      Calculando depreciación…
-                    </div>
-                  </td>
-                </tr>
-              ) : filas.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-12 text-center text-slate-400"
-                  >
-                    <i className="ti ti-folder-x text-3xl text-slate-300" />
-                    <div className="mt-2 text-sm">
-                      No hay bienes para los filtros seleccionados.
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filas.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">
-                      {row.codigo}
+          {!loading && filas.length > 0 && (
+            <div className="border-t border-slate-200 bg-slate-50">
+              <table className="min-w-full text-sm">
+                <tbody>
+                  <tr className="font-semibold text-slate-800">
+                    <td className="px-4 py-3" colSpan={3}>
+                      Totales ({filas.length} bien
+                      {filas.length === 1 ? '' : 'es'})
                     </td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      {row.descripcion}
-                      {row.dadoDeBaja && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 ring-1 ring-red-200">
-                          Dado de baja
-                        </span>
-                      )}
+                    <td className="px-4 py-3 text-right">
+                      {formatMoney(totalAdquisicion)}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {row.categoriaNombre || '-'}
+                    <td className="px-4 py-3 text-right">
+                      {formatMoney(totalAcumulada)}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-700">
-                      {formatMoney(row.valorAdquisicion)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      {formatMoney(row.depreciacionAcumulada)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                      {formatMoney(row.valorEnLibros)}
+                    <td className="px-4 py-3 text-right">
+                      {formatMoney(totalLibros)}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-            {!loading && filas.length > 0 && (
-              <tfoot className="border-t border-slate-200 bg-slate-50">
-                <tr className="text-sm font-semibold text-slate-800">
-                  <td className="px-4 py-3" colSpan={3}>
-                    Totales ({filas.length} bien
-                    {filas.length === 1 ? '' : 'es'})
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {formatMoney(totalAdquisicion)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {formatMoney(totalAcumulada)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {formatMoney(totalLibros)}
-                  </td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </section>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

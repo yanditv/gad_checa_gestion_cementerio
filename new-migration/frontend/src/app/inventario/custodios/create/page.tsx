@@ -3,12 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check } from 'lucide-react';
 import { inventarioCustodiosApi } from '@/lib/api';
-
-const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
-const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+import { Button, Card, Input } from '@/components/ui';
 
 interface FormState {
   nombre: string;
@@ -67,56 +64,40 @@ export default function CreateCustodioPage() {
           href="/inventario/custodios"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft lg:col-span-2">
-          <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">
-              Datos del custodio
-            </h2>
-          </header>
+        <Card padding="none" header="Datos del custodio" className="lg:col-span-2">
           <form onSubmit={handleSubmit} className="space-y-4 p-5">
             {error && (
-              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+              <div className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
                 {error}
               </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className={LABEL_CLS}>Nombre *</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
-                  required
-                  placeholder="Juan Pérez"
-                  value={formData.nombre}
-                  onChange={(e) => set('nombre', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Identificación</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
-                  placeholder="0102030405"
-                  value={formData.identificacion}
-                  onChange={(e) => set('identificacion', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={LABEL_CLS}>Cargo</label>
-                <input
-                  type="text"
-                  className={INPUT_CLS}
-                  placeholder="Secretario"
-                  value={formData.cargo}
-                  onChange={(e) => set('cargo', e.target.value)}
-                />
-              </div>
+              <Input
+                wrapperClassName="sm:col-span-2"
+                label="Nombre"
+                required
+                placeholder="Juan Pérez"
+                value={formData.nombre}
+                onChange={(e) => set('nombre', e.target.value)}
+              />
+              <Input
+                label="Identificación"
+                placeholder="0102030405"
+                value={formData.identificacion}
+                onChange={(e) => set('identificacion', e.target.value)}
+              />
+              <Input
+                label="Cargo"
+                placeholder="Secretario"
+                value={formData.cargo}
+                onChange={(e) => set('cargo', e.target.value)}
+              />
             </div>
 
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
@@ -126,44 +107,18 @@ export default function CreateCustodioPage() {
               >
                 Cancelar
               </Link>
-              <button
+              <Button
                 type="submit"
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                loading={loading}
+                leftIcon={<Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               >
-                {loading ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Guardando…
-                  </>
-                ) : (
-                  <>
-                    <i className="ti ti-check" /> Guardar
-                  </>
-                )}
-              </button>
+                {loading ? 'Guardando…' : 'Guardar'}
+              </Button>
             </div>
           </form>
-        </section>
+        </Card>
 
-        <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-          <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">Información</h2>
-          </header>
+        <Card padding="none" header="Información">
           <div className="p-5 text-sm text-slate-600">
             <p className="text-slate-500">
               El custodio es el responsable de los bienes asignados:
@@ -178,7 +133,7 @@ export default function CreateCustodioPage() {
               </li>
             </ul>
           </div>
-        </aside>
+        </Card>
       </div>
     </div>
   );

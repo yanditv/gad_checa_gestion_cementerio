@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bloquesApi } from '@/lib/api';
 
 const INPUT_CLS =
@@ -125,7 +126,7 @@ export default function EditBloquePage() {
         <p className="text-sm text-slate-600">No se puede editar un bloque inexistente.</p>
         <div>
           <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600">
-            <i className="ti ti-arrow-left" /> Volver al listado
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al listado
           </Link>
         </div>
       </div>
@@ -143,7 +144,7 @@ export default function EditBloquePage() {
           href={bloqueId ? `/bloques/${bloqueId}` : '/bloques'}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" /> Volver
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
         </Link>
       </div>
 
@@ -259,7 +260,11 @@ export default function EditBloquePage() {
                 disabled={saving}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
               >
-                <i className={`ti ${saving ? 'ti-loader animate-spin' : 'ti-check'}`} />
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />
+                ) : (
+                  <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                )}
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </button>
             </div>

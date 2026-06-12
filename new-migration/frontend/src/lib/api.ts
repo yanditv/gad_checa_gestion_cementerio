@@ -174,6 +174,43 @@ class ApiClient {
   }
 
   /**
+   * Sube un archivo vía multipart/form-data. NO fija `Content-Type`: el
+   * navegador añade el `boundary`, y el proxy BFF lo respeta. El JWT viaja por
+   * cookie httpOnly (o Authorization en SSR).
+   */
+  async upload<T>(
+    endpoint: string,
+    file: File,
+    fieldName = 'file',
+  ): Promise<T> {
+    const token = this.getToken();
+    const form = new FormData();
+    form.append(fieldName, file);
+
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(this.buildUrl(endpoint), {
+      method: 'POST',
+      body: form,
+      headers,
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ message: 'Error al subir el archivo' }));
+      throw new Error(error.message || `Error ${response.status}`);
+    }
+
+    const payload = await response.json();
+    if (payload && typeof payload === 'object' && 'success' in payload) {
+      return payload.data as T;
+    }
+    return payload as T;
+  }
+
+  /**
    * Descarga un recurso binario (PDF, XLSX, CSV) desde el backend a través del
    * proxy BFF `/api/*`, que anexa el JWT desde la cookie httpOnly. Devuelve el
    * Blob junto al nombre de archivo sugerido por `Content-Disposition`.
@@ -237,12 +274,25 @@ class ApiClient {
 
 export const api = new ApiClient();
 
+/**
+ * Convierte una ruta de medios del backend (p. ej. `/difuntos/1/foto`,
+ * `/usuarios/<id>/avatar`) en una URL cargable por el navegador a través del
+ * proxy BFF `/api/*` (que anexa el JWT desde la cookie httpOnly). Apta para
+ * `<img src>` y el componente `Avatar`. Devuelve `null` si no hay ruta.
+ */
+export function mediaUrl(path?: string | null): string | null {
+  if (!path) return null;
+  return path.startsWith('/api') ? path : `/api${path}`;
+}
+
 export const authApi = {
-  login: (email: string, password: string) => 
+  login: (email: string, password: string) =>
     api.post<{ user: any; token: string }>('/auth/login', { email, password }),
-  register: (data: any) => 
+  register: (data: any) =>
     api.post<{ user: any; token: string }>('/auth/register', data),
   getProfile: () => api.get<any>('/auth/profile'),
+  uploadAvatar: (file: File) => api.upload<any>('/usuarios/me/avatar', file),
+  deleteAvatar: () => api.delete<any>('/usuarios/me/avatar'),
 };
 
 export const contratosApi = {
@@ -294,6 +344,9 @@ export const difuntosApi = {
   create: (data: any) => api.post<any>('/difuntos', data),
   update: (id: number, data: any) => api.put<any>(`/difuntos/${id}`, data),
   delete: (id: number) => api.delete<any>(`/difuntos/${id}`),
+  uploadFoto: (id: number, file: File) =>
+    api.upload<any>(`/difuntos/${id}/foto`, file),
+  deleteFoto: (id: number) => api.delete<any>(`/difuntos/${id}/foto`),
 };
 
 /** Motivos válidos de exhumación (paridad con backend `MOTIVOS_EXHUMACION`). */
@@ -657,6 +710,9 @@ export const inventarioBienesApi = {
   create: (data: any) => api.post<any>('/inventario/bienes', data),
   update: (id: number, data: any) => api.put<any>(`/inventario/bienes/${id}`, data),
   delete: (id: number) => api.delete<any>(`/inventario/bienes/${id}`),
+  uploadFoto: (id: number, file: File) =>
+    api.upload<any>(`/inventario/bienes/${id}/foto`, file),
+  deleteFoto: (id: number) => api.delete<any>(`/inventario/bienes/${id}/foto`),
   historial: (id: number) => api.get<any[]>(`/inventario/bienes/${id}/historial`),
   depreciacion: (id: number) =>
     api.get<any>(`/inventario/bienes/${id}/depreciacion`),

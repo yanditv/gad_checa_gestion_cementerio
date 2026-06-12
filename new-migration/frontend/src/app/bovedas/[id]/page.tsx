@@ -3,6 +3,22 @@
 import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Check,
+  CircleCheck,
+  CircleOff,
+  FilePlus2,
+  Loader2,
+  Pencil,
+  Search,
+  Trash2,
+  UserPlus,
+  UserX,
+  X,
+} from 'lucide-react';
+import { Button, DataTable, Modal, type DataTableColumn } from '@/components/ui';
 
 interface Persona {
   id: number;
@@ -49,6 +65,8 @@ interface ContratoHistorico {
   observaciones?: string | null;
   difunto?: { nombre: string; apellido: string };
 }
+
+type Difunto = Boveda['difuntos'][number];
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -176,25 +194,11 @@ export default function BovedaDetailsPage({
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg
+        <Loader2
           className="h-6 w-6 animate-spin text-primary-500"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          />
-        </svg>
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -210,7 +214,7 @@ export default function BovedaDetailsPage({
           href="/bovedas"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -218,6 +222,29 @@ export default function BovedaDetailsPage({
   }
 
   const contratoActivo = historial.find((c) => c.estado);
+
+  const difuntosColumns: DataTableColumn<Difunto>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      sortable: true,
+      sortValue: (d) => `${d.nombre} ${d.apellido}`,
+      cell: (d) => (
+        <span className="font-medium text-slate-700">
+          {d.nombre} {d.apellido}
+        </span>
+      ),
+    },
+    {
+      key: 'fechaDefuncion',
+      header: 'Fecha de defunción',
+      sortable: true,
+      sortValue: (d) => d.fechaDefuncion,
+      cell: (d) => (
+        <span className="text-slate-600">{formatDate(d.fechaDefuncion)}</span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -238,7 +265,7 @@ export default function BovedaDetailsPage({
             href="/bovedas"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" />
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Volver al listado
           </Link>
         </div>
@@ -251,11 +278,19 @@ export default function BovedaDetailsPage({
             : 'border-slate-200 bg-slate-100 text-slate-600'
         }`}
       >
-        <i
-          className={`ti ${
-            boveda.estado ? 'ti-circle-check' : 'ti-circle-off'
-          } text-xl`}
-        />
+        {boveda.estado ? (
+          <CircleCheck
+            className="h-5 w-5 shrink-0"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+        ) : (
+          <CircleOff
+            className="h-5 w-5 shrink-0"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+        )}
         <div>
           Bóveda <strong>{boveda.estado ? 'disponible' : 'ocupada'}</strong>
           {contratoActivo && (
@@ -287,7 +322,11 @@ export default function BovedaDetailsPage({
             <div>
               <p className="text-xs uppercase tracking-wide text-slate-400">Estado</p>
               <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${contratoActivo ? 'bg-red-50 text-red-700 ring-red-200' : 'bg-green-50 text-green-700 ring-green-200'}`}>
-                <i className={`ti ${contratoActivo ? 'ti-x' : 'ti-check'}`} />
+                {contratoActivo ? (
+                  <X className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+                ) : (
+                  <Check className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
+                )}
                 {contratoActivo ? 'Ocupada' : 'Disponible'}
               </span>
             </div>
@@ -333,14 +372,14 @@ export default function BovedaDetailsPage({
                 onClick={() => setShowPropietarioModal(true)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                <i className="ti ti-edit" /> Cambiar
+                <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Cambiar
               </button>
               <button
                 type="button"
                 onClick={quitarPropietario}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
               >
-                <i className="ti ti-user-off" /> Quitar
+                <UserX className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Quitar
               </button>
             </div>
           </div>
@@ -352,7 +391,7 @@ export default function BovedaDetailsPage({
               onClick={() => setShowPropietarioModal(true)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
             >
-              <i className="ti ti-user-plus" /> Asignar propietario
+              <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Asignar propietario
             </button>
           </div>
         )}
@@ -383,27 +422,12 @@ export default function BovedaDetailsPage({
       {/* Difuntos */}
       {boveda.difuntos.length > 0 && (
         <Card title="Difuntos en la bóveda">
-          <div className="overflow-x-auto -m-5">
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-2.5">Nombre</th>
-                  <th className="px-5 py-2.5">Fecha de defunción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {boveda.difuntos.map((d) => (
-                  <tr key={d.id}>
-                    <td className="px-5 py-2.5 font-medium text-slate-700">
-                      {d.nombre} {d.apellido}
-                    </td>
-                    <td className="px-5 py-2.5 text-slate-600">
-                      {formatDate(d.fechaDefuncion)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="-m-5">
+            <DataTable
+              columns={difuntosColumns}
+              rows={boveda.difuntos}
+              rowKey={(d) => d.id}
+            />
           </div>
         </Card>
       )}
@@ -469,8 +493,11 @@ export default function BovedaDetailsPage({
             Bloque: <strong className="text-slate-600">{boveda.bloque.nombre}</strong>
             {boveda.bloque.cementerio?.nombre && <> · {boveda.bloque.cementerio.nombre}</>}
           </p>
-          <Link href={`/bloques/${boveda.bloque.id}`} className="text-xs text-primary-600 hover:underline">
-            <i className="ti ti-arrow-up-right" /> Ver bloque
+          <Link
+            href={`/bloques/${boveda.bloque.id}`}
+            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
+          >
+            <ArrowUpRight className="h-3 w-3" strokeWidth={2} aria-hidden="true" /> Ver bloque
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -478,19 +505,19 @@ export default function BovedaDetailsPage({
             href={`/contratos/create?boveda=${boveda.id}`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-file-plus" /> Crear contrato
+            <FilePlus2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Crear contrato
           </Link>
           <Link
             href="/bovedas"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" /> Volver
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver
           </Link>
           <Link
             href={`/bovedas/${boveda.id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
           >
-            <i className="ti ti-edit" /> Editar
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Editar
           </Link>
           {boveda.estado && (
             <button
@@ -498,7 +525,7 @@ export default function BovedaDetailsPage({
               onClick={handleDelete}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
             >
-              <i className="ti ti-trash" /> Eliminar
+              <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Eliminar
             </button>
           )}
         </div>
@@ -610,113 +637,89 @@ function PropietarioModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-fade-in"
-      role="dialog"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !saving) onClose();
+    <Modal
+      open
+      onClose={() => {
+        if (!saving) onClose();
       }}
+      title="Asignar propietario"
+      description="Busca una persona registrada por nombre, apellido o cédula."
+      size="lg"
+      footer={
+        <Button variant="secondary" onClick={onClose} disabled={saving}>
+          Cerrar
+        </Button>
+      }
     >
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lifted animate-scale-in">
-        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5">
-          <div>
-            <h3 className="text-base font-semibold text-slate-800">
-              Asignar propietario
-            </h3>
-            <p className="text-xs text-slate-500">
-              Busca una persona registrada por nombre, apellido o cédula.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Cerrar"
-          >
-            <i className="ti ti-x" />
-          </button>
-        </header>
-
-        <div className="p-6">
-          {error && (
-            <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
-              {error}
-            </div>
-          )}
-
-          <div className="relative mb-3">
-            <i className="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Mínimo 2 caracteres…"
-              autoFocus
-              className={`${INPUT_CLS} pl-9`}
-            />
-          </div>
-
-          <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
-            {loading ? (
-              <div className="py-6 text-center text-sm text-slate-400">
-                Buscando…
-              </div>
-            ) : results.length === 0 ? (
-              <div className="py-6 text-center text-sm text-slate-400">
-                {search.trim().length < 2
-                  ? 'Escribe al menos 2 caracteres.'
-                  : 'No se encontraron personas.'}
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {results.map((p) => {
-                  const isCurrent = actualPersonaId === p.id;
-                  return (
-                    <li
-                      key={p.id}
-                      className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-800">
-                          {p.nombre} {p.apellido}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {p.numeroIdentificacion}
-                          {p.telefono ? ` · ${p.telefono}` : ''}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={saving || isCurrent}
-                        onClick={() => asignar(p.id)}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                          isCurrent
-                            ? 'cursor-default bg-slate-100 text-slate-500'
-                            : 'bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-60'
-                        }`}
-                      >
-                        {isCurrent ? 'Actual' : 'Asignar'}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+      {error && (
+        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {error}
         </div>
+      )}
 
-        <footer className="flex justify-end gap-2 border-t border-slate-100 px-6 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Cerrar
-          </button>
-        </footer>
+      <div className="relative mb-3">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Mínimo 2 caracteres…"
+          autoFocus
+          className={`${INPUT_CLS} pl-9`}
+        />
       </div>
-    </div>
+
+      <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+        {loading ? (
+          <div className="py-6 text-center text-sm text-slate-400">
+            Buscando…
+          </div>
+        ) : results.length === 0 ? (
+          <div className="py-6 text-center text-sm text-slate-400">
+            {search.trim().length < 2
+              ? 'Escribe al menos 2 caracteres.'
+              : 'No se encontraron personas.'}
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {results.map((p) => {
+              const isCurrent = actualPersonaId === p.id;
+              return (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-800">
+                      {p.nombre} {p.apellido}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {p.numeroIdentificacion}
+                      {p.telefono ? ` · ${p.telefono}` : ''}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={saving || isCurrent}
+                    onClick={() => asignar(p.id)}
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                      isCurrent
+                        ? 'cursor-default bg-slate-100 text-slate-500'
+                        : 'bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-60'
+                    }`}
+                  >
+                    {isCurrent ? 'Actual' : 'Asignar'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </Modal>
   );
 }

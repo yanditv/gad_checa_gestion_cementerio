@@ -17,6 +17,7 @@ export interface SessionUser {
   email: string;
   roles: string[];
   mustChangePassword?: boolean;
+  avatarUrl?: string | null;
 }
 
 export function DashboardLayout({ children }: LayoutProps) {

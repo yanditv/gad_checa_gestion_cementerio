@@ -243,6 +243,14 @@ export class BienListItemDto {
   @ApiProperty()
   dadoDeBaja!: boolean;
 
+  @ApiProperty({
+    nullable: true,
+    description:
+      'Ruta (relativa al backend) para servir la foto del bien; null si no tiene.',
+    example: '/inventario/bienes/12/foto',
+  })
+  fotoUrl!: string | null;
+
   @ApiProperty({ type: CategoriaResumenDto, nullable: true })
   categoria!: CategoriaResumenDto | null;
 

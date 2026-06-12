@@ -121,7 +121,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 transition-transform duration-200 lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         aria-label="Menú principal"
@@ -167,8 +167,8 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                     {...(active ? { 'aria-current': 'page' as const } : {})}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                       active
-                        ? 'bg-primary-50 font-semibold text-primary-700'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-white font-semibold text-primary-700 shadow-sm ring-1 ring-slate-200'
+                        : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'
                     }`}
                   >
                     <span

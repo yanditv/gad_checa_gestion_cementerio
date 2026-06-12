@@ -3,6 +3,8 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, CircleCheck, Coins, Loader2 } from 'lucide-react';
+import { DatePicker } from '@/components/ui';
 
 interface CuotaPreview {
   id: number;
@@ -216,25 +218,11 @@ export default function CobrarPage({
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <svg
+        <Loader2
           className="h-6 w-6 animate-spin text-primary-500"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          />
-        </svg>
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -250,7 +238,7 @@ export default function CobrarPage({
           href="/cobros"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -279,14 +267,18 @@ export default function CobrarPage({
           href="/cobros"
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
 
       {preview.cuotas.length === 0 ? (
         <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <i className="ti ti-circle-check mr-1" />
+          <CircleCheck
+            className="mr-1 inline h-4 w-4 align-[-0.125em]"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
           Este contrato no tiene cuotas pendientes.
         </div>
       ) : null}
@@ -403,18 +395,15 @@ export default function CobrarPage({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className={LABEL_CLS}>Fecha de pago</label>
-                <input
-                  type="date"
-                  value={form.fechaPago}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, fechaPago: e.target.value }))
-                  }
-                  required
-                  className={INPUT_CLS}
-                />
-              </div>
+              <DatePicker
+                id="cobro-fecha-pago"
+                label="Fecha de pago"
+                value={form.fechaPago}
+                onChange={(iso) =>
+                  setForm((p) => ({ ...p, fechaPago: iso }))
+                }
+                required
+              />
               <div>
                 <label className={LABEL_CLS}>Descuento</label>
                 <select
@@ -557,7 +546,7 @@ export default function CobrarPage({
               disabled={saving || cuotasSeleccionadas.length === 0}
               className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <i className="ti ti-coin" />
+              <Coins className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Registrando…' : 'Registrar cobro'}
             </button>
           </Card>

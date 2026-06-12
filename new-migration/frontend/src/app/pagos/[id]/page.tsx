@@ -3,6 +3,8 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Ban, FileText } from 'lucide-react';
+import { Button } from '@/components/ui';
 
 interface Pago {
   id: number;
@@ -189,7 +191,7 @@ export default function PagoDetailPage({
           href="/pagos"
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          <i className="ti ti-arrow-left" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           Volver
         </Link>
       </div>
@@ -222,7 +224,7 @@ export default function PagoDetailPage({
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-file-text" />
+            <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Factura PDF
           </a>
           {puedeAnular && (
@@ -231,7 +233,7 @@ export default function PagoDetailPage({
               onClick={() => setConfirmAnular(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
             >
-              <i className="ti ti-ban" />
+              <Ban className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               Anular
             </button>
           )}
@@ -239,21 +241,23 @@ export default function PagoDetailPage({
             href="/pagos"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <i className="ti ti-arrow-left" />
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Volver
           </Link>
         </div>
       </div>
 
       {!pago.estado && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <i className="ti ti-ban mr-1" />
+        <div className="flex items-start gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <Ban className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <div>
           <strong>Pago anulado.</strong> Las cuotas asociadas fueron revertidas
           a pendientes.
           {pago.usuarioEliminador && (
             <> Anulado por {pago.usuarioEliminador.nombre}{' '}
               {pago.usuarioEliminador.apellido}.</>
           )}
+          </div>
         </div>
       )}
 
@@ -470,22 +474,24 @@ export default function PagoDetailPage({
               </p>
             </div>
             <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setConfirmAnular(false)}
                 disabled={anulando}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
+                size="sm"
                 onClick={handleAnular}
-                disabled={anulando}
-                className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-60"
+                loading={anulando}
               >
                 {anulando ? 'Anulando…' : 'Anular pago'}
-              </button>
+              </Button>
             </footer>
           </div>
         </div>
