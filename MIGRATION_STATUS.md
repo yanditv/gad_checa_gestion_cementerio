@@ -240,12 +240,24 @@ Según el plan vivo (`new-migration/MIGRATION_PLAN.md` §5 y §6.1):
   - ~~9.2 Importador catastro on-demand~~ ✅
   - ~~9.3 Vista de estado de última importación~~ ✅
 - **Fase 10** — Pulido y QA
-  - **10.1 Manual de usuario** — @Famiitry
-  - **10.2 Validación visual contra legado (88 vistas)** — mixto
+  - ~~**10.1 Manual de usuario** — @Famiitry~~ ✅
+  - **10.2 Validación visual contra legado (88 vistas)** — ✅ Completada para bloques/bóvedas
   - **10.3 Pruebas de carga con dataset real (~5000 contratos)** — @yanditv
-  - **10.4 Tests E2E con Playwright** — @Famiitry
+  - ~~**10.4 Tests E2E con Playwright** — @Famiitry~~ ✅
   - ~~10.5 Auditoría WCAG AA~~ ✅
   - **10.6 Cierre `MIGRATION_STATUS.md` final** — @yanditv
+
+### 2026-06-10 — Issues #31–#43: Mejoras bloques/bóvedas
+- Badge estado con fechas activas (#31): ✅ backend filtra contratos por fecha real
+- Filtro por bloque en bóvedas (#32): ✅ select de bloques conectado al backend
+- Precios por piso al editar bloque (#33): ✅ tabla con checkboxes "Usar tarifa base"
+- Error handling en delete (#34): ✅ documentado (ya funcionaba)
+- Validación visual vs legado (#35): ✅ comparación completada
+- Tests E2E Playwright (#36): ✅ `e2e/bloques-bovedas.mjs` (4/4 tests)
+- Filtro tipo + columna Tipo en bloques (#39-#40): ✅ server-side con QueryBloqueDto
+- Botón Limpiar filtros (#41): ✅ en bloques y bóvedas
+- Stats Disponibles + % Ocupación (#42): ✅ barra de progreso con color dinámico
+- Columna Propietario en difuntos (#43): ✅ badge verde/gris
 
 ## Brechas técnicas residuales
 

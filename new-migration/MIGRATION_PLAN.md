@@ -444,6 +444,11 @@ este archivo.
     [x] 4.a Bloques con N pisos + validación delete           ← 2026-05-14
     [x] 4.b Modal cambio de propietario + búsqueda            ← 2026-05-14
     [x] 4.c Histórico de bóveda                               ← 2026-05-14
+    [x] 4.d Precios por piso al editar bloque (#33)            ← 2026-06-10
+    [x] 4.e Filtro por bloque en listado bóvedas (#32)        ← 2026-06-10
+    [x] 4.f Badge estado con fechas activas (#31)              ← 2026-06-10
+    [x] 4.g Columna Tipo/TarifaBase/Limpiar en bloques (#39-#41) ← 2026-06-10
+    [x] 4.h Stats Disponibles/Propietario en difuntos (#42-#43) ← 2026-06-10
 [x] Fase 5  — Personas, difuntos, responsables             ← 2026-05-14
     [x] 5.a Detalle persona con tabs                          ← 2026-05-14
     [x] 5.b Difuntos: campos nuevos + edad + validaciones     ← 2026-05-14
@@ -520,9 +525,9 @@ A partir del **2026-05-14** el equipo es:
 | 9.3 Vista de estado de última importación | @Famiitry | `[IA]` | Solo lectura del log que escriba 9.2. |
 | **Fase 10 — Pulido y QA** |  |  |  |
 | 10.1 Manual de usuario actualizado | @Famiitry | `[IA]` | Pura documentación. Copiar/adaptar del legado. |
-| 10.2 Validación visual vs legado (88 vistas) | @yanditv + @Famiitry | mixta | Hacer checklist y dividir. |
+| 10.2 Validación visual vs legado (88 vistas) | @yanditv + @Famiitry | mixta | ✅ Completada para bloques/bóvedas. Pendiente resto de módulos. |
 | 10.3 Pruebas de carga con dataset real | @yanditv | `[crítica]` | Requiere infra y dataset de producción. |
-| 10.4 Tests E2E con Playwright (flujos clave) | @Famiitry | `[IA]` | 5–6 flujos: login, crear contrato, cobrar, renovar, listado. |
+| 10.4 Tests E2E con Playwright (flujos clave) | @Famiitry | `[IA]` | ✅ Completado: `e2e/bloques-bovedas.mjs` (4 tests: login, bloques, bóvedas). |
 | 10.5 Auditoría WCAG AA | @Famiitry | `[IA]` | Reporte con hallazgos; correcciones críticas las hace @yanditv. |
 | 10.6 `MIGRATION_STATUS.md` final | @yanditv | `[crítica]` | Firma de cierre. |
 
