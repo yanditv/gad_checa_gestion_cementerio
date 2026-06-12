@@ -258,7 +258,7 @@ export default function AdminUsuariosPage() {
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
                 usuario.estado
                   ? 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                  : 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-primary-600 text-white hover:bg-primary-700'
               } disabled:opacity-60`}
             >
               {savingUserId === usuario.id ? (

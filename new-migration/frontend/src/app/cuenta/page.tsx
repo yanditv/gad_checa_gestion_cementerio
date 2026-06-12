@@ -268,7 +268,7 @@ export default function CuentaPage() {
               <button
                 type="submit"
                 disabled={pwLoading || !currentPassword || !newPassword || !confirm}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {pwLoading ? 'Guardando…' : 'Actualizar contraseña'}
               </button>

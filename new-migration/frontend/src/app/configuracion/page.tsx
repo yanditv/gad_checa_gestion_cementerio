@@ -276,7 +276,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo descuento
@@ -506,7 +506,7 @@ function DescuentoModal({
           <button
             type="submit"
             disabled={saving || !nombre.trim()}
-            className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
@@ -565,7 +565,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo banco
@@ -773,7 +773,7 @@ function BancoModal({
           <button
             type="submit"
             disabled={saving || !nombre.trim()}
-            className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
@@ -838,7 +838,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Nuevo tipo
@@ -1115,7 +1115,7 @@ function TipoEspacioModal({
           <button
             type="submit"
             disabled={saving || !nombre.trim()}
-            className="rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
@@ -1249,7 +1249,7 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
           {canEdit && (
             <div className="mt-4 flex justify-end">
               <button type="submit" disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60">
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60">
                 {saving ? 'Guardando…' : 'Guardar cementerio'}
               </button>
             </div>
@@ -1290,7 +1290,7 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
           {canEdit && (
             <div className="mt-4 flex justify-end">
               <button type="submit" disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60">
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60">
                 {saving ? 'Guardando…' : 'Guardar GAD'}
               </button>
             </div>

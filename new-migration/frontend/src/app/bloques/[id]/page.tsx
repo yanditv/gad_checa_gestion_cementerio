@@ -197,7 +197,7 @@ export default function BloqueDetailsPage() {
         <h1 className="text-xl font-semibold text-slate-900">Bloque no encontrado</h1>
         <p className="text-sm text-slate-600">El bloque solicitado no existe o ya no está disponible.</p>
         <div>
-          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600">
+          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
             <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al listado
           </Link>
         </div>
@@ -314,7 +314,7 @@ export default function BloqueDetailsPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/bloques/${bloque.id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Editar
           </Link>

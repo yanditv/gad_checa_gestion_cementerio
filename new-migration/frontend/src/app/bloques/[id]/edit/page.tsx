@@ -125,7 +125,7 @@ export default function EditBloquePage() {
         <h1 className="text-xl font-semibold text-slate-900">Bloque no encontrado</h1>
         <p className="text-sm text-slate-600">No se puede editar un bloque inexistente.</p>
         <div>
-          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600">
+          <Link href="/bloques" className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
             <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Volver al listado
           </Link>
         </div>
@@ -258,7 +258,7 @@ export default function EditBloquePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden="true" />

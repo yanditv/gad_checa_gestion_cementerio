@@ -695,7 +695,7 @@ export default function CreateContratoPage() {
                     completed
                       ? 'bg-green-500 text-white'
                       : active
-                        ? 'bg-primary-500 text-white ring-4 ring-primary-100'
+                        ? 'bg-primary-600 text-white ring-4 ring-primary-100'
                         : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
                   }`}
                 >
@@ -1384,7 +1384,7 @@ export default function CreateContratoPage() {
               type="button"
               onClick={handleNext}
               disabled={loading || saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
             >
               Siguiente{' '}
               <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -1394,7 +1394,7 @@ export default function CreateContratoPage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
             >
               <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Guardando…' : 'Finalizar y guardar'}

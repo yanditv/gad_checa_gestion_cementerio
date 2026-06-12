@@ -273,7 +273,7 @@ export default function EditContratoPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
             >
               <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Guardando…' : 'Guardar cambios'}

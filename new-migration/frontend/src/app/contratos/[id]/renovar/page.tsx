@@ -516,7 +516,7 @@ export default function RenovarContratoPage({
               <button
                 type="submit"
                 disabled={saving || !puedeRenovar}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Copy className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 {saving ? 'Renovando…' : 'Crear renovación'}

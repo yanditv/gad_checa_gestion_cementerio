@@ -32,7 +32,7 @@ const base =
 
 const variants: Record<IconButtonVariant, string> = {
   primary:
-    'bg-primary-500 text-white shadow-xs hover:bg-primary-600 active:bg-primary-700 focus-visible:ring-primary-300',
+    'bg-primary-600 text-white shadow-xs hover:bg-primary-700 active:bg-primary-800 focus-visible:ring-primary-300',
   secondary:
     'bg-white text-slate-600 ring-1 ring-inset ring-slate-200 shadow-xs hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-primary-300',
   ghost:

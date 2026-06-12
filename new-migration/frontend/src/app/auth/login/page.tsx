@@ -107,7 +107,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading || !email || !password}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Ingresando…' : 'Iniciar sesión'}
         </button>

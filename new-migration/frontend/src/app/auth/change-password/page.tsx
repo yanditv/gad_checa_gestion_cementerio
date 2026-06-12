@@ -171,7 +171,7 @@ export default function ChangePasswordPage() {
           <button
             type="submit"
             disabled={saving || success}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Cambiar contraseña'}
           </button>

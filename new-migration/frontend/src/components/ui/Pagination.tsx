@@ -111,7 +111,7 @@ export function Pagination({
                     navBase,
                     'tabular-nums',
                     p === page
-                      ? 'bg-primary-500 text-white shadow-xs'
+                      ? 'bg-primary-600 text-white shadow-xs'
                       : 'text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-900',
                   )}
                 >

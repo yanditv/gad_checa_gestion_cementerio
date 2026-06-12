@@ -447,7 +447,7 @@ export default function DifuntoDetailsPage({
           )}
           <Link
             href={`/difuntos/${id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Editar

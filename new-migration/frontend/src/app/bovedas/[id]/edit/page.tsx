@@ -313,7 +313,7 @@ export default function EditBovedaPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? 'Guardando…' : 'Guardar Cambios'}
               </button>
@@ -360,7 +360,7 @@ export default function EditBovedaPage() {
                 <button
                   type="button"
                   onClick={() => setShowPropietarioModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
                 >
                   <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Asignar propietario
                 </button>
@@ -478,7 +478,7 @@ function PropietarioModal({
                 </div>
                 <button type="button" disabled={saving || actualPersonaId === p.id}
                   onClick={() => asignar(p.id)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${actualPersonaId === p.id ? 'cursor-default bg-slate-100 text-slate-500' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${actualPersonaId === p.id ? 'cursor-default bg-slate-100 text-slate-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}>
                   {actualPersonaId === p.id ? 'Actual' : 'Asignar'}
                 </button>
               </li>

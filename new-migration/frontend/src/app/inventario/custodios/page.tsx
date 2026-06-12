@@ -150,7 +150,7 @@ export default function CustodiosPage() {
         actions={
           <Link
             href="/inventario/custodios/create"
-            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Nuevo custodio

@@ -544,7 +544,7 @@ export default function CobrarPage({
             <button
               type="submit"
               disabled={saving || cuotasSeleccionadas.length === 0}
-              className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Coins className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
               {saving ? 'Registrando…' : 'Registrar cobro'}

@@ -240,7 +240,7 @@ export default function CobrosPage() {
                     </div>
                     <Link
                       href={`/cobros/${c.contratoId}/cobrar`}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600"
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-700"
                     >
                       <Coins
                         className="h-3.5 w-3.5"

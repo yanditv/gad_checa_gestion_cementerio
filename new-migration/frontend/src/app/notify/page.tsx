@@ -122,7 +122,7 @@ export default function NotifyPage() {
             onClick={() => { setPage(1); setFilter(f); }}
             className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               filter === f
-                ? 'bg-primary-500 text-white'
+                ? 'bg-primary-600 text-white'
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >

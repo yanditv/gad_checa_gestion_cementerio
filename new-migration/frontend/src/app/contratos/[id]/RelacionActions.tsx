@@ -311,7 +311,7 @@ function CandidatosModal({
           type="button"
           onClick={() => relacionar(c.id)}
           disabled={linking !== null}
-          className="rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+          className="rounded-md bg-primary-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
         >
           {linking === c.id ? 'Vinculando…' : 'Relacionar'}
         </button>
