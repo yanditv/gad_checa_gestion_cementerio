@@ -42,7 +42,7 @@ type Tab = 'descuentos' | 'bancos' | 'tipos' | 'cementerio';
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function ConfiguracionPage() {
   const [tab, setTab] = useState<Tab>('descuentos');
@@ -86,7 +86,7 @@ export default function ConfiguracionPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Configuración</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Gestión de descuentos y bancos disponibles al cobrar.
           </p>
         </div>
@@ -135,7 +135,7 @@ export default function ConfiguracionPage() {
             <div className="flex items-center gap-4">
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-slate-700">{lastImport.registrosProcesados} registros</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   {lastImport.bloquesCreados} bloques · {lastImport.bovedasCreadas} bóvedas · {lastImport.contratosCreados} contratos
                 </p>
               </div>
@@ -294,7 +294,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <th scope="col" className="px-4 py-3">Nombre</th>
                 <th scope="col" className="px-4 py-3 text-right">Porcentaje</th>
                 <th scope="col" className="px-4 py-3">Descripción</th>
@@ -307,7 +307,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 5 : 4}
-                    className="px-4 py-8 text-center text-slate-400"
+                    className="px-4 py-8 text-center text-slate-600"
                   >
                     Cargando descuentos…
                   </td>
@@ -316,7 +316,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 5 : 4}
-                    className="px-4 py-10 text-center text-slate-400"
+                    className="px-4 py-10 text-center text-slate-600"
                   >
                     No hay descuentos registrados.
                   </td>
@@ -349,7 +349,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                         <button
                           type="button"
                           onClick={() => setEditing(d)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -358,7 +358,7 @@ function DescuentosPanel({ canEdit }: { canEdit: boolean }) {
                           <button
                             type="button"
                             onClick={() => handleDelete(d.id)}
-                            className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            className="ml-1 rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
                             title="Desactivar"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -583,7 +583,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <th scope="col" className="px-4 py-3">Nombre</th>
                 <th scope="col" className="px-4 py-3">Cuenta</th>
                 <th scope="col" className="px-4 py-3">Estado</th>
@@ -595,7 +595,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 4 : 3}
-                    className="px-4 py-8 text-center text-slate-400"
+                    className="px-4 py-8 text-center text-slate-600"
                   >
                     Cargando bancos…
                   </td>
@@ -604,7 +604,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 4 : 3}
-                    className="px-4 py-10 text-center text-slate-400"
+                    className="px-4 py-10 text-center text-slate-600"
                   >
                     No hay bancos registrados.
                   </td>
@@ -634,7 +634,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                         <button
                           type="button"
                           onClick={() => setEditing(b)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -643,7 +643,7 @@ function BancosPanel({ canEdit }: { canEdit: boolean }) {
                           <button
                             type="button"
                             onClick={() => handleDelete(b.id)}
-                            className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            className="ml-1 rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
                             title="Desactivar"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -856,7 +856,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <th scope="col" className="px-4 py-3">Nombre</th>
                 <th scope="col" className="px-4 py-3">Prefijo</th>
                 <th scope="col" className="px-4 py-3 text-right">Tarifa</th>
@@ -871,7 +871,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 7 : 6}
-                    className="px-4 py-8 text-center text-slate-400"
+                    className="px-4 py-8 text-center text-slate-600"
                   >
                     Cargando tipos de espacio…
                   </td>
@@ -880,7 +880,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
                 <tr>
                   <td
                     colSpan={canEdit ? 7 : 6}
-                    className="px-4 py-10 text-center text-slate-400"
+                    className="px-4 py-10 text-center text-slate-600"
                   >
                     No hay tipos de espacio registrados.
                   </td>
@@ -919,7 +919,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
                         <button
                           type="button"
                           onClick={() => setEditing(t)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+                          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
                           title="Editar"
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -928,7 +928,7 @@ function TiposEspacioPanel({ canEdit }: { canEdit: boolean }) {
                           <button
                             type="button"
                             onClick={() => handleDelete(t.id)}
-                            className="ml-1 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            className="ml-1 rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
                             title="Dar de baja"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -1232,15 +1232,15 @@ function CementerioPanel({ canEdit }: { canEdit: boolean }) {
             <Field label="Título presidente" value={cementerio?.abreviaturaTituloPresidente ?? ''} onChange={(v) => setField('abreviaturaTituloPresidente', v)} disabled={!canEdit} />
             <Field label="Presidente" value={cementerio?.presidente ?? ''} onChange={(v) => setField('presidente', v)} disabled={!canEdit} />
           </div>
-          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Mora</h3>
-          <p className="mb-3 text-xs text-slate-400">
+          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-600">Mora</h3>
+          <p className="mb-3 text-xs text-slate-600">
             Las tarifas, años y veces de renovación por tipo de espacio se
             administran en la pestaña <strong>Tipos de espacio</strong>.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Tasa mora diaria (%)" value={cementerio?.tasaMoraDiaria ?? ''} onChange={(v) => setField('tasaMoraDiaria', v ? Number(v) : null)} type="number" disabled={!canEdit} />
           </div>
-          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Datos bancarios</h3>
+          <h3 className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-600">Datos bancarios</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Entidad financiera" value={cementerio?.entidadFinanciera ?? ''} onChange={(v) => setField('entidadFinanciera', v)} disabled={!canEdit} />
             <Field label="Nombre entidad" value={cementerio?.nombreEntidadFinanciera ?? ''} onChange={(v) => setField('nombreEntidadFinanciera', v)} disabled={!canEdit} />
@@ -1343,7 +1343,7 @@ function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-md p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-700"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" aria-hidden="true" />

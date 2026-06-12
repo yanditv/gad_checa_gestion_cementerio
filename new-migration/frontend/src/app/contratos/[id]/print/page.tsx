@@ -197,7 +197,7 @@ export default async function ContratoPrintPage({
 
           {/* Datos del difunto */}
           <section className="mt-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
               Datos del difunto
             </h2>
             <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
@@ -222,11 +222,11 @@ export default async function ContratoPrintPage({
 
           {/* Responsables */}
           <section className="mt-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
               Responsables
             </h2>
             <table className="min-w-full border border-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <tr>
                   <th className="border border-slate-200 px-2 py-1.5">
                     Nombre
@@ -261,7 +261,7 @@ export default async function ContratoPrintPage({
                   <tr>
                     <td
                       colSpan={3}
-                      className="border border-slate-200 px-2 py-2 text-center text-slate-400"
+                      className="border border-slate-200 px-2 py-2 text-center text-slate-600"
                     >
                       Sin responsables registrados
                     </td>
@@ -273,11 +273,11 @@ export default async function ContratoPrintPage({
 
           {/* Cuotas */}
           <section className="mt-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
               Cuotas
             </h2>
             <table className="min-w-full border border-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                 <tr>
                   <th className="border border-slate-200 px-2 py-1.5">#</th>
                   <th className="border border-slate-200 px-2 py-1.5">
@@ -313,7 +313,7 @@ export default async function ContratoPrintPage({
                   <tr>
                     <td
                       colSpan={4}
-                      className="border border-slate-200 px-2 py-2 text-center text-slate-400"
+                      className="border border-slate-200 px-2 py-2 text-center text-slate-600"
                     >
                       Sin cuotas registradas
                     </td>

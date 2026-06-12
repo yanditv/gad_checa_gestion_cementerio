@@ -112,7 +112,7 @@ export default function AdminRolesPage() {
         <div className="text-slate-600">
           <div>{rol.usuarios?.length || 0}</div>
           {rol.usuarios?.length > 0 && (
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-slate-600">
               {rol.usuarios
                 .slice(0, 3)
                 .map((item: any) => item.usuario?.email)
@@ -174,7 +174,7 @@ export default function AdminRolesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Gestión de Roles</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           Crear y administrar roles del sistema.
         </p>
       </div>
@@ -194,7 +194,7 @@ export default function AdminRolesPage() {
           <div className="p-5">
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Nombre *
                 </label>
                 <input
@@ -207,7 +207,7 @@ export default function AdminRolesPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                   Permisos (texto)
                 </label>
                 <textarea
@@ -284,7 +284,7 @@ export default function AdminRolesPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
               Nombre
             </label>
             <input
@@ -295,7 +295,7 @@ export default function AdminRolesPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
               Permisos
             </label>
             <textarea

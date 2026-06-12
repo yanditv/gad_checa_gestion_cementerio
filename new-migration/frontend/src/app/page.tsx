@@ -254,7 +254,7 @@ function KpiCard({
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft transition-shadow hover:shadow-lifted">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-wide text-slate-400">
+          <p className="text-xs uppercase tracking-wide text-slate-600">
             {title}
           </p>
           <p className={`mt-1 text-2xl font-bold ${TONE_TEXT[tone]}`}>{value}</p>
@@ -495,7 +495,7 @@ export default function Home() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Vista general del estado operativo y financiero del cementerio.
           </p>
         </div>
@@ -511,7 +511,7 @@ export default function Home() {
 
       {/* Sección: indicadores */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
           <ChartColumn
             className="h-4 w-4 text-primary-500"
             strokeWidth={2}
@@ -554,7 +554,7 @@ export default function Home() {
 
       {/* Sección: espacios por tipo (dinámico por TipoEspacio) */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
           <Layers
             className="h-4 w-4 text-green-600"
             strokeWidth={2}
@@ -563,7 +563,7 @@ export default function Home() {
           Espacios por tipo
         </h2>
         {porTipo.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-400 shadow-soft">
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-600 shadow-soft">
             No hay tipos de espacio configurados.
           </div>
         ) : (
@@ -591,7 +591,7 @@ export default function Home() {
 
       {/* Sección: resumen operativo */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
           <LayoutDashboard
             className="h-4 w-4 text-info-600"
             strokeWidth={2}
@@ -615,12 +615,12 @@ export default function Home() {
                 <dd className="font-semibold">{totalEspacios}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-slate-500">Disponibles</dt>
-                <dd className="font-semibold text-green-600">{disponibles}</dd>
+                <dt className="text-slate-600">Disponibles</dt>
+                <dd className="font-semibold text-green-700">{disponibles}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-slate-500">Ocupados</dt>
-                <dd className="font-semibold text-info-600">{ocupados}</dd>
+                <dt className="text-slate-600">Ocupados</dt>
+                <dd className="font-semibold text-info-700">{ocupados}</dd>
               </div>
             </dl>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
@@ -629,7 +629,7 @@ export default function Home() {
                 style={{ width: `${pctOcupacion}%` }}
               />
             </div>
-            <p className="mt-1 text-right text-xs text-slate-400">
+            <p className="mt-1 text-right text-xs text-slate-600">
               {pctOcupacion.toFixed(0)}% de ocupación
             </p>
           </Card>
@@ -651,7 +651,7 @@ export default function Home() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="Transacciones recientes" icon={Receipt}>
           {data.transaccionesRecientes.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-400">
+            <div className="py-8 text-center text-sm text-slate-600">
               No hay transacciones recientes.
             </div>
           ) : (
@@ -663,8 +663,8 @@ export default function Home() {
                     <p className="text-xs text-slate-500">{formatDate(tx.fechaPago)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-green-600">{formatCurrency(tx.monto)}</p>
-                    <p className="text-xs text-slate-400">#{tx.numeroRecibo}</p>
+                    <p className="text-sm font-semibold text-green-700">{formatCurrency(tx.monto)}</p>
+                    <p className="text-xs text-slate-600">#{tx.numeroRecibo}</p>
                   </div>
                 </div>
               ))}
@@ -756,7 +756,7 @@ export default function Home() {
 
       {/* Sección: accesos rápidos */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
           <LayoutDashboard className="h-4 w-4 text-info-600" />
           Accesos rápidos
         </h2>

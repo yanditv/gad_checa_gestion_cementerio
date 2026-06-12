@@ -69,7 +69,7 @@ interface ContratoHistorico {
 type Difunto = Boveda['difuntos'][number];
 
 const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 function formatCurrency(value: number | string | null | undefined) {
   return new Intl.NumberFormat('es-EC', {
@@ -253,7 +253,7 @@ export default function BovedaDetailsPage({
           <h1 className="text-2xl font-bold text-slate-900">
             Bóveda {boveda.numero}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             {boveda.bloque.nombre}
             {boveda.bloque.cementerio?.nombre
               ? ` · ${boveda.bloque.cementerio.nombre}`
@@ -320,7 +320,7 @@ export default function BovedaDetailsPage({
             <Field label="Número" value={boveda.numero} />
             <Field label="Tipo" value={boveda.tipo || 'Bóveda'} />
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Estado</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Estado</p>
               <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${contratoActivo ? 'bg-red-50 text-red-700 ring-red-200' : 'bg-green-50 text-green-700 ring-green-200'}`}>
                 {contratoActivo ? (
                   <X className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
@@ -435,7 +435,7 @@ export default function BovedaDetailsPage({
       {/* Histórico de contratos */}
       <Card title={`Histórico de contratos · ${historial.length}`}>
         {historial.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-600">
             Esta bóveda aún no tiene contratos registrados.
           </p>
         ) : (
@@ -477,7 +477,7 @@ export default function BovedaDetailsPage({
                     Difunto: {c.difunto.nombre} {c.difunto.apellido}
                   </p>
                 )}
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   Monto: {formatCurrency(c.montoTotal)}
                 </p>
               </li>
@@ -489,7 +489,7 @@ export default function BovedaDetailsPage({
       {/* Acciones */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600">
             Bloque: <strong className="text-slate-600">{boveda.bloque.nombre}</strong>
             {boveda.bloque.cementerio?.nombre && <> · {boveda.bloque.cementerio.nombre}</>}
           </p>
@@ -549,7 +549,7 @@ export default function BovedaDetailsPage({
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-slate-700">{value || '—'}</p>
     </div>
   );
@@ -675,11 +675,11 @@ function PropietarioModal({
 
       <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
         {loading ? (
-          <div className="py-6 text-center text-sm text-slate-400">
+          <div className="py-6 text-center text-sm text-slate-600">
             Buscando…
           </div>
         ) : results.length === 0 ? (
-          <div className="py-6 text-center text-sm text-slate-400">
+          <div className="py-6 text-center text-sm text-slate-600">
             {search.trim().length < 2
               ? 'Escribe al menos 2 caracteres.'
               : 'No se encontraron personas.'}

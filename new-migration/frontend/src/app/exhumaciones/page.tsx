@@ -170,7 +170,7 @@ export default function ExhumacionesPage() {
             {row.difunto.nombre} {row.difunto.apellido}
           </Link>
         ) : (
-          <span className="text-slate-400">—</span>
+          <span className="text-slate-600">—</span>
         ),
     },
     {

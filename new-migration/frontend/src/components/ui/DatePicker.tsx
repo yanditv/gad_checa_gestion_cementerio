@@ -229,7 +229,7 @@ export function DatePicker({
             {DIAS.map((d) => (
               <span
                 key={d}
-                className="flex h-8 items-center justify-center text-[11px] font-medium uppercase text-slate-400"
+                className="flex h-8 items-center justify-center text-[11px] font-medium uppercase text-slate-600"
               >
                 {d}
               </span>
@@ -323,7 +323,7 @@ export function DatePicker({
           'flex h-10 items-center justify-between gap-2 px-3 text-left text-sm',
         )}
       >
-        <span className={value ? 'text-slate-900' : 'text-slate-400'}>
+        <span className={value ? 'text-slate-900' : 'text-slate-600'}>
           {value ? fmtDisplay(value) : placeholder}
         </span>
         <span className="flex items-center gap-1">
@@ -336,7 +336,7 @@ export function DatePicker({
                 e.stopPropagation();
                 onChange('');
               }}
-              className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
+              className="rounded p-0.5 text-slate-600 transition-colors hover:text-slate-600"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </span>

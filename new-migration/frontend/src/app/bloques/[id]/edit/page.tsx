@@ -9,7 +9,7 @@ import { bloquesApi } from '@/lib/api';
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function EditBloquePage() {
   const params = useParams<{ id: string }>();
@@ -138,7 +138,7 @@ export default function EditBloquePage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Editar Bloque</h1>
-          <p className="mt-1 text-sm text-slate-500">Actualice los datos básicos del bloque.</p>
+          <p className="mt-1 text-sm text-slate-600">Actualice los datos básicos del bloque.</p>
         </div>
         <Link
           href={bloqueId ? `/bloques/${bloqueId}` : '/bloques'}

@@ -9,7 +9,7 @@ import { bloquesApi, bovedasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api'
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function CreateBovedaPage() {
   const router = useRouter();
@@ -113,7 +113,7 @@ export default function CreateBovedaPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Nueva Bóveda</h1>
-          <p className="mt-1 text-sm text-slate-500">Registrar una nueva bóveda.</p>
+          <p className="mt-1 text-sm text-slate-600">Registrar una nueva bóveda.</p>
         </div>
         <Link
           href="/bovedas"
@@ -289,11 +289,11 @@ export default function CreateBovedaPage() {
           <div className="space-y-3 p-5 text-sm text-slate-600">
             <p>Ingrese los datos de la bóveda. Los campos marcados con * son obligatorios.</p>
             <div className="border-t border-slate-100 pt-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Tipos de espacio
               </p>
               {tiposEspacio.length === 0 ? (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   No hay tipos de espacio configurados. Créelos en Parámetros.
                 </p>
               ) : (

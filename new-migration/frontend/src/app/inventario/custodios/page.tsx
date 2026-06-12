@@ -119,7 +119,7 @@ export default function CustodiosPage() {
         <div className="inline-flex items-center gap-1">
           <Link
             href={`/inventario/custodios/${row.id}/edit`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -128,7 +128,7 @@ export default function CustodiosPage() {
             type="button"
             onClick={() => handleDelete(row.id)}
             disabled={deletingId === row.id || !row.estado}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
             title="Desactivar"
           >
             {deletingId === row.id ? (

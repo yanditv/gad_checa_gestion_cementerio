@@ -109,7 +109,7 @@ function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+      className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600"
     >
       {children}
     </label>
@@ -117,7 +117,7 @@ function Label({
 }
 
 const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-400 read-only:bg-slate-50';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-600 read-only:bg-slate-50';
 
 function Card({
   title,
@@ -696,7 +696,7 @@ export default function CreateContratoPage() {
                       ? 'bg-green-500 text-white'
                       : active
                         ? 'bg-primary-500 text-white ring-4 ring-primary-100'
-                        : 'bg-slate-100 text-slate-400 ring-1 ring-slate-200'
+                        : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
                   }`}
                 >
                   {completed ? (
@@ -1004,7 +1004,7 @@ export default function CreateContratoPage() {
                     Responsables agregados
                   </h4>
                   {form.responsables.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-slate-400">
+                    <div className="py-6 text-center text-sm text-slate-600">
                       No hay responsables agregados.
                     </div>
                   ) : (
@@ -1026,7 +1026,7 @@ export default function CreateContratoPage() {
                             <button
                               type="button"
                               onClick={() => removeResponsable(r.localId)}
-                              className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                              className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
                               title="Quitar"
                             >
                               <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -1131,7 +1131,7 @@ export default function CreateContratoPage() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-slate-600">
                   Define cuántas cuotas se generan y su frecuencia.
                 </p>
               </div>
@@ -1204,7 +1204,7 @@ export default function CreateContratoPage() {
               <div className="overflow-x-auto rounded-lg border border-slate-200">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="w-12 px-3 py-2">
                         <input
                           type="checkbox"
@@ -1226,7 +1226,7 @@ export default function CreateContratoPage() {
                       <tr>
                         <td
                           colSpan={4}
-                          className="px-3 py-6 text-center text-sm text-slate-400"
+                          className="px-3 py-6 text-center text-sm text-slate-600"
                         >
                           No hay cuotas generadas. Verifica monto, fechas y plan.
                         </td>
@@ -1322,7 +1322,7 @@ export default function CreateContratoPage() {
               </header>
               <div className="space-y-2 p-4 text-sm">
                 {form.responsables.length === 0 ? (
-                  <p className="text-slate-400">Sin responsables.</p>
+                  <p className="text-slate-600">Sin responsables.</p>
                 ) : (
                   form.responsables.map((r) => (
                     <div
@@ -1443,7 +1443,7 @@ export default function CreateContratoPage() {
             <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                     <th className="px-3 py-2">Número</th>
                     <th className="px-3 py-2">Bloque</th>
                     <th className="px-3 py-2">Tipo</th>
@@ -1480,7 +1480,7 @@ export default function CreateContratoPage() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-3 py-6 text-center text-sm text-slate-400"
+                        className="px-3 py-6 text-center text-sm text-slate-600"
                       >
                         No se encontraron bóvedas disponibles.
                       </td>

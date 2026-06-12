@@ -136,7 +136,7 @@ export default function BienesPage() {
           <span className="font-medium text-slate-900">
             {row.descripcion}
             {(row.marca || row.serie) && (
-              <span className="block text-xs font-normal text-slate-400">
+              <span className="block text-xs font-normal text-slate-600">
                 {[row.marca, row.serie].filter(Boolean).join(' · ')}
               </span>
             )}
@@ -191,7 +191,7 @@ export default function BienesPage() {
       cell: (row) => (
         <Link
           href={`/inventario/bienes/${row.id}`}
-          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
           title="Ver ficha"
         >
           <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />

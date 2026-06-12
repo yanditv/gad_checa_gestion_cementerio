@@ -66,9 +66,9 @@ export function Field({
 /** Clases base compartidas por los controles de texto (input/textarea/select). */
 export const controlBase =
   'block w-full rounded-lg border-0 bg-white text-base text-slate-900 ring-1 ring-inset ' +
-  'ring-slate-200 shadow-xs transition-shadow duration-150 placeholder:text-slate-400 ' +
+  'ring-slate-200 shadow-xs transition-shadow duration-150 placeholder:text-slate-600 ' +
   'focus:outline-none focus:ring-2 focus:ring-primary-400 ' +
-  'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400';
+  'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600';
 
 /** Estado inválido para controles de texto. */
 export const controlInvalid =

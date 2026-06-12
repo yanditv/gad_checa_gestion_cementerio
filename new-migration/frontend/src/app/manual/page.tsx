@@ -6,7 +6,7 @@ export default function ManualPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Manual de Usuario</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Guía funcional oficial del sistema de gestión del cementerio.
           </p>
         </div>

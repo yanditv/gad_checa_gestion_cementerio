@@ -61,7 +61,7 @@ const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 function toInputDate(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -311,7 +311,7 @@ export default function RenovarContratoPage({
               {origen.numeroSecuencial}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Crea una renovación heredando bóveda, difunto y responsables del
             contrato actual.
           </p>
@@ -583,7 +583,7 @@ export default function RenovarContratoPage({
 
           <Card title="Responsables heredados">
             {origen.responsables.length === 0 ? (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-600">
                 El contrato origen no tiene responsables registrados.
               </p>
             ) : (
@@ -618,7 +618,7 @@ export default function RenovarContratoPage({
               <div className="overflow-x-auto -m-5">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="px-5 py-2">#</th>
                       <th className="px-5 py-2">Vencimiento</th>
                       <th className="px-5 py-2 text-right">Monto</th>
@@ -642,7 +642,7 @@ export default function RenovarContratoPage({
                       <tr>
                         <td
                           colSpan={3}
-                          className="px-5 py-2 text-center text-xs text-slate-400"
+                          className="px-5 py-2 text-center text-xs text-slate-600"
                         >
                           … {cuotasPreview.length - 12} cuota(s) más
                         </td>

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { AuthShell } from '../AuthShell';
 
 const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
+  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -60,7 +60,7 @@ function LoginForm() {
         <div>
           <label
             htmlFor="email"
-            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600"
           >
             Correo electrónico
           </label>
@@ -80,7 +80,7 @@ function LoginForm() {
         <div>
           <label
             htmlFor="password"
-            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600"
           >
             Contraseña
           </label>
@@ -121,7 +121,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <AuthShell title="Iniciar sesión">
-          <div className="py-3 text-center text-sm text-slate-400">
+          <div className="py-3 text-center text-sm text-slate-600">
             Cargando…
           </div>
         </AuthShell>

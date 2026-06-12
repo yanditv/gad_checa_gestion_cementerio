@@ -42,7 +42,7 @@ const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 function formatCurrency(value: number | string | null | undefined) {
   return new Intl.NumberFormat('es-EC', {
@@ -259,7 +259,7 @@ export default function CobrarPage({
               {preview.contrato.numeroSecuencial}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Selecciona las cuotas a cobrar y registra el pago.
           </p>
         </div>
@@ -291,14 +291,14 @@ export default function CobrarPage({
         <div className="space-y-6 lg:col-span-8">
           <Card title="Cuotas a cobrar">
             {preview.cuotas.length === 0 ? (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-600">
                 Sin cuotas pendientes.
               </p>
             ) : (
               <div className="overflow-x-auto -m-5">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                       <th className="w-12 px-5 py-2.5">
                         <input
                           type="checkbox"
@@ -332,7 +332,7 @@ export default function CobrarPage({
                           </td>
                           <td className="px-5 py-2.5 font-medium text-slate-700">
                             #{c.numero}
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-slate-600">
                               {formatCurrency(c.monto)}
                             </div>
                           </td>
@@ -482,7 +482,7 @@ export default function CobrarPage({
                 <dt className="text-slate-500">Bóveda</dt>
                 <dd className="text-slate-700 text-right">
                   {preview.contrato.boveda?.numero}
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-slate-600">
                     {preview.contrato.boveda?.bloque?.nombre}
                   </div>
                 </dd>

@@ -107,7 +107,7 @@ export default function ReporteBloquesPage() {
               ['Vencidas', data.totales.vencidas, 'text-red-600'],
             ].map(([label, value, cls]) => (
               <Card key={label as string} padding="sm">
-                <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+                <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
                 <p className={`mt-1 text-2xl font-bold ${cls}`}>{value as number}</p>
               </Card>
             ))}
@@ -124,13 +124,13 @@ export default function ReporteBloquesPage() {
                         <p className="text-xs text-slate-500">{bl.descripcion}</p>
                       )}
                       {bl.cementerio && (
-                        <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                        <p className="text-[10px] uppercase tracking-wide text-slate-600">
                           {bl.cementerio}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Ocupación</p>
+                      <p className="text-xs uppercase tracking-wide text-slate-600">Ocupación</p>
                       <p className="text-xl font-bold text-slate-900">
                         {bl.porcentajeOcupacion}%
                       </p>
@@ -145,25 +145,25 @@ export default function ReporteBloquesPage() {
                 </header>
                 <div className="grid grid-cols-4 gap-2 p-4 text-center text-xs">
                   <div>
-                    <p className="text-slate-400">Total</p>
+                    <p className="text-slate-600">Total</p>
                     <p className="font-semibold text-slate-700">{bl.total}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">Disp.</p>
+                    <p className="text-slate-600">Disp.</p>
                     <p className="font-semibold text-green-600">{bl.disponibles}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">Ocup.</p>
+                    <p className="text-slate-600">Ocup.</p>
                     <p className="font-semibold text-blue-600">{bl.ocupadas}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">Por venc.</p>
+                    <p className="text-slate-600">Por venc.</p>
                     <p className="font-semibold text-amber-600">{bl.porCaducar}</p>
                   </div>
                 </div>
                 {bl.proximasLiberaciones.length > 0 && (
                   <div className="border-t border-slate-100 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                       Próximas liberaciones
                     </p>
                     <ul className="mt-2 divide-y divide-slate-100 text-xs">
@@ -175,7 +175,7 @@ export default function ReporteBloquesPage() {
                           <span className="text-slate-600">
                             <span className="font-mono font-semibold">{p.boveda}</span>
                             {p.contrato && (
-                              <span className="ml-2 text-[10px] text-slate-400">
+                              <span className="ml-2 text-[10px] text-slate-600">
                                 {p.contrato}
                               </span>
                             )}

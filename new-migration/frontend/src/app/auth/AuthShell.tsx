@@ -49,7 +49,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           <div className="p-6 sm:p-8">
             <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
             {subtitle && (
-              <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+              <p className="mt-1 text-sm text-slate-600">{subtitle}</p>
             )}
             <div className="mt-6">{children}</div>
           </div>

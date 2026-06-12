@@ -224,14 +224,14 @@ export default function BovedasPage() {
         <div className="inline-flex items-center gap-1 whitespace-nowrap">
           <Link
             href={`/bovedas/${row.id}`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Ver"
           >
             <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </Link>
           <Link
             href={`/bovedas/${row.id}/edit`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -240,7 +240,7 @@ export default function BovedasPage() {
             type="button"
             onClick={() => handleDelete(row.id)}
             disabled={deletingId === row.id}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
             title="Eliminar"
           >
             {deletingId === row.id ? (
@@ -263,7 +263,7 @@ export default function BovedasPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Lista de Bóvedas</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Administración de bóvedas y nichos.
           </p>
         </div>
@@ -292,14 +292,14 @@ export default function BovedasPage() {
                 setPage(1);
                 setSearchTerm(e.target.value);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
 
           <div className="flex items-center gap-2">
             <label
               htmlFor="tipo-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+              className="text-xs font-medium uppercase tracking-wide text-slate-600"
             >
               Tipo
             </label>
@@ -324,7 +324,7 @@ export default function BovedasPage() {
           <div className="flex items-center gap-2">
             <label
               htmlFor="estado-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+              className="text-xs font-medium uppercase tracking-wide text-slate-600"
             >
               Estado
             </label>
@@ -346,7 +346,7 @@ export default function BovedasPage() {
           <div className="flex items-center gap-2">
             <label
               htmlFor="propietario-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+              className="text-xs font-medium uppercase tracking-wide text-slate-600"
             >
               Propietario
             </label>

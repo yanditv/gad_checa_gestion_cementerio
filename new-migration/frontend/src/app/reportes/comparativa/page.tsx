@@ -63,7 +63,7 @@ export default function ComparativaMensualPage() {
         <>
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Card padding="sm">
-              <p className="text-xs uppercase tracking-wide text-slate-400">
+              <p className="text-xs uppercase tracking-wide text-slate-600">
                 Total {data.anios.anterior}
               </p>
               <p className="mt-1 text-2xl font-bold text-slate-600">
@@ -71,7 +71,7 @@ export default function ComparativaMensualPage() {
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-xs uppercase tracking-wide text-slate-400">
+              <p className="text-xs uppercase tracking-wide text-slate-600">
                 Total {data.anios.actual}
               </p>
               <p className="mt-1 text-2xl font-bold text-primary-600">
@@ -79,11 +79,11 @@ export default function ComparativaMensualPage() {
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Variación</p>
+              <p className="text-xs uppercase tracking-wide text-slate-600">Variación</p>
               <p
                 className={`mt-1 text-2xl font-bold ${
                   data.totales.variacionPct == null
-                    ? 'text-slate-400'
+                    ? 'text-slate-600'
                     : data.totales.variacionPct >= 0
                     ? 'text-green-600'
                     : 'text-red-600'

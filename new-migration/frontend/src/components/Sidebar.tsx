@@ -152,7 +152,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                 return (
                   <li
                     key={`s-${idx}`}
-                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 first:mt-0"
+                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-600 first:mt-0"
                   >
                     {item.label}
                   </li>
@@ -176,7 +176,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                       className={`flex h-5 w-5 items-center justify-center ${
                         active
                           ? 'text-primary-600'
-                          : 'text-slate-400 group-hover:text-slate-600'
+                          : 'text-slate-600 group-hover:text-slate-600'
                       }`}
                     >
                       <item.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />

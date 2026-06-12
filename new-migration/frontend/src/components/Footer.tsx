@@ -7,7 +7,7 @@ export function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="mt-8 border-t border-slate-200">
-      <div className="mx-auto flex max-w-screen-2xl flex-col gap-1 px-4 py-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-screen-2xl flex-col gap-1 px-4 py-4 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
         <span>
           © {year} GAD Parroquial de Checa — Sistema de Gestión de Cementerio
         </span>
@@ -17,7 +17,7 @@ export function Footer() {
             href="https://teobu.com"
             target="_blank"
             rel="noreferrer"
-            className="text-slate-400 transition-colors hover:text-slate-600"
+            className="text-slate-600 transition-colors hover:text-slate-600"
           >
             Desarrollado por Teobu
           </a>

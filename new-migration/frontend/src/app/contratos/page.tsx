@@ -215,7 +215,7 @@ export default function ContratosPage() {
             {`${row.difunto?.nombre ?? ''} ${row.difunto?.apellido ?? ''}`.trim()}
           </div>
           {row.difunto?.numeroIdentificacion && (
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-slate-600">
               {row.difunto.numeroIdentificacion}
             </div>
           )}
@@ -230,7 +230,7 @@ export default function ContratosPage() {
       cell: (row) => (
         <>
           <div className="text-slate-700">{row.boveda?.numero ?? '-'}</div>
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-slate-600">
             {row.boveda?.bloque?.nombre ?? '-'}
           </div>
         </>
@@ -272,7 +272,7 @@ export default function ContratosPage() {
       cell: (row) => (
         <div className="whitespace-nowrap text-xs text-slate-500">
           <div>{formatDate(row.fechaInicio)}</div>
-          <div className="text-slate-400">→ {formatDate(row.fechaFin)}</div>
+          <div className="text-slate-600">→ {formatDate(row.fechaFin)}</div>
         </div>
       ),
     },
@@ -316,14 +316,14 @@ export default function ContratosPage() {
         <div className="inline-flex items-center gap-1 whitespace-nowrap">
           <Link
             href={`/contratos/${row.id}`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Ver detalle"
           >
             <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </Link>
           <Link
             href={`/contratos/${row.id}/edit`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -332,7 +332,7 @@ export default function ContratosPage() {
             type="button"
             onClick={() => handleDelete(row.id)}
             disabled={deletingId === row.id}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
             title="Eliminar"
           >
             {deletingId === row.id ? (
@@ -379,7 +379,7 @@ export default function ContratosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Contratos</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Gestión de contratos de arrendamiento de bóvedas y nichos.
           </p>
         </div>
@@ -410,14 +410,14 @@ export default function ContratosPage() {
                 setPage(1);
                 setSearchTerm(e.target.value);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
 
           <div className="flex items-center gap-2">
             <label
               htmlFor="estado-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-500"
+              className="text-xs font-medium uppercase tracking-wide text-slate-600"
             >
               Estado
             </label>
@@ -539,7 +539,7 @@ function SummaryCard({
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-soft">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+          <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
         </div>
         <span

@@ -42,7 +42,7 @@ export function FormSection({
               {icon && (
                 <span
                   aria-hidden="true"
-                  className="inline-flex text-lg text-slate-400"
+                  className="inline-flex text-lg text-slate-600"
                 >
                   {icon}
                 </span>
@@ -51,7 +51,7 @@ export function FormSection({
             </h3>
           )}
           {description != null && (
-            <p className="mt-1 text-sm text-slate-500">{description}</p>
+            <p className="mt-1 text-sm text-slate-600">{description}</p>
           )}
         </div>
       )}

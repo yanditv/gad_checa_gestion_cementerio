@@ -10,7 +10,7 @@ import { DatePicker } from '@/components/ui';
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500';
+  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
 export default function CreatePersonaPage() {
   const router = useRouter();
@@ -54,7 +54,7 @@ export default function CreatePersonaPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Nueva Persona</h1>
-          <p className="mt-1 text-sm text-slate-500">Registrar una nueva persona.</p>
+          <p className="mt-1 text-sm text-slate-600">Registrar una nueva persona.</p>
         </div>
         <Link
           href="/personas"

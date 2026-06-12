@@ -120,7 +120,7 @@ function CardTitle({
       )}
     >
       {icon && (
-        <span aria-hidden="true" className="inline-flex text-lg text-slate-400">
+        <span aria-hidden="true" className="inline-flex text-lg text-slate-600">
           {icon}
         </span>
       )}

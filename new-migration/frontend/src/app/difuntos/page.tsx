@@ -197,14 +197,14 @@ export default function DifuntosPage() {
         <div className="inline-flex items-center gap-1">
           <Link
             href={`/difuntos/${row.id}`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Ver"
           >
             <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           </Link>
           <Link
             href={`/difuntos/${row.id}/edit`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -213,7 +213,7 @@ export default function DifuntosPage() {
             type="button"
             onClick={() => handleDelete(row.id)}
             disabled={deletingId === row.id}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-600"
             title="Eliminar"
           >
             {deletingId === row.id ? (
@@ -236,7 +236,7 @@ export default function DifuntosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Lista de Difuntos</h1>
-          <p className="mt-1 text-sm text-slate-500">Gestión de difuntos registrados.</p>
+          <p className="mt-1 text-sm text-slate-600">Gestión de difuntos registrados.</p>
         </div>
         <Link
           href="/difuntos/create"
@@ -258,7 +258,7 @@ export default function DifuntosPage() {
                   setPage(1);
                   setFiltroNumeroIdentificacion(e.target.value);
                 }}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
               />
               <input
                 type="search"
@@ -268,7 +268,7 @@ export default function DifuntosPage() {
                   setPage(1);
                   setFiltroNombres(e.target.value);
                 }}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
               />
               <input
                 type="search"
@@ -278,7 +278,7 @@ export default function DifuntosPage() {
                   setPage(1);
                   setFiltroApellidos(e.target.value);
                 }}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
               />
               <input
                 type="search"
@@ -288,7 +288,7 @@ export default function DifuntosPage() {
                   setPage(1);
                   setFiltroBoveda(e.target.value);
                 }}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
               />
             </div>
 

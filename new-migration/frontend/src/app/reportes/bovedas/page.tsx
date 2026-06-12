@@ -227,7 +227,7 @@ function ReporteBovedasInner() {
               ['Vencidas', data.totales.vencida ?? 0, 'text-red-600'],
             ].map(([label, value, cls]) => (
               <Card key={label as string} padding="sm">
-                <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+                <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
                 <p className={`mt-1 text-2xl font-bold ${cls}`}>{value as number}</p>
               </Card>
             ))}
@@ -242,7 +242,7 @@ function ReporteBovedasInner() {
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                     <th className="px-5 py-2.5">Bóveda</th>
                     <th className="px-5 py-2.5">Tipo</th>
                     <th className="px-5 py-2.5">Bloque / Piso</th>
@@ -255,7 +255,7 @@ function ReporteBovedasInner() {
                 <tbody className="divide-y divide-slate-100">
                   {data.items.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
+                      <td colSpan={7} className="px-5 py-10 text-center text-slate-600">
                         Sin resultados.
                       </td>
                     </tr>
@@ -287,7 +287,7 @@ function ReporteBovedasInner() {
                           <td className="px-5 py-2.5 text-xs text-slate-500">
                             {b.propietario ?? '—'}
                             {b.identificacionPropietario && (
-                              <p className="text-[10px] text-slate-400">
+                              <p className="text-[10px] text-slate-600">
                                 {b.identificacionPropietario}
                               </p>
                             )}
@@ -301,7 +301,7 @@ function ReporteBovedasInner() {
                                 <span className="font-mono font-semibold text-slate-700">
                                   {b.contrato.numeroSecuencial}
                                 </span>
-                                <p className="text-[10px] text-slate-400">
+                                <p className="text-[10px] text-slate-600">
                                   {formatDate(b.contrato.fechaInicio)} →{' '}
                                   {formatDate(b.contrato.fechaFin)}
                                 </p>

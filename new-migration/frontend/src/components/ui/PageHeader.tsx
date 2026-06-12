@@ -57,7 +57,7 @@ export function PageHeader({
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
             {subtitle != null && (
-              <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+              <p className="mt-1 text-sm text-slate-600">{subtitle}</p>
             )}
           </div>
         </div>

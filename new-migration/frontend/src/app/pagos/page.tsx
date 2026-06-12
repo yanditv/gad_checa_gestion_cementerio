@@ -155,7 +155,7 @@ export default function PagosPage() {
         <div className="inline-flex items-center gap-1">
           <Link
             href={`/pagos/${pago.id}`}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Ver detalle"
           >
             <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -164,7 +164,7 @@ export default function PagosPage() {
             href={`/api/pagos/${pago.id}/factura.pdf`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Ver factura PDF"
           >
             <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -172,7 +172,7 @@ export default function PagosPage() {
           {getContrato(pago)?.id && (
             <Link
               href={`/cobros/${getContrato(pago)?.id}/cobrar`}
-              className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+              className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
               title="Ir al cobro del contrato"
             >
               <Coins className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -188,7 +188,7 @@ export default function PagosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Pagos</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Listado de pagos registrados en el sistema.
           </p>
         </div>
