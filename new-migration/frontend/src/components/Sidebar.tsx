@@ -152,7 +152,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
                 return (
                   <li
                     key={`s-${idx}`}
-                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 first:mt-0"
+                    className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 first:mt-0"
                   >
                     {item.label}
                   </li>
@@ -196,7 +196,7 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer del sidebar */}
-        <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-400">
+        <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
           <div className="flex items-center justify-between">
             <span>v1.0.0</span>
             <span className="inline-flex items-center gap-1">
