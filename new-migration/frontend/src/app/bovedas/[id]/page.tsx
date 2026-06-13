@@ -660,7 +660,7 @@ function PropietarioModal({
         if (!saving) onClose();
       }}
       title="Asignar propietario"
-      description="Busca una persona registrada por nombre, apellido o cédula."
+      description="Busca una persona registrada o crea una nueva para asignarla como propietario."
       size="lg"
       footer={
         <Button variant="secondary" onClick={onClose} disabled={saving}>
