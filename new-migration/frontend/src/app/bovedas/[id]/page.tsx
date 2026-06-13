@@ -660,7 +660,7 @@ function PropietarioModal({
         if (!saving) onClose();
       }}
       title="Asignar propietario"
-      description="Busca una persona registrada por nombre, apellido o cédula."
+      description="Busca una persona registrada o crea una nueva para asignarla como propietario."
       size="lg"
       footer={
         <Button variant="secondary" onClick={onClose} disabled={saving}>
@@ -668,187 +668,236 @@ function PropietarioModal({
         </Button>
       }
     >
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lifted animate-scale-in">
-        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5">
-          <div>
-            <h3 className="text-base font-semibold text-slate-800">Asignar propietario</h3>
-            <p className="text-xs text-slate-500">Buscar existente o crear nuevo.</p>
-          </div>
-          <button type="button" onClick={onClose} disabled={saving}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100" aria-label="Cerrar">
-            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+      <div className="space-y-4">
+        <div className="flex border-b border-slate-100">
+          <button
+            type="button"
+            onClick={() => setTab('buscar')}
+            className={`inline-flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+              tab === 'buscar'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Search className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            Buscar existente
           </button>
-        </header>
-
-        {/* Tabs */}
-        <div className="flex border-b border-slate-100 px-5">
-          <button type="button" onClick={() => setTab('buscar')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === 'buscar' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}>
-            <Search className="h-4 w-4" strokeWidth={2} aria-hidden="true" />Buscar existente
-          </button>
-          <button type="button" onClick={() => setTab('crear')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === 'crear' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}>
-            <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />Crear nuevo
+          <button
+            type="button"
+            onClick={() => setTab('crear')}
+            className={`inline-flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+              tab === 'crear'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            Crear nuevo
           </button>
         </div>
 
-        <div className="p-5">
-          {error && (
-            <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+            {error}
+          </div>
+        )}
 
-          {tab === 'buscar' ? (
-            <>
-              <div className="relative mb-3">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={2} aria-hidden="true" />
-                <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-9`} />
-              </div>
-              <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
-                {loading ? <div className="py-6 text-center text-sm text-slate-400">Buscando…</div>
-                : results.length === 0 ? <div className="py-6 text-center text-sm text-slate-400">
-                    {search.trim().length < 2 ? 'Escribe al menos 2 caracteres.' : 'No se encontraron personas.'}
-                  </div>
-                : <ul className="divide-y divide-slate-100">
-                    {results.map((p) => (
-                      <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50">
+        {tab === 'buscar' ? (
+          <>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Mínimo 2 caracteres..."
+                autoFocus
+                className={`${INPUT_CLS} pl-9`}
+              />
+            </div>
+
+            <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+              {loading ? (
+                <div className="py-6 text-center text-sm text-slate-600">
+                  Buscando...
+                </div>
+              ) : results.length === 0 ? (
+                <div className="py-6 text-center text-sm text-slate-600">
+                  {search.trim().length < 2
+                    ? 'Escribe al menos 2 caracteres.'
+                    : 'No se encontraron personas.'}
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {results.map((p) => {
+                    const isCurrent = actualPersonaId === p.id;
+                    return (
+                      <li
+                        key={p.id}
+                        className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50"
+                      >
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-slate-800">{p.nombre} {p.apellido}</div>
-                          <div className="text-xs text-slate-500">{p.numeroIdentificacion}</div>
+                          <div className="text-sm font-medium text-slate-800">
+                            {p.nombre} {p.apellido}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {p.numeroIdentificacion}
+                            {p.telefono ? ` · ${p.telefono}` : ''}
+                          </div>
                         </div>
-                        <button type="button" disabled={saving || actualPersonaId === p.id}
+                        <button
+                          type="button"
+                          disabled={saving || isCurrent}
                           onClick={() => asignar(p.id)}
                           className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                            actualPersonaId === p.id
+                            isCurrent
                               ? 'cursor-default bg-slate-100 text-slate-500'
-                              : 'bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-60'
-                          }`}>
-                          {actualPersonaId === p.id ? 'Actual' : 'Asignar'}
+                              : 'bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60'
+                          }`}
+                        >
+                          {isCurrent ? 'Actual' : 'Asignar'}
                         </button>
                       </li>
-                    ))}
-                  </ul>}
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Nombres *
+                </label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.nombre}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nombre: e.target.value })
+                  }
+                />
               </div>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Nombres *</label>
-                  <input type="text" className={INPUT_CLS} value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Apellidos *</label>
-                  <input type="text" className={INPUT_CLS} value={formData.apellido}
-                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Tipo ID *</label>
-                  <select className={INPUT_CLS} value={formData.tipoIdentificacion}
-                    onChange={(e) => setFormData({ ...formData, tipoIdentificacion: e.target.value })}>
-                    <option value="Cédula">Cédula</option><option value="RUC">RUC</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Número ID *</label>
-                  <input type="text" className={INPUT_CLS} value={formData.numeroIdentificacion}
-                    onChange={(e) => setFormData({ ...formData, numeroIdentificacion: e.target.value })} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Teléfono</label>
-                  <input type="text" className={INPUT_CLS} value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Email</label>
-                  <input type="email" className={INPUT_CLS} value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">Dirección</label>
-                  <input type="text" className={INPUT_CLS} value={formData.direccion}
-                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })} />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Apellidos *
+                </label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.apellido}
+                  onChange={(e) =>
+                    setFormData({ ...formData, apellido: e.target.value })
+                  }
+                />
               </div>
-              <div className="flex justify-end">
-                <button type="button" onClick={crearYAsignar}
-                  disabled={saving || !formData.nombre.trim() || !formData.apellido.trim() || !formData.numeroIdentificacion.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-success-500 px-4 py-2 text-sm font-medium text-white hover:bg-success-600 disabled:opacity-60">
-                  {saving ? 'Guardando…' : <><Save className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Crear y asignar</>}
-                </button>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Tipo ID *
+                </label>
+                <select
+                  className={INPUT_CLS}
+                  value={formData.tipoIdentificacion}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tipoIdentificacion: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Cédula">Cédula</option>
+                  <option value="RUC">RUC</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Número ID *
+                </label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.numeroIdentificacion}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      numeroIdentificacion: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Teléfono
+                </label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.telefono}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  className={INPUT_CLS}
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+                  Dirección
+                </label>
+                <input
+                  type="text"
+                  className={INPUT_CLS}
+                  value={formData.direccion}
+                  onChange={(e) =>
+                    setFormData({ ...formData, direccion: e.target.value })
+                  }
+                />
               </div>
             </div>
-          )}
-        </div>
-
-        <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
-          <button type="button" onClick={onClose} disabled={saving}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            Cerrar
-          </button>
-        </footer>
-      </div>
-      )
-
-        <footer className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
-          <button type="button" onClick={onClose} disabled={saving}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            Cerrar
-          </button>
-        </footer>
-
-      <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
-        {loading ? (
-          <div className="py-6 text-center text-sm text-slate-600">
-            Buscando…
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={crearYAsignar}
+                disabled={
+                  saving ||
+                  !formData.nombre.trim() ||
+                  !formData.apellido.trim() ||
+                  !formData.numeroIdentificacion.trim()
+                }
+                className="inline-flex items-center gap-1.5 rounded-lg bg-success-500 px-4 py-2 text-sm font-medium text-white hover:bg-success-600 disabled:opacity-60"
+              >
+                {saving ? (
+                  'Guardando...'
+                ) : (
+                  <>
+                    <Save
+                      className="h-4 w-4"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
+                    Crear y asignar
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        ) : results.length === 0 ? (
-          <div className="py-6 text-center text-sm text-slate-600">
-            {search.trim().length < 2
-              ? 'Escribe al menos 2 caracteres.'
-              : 'No se encontraron personas.'}
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {results.map((p) => {
-              const isCurrent = actualPersonaId === p.id;
-              return (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50/50"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-slate-800">
-                      {p.nombre} {p.apellido}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {p.numeroIdentificacion}
-                      {p.telefono ? ` · ${p.telefono}` : ''}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={saving || isCurrent}
-                    onClick={() => asignar(p.id)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                      isCurrent
-                        ? 'cursor-default bg-slate-100 text-slate-500'
-                        : 'bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60'
-                    }`}
-                  >
-                    {isCurrent ? 'Actual' : 'Asignar'}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
         )}
       </div>
     </Modal>
