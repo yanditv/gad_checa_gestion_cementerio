@@ -542,6 +542,9 @@ export class CatastroImportService {
     const gadName = gadInfo?.nombre || 'GAD CHECA';
     const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
 
+    // NOTA DE INVARIANTE: Se ordena por `id: 'desc'` asumiendo que la creación de contratos
+    // es estrictamente secuencial y monótona con respecto al ID incremental en la base de datos
+    // (el contrato con mayor `id` posee el sufijo numérico secuencial más alto para un prefijo y año dado).
     const lastContrato = await this.prisma.contrato.findFirst({
       where: {
         AND: [

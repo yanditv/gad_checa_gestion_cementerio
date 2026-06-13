@@ -359,8 +359,7 @@ export class CatastroImporter {
     const representante = registro.representante || 'CONTRIBUYENTE DESCONOCIDO';
     const [nombre, ...resto] = representante.split(/\s+/).filter(Boolean);
     const apellido = resto.join(' ') || '(MIGRACION)';
-    const numeroIdentificacion =
-      registro.contacto || this.makeMigrationId(`${nombre} ${apellido}`);
+    const numeroIdentificacion = this.makeMigrationId(`${nombre} ${apellido}`);
 
     const existing = await this.prisma.persona.findFirst({
       where: { numeroIdentificacion, tipoPersona: 'Persona' },

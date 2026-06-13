@@ -368,7 +368,7 @@ export class ContratoService {
   private async resolveNumberPrefix(
     bovedaId?: number,
     isRenovacion = false,
-  ): Promise<{ prefix: string; year: number; pattern: string; gadCode: string }> {
+  ): Promise<{ prefix: string; year: number; gadCode: string }> {
     const year = new Date().getFullYear();
     const boveda = bovedaId
       ? await this.prisma.boveda.findUnique({
@@ -395,7 +395,7 @@ export class ContratoService {
     const gadName = gadInfo?.nombre || 'GAD CHECA';
     const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
 
-    return { prefix, year, pattern: `${prefix}-${gadCode}-${year}-`, gadCode };
+    return { prefix, year, gadCode };
   }
 
   /** Hash determinista a int32 para clave de advisory lock. */
@@ -416,6 +416,9 @@ export class ContratoService {
       isRenovacion,
     );
 
+    // NOTA DE INVARIANTE: Se ordena por `id: 'desc'` asumiendo que la creación de contratos
+    // es estrictamente secuencial y monótona con respecto al ID incremental en la base de datos
+    // (el contrato con mayor `id` posee el sufijo numérico secuencial más alto para un prefijo y año dado).
     const last = await this.prisma.contrato.findFirst({
       where: {
         AND: [
@@ -446,6 +449,9 @@ export class ContratoService {
     const lockKey = this.advisoryLockKey(`contrato:${prefix}:${year}`);
     await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${lockKey})`);
 
+    // NOTA DE INVARIANTE: Se ordena por `id: 'desc'` asumiendo que la creación de contratos
+    // es estrictamente secuencial y monótona con respecto al ID incremental en la base de datos
+    // (el contrato con mayor `id` posee el sufijo numérico secuencial más alto para un prefijo y año dado).
     const last = await tx.contrato.findFirst({
       where: {
         AND: [
