@@ -368,7 +368,7 @@ export class ContratoService {
   private async resolveNumberPrefix(
     bovedaId?: number,
     isRenovacion = false,
-  ): Promise<{ prefix: string; year: number; pattern: string; gadCode: string }> {
+  ): Promise<{ prefix: string; year: number; gadCode: string }> {
     const year = new Date().getFullYear();
     const boveda = bovedaId
       ? await this.prisma.boveda.findUnique({
@@ -389,9 +389,13 @@ export class ContratoService {
     });
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    const gadCode = 'GADCHECA';
+    const gadInfo = await this.prisma.gADInformacion.findFirst({
+      select: { nombre: true },
+    });
+    const gadName = gadInfo?.nombre || 'GAD CHECA';
+    const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
 
-    return { prefix, year, pattern: `${prefix}-${gadCode}-${year}-`, gadCode };
+    return { prefix, year, gadCode };
   }
 
   /** Hash determinista a int32 para clave de advisory lock. */
@@ -407,14 +411,22 @@ export class ContratoService {
     bovedaId?: number,
     isRenovacion = false,
   ): Promise<string> {
-    const { prefix, year, pattern, gadCode } = await this.resolveNumberPrefix(
+    const { prefix, year, gadCode } = await this.resolveNumberPrefix(
       bovedaId,
       isRenovacion,
     );
 
+    // NOTA DE INVARIANTE: Se ordena por `id: 'desc'` asumiendo que la creación de contratos
+    // es estrictamente secuencial y monótona con respecto al ID incremental en la base de datos
+    // (el contrato con mayor `id` posee el sufijo numérico secuencial más alto para un prefijo y año dado).
     const last = await this.prisma.contrato.findFirst({
-      where: { numeroSecuencial: { startsWith: pattern } },
-      orderBy: { numeroSecuencial: 'desc' },
+      where: {
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
+      },
+      orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },
     });
 
@@ -429,7 +441,7 @@ export class ContratoService {
     bovedaId?: number,
     isRenovacion = false,
   ): Promise<string> {
-    const { prefix, year, pattern, gadCode } = await this.resolveNumberPrefix(
+    const { prefix, year, gadCode } = await this.resolveNumberPrefix(
       bovedaId,
       isRenovacion,
     );
@@ -437,9 +449,17 @@ export class ContratoService {
     const lockKey = this.advisoryLockKey(`contrato:${prefix}:${year}`);
     await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${lockKey})`);
 
+    // NOTA DE INVARIANTE: Se ordena por `id: 'desc'` asumiendo que la creación de contratos
+    // es estrictamente secuencial y monótona con respecto al ID incremental en la base de datos
+    // (el contrato con mayor `id` posee el sufijo numérico secuencial más alto para un prefijo y año dado).
     const last = await tx.contrato.findFirst({
-      where: { numeroSecuencial: { startsWith: pattern } },
-      orderBy: { numeroSecuencial: 'desc' },
+      where: {
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
+      },
+      orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },
     });
 

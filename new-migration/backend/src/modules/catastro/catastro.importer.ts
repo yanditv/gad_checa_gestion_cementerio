@@ -359,8 +359,7 @@ export class CatastroImporter {
     const representante = registro.representante || 'CONTRIBUYENTE DESCONOCIDO';
     const [nombre, ...resto] = representante.split(/\s+/).filter(Boolean);
     const apellido = resto.join(' ') || '(MIGRACION)';
-    const numeroIdentificacion =
-      registro.contacto || this.makeMigrationId(`${nombre} ${apellido}`);
+    const numeroIdentificacion = this.makeMigrationId(`${nombre} ${apellido}`);
 
     const existing = await this.prisma.persona.findFirst({
       where: { numeroIdentificacion, tipoPersona: 'Persona' },
@@ -560,11 +559,18 @@ export class CatastroImporter {
         : 'CTR';
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
-    const gadCode = 'GADCHECA';
+    const gadInfo = await this.prisma.gADInformacion.findFirst({
+      select: { nombre: true },
+    });
+    const gadName = gadInfo?.nombre || 'GAD CHECA';
+    const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
 
     const lastContrato = await this.prisma.contrato.findFirst({
       where: {
-        numeroSecuencial: { startsWith: `${prefix}-${gadCode}-${year}-` },
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
       },
       orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },

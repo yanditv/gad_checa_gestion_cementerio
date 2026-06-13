@@ -306,7 +306,7 @@ export class CatastroImportService {
     const representante = registro.representante || 'CONTRIBUYENTE DESCONOCIDO';
     const [nombre, ...resto] = representante.split(/\s+/).filter(Boolean);
     const apellido = resto.join(' ') || '(MIGRACION)';
-    const numeroIdentificacion = registro.contacto || this.makeMigrationId(`${nombre} ${apellido}`);
+    const numeroIdentificacion = this.makeMigrationId(`${nombre} ${apellido}`);
 
     const existing = await this.prisma.persona.findFirst({
       where: { numeroIdentificacion, tipoPersona: 'Persona' },
@@ -536,18 +536,28 @@ export class CatastroImportService {
     const basePrefix = tipo.includes('nicho') ? 'NCH' : tipo.includes('tumulo') || tipo.includes('tumul') ? 'TML' : 'CTR';
     const prefix = isRenovacion ? `RNV-${basePrefix}` : basePrefix;
 
+    const gadInfo = await this.prisma.gADInformacion.findFirst({
+      select: { nombre: true },
+    });
+    const gadName = gadInfo?.nombre || 'GAD CHECA';
+    const gadCode = gadName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'GADCHECA';
+
+    // NOTA DE INVARIANTE: Se ordena por `id: 'desc'` asumiendo que la creación de contratos
+    // es estrictamente secuencial y monótona con respecto al ID incremental en la base de datos
+    // (el contrato con mayor `id` posee el sufijo numérico secuencial más alto para un prefijo y año dado).
     const lastContrato = await this.prisma.contrato.findFirst({
       where: {
-        numeroSecuencial: {
-          startsWith: `${prefix}-GADCHECA-${year}-`,
-        },
+        AND: [
+          { numeroSecuencial: { startsWith: `${prefix}-` } },
+          { numeroSecuencial: { contains: `-${year}-` } },
+        ],
       },
       orderBy: { id: 'desc' },
       select: { numeroSecuencial: true },
     });
 
     const nextNumber = lastContrato ? Number(lastContrato.numeroSecuencial.split('-').pop() || '0') + 1 : 1;
-    return `${prefix}-GADCHECA-${year}-${String(nextNumber).padStart(3, '0')}`;
+    return `${prefix}-${gadCode}-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 
   private str(value: unknown): string {

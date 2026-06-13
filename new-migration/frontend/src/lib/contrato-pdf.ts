@@ -407,7 +407,7 @@ export async function buildContratoPdfBuffer(contrato: any, gadInfo?: any): Prom
 
     const bovedaNumero = truncate(boveda.numero || '________________', 20);
     const bloqueDescripcion = truncate(
-      bloque.descripcion || bloque.nombre || '________________',
+      bloque.nombre || bloque.descripcion || '________________',
       30,
     );
 
