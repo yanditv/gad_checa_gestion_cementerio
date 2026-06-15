@@ -63,6 +63,10 @@ function toOptional(value: string) {
   return trimmed.length === 0 ? undefined : trimmed;
 }
 
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
 export default function CreateDifuntoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -109,11 +113,7 @@ export default function CreateDifuntoPage() {
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
       if (fotoFile && creado?.id) {
-        try {
-          await difuntosApi.uploadFoto(creado.id, fotoFile);
-        } catch {
-          // El difunto ya se creó; la foto es opcional y no debe bloquear la navegación.
-        }
+        await difuntosApi.uploadFoto(creado.id, fotoFile);
       }
       router.push('/difuntos');
     } catch (err: any) {
@@ -184,9 +184,12 @@ export default function CreateDifuntoPage() {
               <label className={LABEL_CLS}>Identificación</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
                 className={INPUT_CLS}
                 value={formData.numeroIdentificacion}
-                onChange={(e) => set('numeroIdentificacion', e.target.value)}
+                onChange={(e) => set('numeroIdentificacion', onlyDigits(e.target.value))}
               />
             </div>
             <div>

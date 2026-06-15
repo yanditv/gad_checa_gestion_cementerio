@@ -12,6 +12,19 @@ const INPUT_CLS =
 const LABEL_CLS =
   'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
+function onlyLetters(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.'-]/g, '');
+}
+
+function normalizeOptional(value: string) {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
 export default function CreatePersonaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -37,9 +50,19 @@ export default function CreatePersonaPage() {
     setError('');
     try {
       await personasApi.create({
-        ...formData,
+        tipoIdentificacion: formData.tipoIdentificacion,
+        numeroIdentificacion: formData.numeroIdentificacion.trim(),
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        email: normalizeOptional(formData.email),
+        telefono: normalizeOptional(formData.telefono),
+        direccion: normalizeOptional(formData.direccion),
         tipoPersona: 'Persona',
         fechaNacimiento: formData.fechaNacimiento || null,
+        genero: normalizeOptional(formData.genero),
+        estadoCivil: normalizeOptional(formData.estadoCivil),
+        profesion: normalizeOptional(formData.profesion),
+        nacionalidad: normalizeOptional(formData.nacionalidad),
       });
       router.push('/personas');
     } catch (err: any) {
@@ -94,10 +117,17 @@ export default function CreatePersonaPage() {
                 <label className={LABEL_CLS}>Número de Identificación *</label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className={INPUT_CLS}
                   required
                   value={formData.numeroIdentificacion}
-                  onChange={(e) => setFormData({ ...formData, numeroIdentificacion: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      numeroIdentificacion: onlyDigits(e.target.value),
+                    })
+                  }
                 />
               </div>
 
@@ -108,7 +138,9 @@ export default function CreatePersonaPage() {
                   className={INPUT_CLS}
                   required
                   value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nombre: onlyLetters(e.target.value) })
+                  }
                 />
               </div>
               <div>
@@ -118,7 +150,9 @@ export default function CreatePersonaPage() {
                   className={INPUT_CLS}
                   required
                   value={formData.apellido}
-                  onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, apellido: onlyLetters(e.target.value) })
+                  }
                 />
               </div>
 
@@ -135,9 +169,14 @@ export default function CreatePersonaPage() {
                 <label className={LABEL_CLS}>Teléfono</label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="tel"
                   className={INPUT_CLS}
                   value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono: onlyDigits(e.target.value) })
+                  }
                 />
               </div>
 

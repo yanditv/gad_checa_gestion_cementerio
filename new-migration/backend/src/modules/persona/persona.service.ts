@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
@@ -11,6 +11,35 @@ import { UpdatePersonaDto } from './dto/request/update-persona.dto';
 @Injectable()
 export class PersonaService {
   constructor(private prisma: PrismaService) {}
+
+  private normalizeDto(dto: UpdatePersonaDto): UpdatePersonaDto {
+    const trimOrKeep = (value?: string | null) =>
+      typeof value === 'string' ? value.trim() : undefined;
+    const trimOrUndefined = (value?: string | null) => {
+      const trimmed =
+        typeof value === 'string' ? value.trim() : undefined;
+      return trimmed ? trimmed : undefined;
+    };
+
+    return {
+      ...dto,
+      numeroIdentificacion: trimOrKeep(dto.numeroIdentificacion),
+      nombre: trimOrKeep(dto.nombre),
+      apellido: trimOrKeep(dto.apellido),
+      telefono: trimOrUndefined(dto.telefono),
+      email: trimOrUndefined(dto.email),
+      direccion: trimOrUndefined(dto.direccion),
+      tipoIdentificacion: trimOrKeep(dto.tipoIdentificacion),
+      genero: trimOrUndefined(dto.genero),
+      estadoCivil: trimOrUndefined(dto.estadoCivil),
+      profesion: trimOrUndefined(dto.profesion),
+      nacionalidad: trimOrUndefined(dto.nacionalidad),
+      tipoPersona: trimOrKeep(dto.tipoPersona),
+      fechaNacimiento: dto.fechaNacimiento
+        ? new Date(dto.fechaNacimiento).toISOString()
+        : dto.fechaNacimiento,
+    };
+  }
 
   async findAll(query: PaginationQueryDto, tipo?: string) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
@@ -89,24 +118,46 @@ export class PersonaService {
   }
 
   async create(dto: UpdatePersonaDto, userId?: string) {
-    return this.prisma.persona.create({
-      data: {
-        ...(dto as Prisma.PersonaUncheckedCreateInput),
-        usuarioCreadorId: userId ?? null,
-      },
+    const normalizedDto = this.normalizeDto(dto);
+    await this.assertIdentificacionDisponible({
+      numeroIdentificacion: normalizedDto.numeroIdentificacion,
+      tipoPersona: normalizedDto.tipoPersona,
     });
+
+    try {
+      return await this.prisma.persona.create({
+        data: {
+          ...(normalizedDto as Prisma.PersonaUncheckedCreateInput),
+          usuarioCreadorId: userId ?? null,
+        },
+      });
+    } catch (err) {
+      this.handlePrismaError(err);
+    }
   }
 
   async update(id: number, dto: UpdatePersonaDto, userId?: string) {
-    await this.findOne(id);
-    return this.prisma.persona.update({
-      where: { id },
-      data: {
-        ...(dto as Prisma.PersonaUncheckedUpdateInput),
-        usuarioActualizadorId: userId ?? null,
-        fechaActualizacion: new Date(),
-      },
+    const actual = await this.findOne(id);
+    const normalizedDto = this.normalizeDto(dto);
+    await this.assertIdentificacionDisponible({
+      numeroIdentificacion:
+        normalizedDto.numeroIdentificacion ?? actual.numeroIdentificacion,
+      tipoPersona: normalizedDto.tipoPersona ?? actual.tipoPersona,
+      excludeId: id,
     });
+
+    try {
+      return await this.prisma.persona.update({
+        where: { id },
+        data: {
+          ...(normalizedDto as Prisma.PersonaUncheckedUpdateInput),
+          usuarioActualizadorId: userId ?? null,
+          fechaActualizacion: new Date(),
+        },
+      });
+    } catch (err) {
+      this.handlePrismaError(err);
+    }
   }
 
   async remove(id: number, userId?: string) {
@@ -133,5 +184,41 @@ export class PersonaService {
       },
       take: 20,
     });
+  }
+
+  private handlePrismaError(err: unknown): never {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new ConflictException(
+        'Ya existe una persona con esa identificación',
+      );
+    }
+    throw err;
+  }
+
+  private async assertIdentificacionDisponible(params: {
+    numeroIdentificacion?: string | null;
+    tipoPersona?: string | null;
+    excludeId?: number;
+  }) {
+    const numeroIdentificacion = params.numeroIdentificacion?.trim();
+    if (!numeroIdentificacion) return;
+
+    const tipoPersona = params.tipoPersona?.trim() || 'Persona';
+    const existente = await this.prisma.persona.findFirst({
+      where: {
+        numeroIdentificacion,
+        tipoPersona,
+        ...(params.excludeId ? { id: { not: params.excludeId } } : {}),
+      },
+      select: { estado: true },
+    });
+
+    if (!existente) return;
+
+    throw new ConflictException(
+      existente.estado
+        ? 'Ya existe una persona activa con esa identificación'
+        : 'Ya existe una persona inactiva con esa identificación',
+    );
   }
 }
