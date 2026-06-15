@@ -15,6 +15,7 @@ import { ApiProperty } from '@nestjs/swagger';
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 const PASSWORD_MESSAGE =
   'La contraseña debe tener al menos 6 caracteres e incluir mayúscula, minúscula y un dígito';
+const SOLO_LETRAS_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.'-]+$/;
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@teobu.com' })
@@ -30,14 +31,21 @@ export class LoginDto {
 export class RegisterDto {
   @ApiProperty({ example: '1234567890' })
   @IsString()
+  @Matches(/^\d+$/, { message: 'La identificación debe contener solo números' })
   numeroIdentificacion!: string;
 
   @ApiProperty({ example: 'Juan' })
   @IsString()
+  @Matches(SOLO_LETRAS_REGEX, {
+    message: 'El nombre debe contener solo letras',
+  })
   nombre!: string;
 
   @ApiProperty({ example: 'Pérez' })
   @IsString()
+  @Matches(SOLO_LETRAS_REGEX, {
+    message: 'El apellido debe contener solo letras',
+  })
   apellido!: string;
 
   @ApiProperty({ example: 'usuario@cementerio.com' })
@@ -59,6 +67,7 @@ export class RegisterDto {
   @ApiProperty({ example: '0999999999', required: false })
   @IsOptional()
   @IsString()
+  @Matches(/^\d*$/, { message: 'El teléfono debe contener solo números' })
   telefono?: string;
 
   @ApiProperty({ example: 'Calle Principal', required: false })

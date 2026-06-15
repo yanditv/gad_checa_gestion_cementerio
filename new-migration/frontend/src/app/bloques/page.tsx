@@ -238,6 +238,29 @@ export default function BloquesPage() {
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
+          <div className="sm:w-56">
+            <select
+              aria-label="Filtrar por tipo de bloque"
+              value={filterTipo}
+              onChange={(e) => {
+                setPage(1);
+                setFilterTipo(e.target.value);
+              }}
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              <option value="">Tipo de bloque: Todos</option>
+              <option value="Nichos">Nichos</option>
+              <option value="Bovedas">Bovedas</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            disabled={!search && !filterTipo}
+            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Limpiar filtros
+          </button>
         </div>
 
         {error && (

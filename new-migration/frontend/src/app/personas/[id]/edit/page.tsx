@@ -12,6 +12,14 @@ const INPUT_CLS =
 const LABEL_CLS =
   'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
 
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
+function onlyLetters(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.'-]/g, '');
+}
+
 export default function EditPersonaPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -149,10 +157,17 @@ export default function EditPersonaPage() {
               <label className={LABEL_CLS}>Número de Identificación *</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 className={INPUT_CLS}
                 required
                 value={formData.numeroIdentificacion}
-                onChange={(e) => setFormData({ ...formData, numeroIdentificacion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    numeroIdentificacion: onlyDigits(e.target.value),
+                  })
+                }
               />
             </div>
             <div>
@@ -162,7 +177,9 @@ export default function EditPersonaPage() {
                 className={INPUT_CLS}
                 required
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: onlyLetters(e.target.value) })
+                }
               />
             </div>
             <div>
@@ -172,7 +189,9 @@ export default function EditPersonaPage() {
                 className={INPUT_CLS}
                 required
                 value={formData.apellido}
-                onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, apellido: onlyLetters(e.target.value) })
+                }
               />
             </div>
             <div>
@@ -188,9 +207,14 @@ export default function EditPersonaPage() {
               <label className={LABEL_CLS}>Teléfono</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="tel"
                 className={INPUT_CLS}
                 value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, telefono: onlyDigits(e.target.value) })
+                }
               />
             </div>
             <div className="sm:col-span-2">

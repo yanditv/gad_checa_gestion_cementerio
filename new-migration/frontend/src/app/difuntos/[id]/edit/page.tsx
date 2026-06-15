@@ -63,6 +63,10 @@ function toOptional(value: string) {
   return trimmed.length === 0 ? undefined : trimmed;
 }
 
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
 function toDateInput(value: string | null | undefined): string {
   if (!value) return '';
   const d = new Date(value);
@@ -89,7 +93,10 @@ export default function EditDifuntoPage() {
           bovedasApi.findAll(),
         ]);
 
-        setBovedas(bovedasData.filter((b: any) => b.estado));
+        const opciones = bovedasData.filter(
+          (b: any) => b.estado || b.id === difunto.bovedaId,
+        );
+        setBovedas(opciones);
         setFotoUrl(difunto.fotoUrl ?? null);
         setFormData({
           nombre: difunto.nombre || '',
@@ -154,15 +161,10 @@ export default function EditDifuntoPage() {
         entidadEmisora: toOptional(formData.entidadEmisora),
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
-      // La foto es opcional: cualquier fallo aquí no debe bloquear la navegación.
-      try {
-        if (fotoChange instanceof File) {
-          await difuntosApi.uploadFoto(Number(params.id), fotoChange);
-        } else if (fotoChange === null && fotoUrl) {
-          await difuntosApi.deleteFoto(Number(params.id));
-        }
-      } catch {
-        // no-op
+      if (fotoChange instanceof File) {
+        await difuntosApi.uploadFoto(Number(params.id), fotoChange);
+      } else if (fotoChange === null && fotoUrl) {
+        await difuntosApi.deleteFoto(Number(params.id));
       }
       router.push(`/difuntos/${params.id}`);
     } catch (err: any) {
@@ -260,9 +262,12 @@ export default function EditDifuntoPage() {
               <label className={LABEL_CLS}>Identificación</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
                 className={INPUT_CLS}
                 value={formData.numeroIdentificacion}
-                onChange={(e) => set('numeroIdentificacion', e.target.value)}
+                onChange={(e) => set('numeroIdentificacion', onlyDigits(e.target.value))}
               />
             </div>
             <div>
