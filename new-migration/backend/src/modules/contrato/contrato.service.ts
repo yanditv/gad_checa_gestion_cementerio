@@ -17,6 +17,7 @@ import {
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
+import { GetContratosQueryDto } from './dto/get-contratos-query.dto';
 import {
   resolverPrefijoBase,
   resolverTarifaContrato,
@@ -133,7 +134,7 @@ export class ContratoService {
     };
   }
 
-  async findAll(query: PaginationQueryDto & { estado?: string }) {
+  async findAll(query: GetContratosQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 

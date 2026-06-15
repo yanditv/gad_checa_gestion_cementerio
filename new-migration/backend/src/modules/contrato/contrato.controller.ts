@@ -25,6 +25,7 @@ import {
 } from './documento.service';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
+import { GetContratosQueryDto } from './dto/get-contratos-query.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
@@ -44,7 +45,7 @@ export class ContratoController {
 
   @Get()
   @ApiOperation({ summary: 'Listar contratos paginados (con filtros)' })
-  findAll(@Query() query: PaginationQueryDto & { estado?: string }) {
+  findAll(@Query() query: GetContratosQueryDto) {
     return this.service.findAll(query);
   }
 
