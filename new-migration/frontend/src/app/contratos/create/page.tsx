@@ -169,6 +169,7 @@ export default function CreateContratoPage() {
   const [bovedasDisponibles, setBovedasDisponibles] = useState<any[]>([]);
   const [bovedasMeta, setBovedasMeta] = useState<any>(null);
   const [bovedasPage, setBovedasPage] = useState(1);
+  const [bovedasPageInput, setBovedasPageInput] = useState('1');
   const [showContratosModal, setShowContratosModal] = useState(false);
   const [contratoSearch, setContratoSearch] = useState('');
   const [contratosList, setContratosList] = useState<any[]>([]);
@@ -294,6 +295,10 @@ export default function CreateContratoPage() {
     if (!hydrated.current) return;
     saveWizard(WIZARD_KEY, form);
   }, [form]);
+
+  useEffect(() => {
+    setBovedasPageInput(String(bovedasPage));
+  }, [bovedasPage]);
 
   useEffect(() => {
     if (!showBovedaModal) return;
@@ -1104,7 +1109,7 @@ export default function CreateContratoPage() {
                   placeholder="Buscar responsable existente…"
                   value={responsableSearch}
                   onChange={(e) => setResponsableSearch(e.target.value)}
-                  className={`${INPUT_CLS} pl-9`}
+                  className={INPUT_CLS.replace('px-3', 'pl-9 pr-3')}
                 />
               </div>
               <button
@@ -1746,10 +1751,36 @@ export default function CreateContratoPage() {
 
             {bovedasMeta && bovedasMeta.totalPages > 1 && (
               <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>
-                  Página <strong>{bovedasMeta.page}</strong> de{' '}
-                  <strong>{bovedasMeta.totalPages}</strong>
-                </span>
+                <div className="flex items-center gap-4">
+                  <span>
+                    Página <strong>{bovedasMeta.page}</strong> de{' '}
+                    <strong>{bovedasMeta.totalPages}</strong>
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span>Ir a:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={bovedasMeta.totalPages}
+                      value={bovedasPageInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setBovedasPageInput(val);
+                        const parsed = parseInt(val, 10);
+                        if (!isNaN(parsed) && parsed >= 1 && parsed <= bovedasMeta.totalPages) {
+                          setBovedasPage(parsed);
+                        }
+                      }}
+                      onBlur={() => {
+                        const parsed = parseInt(bovedasPageInput, 10);
+                        if (isNaN(parsed) || parsed < 1 || parsed > bovedasMeta.totalPages) {
+                          setBovedasPageInput(String(bovedasPage));
+                        }
+                      }}
+                      className="w-12 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-center text-xs text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
                 <div className="inline-flex gap-1">
                   <button
                     type="button"

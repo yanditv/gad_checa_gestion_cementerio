@@ -18,6 +18,7 @@ import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
 import { GetContratosQueryDto } from './dto/get-contratos-query.dto';
+import { GetBovedasDisponiblesQueryDto } from './dto/get-bovedas-disponibles-query.dto';
 import {
   resolverPrefijoBase,
   resolverTarifaContrato,
@@ -75,13 +76,15 @@ export class ContratoService {
     };
   }
 
-  async getBovedasDisponibles(query: PaginationQueryDto, tipo?: string) {
+  async getBovedasDisponibles(query: GetBovedasDisponiblesQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
+    const tipo = query.tipo;
     const today = new Date();
 
     const where: any = {
       estado: true,
+      propietarioId: null, // Excluir bóvedas con propietario
       contratos: {
         none: {
           estado: true,

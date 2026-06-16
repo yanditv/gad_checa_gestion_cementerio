@@ -66,11 +66,16 @@ export function Modal({
   const titleId = useId();
   const descId = useId();
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -95,7 +100,7 @@ export function Modal({
         first.focus();
       }
     },
-    [onClose],
+    [],
   );
 
   useEffect(() => {

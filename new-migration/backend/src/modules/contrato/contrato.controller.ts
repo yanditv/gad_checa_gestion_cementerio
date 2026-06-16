@@ -26,6 +26,7 @@ import {
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { GetContratosQueryDto } from './dto/get-contratos-query.dto';
+import { GetBovedasDisponiblesQueryDto } from './dto/get-bovedas-disponibles-query.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
@@ -61,10 +62,9 @@ export class ContratoController {
 
   @Get('bovedas-disponibles')
   getBovedasDisponibles(
-    @Query() query: PaginationQueryDto,
-    @Query('tipo') tipo?: string,
+    @Query() query: GetBovedasDisponiblesQueryDto,
   ) {
-    return this.service.getBovedasDisponibles(query, tipo);
+    return this.service.getBovedasDisponibles(query);
   }
 
   @Get('numero-secuencial')
