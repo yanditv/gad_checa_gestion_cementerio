@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bloquesApi, bovedasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api';
+import { Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -148,37 +149,35 @@ export default function CreateBovedaPage() {
                 />
               </div>
               <div>
-                <label className={LABEL_CLS}>Bloque *</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Bloque"
                   required
                   value={formData.bloqueId}
                   onChange={(e) => setFormData({ ...formData, bloqueId: e.target.value })}
-                >
-                  <option value="">Seleccionar bloque...</option>
-                  {bloques.map((bloque) => (
-                    <option key={bloque.id} value={bloque.id}>
-                      {bloque.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar bloque...' },
+                    ...bloques.map((bloque) => ({
+                      value: bloque.id,
+                      label: bloque.nombre,
+                    })),
+                  ]}
+                />
               </div>
 
               <div>
-                <label className={LABEL_CLS}>Tipo *</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo"
                   required
                   value={formData.tipoEspacioId}
                   onChange={(e) => setFormData({ ...formData, tipoEspacioId: e.target.value })}
-                >
-                  <option value="">Seleccionar tipo...</option>
-                  {tiposEspacio.map((tipo) => (
-                    <option key={tipo.id} value={tipo.id}>
-                      {tipo.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar tipo...' },
+                    ...tiposEspacio.map((tipo) => ({
+                      value: tipo.id,
+                      label: tipo.nombre,
+                    })),
+                  ]}
+                />
               </div>
               <div>
                 <label className={LABEL_CLS}>Capacidad *</label>

@@ -132,7 +132,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               type="search"
               aria-label="Buscar contratos, personas y bóvedas"
               placeholder="Buscar contratos, personas, bóvedas…"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
         </div>

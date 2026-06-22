@@ -14,6 +14,8 @@ export interface InputProps
   error?: ReactNode;
   /** Icono Tabler decorativo a la izquierda del control. */
   leftIcon?: ReactNode;
+  /** Icono decorativo junto a la etiqueta. */
+  labelIcon?: ReactNode;
   /** Nodo a la derecha (sufijo, acción). */
   rightSlot?: ReactNode;
   /** Clase del contenedor `Field`. */
@@ -32,6 +34,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       hint,
       error,
       leftIcon,
+      labelIcon,
       rightSlot,
       required,
       className,
@@ -52,6 +55,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         hint={hint}
         error={error}
         required={required}
+        labelIcon={labelIcon}
         htmlFor={inputId}
         describedById={hasDesc ? describedById : undefined}
         className={wrapperClassName}
@@ -60,7 +64,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {leftIcon && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-base text-slate-600"
+              className="pointer-events-none absolute inset-y-0 left-3 flex w-5 items-center justify-center text-base text-slate-600"
             >
               {leftIcon}
             </span>
@@ -73,11 +77,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={hasDesc ? describedById : undefined}
             className={cn(
               controlBase,
-              'h-10 px-3 py-2',
-              leftIcon && 'pl-9',
+              'h-10 py-2 pr-3',
+              !leftIcon && 'pl-3',
+              leftIcon && 'pl-12',
+              className,
               rightSlot && 'pr-10',
               error != null && controlInvalid,
-              className,
             )}
             {...rest}
           />

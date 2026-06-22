@@ -201,8 +201,7 @@ export default function AdminUsuariosPage() {
             >
               <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             </Link>
-            {/* Pills toggleables: un <select multiple> nativo no se
-                puede estilizar y se ve fuera de sistema. */}
+            {/* Pills toggleables para mantener el control alineado al sistema visual. */}
             <div
               role="group"
               aria-label={`Roles de ${usuario.nombre} ${usuario.apellido}`}

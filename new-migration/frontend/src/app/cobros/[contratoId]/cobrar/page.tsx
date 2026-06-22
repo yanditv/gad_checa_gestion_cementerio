@@ -4,7 +4,7 @@ import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CircleCheck, Coins, Loader2 } from 'lucide-react';
-import { DatePicker } from '@/components/ui';
+import { DatePicker, Select } from '@/components/ui';
 
 interface CuotaPreview {
   id: number;
@@ -380,20 +380,14 @@ export default function CobrarPage({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className={LABEL_CLS}>Método</label>
-                <select
+                <Select
+                  label="Método"
                   value={form.metodoPago}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, metodoPago: e.target.value }))
                   }
-                  className={INPUT_CLS}
-                >
-                  {preview.tiposPago.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                  options={preview.tiposPago.map((t) => ({ value: t, label: t }))}
+                />
               </div>
               <DatePicker
                 id="cobro-fecha-pago"
@@ -405,8 +399,8 @@ export default function CobrarPage({
                 required
               />
               <div>
-                <label className={LABEL_CLS}>Descuento</label>
-                <select
+                <Select
+                  label="Descuento"
                   value={form.descuentoId}
                   onChange={(e) =>
                     setForm((p) => ({
@@ -414,33 +408,31 @@ export default function CobrarPage({
                       descuentoId: Number(e.target.value),
                     }))
                   }
-                  className={INPUT_CLS}
-                >
-                  <option value={0}>Sin descuento</option>
-                  {preview.descuentos.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.nombre} — {Number(d.porcentaje)}%
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: 0, label: 'Sin descuento' },
+                    ...preview.descuentos.map((d) => ({
+                      value: d.id,
+                      label: `${d.nombre} — ${Number(d.porcentaje)}%`,
+                    })),
+                  ]}
+                />
               </div>
               {requiereBanco && preview.bancos.length > 0 && (
                 <div className="sm:col-span-2">
-                  <label className={LABEL_CLS}>Banco</label>
-                  <select
+                  <Select
+                    label="Banco"
                     value={form.bancoId}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, bancoId: Number(e.target.value) }))
                     }
-                    className={INPUT_CLS}
-                  >
-                    <option value={0}>Seleccionar…</option>
-                    {preview.bancos.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.nombre}
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: 0, label: 'Seleccionar…' },
+                      ...preview.bancos.map((b) => ({
+                        value: b.id,
+                        label: b.nombre,
+                      })),
+                    ]}
+                  />
                 </div>
               )}
               <div className={requiereBanco ? '' : 'sm:col-span-2'}>

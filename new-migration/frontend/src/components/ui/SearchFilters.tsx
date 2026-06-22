@@ -53,7 +53,7 @@ export function SearchFilters({
           onChange={(e) => onSearch(e.target.value)}
           placeholder={placeholder}
           aria-label={searchLabel}
-          className="block h-10 w-full rounded-lg border-0 bg-white pl-9 pr-9 text-base text-slate-900 ring-1 ring-inset ring-slate-200 shadow-xs transition-shadow duration-150 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-400"
+          className="block h-10 w-full rounded-lg border-0 bg-white pl-12 pr-9 text-base text-slate-900 ring-1 ring-inset ring-slate-200 shadow-xs transition-shadow duration-150 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-400"
         />
         {search && (
           <button

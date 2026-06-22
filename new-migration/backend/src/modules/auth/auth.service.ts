@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
 import {
@@ -45,45 +46,56 @@ export class AuthService {
   // ---------------------------------------------------------------------------
 
   async register(dto: RegisterDto) {
+    const email = dto.email.trim().toLowerCase();
+    const numeroIdentificacion = dto.numeroIdentificacion.trim();
     const existingUser = await this.prisma.usuario.findFirst({
       where: {
         OR: [
-          { email: dto.email },
-          { numeroIdentificacion: dto.numeroIdentificacion },
+          { email },
+          { numeroIdentificacion },
         ],
       },
+      select: { email: true, numeroIdentificacion: true },
     });
 
     if (existingUser) {
-      throw new ConflictException('El usuario ya existe');
+      throw new ConflictException(
+        existingUser.email.toLowerCase() === email
+          ? 'Ya existe un usuario con ese correo'
+          : 'Ya existe un usuario con esa identificación',
+      );
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    const usuario = await this.prisma.usuario.create({
-      data: {
-        numeroIdentificacion: dto.numeroIdentificacion,
-        nombre: dto.nombre,
-        apellido: dto.apellido,
-        email: dto.email,
-        passwordHash,
-        telefono: dto.telefono,
-        direccion: dto.direccion,
-        tipoIdentificacion: dto.tipoIdentificacion || 'CED',
-      },
-    });
-
-    // Asigna rol 'Usuario' por defecto (paridad legado: rol no privilegiado).
-    const rolUsuario = await this.prisma.rol.findUnique({
-      where: { nombre: 'Usuario' },
-    });
-    if (rolUsuario) {
-      await this.prisma.usuarioRol.create({
-        data: { usuarioId: usuario.id, rolId: rolUsuario.id },
+    try {
+      const usuario = await this.prisma.usuario.create({
+        data: {
+          numeroIdentificacion,
+          nombre: dto.nombre.trim(),
+          apellido: dto.apellido.trim(),
+          email,
+          passwordHash,
+          telefono: dto.telefono?.trim(),
+          direccion: dto.direccion?.trim(),
+          tipoIdentificacion: dto.tipoIdentificacion || 'CED',
+        },
       });
-    }
 
-    return this.buildSession(usuario.id);
+      // Asigna rol 'Usuario' por defecto (paridad legado: rol no privilegiado).
+      const rolUsuario = await this.prisma.rol.findUnique({
+        where: { nombre: 'Usuario' },
+      });
+      if (rolUsuario) {
+        await this.prisma.usuarioRol.create({
+          data: { usuarioId: usuario.id, rolId: rolUsuario.id },
+        });
+      }
+
+      return this.buildSession(usuario.id);
+    } catch (err) {
+      this.handleRegisterPrismaError(err);
+    }
   }
 
   async login(dto: LoginDto) {
@@ -291,5 +303,20 @@ export class AuthService {
       },
       token,
     };
+  }
+
+  private handleRegisterPrismaError(err: unknown): never {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const target = Array.isArray(err.meta?.target)
+        ? err.meta.target.join(',')
+        : String(err.meta?.target ?? '');
+      throw new ConflictException(
+        target.includes('email')
+          ? 'Ya existe un usuario con ese correo'
+          : 'Ya existe un usuario con esa identificación',
+      );
+    }
+
+    throw err;
   }
 }

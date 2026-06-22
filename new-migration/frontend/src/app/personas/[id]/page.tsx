@@ -106,6 +106,23 @@ function Field({
   );
 }
 
+function CompactSection({
+  title,
+  children,
+  className = '',
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`rounded-xl border border-slate-200 bg-white p-4 shadow-soft ${className}`}>
+      <h2 className="mb-3 text-sm font-semibold text-slate-700">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
 export default function PersonaDetailsPage({
   params,
 }: {
@@ -460,27 +477,40 @@ export default function PersonaDetailsPage({
       </div>
 
       {tab === 'datos' && (
-        <Card>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Nombres" value={persona.nombre} />
-            <Field label="Apellidos" value={persona.apellido} />
-            <Field
-              label="Identificación"
-              value={`${persona.tipoIdentificacion} ${persona.numeroIdentificacion}`}
-            />
-            <Field label="Email" value={persona.email} />
-            <Field label="Teléfono" value={persona.telefono} />
-            <Field label="Fecha de nacimiento" value={formatDate(persona.fechaNacimiento)} />
-            <Field label="Género" value={persona.genero} />
-            <Field label="Estado civil" value={persona.estadoCivil} />
-            <Field label="Nacionalidad" value={persona.nacionalidad} />
-            <Field label="Profesión" value={persona.profesion} />
-            <Field label="Tipo de persona" value={persona.tipoPersona} />
-            <div className="sm:col-span-2 lg:col-span-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+          <CompactSection title="Identificación">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Nombres" value={persona.nombre} />
+              <Field label="Apellidos" value={persona.apellido} />
+              <Field
+                label="Identificación"
+                value={`${persona.tipoIdentificacion} ${persona.numeroIdentificacion}`}
+              />
+              <Field label="Tipo de persona" value={persona.tipoPersona} />
+            </div>
+          </CompactSection>
+
+          <CompactSection title="Contacto">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
+              <Field label="Email" value={persona.email} />
+              <Field label="Teléfono" value={persona.telefono} />
               <Field label="Dirección" value={persona.direccion} />
             </div>
-          </div>
-        </Card>
+          </CompactSection>
+
+          <CompactSection title="Información complementaria" className="xl:col-span-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Fecha de nacimiento" value={formatDate(persona.fechaNacimiento)} />
+              <Field label="Género" value={persona.genero} />
+              <Field label="Estado civil" value={persona.estadoCivil} />
+              <Field label="Nacionalidad" value={persona.nacionalidad} />
+              <Field label="Profesión" value={persona.profesion} />
+              <Field label="Estado del registro" value={persona.estado ? 'Activa' : 'Inactiva'} />
+              <Field label="Bóvedas vinculadas" value={String(bovedas.length)} />
+              <Field label="Contratos vinculados" value={String(contratos.length)} />
+            </div>
+          </CompactSection>
+        </div>
       )}
 
       {tab === 'bovedas' && (

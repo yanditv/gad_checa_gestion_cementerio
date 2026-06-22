@@ -327,7 +327,17 @@ export const contratosApi = {
 };
 
 export const bovedasApi = {
-  findAll: () => api.get<any[]>('/bovedas'),
+  findAll: async () => {
+    const firstPage = await api.getPaginated<any>('/bovedas', { page: 1, limit: 100 });
+    const items = [...firstPage.data];
+
+    for (let page = 2; page <= firstPage.meta.totalPages; page += 1) {
+      const result = await api.getPaginated<any>('/bovedas', { page, limit: 100 });
+      items.push(...result.data);
+    }
+
+    return items;
+  },
   findPage: (params?: PaginationParams) => api.getPaginated<any>('/bovedas', params),
   findOne: (id: number) => api.get<any>(`/bovedas/${id}`),
   create: (data: any) => api.post<any>('/bovedas', data),

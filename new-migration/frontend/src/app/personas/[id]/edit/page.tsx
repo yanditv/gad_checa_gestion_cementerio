@@ -5,12 +5,20 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { personasApi } from '@/lib/api';
-import { DatePicker } from '@/components/ui';
+import { DatePicker, Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
 const LABEL_CLS =
   'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
+function onlyLetters(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.'-]/g, '');
+}
 
 export default function EditPersonaPage() {
   const params = useParams<{ id: string }>();
@@ -133,26 +141,33 @@ export default function EditPersonaPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className={LABEL_CLS}>Tipo de Identificación *</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Tipo de Identificación"
                 required
                 value={formData.tipoIdentificacion}
                 onChange={(e) => setFormData({ ...formData, tipoIdentificacion: e.target.value })}
-              >
-                <option value="CED">Cédula</option>
-                <option value="RUC">RUC</option>
-                <option value="PAS">Pasaporte</option>
-              </select>
+                options={[
+                  { value: 'CED', label: 'Cédula' },
+                  { value: 'RUC', label: 'RUC' },
+                  { value: 'PAS', label: 'Pasaporte' },
+                ]}
+              />
             </div>
             <div>
               <label className={LABEL_CLS}>Número de Identificación *</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 className={INPUT_CLS}
                 required
                 value={formData.numeroIdentificacion}
-                onChange={(e) => setFormData({ ...formData, numeroIdentificacion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    numeroIdentificacion: onlyDigits(e.target.value),
+                  })
+                }
               />
             </div>
             <div>
@@ -162,7 +177,9 @@ export default function EditPersonaPage() {
                 className={INPUT_CLS}
                 required
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: onlyLetters(e.target.value) })
+                }
               />
             </div>
             <div>
@@ -172,7 +189,9 @@ export default function EditPersonaPage() {
                 className={INPUT_CLS}
                 required
                 value={formData.apellido}
-                onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, apellido: onlyLetters(e.target.value) })
+                }
               />
             </div>
             <div>
@@ -188,9 +207,14 @@ export default function EditPersonaPage() {
               <label className={LABEL_CLS}>Teléfono</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="tel"
                 className={INPUT_CLS}
                 value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, telefono: onlyDigits(e.target.value) })
+                }
               />
             </div>
             <div className="sm:col-span-2">
@@ -208,31 +232,31 @@ export default function EditPersonaPage() {
               onChange={(iso) => setFormData({ ...formData, fechaNacimiento: iso })}
             />
             <div>
-              <label className={LABEL_CLS}>Género</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Género"
                 value={formData.genero}
                 onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-              >
-                <option value="">Seleccionar...</option>
-                <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                </select>
+                options={[
+                  { value: '', label: 'Seleccionar...' },
+                  { value: 'M', label: 'Masculino' },
+                  { value: 'F', label: 'Femenino' },
+                ]}
+              />
               </div>
               <div>
-                <label className={LABEL_CLS}>Estado civil</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Estado civil"
                   value={formData.estadoCivil}
                   onChange={(e) => setFormData({ ...formData, estadoCivil: e.target.value })}
-                >
-                  <option value="">Seleccionar...</option>
-                  <option value="Soltero/a">Soltero/a</option>
-                  <option value="Casado/a">Casado/a</option>
-                  <option value="Divorciado/a">Divorciado/a</option>
-                  <option value="Viudo/a">Viudo/a</option>
-                  <option value="Unión libre">Unión libre</option>
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar...' },
+                    { value: 'Soltero/a', label: 'Soltero/a' },
+                    { value: 'Casado/a', label: 'Casado/a' },
+                    { value: 'Divorciado/a', label: 'Divorciado/a' },
+                    { value: 'Viudo/a', label: 'Viudo/a' },
+                    { value: 'Unión libre', label: 'Unión libre' },
+                  ]}
+                />
               </div>
               <div>
                 <label className={LABEL_CLS}>Profesión</label>

@@ -12,6 +12,7 @@ export interface TextareaProps
   label?: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;
+  labelIcon?: ReactNode;
   wrapperClassName?: string;
 }
 
@@ -25,6 +26,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       label,
       hint,
       error,
+      labelIcon,
       required,
       rows = 4,
       className,
@@ -45,6 +47,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         hint={hint}
         error={error}
         required={required}
+        labelIcon={labelIcon}
         htmlFor={fieldId}
         describedById={hasDesc ? describedById : undefined}
         className={wrapperClassName}
