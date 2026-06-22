@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-import { Tag } from 'lucide-react';
 import { cn } from './cn';
 
 export interface FieldProps {
@@ -45,9 +44,11 @@ export function Field({
           htmlFor={htmlFor}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700"
         >
-          <span aria-hidden="true" className="inline-flex text-slate-500">
-            {labelIcon ?? <Tag className="h-3.5 w-3.5" strokeWidth={2} />}
-          </span>
+          {labelIcon && (
+            <span aria-hidden="true" className="inline-flex text-slate-500">
+              {labelIcon}
+            </span>
+          )}
           <span>{label}</span>
           {required && (
             <span aria-hidden="true" className="text-danger-500">
