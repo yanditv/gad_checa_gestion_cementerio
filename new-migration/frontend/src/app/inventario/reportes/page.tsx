@@ -9,6 +9,7 @@ import {
   type ReporteInventarioFiltros,
   type TipoReporteInventario,
 } from '@/lib/api';
+import { Select } from '@/components/ui';
 
 interface OpcionResumen {
   id: number;
@@ -231,39 +232,27 @@ export default function ReportesInventarioPage() {
         </header>
         <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Categoría
-            </label>
-            <select
-              className={INPUT_CLS}
+            <Select
+              label="Categoría"
               value={categoriaId}
               onChange={(e) => setCategoriaId(e.target.value)}
-            >
-              <option value="">Todas</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Todas' },
+                ...categorias.map((c) => ({ value: c.id, label: c.nombre })),
+              ]}
+            />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Custodio
-            </label>
-            <select
-              className={INPUT_CLS}
+            <Select
+              label="Custodio"
               value={custodioId}
               onChange={(e) => setCustodioId(e.target.value)}
-            >
-              <option value="">Todos</option>
-              {custodios.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Todos' },
+                ...custodios.map((c) => ({ value: c.id, label: c.nombre })),
+              ]}
+            />
           </div>
 
           <div>
@@ -293,22 +282,15 @@ export default function ReportesInventarioPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Custodio saliente
-              <span className="ml-1 text-slate-600">(acta)</span>
-            </label>
-            <select
-              className={INPUT_CLS}
+            <Select
+              label="Custodio saliente (acta)"
               value={custodioSalienteId}
               onChange={(e) => setCustodioSalienteId(e.target.value)}
-            >
-              <option value="">Ninguno</option>
-              {custodios.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Ninguno' },
+                ...custodios.map((c) => ({ value: c.id, label: c.nombre })),
+              ]}
+            />
           </div>
 
           <div className="flex items-end">

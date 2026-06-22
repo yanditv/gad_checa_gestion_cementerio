@@ -306,7 +306,7 @@ export default function ExhumacionesPage() {
             </Select>
           </div>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="md"
             disabled={!hasFilters}
             onClick={clearFilters}

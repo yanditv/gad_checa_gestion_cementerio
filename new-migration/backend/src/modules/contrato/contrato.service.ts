@@ -74,10 +74,18 @@ export class ContratoService {
     };
   }
 
-  async getBovedasDisponibles(query: PaginationQueryDto, tipo?: string) {
+  async getBovedasDisponibles(
+    query: PaginationQueryDto,
+    tipo?: string,
+    tipoEspacioId?: string,
+  ) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
     const today = new Date();
+    const parsedTipoEspacioId = tipoEspacioId ? Number(tipoEspacioId) : undefined;
+    if (tipoEspacioId && !Number.isInteger(parsedTipoEspacioId)) {
+      throw new BadRequestException('El tipo de espacio no es válido');
+    }
 
     const where: any = {
       estado: true,
@@ -87,6 +95,7 @@ export class ContratoService {
           OR: [{ fechaFin: null }, { fechaFin: { gte: today } }],
         },
       },
+      ...(parsedTipoEspacioId ? { tipoEspacioId: parsedTipoEspacioId } : {}),
       ...(tipo ? { tipo: { equals: tipo, mode: 'insensitive' } } : {}),
       ...(search
         ? {

@@ -62,8 +62,9 @@ export class ContratoController {
   getBovedasDisponibles(
     @Query() query: PaginationQueryDto,
     @Query('tipo') tipo?: string,
+    @Query('tipoEspacioId') tipoEspacioId?: string,
   ) {
-    return this.service.getBovedasDisponibles(query, tipo);
+    return this.service.getBovedasDisponibles(query, tipo, tipoEspacioId);
   }
 
   @Get('numero-secuencial')

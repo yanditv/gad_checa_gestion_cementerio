@@ -1,5 +1,8 @@
 import { Book, Download, ExternalLink, FileText } from 'lucide-react';
 
+const MANUAL_REPO_URL =
+  'https://github.com/yanditv/gad_checa_gestion_cementerio/blob/master/new-migration/frontend/public/Manual_de_Usuario.pdf';
+
 export default function ManualPage() {
   return (
     <div className="space-y-6">
@@ -32,12 +35,12 @@ export default function ManualPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <a
-              href="/Manual_de_Usuario.pdf"
+              href={MANUAL_REPO_URL}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
             >
-              <ExternalLink className="h-4 w-4" aria-hidden="true" /> Abrir en pestaña nueva
+              <ExternalLink className="h-4 w-4" aria-hidden="true" /> Ver en GitHub
             </a>
             <a
               href="/Manual_de_Usuario.pdf"
@@ -47,20 +50,6 @@ export default function ManualPage() {
               <Download className="h-4 w-4" aria-hidden="true" /> Descargar PDF
             </a>
           </div>
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <header className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
-          <FileText className="h-4 w-4 text-primary-500" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-slate-700">Vista previa</h3>
-        </header>
-        <div className="h-[70vh] min-h-[32rem] bg-slate-50">
-          <iframe
-            src="/Manual_de_Usuario.pdf"
-            title="Manual de Usuario"
-            className="h-full w-full"
-          />
         </div>
       </section>
     </div>

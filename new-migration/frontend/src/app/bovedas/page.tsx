@@ -12,10 +12,11 @@ import {
   Plus,
   Search,
   Trash2,
+  X,
 } from 'lucide-react';
 import { bloquesApi, bovedasApi, tiposEspacioApi, PaginationMeta, TipoEspacio } from '@/lib/api';
 import { getEstadoBoveda } from '@/lib/boveda-estado';
-import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
+import { DataTable, EmptyState, Select, type DataTableColumn } from '@/components/ui';
 
 interface Boveda {
   id: number;
@@ -56,6 +57,12 @@ export default function BovedasPage() {
   const [bloques, setBloques] = useState<{ id: number; nombre: string; estado: boolean }[]>([]);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
+  const hasActiveFilters =
+    searchTerm.trim() !== '' ||
+    filterTipo !== '' ||
+    filterEstado !== '' ||
+    filterPropietario !== '' ||
+    filterBloqueId !== '';
 
   useEffect(() => {
     loadBovedas();
@@ -114,6 +121,15 @@ export default function BovedasPage() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const clearFilters = () => {
+    setPage(1);
+    setSearchTerm('');
+    setFilterTipo('');
+    setFilterEstado('');
+    setFilterPropietario('');
+    setFilterBloqueId('');
   };
 
   function calcVisiblePages() {
@@ -285,112 +301,110 @@ export default function BovedasPage() {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder="Buscar bóvedas..."
-              value={searchTerm}
-              onChange={(e) => {
-                setPage(1);
-                setSearchTerm(e.target.value);
-              }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
-            />
+        <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-2 xl:grid-cols-[minmax(16rem,24rem)_repeat(4,minmax(11rem,1fr))_auto] xl:items-end">
+          <div className="space-y-1">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700" htmlFor="bovedas-search">
+              <Search className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+              Buscar
+            </label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                id="bovedas-search"
+                type="search"
+                placeholder="Buscar bóvedas..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchTerm(e.target.value);
+                }}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="tipo-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-600"
-            >
-              Tipo
-            </label>
-            <select
+          <div>
+            <Select
+              label="Tipo"
               id="tipo-filter"
               value={filterTipo}
               onChange={(e) => {
                 setPage(1);
                 setFilterTipo(e.target.value);
               }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos los tipos</option>
-              {tiposEspacio.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Todos los tipos' },
+                ...tiposEspacio.map((tipo) => ({ value: tipo.id, label: tipo.nombre })),
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="estado-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-600"
-            >
-              Estado
-            </label>
-            <select
+          <div>
+            <Select
+              label="Estado"
               id="estado-filter"
               value={filterEstado}
               onChange={(e) => {
                 setPage(1);
                 setFilterEstado(e.target.value);
               }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos los estados</option>
-              <option value="disponible">Disponibles</option>
-              <option value="ocupada">Ocupadas</option>
-            </select>
+              options={[
+                { value: '', label: 'Todos los estados' },
+                { value: 'disponible', label: 'Disponibles' },
+                { value: 'ocupada', label: 'Ocupadas' },
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Bloque
-            </label>
-            <select
+          <div>
+            <Select
+              label="Bloque"
               value={filterBloqueId}
               onChange={(e) => {
                 setPage(1);
                 setFilterBloqueId(e.target.value);
               }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos los bloques</option>
-              {bloques.map((b) => (
-                <option key={b.id} value={b.id}>{b.nombre}</option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Todos los bloques' },
+                ...bloques.map((b) => ({ value: b.id, label: b.nombre })),
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="propietario-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-600"
-            >
-              Propietario
-            </label>
-            <select
+          <div>
+            <Select
+              label="Propietario"
               id="propietario-filter"
               value={filterPropietario}
               onChange={(e) => {
                 setPage(1);
                 setFilterPropietario(e.target.value);
               }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos</option>
-              <option value="con">Con propietario</option>
-              <option value="sin">Sin propietario</option>
-            </select>
+              options={[
+                { value: '', label: 'Todos' },
+                { value: 'con', label: 'Con propietario' },
+                { value: 'sin', label: 'Sin propietario' },
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
+
+          <button
+            type="button"
+            onClick={clearFilters}
+            disabled={!hasActiveFilters}
+            className="inline-flex h-10 items-center justify-center gap-1.5 self-end rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            Limpiar
+          </button>
         </div>
 
         {error && (

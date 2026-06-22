@@ -16,6 +16,15 @@ interface UsePopoverOptions {
   matchTriggerWidth?: boolean;
 }
 
+const hiddenStyle: CSSProperties = {
+  position: 'fixed',
+  left: 0,
+  top: 0,
+  zIndex: 50,
+  visibility: 'hidden',
+  pointerEvents: 'none',
+};
+
 /**
  * Posicionamiento de popovers anclados (DatePicker, Select).
  *
@@ -30,7 +39,7 @@ export function usePopover<T extends HTMLElement = HTMLElement>({
   matchTriggerWidth = false,
 }: UsePopoverOptions = {}) {
   const [open, setOpen] = useState(false);
-  const [style, setStyle] = useState<CSSProperties>({});
+  const [style, setStyle] = useState<CSSProperties>(hiddenStyle);
   const triggerRef = useRef<T | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,6 +57,8 @@ export function usePopover<T extends HTMLElement = HTMLElement>({
       left: Math.max(8, Math.min(rect.left, window.innerWidth - 8 - (popRef.current?.offsetWidth || rect.width))),
       top: openUp ? rect.top - height - gap : rect.bottom + gap,
       zIndex: 50,
+      visibility: 'visible',
+      pointerEvents: 'auto',
     };
     if (matchTriggerWidth) next.width = rect.width;
     setStyle(next);
@@ -57,6 +68,10 @@ export function usePopover<T extends HTMLElement = HTMLElement>({
   useLayoutEffect(() => {
     if (open) reposition();
   }, [open, reposition]);
+
+  useEffect(() => {
+    if (!open) setStyle(hiddenStyle);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

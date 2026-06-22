@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { bovedasApi, difuntosApi, mediaUrl } from '@/lib/api';
-import { Button, ImageUpload } from '@/components/ui';
+import { Button, ImageUpload, Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -271,31 +271,31 @@ export default function EditDifuntoPage() {
               />
             </div>
             <div>
-              <label className={LABEL_CLS}>Género</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Género"
                 value={formData.genero}
                 onChange={(e) => set('genero', e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-              </select>
+                options={[
+                  { value: '', label: 'Seleccionar…' },
+                  { value: 'M', label: 'Masculino' },
+                  { value: 'F', label: 'Femenino' },
+                ]}
+              />
             </div>
             <div>
-              <label className={LABEL_CLS}>Estado civil</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Estado civil"
                 value={formData.estadoCivil}
                 onChange={(e) => set('estadoCivil', e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                <option value="Soltero/a">Soltero/a</option>
-                <option value="Casado/a">Casado/a</option>
-                <option value="Divorciado/a">Divorciado/a</option>
-                <option value="Viudo/a">Viudo/a</option>
-                <option value="Unión libre">Unión libre</option>
-              </select>
+                options={[
+                  { value: '', label: 'Seleccionar…' },
+                  { value: 'Soltero/a', label: 'Soltero/a' },
+                  { value: 'Casado/a', label: 'Casado/a' },
+                  { value: 'Divorciado/a', label: 'Divorciado/a' },
+                  { value: 'Viudo/a', label: 'Viudo/a' },
+                  { value: 'Unión libre', label: 'Unión libre' },
+                ]}
+              />
             </div>
             <div>
               <label className={LABEL_CLS}>Nacionalidad</label>
@@ -453,20 +453,19 @@ export default function EditDifuntoPage() {
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
             <div>
-              <label className={LABEL_CLS}>Bóveda *</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Bóveda"
                 required
                 value={formData.bovedaId}
                 onChange={(e) => set('bovedaId', e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                {bovedas.map((boveda) => (
-                  <option key={boveda.id} value={boveda.id}>
-                    {boveda.numero} — {boveda.bloque?.nombre || 'Sin bloque'}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Seleccionar…' },
+                  ...bovedas.map((boveda) => ({
+                    value: boveda.id,
+                    label: `${boveda.numero} — ${boveda.bloque?.nombre || 'Sin bloque'}`,
+                  })),
+                ]}
+              />
             </div>
             <div className="sm:col-span-2">
               <label className={LABEL_CLS}>Observaciones</label>

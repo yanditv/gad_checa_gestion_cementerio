@@ -10,11 +10,12 @@ import {
   Pencil,
   Plus,
   Search,
+  Tag,
   Trash2,
   Users,
 } from 'lucide-react';
 import { personasApi, PaginationMeta } from '@/lib/api';
-import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
+import { DataTable, EmptyState, Select, type DataTableColumn } from '@/components/ui';
 
 interface Persona {
   id: number;
@@ -195,45 +196,53 @@ export default function PersonasPage() {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder="Buscar personas..."
-              value={search}
-              onChange={(e) => {
-                setPage(1);
-                setSearch(e.target.value);
-              }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
-            />
+        <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-[minmax(18rem,28rem)_minmax(14rem,18rem)] sm:items-end">
+          <div className="space-y-1">
+            <label
+              htmlFor="personas-search"
+              className="flex items-center gap-2 text-sm font-medium text-slate-700"
+            >
+              <Search className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+              Buscar
+            </label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                id="personas-search"
+                type="search"
+                placeholder="Buscar personas..."
+                value={search}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="tipo-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-600"
-            >
-              Tipo
-            </label>
-            <select
+          <div>
+            <Select
+              label="Tipo"
+              labelIcon={<Tag className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
               id="tipo-filter"
               value={tipo}
               onChange={(e) => {
                 setPage(1);
                 setTipo(e.target.value);
               }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos los tipos</option>
-              <option value="Propietario">Propietarios</option>
-              <option value="Responsable">Responsables</option>
-            </select>
+              options={[
+                { value: '', label: 'Todos los tipos' },
+                { value: 'Persona', label: 'Personas' },
+                { value: 'Propietario', label: 'Propietarios' },
+                { value: 'Responsable', label: 'Responsables' },
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
         </div>
 

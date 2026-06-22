@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsInt,
   IsOptional,
   IsString,
@@ -9,9 +10,15 @@ import { Transform } from 'class-transformer';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class ListNotificacionesDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ description: 'true = solo no leídas, false = solo leídas' })
+  @ApiPropertyOptional({ description: 'false = solo no leídas, true = solo leídas' })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' ? true : value === 'false' ? false : undefined)
+  @Transform(({ value, obj }) => {
+    const raw = obj?.leida ?? value;
+    if (raw === true || raw === 'true') return true;
+    if (raw === false || raw === 'false') return false;
+    return undefined;
+  })
+  @IsBoolean()
   leida?: boolean;
 }
 

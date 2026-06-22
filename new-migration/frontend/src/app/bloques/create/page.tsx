@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bloquesApi, cementeriosApi } from '@/lib/api';
+import { Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -172,32 +173,31 @@ export default function CreateBloquePage() {
                 />
               </div>
               <div>
-                <label className={LABEL_CLS}>Cementerio *</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Cementerio"
                   required
                   value={formData.cementerioId}
                   onChange={(e) => setFormData({ ...formData, cementerioId: e.target.value })}
-                >
-                  <option value="">Seleccionar cementerio...</option>
-                  {cementerios.map((cementerio) => (
-                    <option key={cementerio.id} value={cementerio.id}>
-                      {cementerio.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar cementerio...' },
+                    ...cementerios.map((cementerio) => ({
+                      value: cementerio.id,
+                      label: cementerio.nombre,
+                    })),
+                  ]}
+                />
               </div>
 
               <div>
-                <label className={LABEL_CLS}>Tipo</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo"
                   value={formData.tipo}
                   onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                >
-                  <option value="Bovedas">Bóvedas</option>
-                  <option value="Nichos">Nichos</option>
-                </select>
+                  options={[
+                    { value: 'Bovedas', label: 'Bóvedas' },
+                    { value: 'Nichos', label: 'Nichos' },
+                  ]}
+                />
               </div>
               <div>
                 <label className={LABEL_CLS}>Tarifa Base ($)</label>

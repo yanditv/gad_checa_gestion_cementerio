@@ -11,6 +11,7 @@ export interface DatePickerProps {
   label?: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;
+  labelIcon?: ReactNode;
   required?: boolean;
   /** Valor ISO `yyyy-mm-dd` (o `''`). Se muestra como `dd/mm/aaaa`. */
   value: string;
@@ -83,6 +84,7 @@ export function DatePicker({
   label,
   hint,
   error,
+  labelIcon,
   required,
   value,
   onChange,
@@ -420,6 +422,7 @@ export function DatePicker({
       hint={hint}
       error={error}
       required={required}
+      labelIcon={labelIcon}
       htmlFor={inputId}
       describedById={hint != null || error != null ? hintId : undefined}
       className={wrapperClassName}

@@ -4,7 +4,7 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Copy, Loader2, TriangleAlert, User } from 'lucide-react';
-import { DatePicker } from '@/components/ui';
+import { DatePicker, Select } from '@/components/ui';
 
 type PlanCuota = 'unico' | 'mensual' | 'trimestral' | 'semestral' | 'anual';
 
@@ -398,8 +398,8 @@ export default function RenovarContratoPage({
                   />
                 </div>
                 <div>
-                  <label className={LABEL_CLS}>Descuento</label>
-                  <select
+                  <Select
+                    label="Descuento"
                     value={form.descuentoId}
                     onChange={(e) =>
                       setForm((p) => ({
@@ -407,31 +407,24 @@ export default function RenovarContratoPage({
                         descuentoId: Number(e.target.value),
                       }))
                     }
-                    className={INPUT_CLS}
-                  >
-                    <option value={0}>Sin descuento</option>
-                    {metadata.descuentos.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.nombre} — {Number(d.porcentaje)}%
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: 0, label: 'Sin descuento' },
+                      ...metadata.descuentos.map((d) => ({
+                        value: d.id,
+                        label: `${d.nombre} — ${Number(d.porcentaje)}%`,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div>
-                  <label className={LABEL_CLS}>Plan de cuotas</label>
-                  <select
+                  <Select
+                    label="Plan de cuotas"
                     value={form.plan}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, plan: e.target.value as PlanCuota }))
                     }
-                    className={INPUT_CLS}
-                  >
-                    {PLAN_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={PLAN_OPTIONS}
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={LABEL_CLS}>Observaciones</label>
@@ -465,20 +458,14 @@ export default function RenovarContratoPage({
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className={LABEL_CLS}>Método</label>
-                  <select
+                  <Select
+                    label="Método"
                     value={form.tipoPago}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, tipoPago: e.target.value }))
                     }
-                    className={INPUT_CLS}
-                  >
-                    {metadata.tiposPago.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
+                    options={metadata.tiposPago.map((t) => ({ value: t, label: t }))}
+                  />
                 </div>
                 <div>
                   <label className={LABEL_CLS}>Comprobante / referencia</label>
@@ -500,21 +487,20 @@ export default function RenovarContratoPage({
                 />
                 {form.tipoPago !== 'Efectivo' && metadata.bancos.length > 0 && (
                   <div className="sm:col-span-2">
-                    <label className={LABEL_CLS}>Banco</label>
-                    <select
+                    <Select
+                      label="Banco"
                       value={form.bancoId}
                       onChange={(e) =>
                         setForm((p) => ({ ...p, bancoId: Number(e.target.value) }))
                       }
-                      className={INPUT_CLS}
-                    >
-                      <option value={0}>Seleccionar…</option>
-                      {metadata.bancos.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.nombre}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: 0, label: 'Seleccionar…' },
+                        ...metadata.bancos.map((b) => ({
+                          value: b.id,
+                          label: b.nombre,
+                        })),
+                      ]}
+                    />
                   </div>
                 )}
                 <div className="sm:col-span-3">

@@ -5,13 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bovedasApi, contratosApi, difuntosApi } from '@/lib/api';
-import { DatePicker } from '@/components/ui';
-
-const INPUT_CLS =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
-
-const LABEL_CLS =
-  'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600';
+import { DatePicker, Input, Select, Textarea } from '@/components/ui';
 
 export default function EditContratoPage() {
   const params = useParams<{ id: string }>();
@@ -151,42 +145,36 @@ export default function EditContratoPage() {
           )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={LABEL_CLS}>Bóveda *</label>
-              <select
-                required
-                value={formData.bovedaId}
-                onChange={(e) =>
-                  setFormData({ ...formData, bovedaId: e.target.value })
-                }
-                className={INPUT_CLS}
-              >
-                <option value="">Seleccionar…</option>
-                {bovedas.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.numero} - {b.bloque?.nombre || 'Sin bloque'}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={LABEL_CLS}>Difunto *</label>
-              <select
-                required
-                value={formData.difuntoId}
-                onChange={(e) =>
-                  setFormData({ ...formData, difuntoId: e.target.value })
-                }
-                className={INPUT_CLS}
-              >
-                <option value="">Seleccionar…</option>
-                {difuntos.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nombre} {d.apellido}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Bóveda"
+              required
+              value={formData.bovedaId}
+              onChange={(e) =>
+                setFormData({ ...formData, bovedaId: e.target.value })
+              }
+              options={[
+                { value: '', label: 'Seleccionar…' },
+                ...bovedas.map((b) => ({
+                  value: b.id,
+                  label: `${b.numero} - ${b.bloque?.nombre || 'Sin bloque'}`,
+                })),
+              ]}
+            />
+            <Select
+              label="Difunto"
+              required
+              value={formData.difuntoId}
+              onChange={(e) =>
+                setFormData({ ...formData, difuntoId: e.target.value })
+              }
+              options={[
+                { value: '', label: 'Seleccionar…' },
+                ...difuntos.map((d) => ({
+                  value: d.id,
+                  label: `${d.nombre} ${d.apellido}`,
+                })),
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -203,65 +191,54 @@ export default function EditContratoPage() {
               value={formData.fechaFin}
               onChange={(iso) => setFormData({ ...formData, fechaFin: iso })}
             />
-            <div>
-              <label className={LABEL_CLS}>Años *</label>
-              <input
-                type="number"
-                min={1}
-                required
-                value={formData.numeroDeMeses}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    numeroDeMeses: e.target.value,
-                  })
-                }
-                className={INPUT_CLS}
-              />
-            </div>
-            <div>
-              <label className={LABEL_CLS}>Estado</label>
-              <select
-                value={formData.estado ? 'true' : 'false'}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    estado: e.target.value === 'true',
-                  })
-                }
-                className={INPUT_CLS}
-              >
-                <option value="true">Activo</option>
-                <option value="false">Inactivo</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className={LABEL_CLS}>Monto total *</label>
-            <input
+            <Input
+              label="Años"
               type="number"
-              step="0.01"
+              min={1}
               required
-              value={formData.montoTotal}
+              value={formData.numeroDeMeses}
               onChange={(e) =>
-                setFormData({ ...formData, montoTotal: e.target.value })
+                setFormData({
+                  ...formData,
+                  numeroDeMeses: e.target.value,
+                })
               }
-              className={INPUT_CLS}
+            />
+            <Select
+              label="Estado"
+              value={formData.estado ? 'true' : 'false'}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  estado: e.target.value === 'true',
+                })
+              }
+              options={[
+                { value: 'true', label: 'Activo' },
+                { value: 'false', label: 'Inactivo' },
+              ]}
             />
           </div>
 
-          <div>
-            <label className={LABEL_CLS}>Observaciones</label>
-            <textarea
-              rows={3}
-              value={formData.observaciones}
-              onChange={(e) =>
-                setFormData({ ...formData, observaciones: e.target.value })
-              }
-              className={INPUT_CLS}
-            />
-          </div>
+          <Input
+            label="Monto total"
+            type="number"
+            step="0.01"
+            required
+            value={formData.montoTotal}
+            onChange={(e) =>
+              setFormData({ ...formData, montoTotal: e.target.value })
+            }
+          />
+
+          <Textarea
+            label="Observaciones"
+            rows={3}
+            value={formData.observaciones}
+            onChange={(e) =>
+              setFormData({ ...formData, observaciones: e.target.value })
+            }
+          />
 
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <Link

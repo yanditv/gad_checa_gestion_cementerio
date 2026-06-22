@@ -217,8 +217,7 @@ export default function BienesPage() {
       />
 
       <Card padding="none">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 border-b border-slate-100 p-4 md:grid-cols-2 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto] xl:items-end">
             <Input
               type="search"
               placeholder="Código, descripción o serie"
@@ -279,17 +278,15 @@ export default function BienesPage() {
               <option value="false">Activos (en uso)</option>
               <option value="true">Dados de baja</option>
             </Select>
-          </div>
-          <div className="flex justify-end">
             <Button
               variant="secondary"
-              size="sm"
+              size="md"
               onClick={clearFilters}
               leftIcon={<X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+              className="justify-self-start xl:justify-self-end"
             >
               Limpiar
             </Button>
-          </div>
         </div>
 
         {error && (
