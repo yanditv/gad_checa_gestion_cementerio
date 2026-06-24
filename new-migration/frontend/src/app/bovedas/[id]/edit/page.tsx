@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Pencil, Search, UserPlus, UserX } from 'lucide-react';
 import { bloquesApi, bovedasApi, personasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api';
-import { Button, Modal } from '@/components/ui';
+import { Button, Modal, Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -200,39 +200,37 @@ export default function EditBovedaPage() {
                 />
               </div>
               <div>
-                <label className={LABEL_CLS}>Bloque *</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Bloque"
                   required
                   value={formData.bloqueId}
                   onChange={(e) => setFormData({ ...formData, bloqueId: e.target.value })}
-                >
-                  <option value="">Seleccionar...</option>
-                  {bloques.map((bloque) => (
-                    <option key={bloque.id} value={bloque.id}>
-                      {bloque.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar...' },
+                    ...bloques.map((bloque) => ({
+                      value: bloque.id,
+                      label: bloque.nombre,
+                    })),
+                  ]}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className={LABEL_CLS}>Tipo *</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo"
                   required
                   value={formData.tipoEspacioId}
                   onChange={(e) => setFormData({ ...formData, tipoEspacioId: e.target.value })}
-                >
-                  <option value="">Seleccionar tipo...</option>
-                  {tiposEspacio.map((tipo) => (
-                    <option key={tipo.id} value={tipo.id}>
-                      {tipo.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar tipo...' },
+                    ...tiposEspacio.map((tipo) => ({
+                      value: tipo.id,
+                      label: tipo.nombre,
+                    })),
+                  ]}
+                />
               </div>
               <div>
                 <label className={LABEL_CLS}>Capacidad *</label>
@@ -246,15 +244,15 @@ export default function EditBovedaPage() {
                 />
               </div>
               <div>
-                <label className={LABEL_CLS}>Estado</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Estado"
                   value={formData.estado ? 'true' : 'false'}
                   onChange={(e) => setFormData({ ...formData, estado: e.target.value === 'true' })}
-                >
-                  <option value="true">Activa</option>
-                  <option value="false">Inactiva</option>
-                </select>
+                  options={[
+                    { value: 'true', label: 'Activa' },
+                    { value: 'false', label: 'Inactiva' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -459,7 +457,7 @@ function PropietarioModal({
           aria-hidden="true"
         />
         <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-9`} />
+          placeholder="Mínimo 2 caracteres…" autoFocus className={`${INPUT_CLS} pl-12`} />
       </div>
       <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
         {loading ? (

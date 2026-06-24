@@ -10,6 +10,8 @@ export interface FieldProps {
   error?: ReactNode;
   /** Marca el campo como obligatorio (añade asterisco). */
   required?: boolean;
+  /** Icono decorativo junto a la etiqueta. */
+  labelIcon?: ReactNode;
   /** `id` del control para vincular `<label htmlFor>`. */
   htmlFor?: string;
   /** `id` del nodo hint/error para `aria-describedby` del control. */
@@ -29,6 +31,7 @@ export function Field({
   hint,
   error,
   required,
+  labelIcon,
   htmlFor,
   describedById,
   className,
@@ -39,11 +42,16 @@ export function Field({
       {label != null && (
         <label
           htmlFor={htmlFor}
-          className="text-sm font-medium text-slate-700"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700"
         >
-          {label}
+          {labelIcon && (
+            <span aria-hidden="true" className="inline-flex text-slate-500">
+              {labelIcon}
+            </span>
+          )}
+          <span>{label}</span>
           {required && (
-            <span aria-hidden="true" className="ml-0.5 text-danger-500">
+            <span aria-hidden="true" className="text-danger-500">
               *
             </span>
           )}

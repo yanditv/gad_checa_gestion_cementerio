@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check } from 'lucide-react';
 import { bovedasApi, difuntosApi } from '@/lib/api';
-import { Button, ImageUpload } from '@/components/ui';
+import { Button, ImageUpload, Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -63,6 +63,10 @@ function toOptional(value: string) {
   return trimmed.length === 0 ? undefined : trimmed;
 }
 
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
 export default function CreateDifuntoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -109,11 +113,7 @@ export default function CreateDifuntoPage() {
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
       });
       if (fotoFile && creado?.id) {
-        try {
-          await difuntosApi.uploadFoto(creado.id, fotoFile);
-        } catch {
-          // El difunto ya se creó; la foto es opcional y no debe bloquear la navegación.
-        }
+        await difuntosApi.uploadFoto(creado.id, fotoFile);
       }
       router.push('/difuntos');
     } catch (err: any) {
@@ -184,37 +184,40 @@ export default function CreateDifuntoPage() {
               <label className={LABEL_CLS}>Identificación</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
                 className={INPUT_CLS}
                 value={formData.numeroIdentificacion}
-                onChange={(e) => set('numeroIdentificacion', e.target.value)}
+                onChange={(e) => set('numeroIdentificacion', onlyDigits(e.target.value))}
               />
             </div>
             <div>
-              <label className={LABEL_CLS}>Género</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Género"
                 value={formData.genero}
                 onChange={(e) => set('genero', e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-              </select>
+                options={[
+                  { value: '', label: 'Seleccionar…' },
+                  { value: 'M', label: 'Masculino' },
+                  { value: 'F', label: 'Femenino' },
+                ]}
+              />
             </div>
             <div>
-              <label className={LABEL_CLS}>Estado civil</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Estado civil"
                 value={formData.estadoCivil}
                 onChange={(e) => set('estadoCivil', e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                <option value="Soltero/a">Soltero/a</option>
-                <option value="Casado/a">Casado/a</option>
-                <option value="Divorciado/a">Divorciado/a</option>
-                <option value="Viudo/a">Viudo/a</option>
-                <option value="Unión libre">Unión libre</option>
-              </select>
+                options={[
+                  { value: '', label: 'Seleccionar…' },
+                  { value: 'Soltero/a', label: 'Soltero/a' },
+                  { value: 'Casado/a', label: 'Casado/a' },
+                  { value: 'Divorciado/a', label: 'Divorciado/a' },
+                  { value: 'Viudo/a', label: 'Viudo/a' },
+                  { value: 'Unión libre', label: 'Unión libre' },
+                ]}
+              />
             </div>
             <div>
               <label className={LABEL_CLS}>Nacionalidad</label>
@@ -375,20 +378,19 @@ export default function CreateDifuntoPage() {
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
             <div>
-              <label className={LABEL_CLS}>Bóveda *</label>
-              <select
-                className={INPUT_CLS}
+              <Select
+                label="Bóveda"
                 required
                 value={formData.bovedaId}
                 onChange={(e) => set('bovedaId', e.target.value)}
-              >
-                <option value="">Seleccionar bóveda…</option>
-                {bovedas.map((boveda) => (
-                  <option key={boveda.id} value={boveda.id}>
-                    {boveda.numero} — {boveda.bloque?.nombre || 'Sin bloque'}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Seleccionar bóveda…' },
+                  ...bovedas.map((boveda) => ({
+                    value: boveda.id,
+                    label: `${boveda.numero} — ${boveda.bloque?.nombre || 'Sin bloque'}`,
+                  })),
+                ]}
+              />
             </div>
             <div className="sm:col-span-2">
               <label className={LABEL_CLS}>Observaciones</label>

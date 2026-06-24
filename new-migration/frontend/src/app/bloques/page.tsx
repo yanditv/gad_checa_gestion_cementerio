@@ -12,11 +12,13 @@ import {
   Plus,
   Search,
   Trash2,
+  X,
 } from 'lucide-react';
 import { bloquesApi, PaginationMeta } from '@/lib/api';
 import {
   DataTable,
   EmptyState,
+  Select,
   type DataTableColumn,
 } from '@/components/ui';
 
@@ -220,24 +222,57 @@ export default function BloquesPage() {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder="Buscar bloques..."
-              value={search}
+        <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-[minmax(18rem,30rem)_minmax(14rem,18rem)_auto] md:items-end">
+          <div className="space-y-1">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700" htmlFor="bloques-search">
+              <Search className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+              Buscar
+            </label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                id="bloques-search"
+                type="search"
+                placeholder="Buscar bloques..."
+                value={search}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
+          </div>
+          <div>
+            <Select
+              label="Tipo"
+              aria-label="Filtrar por tipo de bloque"
+              value={filterTipo}
               onChange={(e) => {
                 setPage(1);
-                setSearch(e.target.value);
+                setFilterTipo(e.target.value);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              options={[
+                { value: '', label: 'Tipo de bloque: Todos' },
+                { value: 'Nichos', label: 'Nichos' },
+                { value: 'Bovedas', label: 'Bovedas' },
+              ]}
+              wrapperClassName="gap-1"
             />
           </div>
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            disabled={!search && !filterTipo}
+            className="inline-flex h-10 w-fit items-center justify-center gap-1.5 self-end justify-self-start rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 md:justify-self-end"
+          >
+            <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            Limpiar
+          </button>
         </div>
 
         {error && (

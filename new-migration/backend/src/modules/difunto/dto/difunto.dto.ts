@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsInt,
+  Matches,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -24,6 +25,7 @@ export class CreateDifuntoDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @Matches(/^\d+$/, { message: 'La identificación debe contener solo números' })
   numeroIdentificacion?: string;
 
   @ApiProperty()
@@ -127,6 +129,7 @@ export class UpdateDifuntoDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @Matches(/^\d+$/, { message: 'La identificación debe contener solo números' })
   numeroIdentificacion?: string;
 
   @ApiProperty({ required: false })

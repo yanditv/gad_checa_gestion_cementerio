@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { bloquesApi } from '@/lib/api';
+import { Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -185,27 +186,27 @@ export default function EditBloquePage() {
               </div>
 
               <div>
-                <label className={LABEL_CLS}>Estado</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Estado"
                   value={formData.estado ? 'activo' : 'inactivo'}
                   onChange={(e) => setFormData((prev) => ({ ...prev, estado: e.target.value === 'activo' }))}
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                </select>
+                  options={[
+                    { value: 'activo', label: 'Activo' },
+                    { value: 'inactivo', label: 'Inactivo' },
+                  ]}
+                />
               </div>
 
               <div>
-                <label className={LABEL_CLS}>Tipo</label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo"
                   value={formData.tipo}
                   onChange={(e) => setFormData((prev) => ({ ...prev, tipo: e.target.value }))}
-                >
-                  <option value="Bovedas">Bóvedas</option>
-                  <option value="Nichos">Nichos</option>
-                </select>
+                  options={[
+                    { value: 'Bovedas', label: 'Bóvedas' },
+                    { value: 'Nichos', label: 'Nichos' },
+                  ]}
+                />
               </div>
               <div>
                 <label className={LABEL_CLS}>Tarifa Base ($)</label>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowUpRight,
+  CalendarDays,
   Check,
   CircleCheck,
   CircleOff,
@@ -19,8 +20,17 @@ import {
   UserX,
   X,
 } from 'lucide-react';
-import { bovedasApi, personasApi } from '@/lib/api';
-import { Button, DataTable, Modal, type DataTableColumn } from '@/components/ui';
+import { bovedasApi, difuntosApi, personasApi } from '@/lib/api';
+import {
+  Button,
+  DataTable,
+  DatePicker,
+  Input,
+  Modal,
+  Select,
+  Textarea,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface Persona {
   id: number;
@@ -117,6 +127,7 @@ export default function BovedaDetailsPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPropietarioModal, setShowPropietarioModal] = useState(false);
+  const [showDifuntoModal, setShowDifuntoModal] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -422,17 +433,30 @@ export default function BovedaDetailsPage({
       })()}
 
       {/* Difuntos */}
-      {boveda.difuntos.length > 0 && (
-        <Card title="Difuntos en la bóveda">
-          <div className="-m-5">
+      <Card title={`Difuntos en la bóveda · ${boveda.difuntos.length}`}>
+        <div className="mb-4 flex justify-end">
+          <Button
+            type="button"
+            leftIcon={<UserPlus className="h-4 w-4" aria-hidden="true" />}
+            onClick={() => setShowDifuntoModal(true)}
+          >
+            Registrar difunto
+          </Button>
+        </div>
+        {boveda.difuntos.length > 0 ? (
+          <div className="-m-5 mt-0">
             <DataTable
               columns={difuntosColumns}
               rows={boveda.difuntos}
               rowKey={(d) => d.id}
             />
           </div>
-        </Card>
-      )}
+        ) : (
+          <p className="text-sm text-slate-600">
+            Esta bóveda aún no tiene difuntos registrados.
+          </p>
+        )}
+      </Card>
 
       {/* Histórico de contratos */}
       <Card title={`Histórico de contratos · ${historial.length}`}>
@@ -544,6 +568,18 @@ export default function BovedaDetailsPage({
           }}
         />
       )}
+
+      {showDifuntoModal && (
+        <RegistrarDifuntoModal
+          bovedaId={boveda.id}
+          bovedaNumero={boveda.numero}
+          onClose={() => setShowDifuntoModal(false)}
+          onSaved={() => {
+            setShowDifuntoModal(false);
+            void load();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -554,6 +590,137 @@ function Field({ label, value }: { label: string; value: string | null | undefin
       <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-slate-700">{value || '—'}</p>
     </div>
+  );
+}
+
+function RegistrarDifuntoModal({
+  bovedaId,
+  bovedaNumero,
+  onClose,
+  onSaved,
+}: {
+  bovedaId: number;
+  bovedaNumero: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    nombre: '',
+    apellido: '',
+    numeroIdentificacion: '',
+    fechaDefuncion: '',
+    fechaInhumacion: '',
+    causaMuerte: '',
+    observaciones: '',
+  });
+
+  async function guardar() {
+    setSaving(true);
+    setError(null);
+    try {
+      await difuntosApi.create({
+        bovedaId,
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        numeroIdentificacion: formData.numeroIdentificacion.trim() || undefined,
+        fechaDefuncion: formData.fechaDefuncion || undefined,
+        fechaInhumacion: formData.fechaInhumacion || undefined,
+        causaMuerte: formData.causaMuerte.trim() || undefined,
+        observaciones: formData.observaciones.trim() || undefined,
+      });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo registrar el difunto');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const canSave = formData.nombre.trim() && formData.apellido.trim();
+
+  return (
+    <Modal
+      open
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      title="Registrar difunto"
+      description={`Registro directo en la bóveda ${bovedaNumero}, sin crear contrato.`}
+      size="lg"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={guardar}
+            disabled={saving || !canSave}
+            leftIcon={saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
+          >
+            {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {error && (
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+            {error}
+          </div>
+        )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            label="Nombres"
+            required
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+            placeholder="Nombres del difunto"
+          />
+          <Input
+            label="Apellidos"
+            required
+            value={formData.apellido}
+            onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+            placeholder="Apellidos del difunto"
+          />
+          <Input
+            label="Identificación"
+            value={formData.numeroIdentificacion}
+            onChange={(e) =>
+              setFormData({ ...formData, numeroIdentificacion: e.target.value })
+            }
+            placeholder="Opcional"
+          />
+          <DatePicker
+            label="Fecha de defunción"
+            labelIcon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
+            value={formData.fechaDefuncion}
+            onChange={(value) => setFormData({ ...formData, fechaDefuncion: value })}
+          />
+          <DatePicker
+            label="Fecha de inhumación"
+            labelIcon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
+            value={formData.fechaInhumacion}
+            onChange={(value) => setFormData({ ...formData, fechaInhumacion: value })}
+          />
+          <Input
+            label="Causa de muerte"
+            value={formData.causaMuerte}
+            onChange={(e) => setFormData({ ...formData, causaMuerte: e.target.value })}
+            placeholder="Opcional"
+          />
+          <Textarea
+            label="Observaciones"
+            wrapperClassName="sm:col-span-2"
+            value={formData.observaciones}
+            onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+            rows={3}
+          />
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -716,7 +883,7 @@ function PropietarioModal({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Mínimo 2 caracteres..."
                 autoFocus
-                className={`${INPUT_CLS} pl-9`}
+                className={`${INPUT_CLS} pl-12`}
               />
             </div>
 
@@ -798,11 +965,9 @@ function PropietarioModal({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
-                  Tipo ID *
-                </label>
-                <select
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo ID"
+                  required
                   value={formData.tipoIdentificacion}
                   onChange={(e) =>
                     setFormData({
@@ -810,10 +975,11 @@ function PropietarioModal({
                       tipoIdentificacion: e.target.value,
                     })
                   }
-                >
-                  <option value="Cédula">Cédula</option>
-                  <option value="RUC">RUC</option>
-                </select>
+                  options={[
+                    { value: 'Cédula', label: 'Cédula' },
+                    { value: 'RUC', label: 'RUC' },
+                  ]}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">

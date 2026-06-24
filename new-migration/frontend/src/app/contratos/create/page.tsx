@@ -15,8 +15,8 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { Button, DatePicker, Modal } from '@/components/ui';
-import { contratosApi, personasApi } from '@/lib/api';
+import { Button, DatePicker, Modal, Select } from '@/components/ui';
+import { contratosApi, personasApi, tiposEspacioApi, type TipoEspacio } from '@/lib/api';
 import { clearWizard, loadWizard, saveWizard } from '@/lib/wizardStorage';
 import dynamic from 'next/dynamic';
 
@@ -180,7 +180,8 @@ export default function CreateContratoPage() {
   const [showResponsableModal, setShowResponsableModal] = useState(false);
   const [showBovedaModal, setShowBovedaModal] = useState(false);
   const [bovedaSearch, setBovedaSearch] = useState('');
-  const [bovedaTipo, setBovedaTipo] = useState('');
+  const [bovedaTipoEspacioId, setBovedaTipoEspacioId] = useState('');
+  const [tiposEspacio, setTiposEspacio] = useState<TipoEspacio[]>([]);
   const [bovedasDisponibles, setBovedasDisponibles] = useState<any[]>([]);
   const [bovedasMeta, setBovedasMeta] = useState<any>(null);
   const [bovedasPage, setBovedasPage] = useState(1);
@@ -260,14 +261,16 @@ export default function CreateContratoPage() {
     async function loadInitialData() {
       setLoading(true);
       try {
-        const [createMetadata, personasResult, numeroPreview] = await Promise.all([
+        const [createMetadata, personasResult, numeroPreview, tiposEspacioResult] = await Promise.all([
           contratosApi.getCreateMetadata(),
           personasApi.findPage({ page: 1, limit: 100, search: '' }),
           contratosApi.getNumeroSecuencial(),
+          tiposEspacioApi.findAll(),
         ]);
 
         setMetadata(createMetadata);
         setPersonas(personasResult.data || []);
+        setTiposEspacio(tiposEspacioResult);
 
         const draft = loadWizard<typeof form>(WIZARD_KEY);
         if (draft) {
@@ -371,7 +374,7 @@ export default function CreateContratoPage() {
           page: bovedasPage,
           limit: 10,
           search: bovedaSearch,
-          tipo: bovedaTipo || undefined,
+          tipoEspacioId: bovedaTipoEspacioId || undefined,
         });
         setBovedasDisponibles(result.data || []);
         setBovedasMeta(result.meta);
@@ -380,7 +383,7 @@ export default function CreateContratoPage() {
       }
     }
     loadBovedasDisponibles();
-  }, [showBovedaModal, bovedasPage, bovedaSearch, bovedaTipo]);
+  }, [showBovedaModal, bovedasPage, bovedaSearch, bovedaTipoEspacioId]);
 
   async function refreshNumeroSecuencial(bovedaId: number, esRenovacion: boolean) {
     if (!bovedaId) return;
@@ -1087,10 +1090,8 @@ export default function CreateContratoPage() {
               />
             </div>
             <div>
-              <Label htmlFor="difunto-descuento">Descuento</Label>
-              <select
-                id="difunto-descuento"
-                className={INPUT_CLS}
+              <Select
+                label="Descuento"
                 value={form.difunto.descuentoId}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -1098,14 +1099,14 @@ export default function CreateContratoPage() {
                     difunto: { ...prev.difunto, descuentoId: Number(e.target.value) },
                   }))
                 }
-              >
-                <option value={0}>Sin descuento</option>
-                {metadata.descuentos?.map((item: any) => (
-                  <option key={item.id} value={item.id}>
-                    {item.nombre} — {Number(item.porcentaje).toFixed(2)}%
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: 0, label: 'Sin descuento' },
+                  ...(metadata.descuentos ?? []).map((item: any) => ({
+                    value: item.id,
+                    label: `${item.nombre} — ${Number(item.porcentaje).toFixed(2)}%`,
+                  })),
+                ]}
+              />
             </div>
             <DatePicker
               id="difunto-fecha-nacimiento"
@@ -1146,7 +1147,7 @@ export default function CreateContratoPage() {
                   placeholder="Buscar responsable existente…"
                   value={responsableSearch}
                   onChange={(e) => setResponsableSearch(e.target.value)}
-                  className={INPUT_CLS.replace('px-3', 'pl-9 pr-3')}
+                  className={`${INPUT_CLS} pl-12`}
                 />
               </div>
               <button
@@ -1296,10 +1297,8 @@ export default function CreateContratoPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <Label htmlFor="pago-plan">Plan de cuotas</Label>
-                <select
-                  id="pago-plan"
-                  className={INPUT_CLS}
+                <Select
+                  label="Plan de cuotas"
                   value={form.pago.plan}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -1311,22 +1310,15 @@ export default function CreateContratoPage() {
                       },
                     }))
                   }
-                >
-                  {PLAN_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  options={PLAN_OPTIONS}
+                />
                 <p className="mt-1 text-xs text-slate-600">
                   Define cuántas cuotas se generan y su frecuencia.
                 </p>
               </div>
               <div>
-                <Label htmlFor="pago-tipo">Tipo de pago</Label>
-                <select
-                  id="pago-tipo"
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo de pago"
                   value={form.pago.tipoPago}
                   onChange={(e) =>
                     setForm((prev) => ({
@@ -1334,13 +1326,11 @@ export default function CreateContratoPage() {
                       pago: { ...prev.pago, tipoPago: e.target.value },
                     }))
                   }
-                >
-                  {metadata.tiposPago?.map((tipo: string) => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
-                    </option>
-                  ))}
-                </select>
+                  options={(metadata.tiposPago ?? []).map((tipo: string) => ({
+                    value: tipo,
+                    label: tipo,
+                  }))}
+                />
               </div>
               <div>
                 <Label htmlFor="pago-comprobante">Número de comprobante</Label>
@@ -1627,19 +1617,21 @@ export default function CreateContratoPage() {
                 />
               </div>
               <div>
-                <select
-                  className={INPUT_CLS}
-                  value={bovedaTipo}
+                <Select
+                  label="Tipo"
+                  value={bovedaTipoEspacioId}
                   onChange={(e) => {
                     setBovedasPage(1);
-                    setBovedaTipo(e.target.value);
+                    setBovedaTipoEspacioId(e.target.value);
                   }}
-                >
-                  <option value="">Todos los tipos</option>
-                  <option value="Boveda">Bóveda</option>
-                  <option value="Nicho">Nicho</option>
-                  <option value="Tumulo">Tumulo</option>
-                </select>
+                  options={[
+                    { value: '', label: 'Todos los tipos' },
+                    ...tiposEspacio.map((tipo) => ({
+                      value: String(tipo.id),
+                      label: tipo.nombre,
+                    })),
+                  ]}
+                />
               </div>
             </div>
 
@@ -1796,12 +1788,8 @@ export default function CreateContratoPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="responsable-tipo-identificacion">
-                  Tipo de identificación
-                </Label>
-                <select
-                  id="responsable-tipo-identificacion"
-                  className={INPUT_CLS}
+                <Select
+                  label="Tipo de identificación"
                   value={newResponsable.tipoIdentificacion}
                   onChange={(e) =>
                     setNewResponsable((prev) => ({
@@ -1809,10 +1797,11 @@ export default function CreateContratoPage() {
                       tipoIdentificacion: e.target.value,
                     }))
                   }
-                >
-                  <option value="Cedula">Cédula</option>
-                  <option value="RUC">RUC</option>
-                </select>
+                  options={[
+                    { value: 'Cedula', label: 'Cédula' },
+                    { value: 'RUC', label: 'RUC' },
+                  ]}
+                />
               </div>
               <div>
                 <Label htmlFor="responsable-numero-identificacion">

@@ -13,6 +13,7 @@ import {
   Search,
 } from 'lucide-react';
 import { cuotasApi, pagosApi } from '@/lib/api';
+import { Select } from '@/components/ui';
 
 function formatCurrency(value: number | string | null | undefined) {
   return new Intl.NumberFormat('es-EC', {
@@ -143,35 +144,41 @@ export default function CobrosPage() {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por contrato, difunto o recibo..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
-            />
+        <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-[minmax(18rem,28rem)_minmax(14rem,18rem)] md:items-end">
+          <div className="space-y-1">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700" htmlFor="cobros-search">
+              <Search className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+              Buscar
+            </label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                id="cobros-search"
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por contrato, difunto o recibo..."
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-600">
-              Estado
-            </label>
-            <select
+          <div>
+            <Select
+              label="Estado"
               value={estadoFiltro}
               onChange={(e) => setEstadoFiltro(e.target.value as 'todos' | 'pendiente' | 'pagado')}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="todos">Todos</option>
-              <option value="pendiente">Pendientes</option>
-              <option value="pagado">Pagados</option>
-            </select>
+              options={[
+                { value: 'todos', label: 'Todos' },
+                { value: 'pendiente', label: 'Pendientes' },
+                { value: 'pagado', label: 'Pagados' },
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
         </div>
 

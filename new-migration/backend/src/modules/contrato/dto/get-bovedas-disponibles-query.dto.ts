@@ -5,4 +5,8 @@ export class GetBovedasDisponiblesQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   tipo?: string;
+
+  @IsOptional()
+  @IsString()
+  tipoEspacioId?: string;
 }

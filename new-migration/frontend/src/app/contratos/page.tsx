@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { contratosApi } from '@/lib/api';
-import { DataTable, EmptyState, type DataTableColumn } from '@/components/ui';
+import { DataTable, EmptyState, Select, type DataTableColumn } from '@/components/ui';
 
 type EstadoFiltro = '' | 'activos' | 'porvencer' | 'vencidos' | 'inactivos';
 
@@ -400,53 +400,56 @@ export default function ContratosPage() {
       {/* Tarjeta principal */}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
         {/* Filtros */}
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder="Buscar por número, difunto o identificación…"
-              value={searchTerm}
-              onChange={(e) => {
-                setPage(1);
-                setSearchTerm(e.target.value);
-              }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
-            />
+        <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-[minmax(20rem,32rem)_minmax(14rem,20rem)_auto] md:items-end">
+          <div className="space-y-1">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700" htmlFor="contratos-search">
+              <Search className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+              Buscar
+            </label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                id="contratos-search"
+                type="search"
+                placeholder="Buscar por número, difunto o identificación…"
+                value={searchTerm}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchTerm(e.target.value);
+                }}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="estado-filter"
-              className="text-xs font-medium uppercase tracking-wide text-slate-600"
-            >
-              Estado
-            </label>
-            <select
+          <div>
+            <Select
+              label="Estado"
               id="estado-filter"
               value={estado}
               onChange={(e) => {
                 setPage(1);
                 setEstado(e.target.value as EstadoFiltro);
               }}
-              className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            >
-              <option value="">Todos</option>
-              <option value="activos">Activos</option>
-              <option value="porvencer">Por vencer (30 días)</option>
-              <option value="vencidos">Vencidos</option>
-              <option value="inactivos">Inactivos</option>
-            </select>
+              options={[
+                { value: '', label: 'Todos' },
+                { value: 'activos', label: 'Activos' },
+                { value: 'porvencer', label: 'Por vencer (30 días)' },
+                { value: 'vencidos', label: 'Vencidos' },
+                { value: 'inactivos', label: 'Inactivos' },
+              ]}
+              wrapperClassName="gap-1"
+            />
           </div>
 
           <button
             type="button"
             onClick={clearFilters}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-10 w-fit items-center justify-center gap-1.5 self-end justify-self-start rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 md:justify-self-end"
           >
             <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Limpiar
           </button>

@@ -81,6 +81,10 @@ export class ContratoService {
     const search = query.search?.trim();
     const tipo = query.tipo;
     const today = new Date();
+    const parsedTipoEspacioId = query.tipoEspacioId ? Number(query.tipoEspacioId) : undefined;
+    if (query.tipoEspacioId && !Number.isInteger(parsedTipoEspacioId)) {
+      throw new BadRequestException('El tipo de espacio no es válido');
+    }
 
     const where: any = {
       estado: true,
@@ -91,6 +95,7 @@ export class ContratoService {
           OR: [{ fechaFin: null }, { fechaFin: { gte: today } }],
         },
       },
+      ...(parsedTipoEspacioId ? { tipoEspacioId: parsedTipoEspacioId } : {}),
       ...(tipo ? { tipo: { equals: tipo, mode: 'insensitive' } } : {}),
       ...(search
         ? {

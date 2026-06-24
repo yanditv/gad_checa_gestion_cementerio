@@ -12,7 +12,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Avatar, Button } from '@/components/ui';
+import { Avatar, Button, Select } from '@/components/ui';
 import {
   authApi,
   contratosApi,
@@ -724,22 +724,18 @@ export default function DifuntoDetailsPage({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">
-                  Motivo <span className="text-red-500">*</span>
-                </label>
-                <select
+                <Select
+                  label="Motivo"
+                  required
                   value={motivo}
                   onChange={(e) =>
                     setMotivo(e.target.value as MotivoExhumacion)
                   }
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-                >
-                  {MOTIVOS_EXHUMACION.map((m) => (
-                    <option key={m} value={m}>
-                      {MOTIVO_EXHUMACION_LABEL[m]}
-                    </option>
-                  ))}
-                </select>
+                  options={MOTIVOS_EXHUMACION.map((m) => ({
+                    value: m,
+                    label: MOTIVO_EXHUMACION_LABEL[m],
+                  }))}
+                />
               </div>
             </div>
 
@@ -758,22 +754,19 @@ export default function DifuntoDetailsPage({
 
             {motivo === 'traslado' && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">
-                  Bóveda destino <span className="text-red-500">*</span>
-                </label>
-                <select
+                <Select
+                  label="Bóveda destino"
+                  required
                   value={bovedaDestinoId}
                   onChange={(e) => setBovedaDestinoId(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-                >
-                  <option value="">Seleccione una bóveda disponible…</option>
-                  {bovedasDestino.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      Bóveda {b.numero}
-                      {b.bloque?.nombre ? ` · ${b.bloque.nombre}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccione una bóveda disponible…' },
+                    ...bovedasDestino.map((b) => ({
+                      value: b.id,
+                      label: `Bóveda ${b.numero}${b.bloque?.nombre ? ` · ${b.bloque.nombre}` : ''}`,
+                    })),
+                  ]}
+                />
                 <p className="mt-1 text-xs text-slate-600">
                   El traslado reasigna al difunto a la bóveda seleccionada.
                 </p>
