@@ -237,14 +237,14 @@ export function DocumentosSection({ contratoId }: { contratoId: number }) {
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-      <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+      <header className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 bg-slate-50/30">
         <h3 className="text-sm font-semibold text-slate-700">
           Documentos adjuntos
         </h3>
         <span className="text-xs text-slate-600">PDF · máx. 10 MB</span>
       </header>
 
-      <div className="p-5">
+      <div className="p-4">
         {error && (
           <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
             {error}
