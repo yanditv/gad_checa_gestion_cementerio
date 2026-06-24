@@ -1147,7 +1147,7 @@ export default function CreateContratoPage() {
                   placeholder="Buscar responsable existente…"
                   value={responsableSearch}
                   onChange={(e) => setResponsableSearch(e.target.value)}
-                  className={`${INPUT_CLS} pl-12`}
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-12 pr-3 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-600 read-only:bg-slate-50"
                 />
               </div>
               <button

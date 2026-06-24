@@ -232,7 +232,7 @@ export function DatePicker({
           aria-modal="true"
           aria-label="Elegir fecha"
           onKeyDown={onDialogKeyDown}
-          className="w-[19rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lifted"
+          className="z-[1200] w-[19rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lifted"
         >
           {/* Cabecera: navegación directa por mes y año sin desplegables largos. */}
           <div className="mb-2 grid grid-cols-[1.75rem_1fr_1.75rem] items-center gap-2 px-1">
