@@ -749,7 +749,7 @@ function PropietarioModal({
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
-    tipoIdentificacion: 'Cédula',
+    tipoIdentificacion: 'CED',
     numeroIdentificacion: '',
     telefono: '',
     email: '',
@@ -883,7 +883,7 @@ function PropietarioModal({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Mínimo 2 caracteres..."
                 autoFocus
-                className={`${INPUT_CLS} pl-12`}
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-12 pr-3 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-600 read-only:bg-slate-50"
               />
             </div>
 
@@ -976,8 +976,9 @@ function PropietarioModal({
                     })
                   }
                   options={[
-                    { value: 'Cédula', label: 'Cédula' },
+                    { value: 'CED', label: 'Cédula' },
                     { value: 'RUC', label: 'RUC' },
+                    { value: 'PAS', label: 'Pasaporte' },
                   ]}
                 />
               </div>

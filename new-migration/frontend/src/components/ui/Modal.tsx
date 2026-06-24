@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  useCallback,
   useEffect,
   useId,
   useRef,
@@ -63,14 +62,25 @@ export function Modal({
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
   const descId = useId();
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const { body } = document;
+    const prevOverflow = body.style.overflow;
+    body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -94,16 +104,8 @@ export function Modal({
         e.preventDefault();
         first.focus();
       }
-    },
-    [onClose],
-  );
+    };
 
-  useEffect(() => {
-    if (!open) return;
-    previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const { body } = document;
-    const prevOverflow = body.style.overflow;
-    body.style.overflow = 'hidden';
     document.addEventListener('keydown', handleKeyDown);
 
     // Foco inicial dentro del panel.
@@ -111,7 +113,9 @@ export function Modal({
       const panel = panelRef.current;
       if (!panel) return;
       const target =
-        panel.querySelector<HTMLElement>(FOCUSABLE) ?? panel;
+        panel.querySelector<HTMLElement>('[data-autofocus], input:not([disabled]), textarea:not([disabled]), select:not([disabled])') ??
+        panel.querySelector<HTMLElement>(FOCUSABLE) ??
+        panel;
       target.focus();
     });
 
@@ -121,7 +125,7 @@ export function Modal({
       body.style.overflow = prevOverflow;
       previouslyFocused.current?.focus?.();
     };
-  }, [open, handleKeyDown]);
+  }, [open]);
 
   if (!open || typeof document === 'undefined') return null;
 
