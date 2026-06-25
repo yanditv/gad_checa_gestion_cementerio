@@ -1618,7 +1618,6 @@ export default function CreateContratoPage() {
               </div>
               <div>
                 <Select
-                  label="Tipo"
                   value={bovedaTipoEspacioId}
                   onChange={(e) => {
                     setBovedasPage(1);
