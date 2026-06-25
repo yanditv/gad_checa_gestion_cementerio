@@ -67,7 +67,10 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
-      throw new Error(error.message || `Error ${response.status}`);
+      const message = Array.isArray(error.message)
+        ? error.message.join(', ')
+        : error.message || error.error?.message || `Error ${response.status}`;
+      throw new Error(message);
     }
 
     const payload = await response.json();
@@ -131,7 +134,10 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
-      throw new Error(error.message || `Error ${response.status}`);
+      const message = Array.isArray(error.message)
+        ? error.message.join(', ')
+        : error.message || error.error?.message || `Error ${response.status}`;
+      throw new Error(message);
     }
 
     return response.json() as Promise<T>;
