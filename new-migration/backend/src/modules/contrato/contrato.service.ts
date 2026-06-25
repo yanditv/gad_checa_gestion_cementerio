@@ -17,6 +17,8 @@ import {
 import { RenovarContratoDto } from './dto/renovar-contrato.dto';
 import { RelacionarContratosDto } from './dto/relacionar-contratos.dto';
 import { UpdateContratoDto } from './dto/request/update-contrato.dto';
+import { GetContratosQueryDto } from './dto/get-contratos-query.dto';
+import { GetBovedasDisponiblesQueryDto } from './dto/get-bovedas-disponibles-query.dto';
 import {
   resolverPrefijoBase,
   resolverTarifaContrato,
@@ -74,21 +76,19 @@ export class ContratoService {
     };
   }
 
-  async getBovedasDisponibles(
-    query: PaginationQueryDto,
-    tipo?: string,
-    tipoEspacioId?: string,
-  ) {
+  async getBovedasDisponibles(query: GetBovedasDisponiblesQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
+    const tipo = query.tipo;
     const today = new Date();
-    const parsedTipoEspacioId = tipoEspacioId ? Number(tipoEspacioId) : undefined;
-    if (tipoEspacioId && !Number.isInteger(parsedTipoEspacioId)) {
+    const parsedTipoEspacioId = query.tipoEspacioId ? Number(query.tipoEspacioId) : undefined;
+    if (query.tipoEspacioId && !Number.isInteger(parsedTipoEspacioId)) {
       throw new BadRequestException('El tipo de espacio no es válido');
     }
 
     const where: any = {
       estado: true,
+      propietarioId: null, // Excluir bóvedas con propietario
       contratos: {
         none: {
           estado: true,
@@ -142,7 +142,7 @@ export class ContratoService {
     };
   }
 
-  async findAll(query: PaginationQueryDto & { estado?: string }) {
+  async findAll(query: GetContratosQueryDto) {
     const { page, limit, skip } = normalizePagination(query.page, query.limit);
     const search = query.search?.trim();
 

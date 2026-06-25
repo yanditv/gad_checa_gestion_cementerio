@@ -1,0 +1,12 @@
+import { IsOptional, IsString } from 'class-validator';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
+
+export class GetBovedasDisponiblesQueryDto extends PaginationQueryDto {
+  @IsOptional()
+  @IsString()
+  tipo?: string;
+
+  @IsOptional()
+  @IsString()
+  tipoEspacioId?: string;
+}

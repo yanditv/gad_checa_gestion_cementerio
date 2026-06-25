@@ -155,13 +155,12 @@ export default function NuevoBienPage() {
           className="lg:col-span-2"
           header={<Card.Title icon={<ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>Datos del bien</Card.Title>}
         >
-          <form onSubmit={handleSubmit} className="space-y-6 p-5">
+          <form onSubmit={handleSubmit} className="space-y-6 px-5">
             {error && (
               <div className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-inset ring-danger-200">
                 {error}
               </div>
             )}
-
             <FormSection divided={false}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
@@ -217,7 +216,14 @@ export default function NuevoBienPage() {
                 />
               </div>
             </FormSection>
-
+            <FormSection title="Fotografía" icon={<Camera className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+              <ImageUpload
+                shape="square"
+                label="Foto (opcional)"
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+                onChange={setFotoFile}
+              />
+            </FormSection>
             <FormSection
               title="Adquisición y depreciación"
               description="Datos contables del bien (CGE 406-03)."
@@ -288,16 +294,7 @@ export default function NuevoBienPage() {
               </Select>
             </FormSection>
 
-            <FormSection title="Fotografía" icon={<Camera className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-              <ImageUpload
-                shape="square"
-                label="Foto (opcional)"
-                hint="JPG, PNG o WEBP, máx. 5 MB"
-                onChange={setFotoFile}
-              />
-            </FormSection>
-
-            <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-5 pb-5">
               <Button
                 variant="secondary"
                 onClick={() => router.push('/inventario/bienes')}
