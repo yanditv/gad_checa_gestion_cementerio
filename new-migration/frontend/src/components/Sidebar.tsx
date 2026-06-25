@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -85,6 +86,32 @@ interface SidebarProps {
 
 export function Sidebar({ user, open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [cemeteryName, setCemeteryName] = useState<string>('Cementerio Checa');
+  const [logoUrl, setLogoUrl] = useState<string>('/logo.png');
+
+  useEffect(() => {
+    // 1. Cargar nombre del cementerio
+    fetch('/api/cementerios', { credentials: 'same-origin', cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+        if (list.length > 0 && list[0]?.nombre) {
+          setCemeteryName(list[0].nombre);
+        }
+      })
+      .catch(() => undefined);
+
+    // 2. Cargar información del GAD (para el logo)
+    fetch('/api/cementerios/gad-informacion', { credentials: 'same-origin', cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        const data = payload?.data ?? payload;
+        if (data?.logoUrl) {
+          setLogoUrl(data.logoUrl);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   const isActive = (item: Extract<NavItem, { type: 'item' }>) => {
     const href = item.href;
@@ -130,16 +157,17 @@ export function Sidebar({ user, open, onClose }: SidebarProps) {
         <div className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 px-4">
           <Link
             href="/"
-            className="flex items-center gap-1"
+            className="flex items-center gap-2 min-w-0 flex-1"
             onClick={onClose}
           >
             <img
-              src="/logo.png"
-              alt="Cementerio GAD Checa"
-              className="h-10 w-10 object-contain"
+              src={logoUrl}
+              alt={cemeteryName}
+              className="h-10 w-10 shrink-0 object-contain rounded-lg"
+              onError={() => setLogoUrl('/logo.png')}
             />
-            <span className="font-display text-xl font-bold lowercase tracking-tight text-brand-dark">
-              cementer<span className="text-brand-accent">io</span>
+            <span className="font-display text-sm font-bold tracking-tight text-slate-800 line-clamp-2 leading-snug">
+              {cemeteryName}
             </span>
           </Link>
         </div>
