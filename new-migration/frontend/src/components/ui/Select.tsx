@@ -150,7 +150,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             style={style}
             role="listbox"
             aria-labelledby={fieldId}
-            className="z-50 max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
+            className="z-[1200] max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
           >
             {optionRows.map((opt) => {
               const optValue = String(opt.value);

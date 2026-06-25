@@ -14,16 +14,9 @@ interface UsePopoverOptions {
   estimatedHeight?: number;
   /** Igualar el ancho del popover al del trigger (selects). */
   matchTriggerWidth?: boolean;
+  /** Z-index del popover. Por defecto es 1200 para mostrarse sobre modales. */
+  zIndex?: number;
 }
-
-const hiddenStyle: CSSProperties = {
-  position: 'fixed',
-  left: 0,
-  top: 0,
-  zIndex: 50,
-  visibility: 'hidden',
-  pointerEvents: 'none',
-};
 
 /**
  * Posicionamiento de popovers anclados (DatePicker, Select).
@@ -37,9 +30,17 @@ const hiddenStyle: CSSProperties = {
 export function usePopover<T extends HTMLElement = HTMLElement>({
   estimatedHeight = 320,
   matchTriggerWidth = false,
+  zIndex = 1200,
 }: UsePopoverOptions = {}) {
   const [open, setOpen] = useState(false);
-  const [style, setStyle] = useState<CSSProperties>(hiddenStyle);
+  const [style, setStyle] = useState<CSSProperties>({
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    zIndex,
+    visibility: 'hidden',
+    pointerEvents: 'none',
+  });
   const triggerRef = useRef<T | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
 
@@ -56,13 +57,13 @@ export function usePopover<T extends HTMLElement = HTMLElement>({
       position: 'fixed',
       left: Math.max(8, Math.min(rect.left, window.innerWidth - 8 - (popRef.current?.offsetWidth || rect.width))),
       top: openUp ? rect.top - height - gap : rect.bottom + gap,
-      zIndex: 50,
+      zIndex,
       visibility: 'visible',
       pointerEvents: 'auto',
     };
     if (matchTriggerWidth) next.width = rect.width;
     setStyle(next);
-  }, [estimatedHeight, matchTriggerWidth]);
+  }, [estimatedHeight, matchTriggerWidth, zIndex]);
 
   // Posicionar al abrir (layout effect: antes del paint, sin parpadeo).
   useLayoutEffect(() => {
@@ -70,8 +71,17 @@ export function usePopover<T extends HTMLElement = HTMLElement>({
   }, [open, reposition]);
 
   useEffect(() => {
-    if (!open) setStyle(hiddenStyle);
-  }, [open]);
+    if (!open) {
+      setStyle({
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        zIndex,
+        visibility: 'hidden',
+        pointerEvents: 'none',
+      });
+    }
+  }, [open, zIndex]);
 
   useEffect(() => {
     if (!open) return;
