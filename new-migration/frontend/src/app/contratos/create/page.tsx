@@ -10,6 +10,7 @@ import {
   FilePlus,
   Info,
   List,
+  Loader2,
   Plus,
   Search,
   Trash2,
@@ -17,6 +18,16 @@ import {
 import { Button, DatePicker, Modal, Select } from '@/components/ui';
 import { contratosApi, personasApi, tiposEspacioApi, type TipoEspacio } from '@/lib/api';
 import { clearWizard, loadWizard, saveWizard } from '@/lib/wizardStorage';
+import dynamic from 'next/dynamic';
+
+const PDFPreview = dynamic(() => import('@/components/PDFPreview'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[650px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
+      Cargando visor de PDF…
+    </div>
+  ),
+});
 
 const WIZARD_KEY = 'contrato:v1';
 
@@ -155,6 +166,10 @@ export default function CreateContratoPage() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+
   const [metadata, setMetadata] = useState<any>({
     descuentos: [],
     bancos: [],
@@ -170,6 +185,7 @@ export default function CreateContratoPage() {
   const [bovedasDisponibles, setBovedasDisponibles] = useState<any[]>([]);
   const [bovedasMeta, setBovedasMeta] = useState<any>(null);
   const [bovedasPage, setBovedasPage] = useState(1);
+  const [bovedasPageInput, setBovedasPageInput] = useState('1');
   const [showContratosModal, setShowContratosModal] = useState(false);
   const [contratoSearch, setContratoSearch] = useState('');
   const [contratosList, setContratosList] = useState<any[]>([]);
@@ -297,6 +313,58 @@ export default function CreateContratoPage() {
     if (!hydrated.current) return;
     saveWizard(WIZARD_KEY, form);
   }, [form]);
+
+  useEffect(() => {
+    setBovedasPageInput(String(bovedasPage));
+  }, [bovedasPage]);
+
+  useEffect(() => {
+    if (step !== 4) {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+        setPdfUrl(null);
+      }
+      return;
+    }
+
+    let isMounted = true;
+    let url: string | null = null;
+
+    async function loadPdfPreview() {
+      setPdfLoading(true);
+      setPdfError('');
+      try {
+        const response = await fetch('/api/contratos/preview-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(form),
+        });
+        if (!response.ok) {
+          throw new Error('Error al generar la vista previa del PDF');
+        }
+        const blob = await response.blob();
+        if (!isMounted) return;
+        url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+      } catch (err: any) {
+        if (!isMounted) return;
+        setPdfError(err.message || 'No se pudo cargar la vista previa del PDF');
+      } finally {
+        if (isMounted) setPdfLoading(false);
+      }
+    }
+
+    loadPdfPreview();
+
+    return () => {
+      isMounted = false;
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [step, form]);
 
   useEffect(() => {
     if (!showBovedaModal) return;
@@ -746,32 +814,6 @@ export default function CreateContratoPage() {
 
   return (
     <div className="space-y-6">
-      {/* Banner superior */}
-      <div className="overflow-hidden rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 shadow-soft">
-        <div className="flex flex-col items-start justify-between gap-3 px-5 py-4 text-white sm:flex-row sm:items-center">
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20">
-              <FilePlus className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold">
-                Contrato de servicio de arrendamiento
-              </h2>
-              <p className="text-sm text-white/80">
-                {form.contrato.numeroSecuencial || 'Generando número de contrato…'}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/contratos"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
-          >
-            <List className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            Ver todos
-          </Link>
-        </div>
-      </div>
-
       {/* Stepper */}
       <Card>
         <ol className="flex flex-wrap gap-3">
@@ -1401,114 +1443,21 @@ export default function CreateContratoPage() {
         ) : null}
 
         {step === 4 ? (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-slate-200">
-              <header className="border-b border-slate-100 px-4 py-2">
-                <strong className="text-sm text-slate-700">Contrato</strong>
-              </header>
-              <div className="space-y-1.5 p-4 text-sm">
-                <p>
-                  <strong>Número:</strong> {form.contrato.numeroSecuencial}
-                </p>
-                <p>
-                  <strong>Bóveda:</strong> {form.contrato.bovedaLabel}
-                </p>
-                <p>
-                  <strong>Vigencia:</strong> {form.contrato.fechaInicio} al{' '}
-                  {form.contrato.fechaFin}
-                </p>
-                <p>
-                  <strong>Subtotal:</strong> ${Number(form.contrato.montoTotal).toFixed(2)}
-                </p>
-                {descuentoPorcentaje > 0 && (
-                  <p className="text-green-600 font-medium">
-                    <strong>Descuento ({descuentoPorcentaje}%):</strong> -${montoDescuento.toFixed(2)}
-                  </p>
-                )}
-                <p className="text-slate-900 font-bold">
-                  <strong>Total Neto:</strong> ${montoFinalConDescuento.toFixed(2)}
-                </p>
-                <p>
-                  <strong>Observaciones:</strong>{' '}
-                  {form.contrato.observaciones || '—'}
-                </p>
+          <div className="space-y-4">
+            {pdfLoading && (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500 bg-slate-50/50 rounded-xl border border-slate-200 border-dashed">
+                <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+                <span className="mt-2 text-sm">Generando vista previa del contrato…</span>
               </div>
-            </div>
-
-            <div className="rounded-lg border border-slate-200">
-              <header className="border-b border-slate-100 px-4 py-2">
-                <strong className="text-sm text-slate-700">Difunto</strong>
-              </header>
-              <div className="space-y-1.5 p-4 text-sm">
-                <p>
-                  <strong>Nombre:</strong> {form.difunto.nombres}{' '}
-                  {form.difunto.apellidos}
-                </p>
-                <p>
-                  <strong>Identificación:</strong>{' '}
-                  {form.difunto.numeroIdentificacion || '—'}
-                </p>
-                <p>
-                  <strong>Nacimiento:</strong>{' '}
-                  {form.difunto.fechaNacimiento || '—'}
-                </p>
-                <p>
-                  <strong>Defunción:</strong>{' '}
-                  {form.difunto.fechaFallecimiento || '—'}
-                </p>
+            )}
+            {pdfError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {pdfError}
               </div>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 lg:col-span-1">
-              <header className="border-b border-slate-100 px-4 py-2">
-                <strong className="text-sm text-slate-700">Responsables</strong>
-              </header>
-              <div className="space-y-2 p-4 text-sm">
-                {form.responsables.length === 0 ? (
-                  <p className="text-slate-600">Sin responsables.</p>
-                ) : (
-                  form.responsables.map((r) => (
-                    <div
-                      key={r.localId}
-                      className="rounded border border-slate-200 bg-slate-50/40 p-2"
-                    >
-                      <div className="font-medium text-slate-800">
-                        {r.nombres} {r.apellidos}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {r.numeroIdentificacion}
-                        {r.parentesco ? ` · ${r.parentesco}` : ''}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 lg:col-span-1">
-              <header className="border-b border-slate-100 px-4 py-2">
-                <strong className="text-sm text-slate-700">Pago</strong>
-              </header>
-              <div className="space-y-1.5 p-4 text-sm">
-                <p>
-                  <strong>Plan:</strong>{' '}
-                  {PLAN_OPTIONS.find((p) => p.value === form.pago.plan)?.label}
-                </p>
-                <p>
-                  <strong>Tipo:</strong> {form.pago.tipoPago}
-                </p>
-                <p>
-                  <strong>Comprobante:</strong>{' '}
-                  {form.pago.numeroComprobante || '—'}
-                </p>
-                <p>
-                  <strong>Fecha:</strong> {form.pago.fechaPago}
-                </p>
-                <p>
-                  <strong>Total cobrado:</strong> ${form.pago.monto.toFixed(2)}
-                </p>
-              </div>
-            </div>
+            )}
+            {!pdfLoading && !pdfError && pdfUrl && (
+              <PDFPreview pdfUrl={pdfUrl} />
+            )}
           </div>
         ) : null}
 
@@ -1669,7 +1618,6 @@ export default function CreateContratoPage() {
               </div>
               <div>
                 <Select
-                  label="Tipo"
                   value={bovedaTipoEspacioId}
                   onChange={(e) => {
                     setBovedasPage(1);
@@ -1738,10 +1686,36 @@ export default function CreateContratoPage() {
 
             {bovedasMeta && bovedasMeta.totalPages > 1 && (
               <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>
-                  Página <strong>{bovedasMeta.page}</strong> de{' '}
-                  <strong>{bovedasMeta.totalPages}</strong>
-                </span>
+                <div className="flex items-center gap-4">
+                  <span>
+                    Página <strong>{bovedasMeta.page}</strong> de{' '}
+                    <strong>{bovedasMeta.totalPages}</strong>
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span>Ir a:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={bovedasMeta.totalPages}
+                      value={bovedasPageInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setBovedasPageInput(val);
+                        const parsed = parseInt(val, 10);
+                        if (!isNaN(parsed) && parsed >= 1 && parsed <= bovedasMeta.totalPages) {
+                          setBovedasPage(parsed);
+                        }
+                      }}
+                      onBlur={() => {
+                        const parsed = parseInt(bovedasPageInput, 10);
+                        if (isNaN(parsed) || parsed < 1 || parsed > bovedasMeta.totalPages) {
+                          setBovedasPageInput(String(bovedasPage));
+                        }
+                      }}
+                      className="w-12 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-center text-xs text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
                 <div className="inline-flex gap-1">
                   <button
                     type="button"

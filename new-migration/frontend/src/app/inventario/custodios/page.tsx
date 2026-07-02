@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { FolderX, Loader2, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { inventarioCustodiosApi, PaginationMeta } from '@/lib/api';
 import {
@@ -16,6 +15,7 @@ import {
   Pagination,
   type DataTableColumn,
 } from '@/components/ui';
+import { CustodioFormModal } from './CustodioFormModal';
 
 interface Custodio {
   id: number;
@@ -36,6 +36,8 @@ export default function CustodiosPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingCustodio, setEditingCustodio] = useState<Custodio | null>(null);
 
   useEffect(() => {
     loadCustodios();
@@ -117,13 +119,17 @@ export default function CustodiosPage() {
       cellClassName: 'whitespace-nowrap',
       cell: (row) => (
         <div className="inline-flex items-center gap-1">
-          <Link
-            href={`/inventario/custodios/${row.id}/edit`}
+          <button
+            type="button"
+            onClick={() => {
+              setEditingCustodio(row);
+              setShowFormModal(true);
+            }}
             className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
             title="Editar"
           >
             <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          </Link>
+          </button>
           <button
             type="button"
             onClick={() => handleDelete(row.id)}
@@ -148,13 +154,15 @@ export default function CustodiosPage() {
         title="Custodios"
         subtitle="Responsables de los bienes del inventario."
         actions={
-          <Link
-            href="/inventario/custodios/create"
-            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-soft transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          <Button
+            onClick={() => {
+              setEditingCustodio(null);
+              setShowFormModal(true);
+            }}
+            leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
           >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             Nuevo custodio
-          </Link>
+          </Button>
         }
       />
 
@@ -230,6 +238,16 @@ export default function CustodiosPage() {
           </div>
         )}
       </Card>
+
+      <CustodioFormModal
+        open={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setEditingCustodio(null);
+        }}
+        onSaved={loadCustodios}
+        custodio={editingCustodio}
+      />
     </div>
   );
 }

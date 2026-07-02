@@ -814,6 +814,26 @@ export const inventarioReportesApi = {
       `/inventario/reportes/${tipo}/${formato}`,
       filtros as PaginationParams | undefined,
     ),
+
+  /**
+   * Obtiene datos JSON del reporte (vista previa) desde
+   * `/inventario/reportes/<tipo>` con los filtros aplicados.
+   */
+  preview: <T>(
+    tipo: TipoReporteInventario,
+    filtros?: ReporteInventarioFiltros,
+  ): Promise<T> => {
+    const params = new URLSearchParams();
+    if (filtros) {
+      Object.entries(filtros).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.set(key, String(value));
+        }
+      });
+    }
+    const qs = params.toString();
+    return api.get<T>(`/inventario/reportes/${tipo}${qs ? `?${qs}` : ''}`);
+  },
 };
 
 export const inventarioDepreciacionApi = {

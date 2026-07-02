@@ -10,7 +10,6 @@ import {
   Mail,
   Pencil,
   Phone,
-  Printer,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -69,11 +68,11 @@ function Card({
       className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft ${className}`}
     >
       {title && (
-        <header className="border-b border-slate-100 px-5 py-3">
+        <header className="border-b border-slate-100 px-4 py-2.5 bg-slate-50/30">
           <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
         </header>
       )}
-      <div className="p-5">{children}</div>
+      <div className="p-4">{children}</div>
     </section>
   );
 }
@@ -133,7 +132,7 @@ export default async function ContratoDetailsPage({
   const AlertIcon = alert.icon;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -158,14 +157,6 @@ export default async function ContratoDetailsPage({
             PDF
           </a>
           <Link
-            href={`/contratos/${id}/print`}
-            target="_blank"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Printer className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            Imprimir
-          </Link>
-          <Link
             href={`/contratos/${id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
           >
@@ -184,9 +175,9 @@ export default async function ContratoDetailsPage({
 
       {/* Estado alert */}
       <div
-        className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${alert.box}`}
+        className={`flex items-center gap-2.5 rounded-lg border px-3.5 py-2 text-sm ${alert.box}`}
       >
-        <AlertIcon className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+        <AlertIcon className="h-4.5 w-4.5 shrink-0" strokeWidth={2} aria-hidden="true" />
         <div>
           Contrato <strong>{estadoContrato.toLowerCase()}</strong>
           {contrato.fechaFin && (
@@ -195,19 +186,19 @@ export default async function ContratoDetailsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Columna principal */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-4 lg:col-span-2">
           {/* Información del contrato */}
           <Card title="Información del contrato">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 md:grid-cols-4">
               <div>
                 <FieldLabel>Número</FieldLabel>
                 <FieldValue>{contrato.numeroSecuencial}</FieldValue>
               </div>
               <div>
                 <FieldLabel>Estado</FieldLabel>
-                <p className="mt-0.5">
+                <div className="mt-0.5">
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
                       ESTADO_BADGE[estadoContrato] ?? ESTADO_BADGE['Inactivo']
@@ -215,7 +206,26 @@ export default async function ContratoDetailsPage({
                   >
                     {estadoContrato}
                   </span>
-                </p>
+                </div>
+              </div>
+              <div>
+                <FieldLabel>Tipo</FieldLabel>
+                <div className="mt-0.5">
+                  {contrato.esRenovacion ? (
+                    <span className="inline-flex items-center rounded-full bg-info-50 px-2 py-0.5 text-xs font-medium text-info-600 ring-1 ring-info-200">
+                      Renovación
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
+                      Nuevo
+                    </span>
+                  )}
+                  {contrato.vecesRenovado > 0 && (
+                    <span className="ml-1.5 inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                      Renovado {contrato.vecesRenovado}×
+                    </span>
+                  )}
+                </div>
               </div>
               <div>
                 <FieldLabel>Fecha de inicio</FieldLabel>
@@ -229,12 +239,17 @@ export default async function ContratoDetailsPage({
                 <FieldLabel>Subtotal</FieldLabel>
                 <FieldValue>{formatCurrency(contrato.montoSubtotal || contrato.montoTotal)}</FieldValue>
               </div>
-              {contrato.descuento && (
+              {contrato.descuento ? (
                 <div>
                   <FieldLabel>Descuento ({Number(contrato.descuento.porcentaje)}%)</FieldLabel>
                   <FieldValue className="text-green-600">
                     -{formatCurrency(contrato.montoDescuento || 0)}
                   </FieldValue>
+                </div>
+              ) : (
+                <div>
+                  <FieldLabel>Descuento</FieldLabel>
+                  <FieldValue>Ninguno</FieldValue>
                 </div>
               )}
               <div>
@@ -243,138 +258,113 @@ export default async function ContratoDetailsPage({
                   {formatCurrency(contrato.montoTotal)}
                 </FieldValue>
               </div>
-              <div>
-                <FieldLabel>Tipo</FieldLabel>
-                <p className="mt-0.5">
-                  {contrato.esRenovacion ? (
-                    <span className="inline-flex items-center rounded-full bg-info-50 px-2 py-0.5 text-xs font-medium text-info-600 ring-1 ring-info-200">
-                      Renovación
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-primary-200">
-                      Nuevo
-                    </span>
-                  )}
-                  {contrato.vecesRenovado > 0 && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                      Renovado {contrato.vecesRenovado}×
-                    </span>
-                  )}
-                </p>
-              </div>
-              {contrato.descuento && (
-                <div>
-                  <FieldLabel>Descuento</FieldLabel>
-                  <FieldValue>
-                    {contrato.descuento.nombre} —{' '}
-                    {Number(contrato.descuento.porcentaje)}%
-                  </FieldValue>
-                </div>
-              )}
-              <div className="sm:col-span-2">
+              <div className="col-span-2 sm:col-span-3 md:col-span-4">
                 <FieldLabel>Observaciones</FieldLabel>
                 <FieldValue>{contrato.observaciones || '—'}</FieldValue>
               </div>
             </div>
           </Card>
 
-          {/* Bóveda */}
-          <Card title="Bóveda">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div>
-                <FieldLabel>Número</FieldLabel>
-                <FieldValue>{contrato.boveda?.numero ?? '—'}</FieldValue>
+          {/* Bóveda y Difunto side-by-side */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Bóveda */}
+            <Card title="Bóveda">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+                <div>
+                  <FieldLabel>Número</FieldLabel>
+                  <FieldValue>{contrato.boveda?.numero ?? '—'}</FieldValue>
+                </div>
+                <div>
+                  <FieldLabel>Bloque</FieldLabel>
+                  <FieldValue>{contrato.boveda?.bloque?.nombre ?? '—'}</FieldValue>
+                </div>
+                <div>
+                  <FieldLabel>Piso</FieldLabel>
+                  <FieldValue>{contrato.boveda?.piso?.numero ?? '—'}</FieldValue>
+                </div>
+                <div>
+                  <FieldLabel>Tipo</FieldLabel>
+                  <FieldValue>{contrato.boveda?.tipo ?? '—'}</FieldValue>
+                </div>
+                <div className="col-span-2">
+                  <FieldLabel>Propietario</FieldLabel>
+                  <FieldValue>
+                    {propietario
+                      ? `${propietario.nombre} ${propietario.apellido}`
+                      : 'Sin propietario asignado'}
+                  </FieldValue>
+                </div>
+                <div className="col-span-2">
+                  <FieldLabel>Cementerio</FieldLabel>
+                  <FieldValue>
+                    {contrato.boveda?.bloque?.cementerio?.nombre ?? '—'}
+                  </FieldValue>
+                </div>
               </div>
-              <div>
-                <FieldLabel>Bloque</FieldLabel>
-                <FieldValue>{contrato.boveda?.bloque?.nombre ?? '—'}</FieldValue>
-              </div>
-              <div>
-                <FieldLabel>Piso</FieldLabel>
-                <FieldValue>{contrato.boveda?.piso?.numero ?? '—'}</FieldValue>
-              </div>
-              <div>
-                <FieldLabel>Tipo</FieldLabel>
-                <FieldValue>{contrato.boveda?.tipo ?? '—'}</FieldValue>
-              </div>
-              <div className="col-span-2">
-                <FieldLabel>Propietario</FieldLabel>
-                <FieldValue>
-                  {propietario
-                    ? `${propietario.nombre} ${propietario.apellido}`
-                    : 'Sin propietario asignado'}
-                </FieldValue>
-              </div>
-              <div className="col-span-2">
-                <FieldLabel>Cementerio</FieldLabel>
-                <FieldValue>
-                  {contrato.boveda?.bloque?.cementerio?.nombre ?? '—'}
-                </FieldValue>
-              </div>
-            </div>
-          </Card>
+            </Card>
 
-          {/* Difunto */}
-          <Card title="Difunto">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <FieldLabel>Nombre</FieldLabel>
-                <FieldValue>
-                  {contrato.difunto?.nombre ?? '—'}{' '}
-                  {contrato.difunto?.apellido ?? ''}
-                </FieldValue>
+            {/* Difunto */}
+            <Card title="Difunto">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+                <div className="col-span-2">
+                  <FieldLabel>Nombre</FieldLabel>
+                  <FieldValue>
+                    {contrato.difunto?.nombre ?? '—'}{' '}
+                    {contrato.difunto?.apellido ?? ''}
+                  </FieldValue>
+                </div>
+                <div className="col-span-2">
+                  <FieldLabel>Identificación</FieldLabel>
+                  <FieldValue>
+                    {contrato.difunto?.numeroIdentificacion ?? '—'}
+                  </FieldValue>
+                </div>
+                <div>
+                  <FieldLabel>Nacimiento</FieldLabel>
+                  <FieldValue>{formatDate(contrato.difunto?.fechaNacimiento)}</FieldValue>
+                </div>
+                <div>
+                  <FieldLabel>Defunción</FieldLabel>
+                  <FieldValue>{formatDate(contrato.difunto?.fechaDefuncion)}</FieldValue>
+                </div>
               </div>
-              <div>
-                <FieldLabel>Identificación</FieldLabel>
-                <FieldValue>
-                  {contrato.difunto?.numeroIdentificacion ?? '—'}
-                </FieldValue>
-              </div>
-              <div>
-                <FieldLabel>Fecha de nacimiento</FieldLabel>
-                <FieldValue>{formatDate(contrato.difunto?.fechaNacimiento)}</FieldValue>
-              </div>
-              <div>
-                <FieldLabel>Fecha de defunción</FieldLabel>
-                <FieldValue>{formatDate(contrato.difunto?.fechaDefuncion)}</FieldValue>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
 
           {/* Responsables */}
           <Card title="Responsables">
             {(contrato.responsables || []).length === 0 ? (
               <p className="text-sm text-slate-600">Sin responsables registrados.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
                 {contrato.responsables.map((item: any) => {
                   const persona = item.responsable?.persona;
                   return (
                     <div
                       key={item.responsableId}
-                      className="rounded-lg border border-slate-200 bg-slate-50/40 p-3"
+                      className="rounded-lg border border-slate-200 bg-slate-50/40 p-2.5 text-xs"
                     >
-                      <div className="font-medium text-slate-800">
+                      <div className="font-medium text-slate-800 text-sm">
                         {persona?.nombre} {persona?.apellido}
                       </div>
-                      <div className="mt-0.5 text-xs text-slate-500">
+                      <div className="mt-0.5 text-slate-500 font-mono">
                         {persona?.tipoIdentificacion}: {persona?.numeroIdentificacion}
                       </div>
                       {persona?.telefono && (
-                        <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                        <div className="mt-1 flex items-center gap-1 text-slate-500">
                           <Phone className="h-3.5 w-3.5 text-slate-400" strokeWidth={2} aria-hidden="true" />
                           {persona.telefono}
                         </div>
                       )}
                       {persona?.email && (
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <div className="flex items-center gap-1 text-slate-500">
                           <Mail className="h-3.5 w-3.5 text-slate-400" strokeWidth={2} aria-hidden="true" />
                           {persona.email}
                         </div>
                       )}
-                      <div className="mt-2 text-xs text-slate-500">
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-slate-500">
                         Parentesco:{' '}
-                        <span className="text-slate-700">
+                        <span className="font-medium text-slate-700">
                           {item.responsable?.parentesco ?? '—'}
                         </span>
                       </div>
@@ -387,30 +377,30 @@ export default async function ContratoDetailsPage({
 
           {/* Cuotas */}
           <Card title="Cuotas">
-            <div className="overflow-x-auto -m-5">
+            <div className="overflow-x-auto -m-4">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50">
                   <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                    <th className="px-5 py-2.5">#</th>
-                    <th className="px-5 py-2.5 text-right">Monto</th>
-                    <th className="px-5 py-2.5">Vencimiento</th>
-                    <th className="px-5 py-2.5">Estado</th>
-                    <th className="px-5 py-2.5">Fecha de pago</th>
+                    <th className="px-4 py-2">#</th>
+                    <th className="px-4 py-2 text-right">Monto</th>
+                    <th className="px-4 py-2">Vencimiento</th>
+                    <th className="px-4 py-2">Estado</th>
+                    <th className="px-4 py-2">Fecha de pago</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {(contrato.cuotas || []).map((c: any) => (
                     <tr key={c.id}>
-                      <td className="px-5 py-2.5 font-medium text-slate-700">
+                      <td className="px-4 py-2 font-medium text-slate-700">
                         {c.numero}
                       </td>
-                      <td className="px-5 py-2.5 text-right">
+                      <td className="px-4 py-2 text-right">
                         {formatCurrency(c.monto)}
                       </td>
-                      <td className="px-5 py-2.5 text-slate-600">
+                      <td className="px-4 py-2 text-slate-600">
                         {formatDate(c.fechaVencimiento)}
                       </td>
-                      <td className="px-5 py-2.5">
+                      <td className="px-4 py-2">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
                             c.pagada
@@ -421,7 +411,7 @@ export default async function ContratoDetailsPage({
                           {c.pagada ? 'Pagada' : 'Pendiente'}
                         </span>
                       </td>
-                      <td className="px-5 py-2.5 text-slate-600">
+                      <td className="px-4 py-2 text-slate-600">
                         {formatDate(c.fechaPago)}
                       </td>
                     </tr>
@@ -434,35 +424,35 @@ export default async function ContratoDetailsPage({
           {/* Recibos */}
           {recibos.length > 0 && (
             <Card title="Recibos emitidos">
-              <div className="overflow-x-auto -m-5">
+              <div className="overflow-x-auto -m-4">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50">
                     <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                      <th className="px-5 py-2.5">Recibo</th>
-                      <th className="px-5 py-2.5">Fecha</th>
-                      <th className="px-5 py-2.5">Método</th>
-                      <th className="px-5 py-2.5">Banco / Referencia</th>
-                      <th className="px-5 py-2.5">Cuotas</th>
-                      <th className="px-5 py-2.5 text-right">Monto</th>
+                      <th className="px-4 py-2">Recibo</th>
+                      <th className="px-4 py-2">Fecha</th>
+                      <th className="px-4 py-2">Método</th>
+                      <th className="px-4 py-2">Banco / Referencia</th>
+                      <th className="px-4 py-2">Cuotas</th>
+                      <th className="px-4 py-2 text-right">Monto</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {recibos.map((p: any) => (
                       <tr key={p.id}>
-                        <td className="px-5 py-2.5 font-mono text-xs font-semibold text-slate-700">
+                        <td className="px-4 py-2 font-mono text-xs font-semibold text-slate-700">
                           {p.numeroRecibo}
                         </td>
-                        <td className="px-5 py-2.5 text-slate-600">
+                        <td className="px-4 py-2 text-slate-600">
                           {formatDate(p.fechaPago)}
                         </td>
-                        <td className="px-5 py-2.5 text-slate-600">{p.metodoPago}</td>
-                        <td className="px-5 py-2.5 text-slate-600">
+                        <td className="px-4 py-2 text-slate-600">{p.metodoPago}</td>
+                        <td className="px-4 py-2 text-slate-600">
                           {p.banco?.nombre ?? p.referencia ?? '—'}
                         </td>
-                        <td className="px-5 py-2.5 text-slate-600">
+                        <td className="px-4 py-2 text-slate-600">
                           {p.cuotas.map((c: any) => `#${c.numero}`).join(', ')}
                         </td>
-                        <td className="px-5 py-2.5 text-right font-medium text-slate-700">
+                        <td className="px-4 py-2 text-right font-medium text-slate-700">
                           {formatCurrency(p.monto)}
                         </td>
                       </tr>
@@ -525,7 +515,7 @@ export default async function ContratoDetailsPage({
         </div>
 
         {/* Lateral */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card title="Resumen de pagos">
             <dl className="space-y-2 text-sm">
               <div className="flex items-baseline justify-between">
@@ -574,14 +564,6 @@ export default async function ContratoDetailsPage({
                 <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                 Ver PDF oficial
               </a>
-              <Link
-                href={`/contratos/${id}/print`}
-                target="_blank"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <Printer className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-                Vista imprimible
-              </Link>
               <Link
                 href={`/contratos/${id}/edit`}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"

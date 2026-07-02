@@ -108,7 +108,12 @@ export default function ContratosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [estado, setEstado] = useState<EstadoFiltro>('');
   const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [meta, setMeta] = useState<PaginationMeta>();
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
 
   useEffect(() => {
     let cancelled = false;
@@ -474,13 +479,39 @@ export default function ContratosPage() {
         {/* Paginación */}
         {meta && meta.totalPages > 1 && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row">
-            <p className="text-xs text-slate-500">
-              Página <strong className="text-slate-700">{meta.page}</strong> de{' '}
-              <strong className="text-slate-700">{meta.totalPages}</strong>
-              <span className="mx-1.5 text-slate-300">·</span>
-              <strong className="text-slate-700">{meta.total}</strong>{' '}
-              contrato{meta.total === 1 ? '' : 's'}
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-xs text-slate-500">
+                Página <strong className="text-slate-700">{meta.page}</strong> de{' '}
+                <strong className="text-slate-700">{meta.totalPages}</strong>
+                <span className="mx-1.5 text-slate-300">·</span>
+                <strong className="text-slate-700">{meta.total}</strong>{' '}
+                contrato{meta.total === 1 ? '' : 's'}
+              </p>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Ir a:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={meta.totalPages}
+                  value={pageInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPageInput(val);
+                    const parsed = parseInt(val, 10);
+                    if (!isNaN(parsed) && parsed >= 1 && parsed <= meta.totalPages) {
+                      setPage(parsed);
+                    }
+                  }}
+                  onBlur={() => {
+                    const parsed = parseInt(pageInput, 10);
+                    if (isNaN(parsed) || parsed < 1 || parsed > meta.totalPages) {
+                      setPageInput(String(page));
+                    }
+                  }}
+                  className="w-12 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-center text-xs text-slate-700 placeholder:text-slate-600 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
             <nav className="inline-flex items-center gap-1">
               <button
                 type="button"

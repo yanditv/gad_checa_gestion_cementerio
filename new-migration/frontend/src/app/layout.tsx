@@ -28,7 +28,6 @@ export default function RootLayout({
           id="main-font-link"
         />
         <link rel="stylesheet" href="/fonts/tabler-icons.min.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabler-icons@2.1.0/fonts/tabler-icons.min.css" />
         <link rel="stylesheet" href="/fonts/feather.css" />
         <link rel="stylesheet" href="/fonts/fontawesome.css" />
         <link rel="stylesheet" href="/fonts/material.css" />
