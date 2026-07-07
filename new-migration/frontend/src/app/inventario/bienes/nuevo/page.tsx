@@ -221,11 +221,12 @@ export default function NuevoBienPage() {
                   </div>
                   <Button
                     variant="secondary"
-                    size="sm"
+                    size="md"
                     onClick={() => setShowCategoriaModal(true)}
                     leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                     className="shrink-0"
                   >
+                    Nueva
                   </Button>
                 </div>
                 <Input
@@ -342,11 +343,12 @@ export default function NuevoBienPage() {
                 </div>
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="md"
                   onClick={() => setShowCustodioModal(true)}
                   leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                   className="shrink-0"
                 >
+                  Nuevo
                 </Button>
               </div>
             </FormSection>

@@ -147,7 +147,7 @@ export function Modal({
         aria-describedby={description != null ? descId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative w-full rounded-2xl bg-white shadow-overlay animate-scale-in focus:outline-none',
+          'relative w-full rounded-2xl bg-white shadow-overlay animate-scale-in focus:outline-none overflow-hidden',
           sizes[size],
           className,
         )}
