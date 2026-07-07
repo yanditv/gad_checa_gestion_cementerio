@@ -15,7 +15,7 @@ interface FormState {
 interface CustodioFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (data?: any) => void;
   custodio?: {
     id: number;
     nombre: string;
@@ -73,21 +73,22 @@ export function CustodioFormModal({ open, onClose, onSaved, custodio }: Custodio
     setLoading(true);
     setError('');
     try {
+      let result: any;
       if (isEdit) {
-        await inventarioCustodiosApi.update(custodio!.id, {
+        result = await inventarioCustodiosApi.update(custodio!.id, {
           nombre: formData.nombre.trim(),
           identificacion: toOptional(formData.identificacion),
           cargo: toOptional(formData.cargo),
           estado: formData.estado,
         });
       } else {
-        await inventarioCustodiosApi.create({
+        result = await inventarioCustodiosApi.create({
           nombre: formData.nombre.trim(),
           identificacion: toOptional(formData.identificacion),
           cargo: toOptional(formData.cargo),
         });
       }
-      onSaved();
+      onSaved(result);
       onClose();
     } catch (err: any) {
       setError(err.message || 'No se pudo guardar el custodio');

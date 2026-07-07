@@ -4,9 +4,7 @@ const path = require('path');
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   serverExternalPackages: ['pdfkit'],
-  experimental: {
-    webpackMemoryOptimizations: true,
-  },
+
   webpack: (config, { dev }) => {
     if (dev) {
       // Cache en memoria: evita corrupción de disco y acelera recompilaciones
