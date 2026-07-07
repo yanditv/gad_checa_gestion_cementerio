@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Info, UserCheck } from 'lucide-react';
 import { personasApi } from '@/lib/api';
 import { DatePicker, Select } from '@/components/ui';
 
@@ -42,6 +42,7 @@ export default function CreatePersonaPage() {
     estadoCivil: '',
     profesion: '',
     nacionalidad: '',
+    tipoPersona: 'Persona',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +58,7 @@ export default function CreatePersonaPage() {
         email: normalizeOptional(formData.email),
         telefono: normalizeOptional(formData.telefono),
         direccion: normalizeOptional(formData.direccion),
-        tipoPersona: 'Persona',
+        tipoPersona: formData.tipoPersona,
         fechaNacimiento: formData.fechaNacimiento || null,
         genero: normalizeOptional(formData.genero),
         estadoCivil: normalizeOptional(formData.estadoCivil),
@@ -100,6 +101,20 @@ export default function CreatePersonaPage() {
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Select
+                  label="Tipo de persona"
+                  required
+                  value={formData.tipoPersona}
+                  onChange={(e) => setFormData({ ...formData, tipoPersona: e.target.value })}
+                  options={[
+                    { value: 'Persona', label: 'Persona' },
+                    { value: 'Propietario', label: 'Propietario' },
+                    { value: 'Responsable', label: 'Responsable' },
+                  ]}
+                />
+              </div>
+
               <div>
                 <Select
                   label="Tipo de Identificación"
@@ -288,20 +303,37 @@ export default function CreatePersonaPage() {
           </form>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <section className="self-start overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">Información</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Info className="h-4 w-4 text-primary-600" strokeWidth={2} aria-hidden="true" />
+              Información
+            </h2>
           </header>
-          <div className="p-5 text-sm text-slate-600">
-            <p className="text-slate-500">La persona puede ser registrada como:</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600">
-              <li>
-                <strong className="text-slate-700">Propietario:</strong> Dueño de una bóveda
-              </li>
-              <li>
-                <strong className="text-slate-700">Responsable:</strong> Persona de contacto
-              </li>
-            </ul>
+          <div className="space-y-3 p-5 text-sm text-slate-600">
+            <div className="rounded-lg border border-primary-100 bg-primary-50/70 p-3">
+              <div className="flex items-start gap-2">
+                <UserCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary-700" strokeWidth={2} aria-hidden="true" />
+                <p>
+                  Selecciona el tipo antes de guardar para que el listado muestre
+                  la categoría correcta.
+                </p>
+              </div>
+            </div>
+            <dl className="space-y-2">
+              <div>
+                <dt className="font-semibold text-slate-700">Persona</dt>
+                <dd>Registro general sin rol asignado todavía.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-700">Propietario</dt>
+                <dd>Dueño o titular vinculado a una bóveda.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-700">Responsable</dt>
+                <dd>Contacto asociado a contratos o trámites.</dd>
+              </div>
+            </dl>
           </div>
         </section>
       </div>

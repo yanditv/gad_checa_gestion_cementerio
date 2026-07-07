@@ -206,7 +206,10 @@ class ApiClient {
       const error = await response
         .json()
         .catch(() => ({ message: 'Error al subir el archivo' }));
-      throw new Error(error.message || `Error ${response.status}`);
+      const message = Array.isArray(error.message)
+        ? error.message.join(', ')
+        : error.message || error.error?.message || `Error ${response.status}`;
+      throw new Error(message);
     }
 
     const payload = await response.json();

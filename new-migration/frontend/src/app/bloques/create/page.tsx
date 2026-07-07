@@ -3,7 +3,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Building2,
+  Check,
+  DollarSign,
+  Grid3X3,
+  Info,
+  Layers3,
+  Loader2,
+  Route,
+} from 'lucide-react';
 import { bloquesApi, cementeriosApi } from '@/lib/api';
 import { Select } from '@/components/ui';
 
@@ -352,34 +362,80 @@ export default function CreateBloquePage() {
           </form>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <section className="self-start overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">Resumen</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Info className="h-4 w-4 text-primary-600" strokeWidth={2} aria-hidden="true" />
+              Resumen
+            </h2>
           </header>
-          <div className="space-y-3 p-5 text-sm">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-600">Tipo</p>
-              <p className="font-medium text-slate-700">{formData.tipo === 'Nichos' ? 'Nichos' : 'Bóvedas'}</p>
+          <div className="space-y-4 p-5 text-sm text-slate-600">
+            <div className="rounded-lg border border-primary-100 bg-primary-50/70 p-3">
+              <div className="flex items-start gap-2">
+                <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary-700" strokeWidth={2} aria-hidden="true" />
+                <div>
+                  <p className="font-semibold text-slate-800">
+                    {formData.nombre.trim() || 'Bloque sin nombre'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600">
+                    {cementerioSeleccionado?.nombre || 'Selecciona un cementerio'}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-600">Pisos</p>
-              <p className="font-medium text-slate-700">{formData.numeroPisos}</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <Layers3 className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Pisos
+                </div>
+                <p className="mt-2 text-lg font-bold text-slate-800">{formData.numeroPisos}</p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <Grid3X3 className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Por piso
+                </div>
+                <p className="mt-2 text-lg font-bold text-slate-800">{formData.bovedasPorPiso}</p>
+              </div>
+              <div className="rounded-lg border border-primary-100 bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  Total
+                </p>
+                <p className="mt-2 text-lg font-bold text-primary-700">{totalBovedas}</p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-white p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <DollarSign className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Tarifa
+                </div>
+                <p className="mt-2 text-lg font-bold text-slate-800">
+                  ${Number(formData.tarifaBase).toFixed(2)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-600">Bóvedas por piso</p>
-              <p className="font-medium text-slate-700">{formData.bovedasPorPiso}</p>
+
+            <div className="rounded-lg border border-slate-100 bg-white p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Tipo</p>
+              <p className="mt-1 font-medium text-slate-800">
+                {formData.tipo === 'Nichos' ? 'Nichos' : 'Bóvedas'}
+              </p>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-600">Total bóvedas</p>
-              <p className="text-lg font-bold text-primary-600">{totalBovedas}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-600">Tarifa base</p>
-              <p className="font-medium text-slate-700">${Number(formData.tarifaBase).toFixed(2)}</p>
-            </div>
-            <div className="border-t border-slate-100 pt-3 text-xs text-slate-500">
-              <p>Si no especifica bóvedas por piso, solo se crearán los pisos.</p>
-              <p className="mt-1">Las bóvedas se numerarán automáticamente: "Piso-Bóveda" (ej: 1-1, 1-2, …).</p>
+
+            <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+              <div className="flex gap-2">
+                <Route className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                <p>
+                  Si no especificas bóvedas por piso, solo se crearán los pisos.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Grid3X3 className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                <p>
+                  La numeración automática usa el formato piso-bóveda, por ejemplo 1-1, 1-2.
+                </p>
+              </div>
             </div>
           </div>
         </section>

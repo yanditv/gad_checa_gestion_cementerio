@@ -5,14 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
+  AlertTriangle,
   Boxes,
+  Eye,
   FileText,
   Loader2,
   Pencil,
   Trash2,
   User,
 } from 'lucide-react';
-import { DataTable, type DataTableColumn } from '@/components/ui';
+import { Button, DataTable, Modal, type DataTableColumn } from '@/components/ui';
 
 interface Boveda {
   id: number;
@@ -61,6 +63,7 @@ interface Persona {
 }
 
 type Tab = 'datos' | 'bovedas' | 'contratos';
+type DetailModal = 'identificacion' | 'contacto' | 'complementaria' | null;
 
 function formatDate(value?: string | null) {
   if (!value) return '—';
@@ -108,18 +111,36 @@ function Field({
 
 function CompactSection({
   title,
+  action,
   children,
   className = '',
 }: {
   title: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <section className={`rounded-xl border border-slate-200 bg-white p-4 shadow-soft ${className}`}>
-      <h2 className="mb-3 text-sm font-semibold text-slate-700">{title}</h2>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+        {action}
+      </div>
       {children}
     </section>
+  );
+}
+
+function SectionDetailButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300"
+    >
+      <Eye className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+      Ver detalle
+    </button>
   );
 }
 
@@ -135,6 +156,8 @@ export default function PersonaDetailsPage({
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [tab, setTab] = useState<Tab>('datos');
+  const [detailModal, setDetailModal] = useState<DetailModal>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -320,7 +343,6 @@ export default function PersonaDetailsPage({
   ];
 
   async function handleDelete() {
-    if (!window.confirm('¿Desactivar esta persona?')) return;
     setDeleting(true);
     setError(null);
     try {
@@ -337,6 +359,7 @@ export default function PersonaDetailsPage({
       setError(err instanceof Error ? err.message : 'Error');
     } finally {
       setDeleting(false);
+      setDeleteModalOpen(false);
     }
   }
 
@@ -421,7 +444,7 @@ export default function PersonaDetailsPage({
           {persona.estado && (
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={() => setDeleteModalOpen(true)}
               disabled={deleting}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
             >
@@ -478,7 +501,10 @@ export default function PersonaDetailsPage({
 
       {tab === 'datos' && (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
-          <CompactSection title="Identificación">
+          <CompactSection
+            title="Identificación"
+            action={<SectionDetailButton onClick={() => setDetailModal('identificacion')} />}
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Nombres" value={persona.nombre} />
               <Field label="Apellidos" value={persona.apellido} />
@@ -490,7 +516,10 @@ export default function PersonaDetailsPage({
             </div>
           </CompactSection>
 
-          <CompactSection title="Contacto">
+          <CompactSection
+            title="Contacto"
+            action={<SectionDetailButton onClick={() => setDetailModal('contacto')} />}
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
               <Field label="Email" value={persona.email} />
               <Field label="Teléfono" value={persona.telefono} />
@@ -498,7 +527,11 @@ export default function PersonaDetailsPage({
             </div>
           </CompactSection>
 
-          <CompactSection title="Información complementaria" className="xl:col-span-2">
+          <CompactSection
+            title="Información complementaria"
+            className="xl:col-span-2"
+            action={<SectionDetailButton onClick={() => setDetailModal('complementaria')} />}
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="Fecha de nacimiento" value={formatDate(persona.fechaNacimiento)} />
               <Field label="Género" value={persona.genero} />
@@ -548,6 +581,97 @@ export default function PersonaDetailsPage({
           )}
         </Card>
       )}
+
+      <Modal
+        open={detailModal !== null}
+        onClose={() => setDetailModal(null)}
+        title={
+          detailModal === 'identificacion'
+            ? 'Identificación'
+            : detailModal === 'contacto'
+              ? 'Contacto'
+              : 'Información complementaria'
+        }
+        description={fullName}
+        size="lg"
+        footer={
+          <Button type="button" variant="secondary" onClick={() => setDetailModal(null)}>
+            Cerrar
+          </Button>
+        }
+      >
+        {detailModal === 'identificacion' && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Nombres" value={persona.nombre} />
+            <Field label="Apellidos" value={persona.apellido} />
+            <Field label="Tipo de identificación" value={persona.tipoIdentificacion} />
+            <Field label="Número de identificación" value={persona.numeroIdentificacion} />
+            <Field label="Tipo de persona" value={persona.tipoPersona} />
+            <Field label="Estado del registro" value={persona.estado ? 'Activa' : 'Inactiva'} />
+          </div>
+        )}
+
+        {detailModal === 'contacto' && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Email" value={persona.email} />
+            <Field label="Teléfono" value={persona.telefono} />
+            <div className="sm:col-span-2">
+              <Field label="Dirección" value={persona.direccion} />
+            </div>
+          </div>
+        )}
+
+        {detailModal === 'complementaria' && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <Field label="Fecha de nacimiento" value={formatDate(persona.fechaNacimiento)} />
+            <Field label="Género" value={persona.genero} />
+            <Field label="Estado civil" value={persona.estadoCivil} />
+            <Field label="Nacionalidad" value={persona.nacionalidad} />
+            <Field label="Profesión" value={persona.profesion} />
+            <Field label="Bóvedas vinculadas" value={String(bovedas.length)} />
+            <Field label="Contratos vinculados" value={String(contratos.length)} />
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={deleteModalOpen}
+        onClose={() => {
+          if (!deleting) setDeleteModalOpen(false);
+        }}
+        title="Desactivar persona"
+        description="Esta acción marcará el registro como inactivo."
+        size="sm"
+        disableOverlayClose={deleting}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={deleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              loading={deleting}
+              onClick={handleDelete}
+            >
+              Desactivar
+            </Button>
+          </>
+        }
+      >
+        <div className="flex gap-3 rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <p>
+            ¿Deseas desactivar a <span className="font-semibold">{fullName}</span>?
+            No se eliminará físicamente, pero dejará de figurar como activa en el sistema.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

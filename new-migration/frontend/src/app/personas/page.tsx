@@ -183,7 +183,7 @@ export default function PersonasPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Lista de Personas</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Gestión de propietarios y responsables.
+            Gestión de personas, propietarios y responsables.
           </p>
         </div>
         <Link

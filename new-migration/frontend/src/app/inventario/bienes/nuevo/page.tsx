@@ -6,9 +6,12 @@ import {
   Camera,
   Check,
   ClipboardList,
+  CircleDollarSign,
+  Clock,
   Info,
   Package,
   Receipt,
+  Tag,
   UserCheck,
 } from 'lucide-react';
 import {
@@ -72,6 +75,13 @@ function toOptional(value: string) {
   return trimmed.length === 0 ? undefined : trimmed;
 }
 
+function formatCurrency(value: string) {
+  return new Intl.NumberFormat('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(Number(value || 0));
+}
+
 export default function NuevoBienPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -80,6 +90,8 @@ export default function NuevoBienPage() {
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [custodios, setCustodios] = useState<{ id: number; nombre: string }[]>([]);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const categoriaSeleccionada = categorias.find((c) => c.id === Number(formData.categoriaId));
+  const custodioSeleccionado = custodios.find((c) => c.id === Number(formData.custodioId));
 
   useEffect(() => {
     inventarioCategoriasApi
@@ -314,28 +326,73 @@ export default function NuevoBienPage() {
 
         <Card
           padding="none"
+          className="self-start"
           header={<Card.Title icon={<Info className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>Información</Card.Title>}
         >
-          <div className="p-5 text-sm text-slate-600">
-            <p className="text-slate-500">
-              Al registrar el bien se crea automáticamente un movimiento de
-              <strong className="text-slate-700"> alta</strong> en su historial.
-            </p>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-600">
-              <li>
-                <strong className="text-slate-700">Código:</strong> si se deja
-                vacío se autogenera con el patrón BN-AAAA-NNNN.
-              </li>
-              <li>
-                <strong className="text-slate-700">Depreciación:</strong> usa la
-                vida útil y el % residual de la categoría (CGE 406-03), salvo que
-                indique overrides.
-              </li>
-              <li>
-                <strong className="text-slate-700">Custodio:</strong> puede
-                asignarse luego desde la ficha del bien.
-              </li>
-            </ul>
+          <div className="space-y-4 p-5 text-sm text-slate-600">
+            <div className="rounded-lg border border-primary-100 bg-primary-50/70 p-3">
+              <div className="flex items-start gap-2">
+                <Package className="mt-0.5 h-4 w-4 shrink-0 text-primary-700" strokeWidth={2} aria-hidden="true" />
+                <div>
+                  <p className="font-semibold text-slate-800">
+                    {formData.descripcion.trim() || 'Bien sin descripción'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600">
+                    {formData.codigo.trim() || 'El código se autogenera al guardar'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <Tag className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Categoría
+                </div>
+                <p className="mt-2 truncate font-semibold text-slate-800">
+                  {categoriaSeleccionada?.nombre || '—'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <UserCheck className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Custodio
+                </div>
+                <p className="mt-2 truncate font-semibold text-slate-800">
+                  {custodioSeleccionado?.nombre || 'Sin asignar'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-white p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <CircleDollarSign className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Valor
+                </div>
+                <p className="mt-2 font-semibold text-slate-800">
+                  {formatCurrency(formData.valorAdquisicion)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-white p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <Clock className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Fecha
+                </div>
+                <p className="mt-2 font-semibold text-slate-800">
+                  {formData.fechaAdquisicion || '—'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+              <p>
+                Al guardar se crea automáticamente un movimiento de
+                <strong className="text-slate-700"> alta</strong> en el historial.
+              </p>
+              <p>
+                La depreciación usa la vida útil y el valor residual de la categoría,
+                salvo que indiques valores override.
+              </p>
+            </div>
           </div>
         </Card>
       </div>
