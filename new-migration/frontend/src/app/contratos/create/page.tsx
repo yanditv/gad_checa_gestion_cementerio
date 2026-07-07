@@ -127,6 +127,10 @@ function Label({
   );
 }
 
+function soloDigitos(valor: string): string {
+  return valor.replace(/\D/g, '');
+}
+
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-600 read-only:bg-slate-50';
 
@@ -1813,7 +1817,7 @@ export default function CreateContratoPage() {
                   onChange={(e) =>
                     setNewResponsable((prev) => ({
                       ...prev,
-                      numeroIdentificacion: e.target.value,
+                      numeroIdentificacion: soloDigitos(e.target.value),
                     }))
                   }
                 />
@@ -1827,7 +1831,7 @@ export default function CreateContratoPage() {
                   onChange={(e) =>
                     setNewResponsable((prev) => ({
                       ...prev,
-                      telefono: e.target.value,
+                      telefono: soloDigitos(e.target.value),
                     }))
                   }
                 />
