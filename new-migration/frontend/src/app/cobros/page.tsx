@@ -6,14 +6,16 @@ import {
   Check,
   Clock,
   Coins,
+  Eye,
   FileText,
   FolderX,
   Loader2,
   Receipt,
   Search,
+  TrendingUp,
 } from 'lucide-react';
 import { cuotasApi, pagosApi } from '@/lib/api';
-import { Select } from '@/components/ui';
+import { Button, Modal, Select } from '@/components/ui';
 
 function formatCurrency(value: number | string | null | undefined) {
   return new Intl.NumberFormat('es-EC', {
@@ -43,6 +45,7 @@ export default function CobrosPage() {
   const [pagos, setPagos] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'pendiente' | 'pagado'>('todos');
+  const [selectedPago, setSelectedPago] = useState<any | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -117,6 +120,16 @@ export default function CobrosPage() {
     });
   }, [pagos, search, estadoFiltro]);
 
+  const totalPendiente = useMemo(
+    () => contratosFiltrados.reduce((acc, item) => acc + item.totalPendiente, 0),
+    [contratosFiltrados],
+  );
+
+  const totalPagado = useMemo(
+    () => pagosFiltrados.reduce((acc, pago) => acc + Number(pago.monto ?? 0), 0),
+    [pagosFiltrados],
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-slate-600">
@@ -189,7 +202,28 @@ export default function CobrosPage() {
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <SummaryTile
+          icon={<Clock className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+          label="Pendientes"
+          value={String(contratosFiltrados.length)}
+          tone="amber"
+        />
+        <SummaryTile
+          icon={<Coins className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+          label="Por cobrar"
+          value={formatCurrency(totalPendiente)}
+          tone="slate"
+        />
+        <SummaryTile
+          icon={<TrendingUp className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+          label="Pagado"
+          value={formatCurrency(totalPagado)}
+          tone="primary"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         {/* Contratos con cuotas pendientes */}
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
@@ -207,55 +241,52 @@ export default function CobrosPage() {
               {contratosFiltrados.length}
             </span>
           </header>
-          <div className="max-h-[480px] overflow-y-auto p-5">
+          <div className="max-h-[34rem] overflow-y-auto p-4">
             {contratosFiltrados.length === 0 ? (
-              <div className="py-10 text-center text-slate-600">
-                <Check
-                  className="mx-auto h-8 w-8 text-slate-300"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-                <div className="mt-2 text-sm">
+              <div className="rounded-lg border border-green-100 bg-green-50/70 px-4 py-5 text-center text-slate-600">
+                <Check className="mx-auto h-7 w-7 text-green-500" strokeWidth={2} aria-hidden="true" />
+                <p className="mt-2 text-sm font-medium text-green-800">
                   No hay cuotas vencidas pendientes.
-                </div>
+                </p>
+                <p className="mt-1 text-xs text-green-700">
+                  Los contratos filtrados están al día.
+                </p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="space-y-3">
                 {contratosFiltrados.map((c) => (
                   <li
                     key={c.contratoId}
-                    className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                    className="rounded-lg border border-slate-100 bg-slate-50/70 p-3"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <strong className="font-mono text-xs font-semibold text-slate-800">
                           {c.numeroSecuencial}
                         </strong>
-                        <span className="inline-flex items-center rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
-                          {c.cuotas.length} cuota{c.cuotas.length === 1 ? '' : 's'}
-                        </span>
+                        <p className="mt-1 truncate text-sm font-medium text-slate-700">
+                          {c.difunto}
+                        </p>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {c.difunto}
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        Total pendiente:{' '}
-                        <strong className="text-slate-700">
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+                        {c.cuotas.length} cuota{c.cuotas.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="text-sm text-slate-600">
+                        Pendiente{' '}
+                        <strong className="text-slate-900">
                           {formatCurrency(c.totalPendiente)}
                         </strong>
                       </p>
+                      <Link
+                        href={`/cobros/${c.contratoId}/cobrar`}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700"
+                      >
+                        <Coins className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                        Cobrar
+                      </Link>
                     </div>
-                    <Link
-                      href={`/cobros/${c.contratoId}/cobrar`}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-primary-700"
-                    >
-                      <Coins
-                        className="h-3.5 w-3.5"
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                      Cobrar
-                    </Link>
                   </li>
                 ))}
               </ul>
@@ -280,49 +311,51 @@ export default function CobrosPage() {
               {pagosFiltrados.length}
             </span>
           </header>
-          <div className="max-h-[480px] overflow-y-auto p-5">
+          <div className="max-h-[34rem] overflow-y-auto p-4">
             {pagosFiltrados.length === 0 ? (
-              <div className="py-10 text-center text-slate-600">
-                <FolderX
-                  className="mx-auto h-8 w-8 text-slate-300"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-                <div className="mt-2 text-sm">No hay pagos registrados.</div>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-5 text-center text-slate-600">
+                <FolderX className="mx-auto h-7 w-7 text-slate-300" strokeWidth={2} aria-hidden="true" />
+                <p className="mt-2 text-sm font-medium">No hay pagos registrados.</p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="space-y-3">
                 {pagosFiltrados.slice(0, 20).map((pago) => (
                   <li
                     key={pago.id}
-                    className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                    className="rounded-lg border border-slate-100 bg-white p-3 transition-colors hover:bg-slate-50"
                   >
-                    <div className="min-w-0 flex-1">
-                      <strong className="font-mono text-xs font-semibold text-slate-800">
-                        {pago.numeroRecibo}
-                      </strong>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {formatDate(pago.fechaPago)} · {pago.metodoPago}
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        {pago.referencia || 'Sin referencia'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="block text-sm font-medium text-slate-700">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <strong className="font-mono text-xs font-semibold text-slate-800">
+                          {pago.numeroRecibo}
+                        </strong>
+                        <p className="mt-1 truncate text-xs text-slate-500">
+                          {formatDate(pago.fechaPago)} · {pago.metodoPago}
+                        </p>
+                        <p className="truncate text-xs text-slate-600">
+                          {pago.referencia || 'Sin referencia'}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold text-slate-800">
                         {formatCurrency(pago.monto)}
                       </span>
+                    </div>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPago(pago)}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-primary-700"
+                      >
+                        <Eye className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                        Detalle
+                      </button>
                       <a
                         href={`/api/pagos/${pago.id}/factura.pdf`}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50"
                       >
-                        <FileText
-                          className="h-3.5 w-3.5"
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
+                        <FileText className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
                         Recibo
                       </a>
                     </div>
@@ -333,6 +366,84 @@ export default function CobrosPage() {
           </div>
         </section>
       </div>
+
+      <Modal
+        open={selectedPago !== null}
+        onClose={() => setSelectedPago(null)}
+        title="Detalle del pago"
+        description={selectedPago?.numeroRecibo}
+        size="md"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setSelectedPago(null)}>
+              Cerrar
+            </Button>
+            {selectedPago && (
+              <a
+                href={`/api/pagos/${selectedPago.id}/factura.pdf`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-primary-700"
+              >
+                <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                Ver recibo
+              </a>
+            )}
+          </>
+        }
+      >
+        {selectedPago && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <InfoField label="Fecha" value={formatDate(selectedPago.fechaPago)} />
+            <InfoField label="Método" value={selectedPago.metodoPago || '—'} />
+            <InfoField label="Monto" value={formatCurrency(selectedPago.monto)} />
+            <InfoField label="Referencia" value={selectedPago.referencia || 'Sin referencia'} />
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function SummaryTile({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: 'amber' | 'primary' | 'slate';
+}) {
+  const toneClass = {
+    amber: 'bg-amber-50 text-amber-700 ring-amber-200',
+    primary: 'bg-primary-50 text-primary-700 ring-primary-200',
+    slate: 'bg-slate-50 text-slate-700 ring-slate-200',
+  }[tone];
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-soft">
+      <div className="flex items-center gap-3">
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${toneClass}`}>
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {label}
+          </p>
+          <p className="truncate text-lg font-bold text-slate-900">{value}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InfoField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-medium text-slate-800">{value}</p>
     </div>
   );
 }

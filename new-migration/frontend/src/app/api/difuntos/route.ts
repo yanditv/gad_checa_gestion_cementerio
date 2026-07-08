@@ -2,6 +2,28 @@ import { NextResponse } from 'next/server';
 import { API_URL, fetchWithTimeout, unwrapApiResponse } from '../_utils';
 import { authHeaders } from '@/lib/auth';
 
+async function forwardJson(request: Request, method: 'POST' | 'PUT' | 'PATCH' | 'DELETE') {
+  const body = method === 'DELETE' ? undefined : await request.text();
+  const response = await fetchWithTimeout(`${API_URL}/difuntos`, {
+    method,
+    headers: await authHeaders(),
+    body: body || undefined,
+    cache: 'no-store',
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message =
+      payload?.message ||
+      payload?.error?.message ||
+      `Error ${response.status}`;
+    return NextResponse.json({ message }, { status: response.status });
+  }
+
+  const { data, meta } = unwrapApiResponse<unknown>(payload);
+  return NextResponse.json(meta ? { data, meta } : data);
+}
+
 export async function GET(request: Request) {
   try {
     const params = new URL(request.url).searchParams.toString();
@@ -27,4 +49,8 @@ export async function GET(request: Request) {
       meta: { page: 1, limit: 20, total: 3, totalPages: 1, hasNextPage: false, hasPrevPage: false },
     });
   }
+}
+
+export async function POST(request: Request) {
+  return forwardJson(request, 'POST');
 }

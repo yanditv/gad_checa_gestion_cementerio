@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check } from 'lucide-react';
 import { bovedasApi, difuntosApi } from '@/lib/api';
-import { Button, ImageUpload, Select } from '@/components/ui';
+import { Button, DatePicker, ImageUpload, Select } from '@/components/ui';
 
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200';
@@ -67,6 +67,22 @@ function onlyDigits(value: string) {
   return value.replace(/\D/g, '');
 }
 
+function buildOptionalPayload(data: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined && value !== ''),
+  );
+}
+
+function uniqueById(items: any[]) {
+  const seen = new Set<number>();
+  return items.filter((item) => {
+    const id = Number(item?.id);
+    if (!Number.isInteger(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 export default function CreateDifuntoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -78,7 +94,7 @@ export default function CreateDifuntoPage() {
   useEffect(() => {
     bovedasApi
       .findAll()
-      .then((data) => setBovedas(data.filter((b: any) => b.estado)))
+      .then((data) => setBovedas(uniqueById(data.filter((b: any) => b.estado))))
       .catch(() => setBovedas([]));
   }, []);
 
@@ -90,10 +106,16 @@ export default function CreateDifuntoPage() {
     setLoading(true);
     setError('');
     try {
-      const creado = await difuntosApi.create({
+      const bovedaId = Number(formData.bovedaId);
+      if (!Number.isInteger(bovedaId) || bovedaId <= 0) {
+        setError('Selecciona una bóveda válida.');
+        return;
+      }
+
+      const creado = await difuntosApi.create(buildOptionalPayload({
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
-        bovedaId: Number(formData.bovedaId),
+        bovedaId,
         numeroIdentificacion: toOptional(formData.numeroIdentificacion),
         fechaNacimiento: toOptional(formData.fechaNacimiento),
         fechaDefuncion: toOptional(formData.fechaDefuncion),
@@ -111,9 +133,18 @@ export default function CreateDifuntoPage() {
         numeroCertificadoDefuncion: toOptional(formData.numeroCertificadoDefuncion),
         entidadEmisora: toOptional(formData.entidadEmisora),
         fechaEmisionCertificado: toOptional(formData.fechaEmisionCertificado),
-      });
+      }));
       if (fotoFile && creado?.id) {
-        await difuntosApi.uploadFoto(creado.id, fotoFile);
+        try {
+          await difuntosApi.uploadFoto(creado.id, fotoFile);
+        } catch (uploadError: any) {
+          setError(
+            uploadError?.message
+              ? `El difunto se registró, pero no se pudo subir la foto: ${uploadError.message}`
+              : 'El difunto se registró, pero no se pudo subir la foto.',
+          );
+          return;
+        }
       }
       router.push('/difuntos');
     } catch (err: any) {
@@ -238,32 +269,26 @@ export default function CreateDifuntoPage() {
           </header>
           <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <label className={LABEL_CLS}>Fecha de nacimiento</label>
-              <input
-                type="date"
-                className={INPUT_CLS}
+              <DatePicker
+                label="Fecha de nacimiento"
                 value={formData.fechaNacimiento}
-                onChange={(e) => set('fechaNacimiento', e.target.value)}
+                onChange={(value) => set('fechaNacimiento', value)}
               />
             </div>
             <div>
-              <label className={LABEL_CLS}>Fecha de defunción *</label>
-              <input
-                type="date"
-                className={INPUT_CLS}
+              <DatePicker
+                label="Fecha de defunción"
                 required
                 value={formData.fechaDefuncion}
-                onChange={(e) => set('fechaDefuncion', e.target.value)}
+                onChange={(value) => set('fechaDefuncion', value)}
               />
             </div>
             <div>
-              <label className={LABEL_CLS}>Fecha de inhumación *</label>
-              <input
-                type="date"
-                className={INPUT_CLS}
+              <DatePicker
+                label="Fecha de inhumación"
                 required
                 value={formData.fechaInhumacion}
-                onChange={(e) => set('fechaInhumacion', e.target.value)}
+                onChange={(value) => set('fechaInhumacion', value)}
               />
             </div>
             <div>
@@ -359,12 +384,10 @@ export default function CreateDifuntoPage() {
               />
             </div>
             <div>
-              <label className={LABEL_CLS}>Fecha de emisión</label>
-              <input
-                type="date"
-                className={INPUT_CLS}
+              <DatePicker
+                label="Fecha de emisión"
                 value={formData.fechaEmisionCertificado}
-                onChange={(e) => set('fechaEmisionCertificado', e.target.value)}
+                onChange={(value) => set('fechaEmisionCertificado', value)}
               />
             </div>
           </div>

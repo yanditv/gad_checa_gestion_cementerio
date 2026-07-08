@@ -3,7 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Boxes,
+  Check,
+  CircleDollarSign,
+  Info,
+  Layers3,
+  Loader2,
+  MapPin,
+  PackageCheck,
+  Users,
+} from 'lucide-react';
 import { bloquesApi, bovedasApi, tiposEspacioApi, TipoEspacio } from '@/lib/api';
 import { Select } from '@/components/ui';
 
@@ -29,6 +40,9 @@ export default function CreateBovedaPage() {
     observaciones: '',
     estado: true,
   });
+
+  const bloqueSeleccionado = bloques.find((bloque) => bloque.id === Number(formData.bloqueId));
+  const tipoSeleccionado = tiposEspacio.find((tipo) => tipo.id === Number(formData.tipoEspacioId));
 
   const loadAllBloques = async () => {
     const items: any[] = [];
@@ -281,14 +295,77 @@ export default function CreateBovedaPage() {
           </form>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+        <section className="self-start overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
           <header className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">Información</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Info className="h-4 w-4 text-primary-600" strokeWidth={2} aria-hidden="true" />
+              Información
+            </h2>
           </header>
-          <div className="space-y-3 p-5 text-sm text-slate-600">
-            <p>Ingrese los datos de la bóveda. Los campos marcados con * son obligatorios.</p>
-            <div className="border-t border-slate-100 pt-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+          <div className="space-y-4 p-5 text-sm text-slate-600">
+            <div className="rounded-lg border border-primary-100 bg-primary-50/70 p-3">
+              <div className="flex items-start gap-2">
+                <Boxes className="mt-0.5 h-4 w-4 shrink-0 text-primary-700" strokeWidth={2} aria-hidden="true" />
+                <div>
+                  <p className="font-semibold text-slate-800">
+                    {formData.numero.trim() || 'Bóveda sin número'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600">
+                    {bloqueSeleccionado?.nombre || 'Selecciona un bloque'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <Layers3 className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Tipo
+                </div>
+                <p className="mt-2 font-semibold text-slate-800">
+                  {tipoSeleccionado?.nombre || '—'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <Users className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Capacidad
+                </div>
+                <p className="mt-2 text-lg font-bold text-slate-800">{formData.capacidad}</p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-white p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <CircleDollarSign className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Venta
+                </div>
+                <p className="mt-2 font-semibold text-slate-800">
+                  ${Number(formData.precio || 0).toFixed(2)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-white p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <PackageCheck className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                  Arriendo
+                </div>
+                <p className="mt-2 font-semibold text-slate-800">
+                  ${Number(formData.precioArrendamiento || 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-100 bg-white p-3">
+              <div className="flex gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" strokeWidth={2} aria-hidden="true" />
+                <p>
+                  Los campos marcados con <span className="font-semibold text-red-500">*</span> son obligatorios.
+                  Si marcas la bóveda como disponible, podrá usarse en contratos de arriendo.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Tipos de espacio
               </p>
               {tiposEspacio.length === 0 ? (
@@ -296,12 +373,17 @@ export default function CreateBovedaPage() {
                   No hay tipos de espacio configurados. Créelos en Parámetros.
                 </p>
               ) : (
-                <ul className="list-disc space-y-1 pl-5">
+                <ul className="space-y-2">
                   {tiposEspacio.map((tipo) => (
-                    <li key={tipo.id}>
-                      <strong className="text-slate-700">{tipo.nombre}:</strong>{' '}
-                      ${Number(tipo.tarifaArriendo).toFixed(2)} · {tipo.aniosArriendo} año
-                      {tipo.aniosArriendo === 1 ? '' : 's'} de arriendo
+                    <li
+                      key={tipo.id}
+                      className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2"
+                    >
+                      <span className="font-medium text-slate-700">{tipo.nombre}</span>
+                      <span className="text-xs text-slate-500">
+                        ${Number(tipo.tarifaArriendo).toFixed(2)} · {tipo.aniosArriendo} año
+                        {tipo.aniosArriendo === 1 ? '' : 's'}
+                      </span>
                     </li>
                   ))}
                 </ul>

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -7,6 +8,12 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+
+function emptyToUndefined({ value }: { value: unknown }) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
 
 /**
  * Campos del difunto. La identificación (`numeroIdentificacion`) es
@@ -24,6 +31,7 @@ export class CreateDifuntoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsString()
   @Matches(/^\d+$/, { message: 'La identificación debe contener solo números' })
   numeroIdentificacion?: string;
@@ -34,16 +42,19 @@ export class CreateDifuntoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaNacimiento?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaDefuncion?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaInhumacion?: string;
 
@@ -111,6 +122,7 @@ export class CreateDifuntoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaEmisionCertificado?: string;
 }
@@ -128,6 +140,7 @@ export class UpdateDifuntoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsString()
   @Matches(/^\d+$/, { message: 'La identificación debe contener solo números' })
   numeroIdentificacion?: string;
@@ -139,16 +152,19 @@ export class UpdateDifuntoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaNacimiento?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaDefuncion?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaInhumacion?: string;
 
@@ -214,6 +230,7 @@ export class UpdateDifuntoDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @Transform(emptyToUndefined)
   @IsDateString()
   fechaEmisionCertificado?: string;
 

@@ -152,12 +152,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-labelledby={fieldId}
             className="z-[1200] max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
           >
-            {optionRows.map((opt) => {
+            {optionRows.map((opt, index) => {
               const optValue = String(opt.value);
               const active = optValue === internalValue;
               return (
                 <button
-                  key={optValue || '__empty'}
+                  key={`${optValue || '__empty'}-${index}`}
                   type="button"
                   role="option"
                   aria-selected={active}
@@ -214,8 +214,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           )}
           {options
-            ? options.map((opt) => (
-                <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+            ? options.map((opt, index) => (
+                <option
+                  key={`${String(opt.value) || '__empty'}-${index}`}
+                  value={opt.value}
+                  disabled={opt.disabled}
+                >
                   {opt.label}
                 </option>
               ))

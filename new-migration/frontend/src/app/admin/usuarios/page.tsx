@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, Eye, KeyRound, Loader2, Search, UserCheck, UserX, Users } from 'lucide-react';
+import { Check, Eye, KeyRound, Loader2, Search, ShieldCheck, UserCheck, UserX, Users } from 'lucide-react';
 import { usuariosApi, rolesApi, PaginationMeta } from '@/lib/api';
 import {
   Avatar,
   Badge,
+  Button,
   DataTable,
   EmptyState,
   Input,
+  Modal,
   Pagination,
   type DataTableColumn,
 } from '@/components/ui';
@@ -45,6 +47,7 @@ export default function AdminUsuariosPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>();
+  const [rolesModalUser, setRolesModalUser] = useState<Usuario | null>(null);
 
   const loadUsuarios = async () => {
     setLoading(true);
@@ -99,6 +102,16 @@ export default function AdminUsuariosPage() {
     try {
       await usuariosApi.setRoles(id, selected);
       await loadUsuarios();
+      setRolesModalUser((current) => {
+        if (!current || current.id !== id) return current;
+        const selectedSet = new Set(selected);
+        return {
+          ...current,
+          usuarioRols: roles
+            .filter((rol) => selectedSet.has(rol.id))
+            .map((rol) => ({ rolId: rol.id, rol })),
+        };
+      });
     } catch (err: any) {
       setError(err.message || 'No se pudieron actualizar los roles');
     } finally {
@@ -191,7 +204,6 @@ export default function AdminUsuariosPage() {
       align: 'right',
       cellClassName: 'whitespace-nowrap',
       cell: (usuario) => {
-        const currentRoles = usuario.usuarioRols?.map((item) => item.rolId) || [];
         return (
           <div className="inline-flex items-center gap-2">
             <Link
@@ -201,42 +213,15 @@ export default function AdminUsuariosPage() {
             >
               <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
             </Link>
-            {/* Pills toggleables para mantener el control alineado al sistema visual. */}
-            <div
-              role="group"
-              aria-label={`Roles de ${usuario.nombre} ${usuario.apellido}`}
-              className="inline-flex flex-wrap items-center gap-1"
+            <button
+              type="button"
+              onClick={() => setRolesModalUser(usuario)}
+              disabled={savingUserId === usuario.id}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-50 disabled:opacity-60"
             >
-              {roles.map((rol) => {
-                const checked = currentRoles.includes(rol.id);
-                return (
-                  <button
-                    key={rol.id}
-                    type="button"
-                    aria-pressed={checked}
-                    disabled={savingUserId === usuario.id}
-                    onClick={() =>
-                      updateRoles(
-                        usuario.id,
-                        checked
-                          ? currentRoles.filter((id) => id !== rol.id)
-                          : [...currentRoles, rol.id],
-                      )
-                    }
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 disabled:opacity-60 ${
-                      checked
-                        ? 'bg-primary-50 text-primary-700 ring-primary-200 hover:bg-primary-100'
-                        : 'bg-white text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-700'
-                    }`}
-                  >
-                    {checked && (
-                      <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
-                    )}
-                    {rol.nombre}
-                  </button>
-                );
-              })}
-            </div>
+              <ShieldCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              Roles
+            </button>
             <button
               type="button"
               onClick={() => resetPassword(usuario.id)}
@@ -341,6 +326,60 @@ export default function AdminUsuariosPage() {
           </div>
         )}
       </section>
+
+      <Modal
+        open={rolesModalUser !== null}
+        onClose={() => setRolesModalUser(null)}
+        title="Asignar roles"
+        description={
+          rolesModalUser
+            ? `${rolesModalUser.nombre} ${rolesModalUser.apellido}`
+            : undefined
+        }
+        size="md"
+        footer={
+          <Button type="button" variant="secondary" onClick={() => setRolesModalUser(null)}>
+            Cerrar
+          </Button>
+        }
+      >
+        {rolesModalUser && (
+          <div
+            role="group"
+            aria-label={`Roles de ${rolesModalUser.nombre} ${rolesModalUser.apellido}`}
+            className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+          >
+            {roles.map((rol) => {
+              const currentRoles = rolesModalUser.usuarioRols?.map((item) => item.rolId) || [];
+              const checked = currentRoles.includes(rol.id);
+              return (
+                <button
+                  key={rol.id}
+                  type="button"
+                  aria-pressed={checked}
+                  disabled={savingUserId === rolesModalUser.id}
+                  onClick={() =>
+                    updateRoles(
+                      rolesModalUser.id,
+                      checked
+                        ? currentRoles.filter((id) => id !== rol.id)
+                        : [...currentRoles, rol.id],
+                    )
+                  }
+                  className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 disabled:opacity-60 ${
+                    checked
+                      ? 'border-primary-200 bg-primary-50 text-primary-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{rol.nombre}</span>
+                  {checked && <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

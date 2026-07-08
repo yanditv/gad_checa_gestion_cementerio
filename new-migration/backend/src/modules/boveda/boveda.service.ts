@@ -104,7 +104,7 @@ export class BovedaService {
             select: { id: true, numeroSecuencial: true },
           },
         },
-        orderBy: { fechaCreacion: 'desc' },
+        orderBy: [{ fechaCreacion: 'desc' }, { id: 'desc' }],
         skip: estadoFilter ? undefined : skip,
         take: estadoFilter ? undefined : limit,
       }),
