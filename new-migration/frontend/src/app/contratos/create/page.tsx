@@ -127,6 +127,29 @@ function Label({
   );
 }
 
+function soloDigitos(valor: string): string {
+  return valor.replace(/\D/g, '');
+}
+
+function validarCedulaEcuatoriana(cedula: string): string | null {
+  if (cedula.length !== 10) return 'La cédula debe tener 10 dígitos.';
+  const provincia = parseInt(cedula.substring(0, 2), 10);
+  if (provincia < 1 || provincia > 24) return 'Los primeros 2 dígitos deben ser 01–24 (código de provincia).';
+  const tercerDigito = parseInt(cedula[2], 10);
+  if (tercerDigito >= 6) return 'El tercer dígito debe ser menor a 6.';
+  const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  let suma = 0;
+  for (let i = 0; i < 9; i++) {
+    let producto = parseInt(cedula[i], 10) * coeficientes[i];
+    if (producto > 9) producto -= 9;
+    suma += producto;
+  }
+  const digitoVerificador = parseInt(cedula[9], 10);
+  const esperado = (10 - (suma % 10)) % 10;
+  if (digitoVerificador !== esperado) return 'El dígito verificador no coincide.';
+  return null;
+}
+
 const INPUT_CLS =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:bg-slate-50 disabled:text-slate-600 read-only:bg-slate-50';
 
@@ -178,6 +201,7 @@ export default function CreateContratoPage() {
   const [personas, setPersonas] = useState<any[]>([]);
   const [responsableSearch, setResponsableSearch] = useState('');
   const [showResponsableModal, setShowResponsableModal] = useState(false);
+  const [newResponsableError, setNewResponsableError] = useState('');
   const [showBovedaModal, setShowBovedaModal] = useState(false);
   const [bovedaSearch, setBovedaSearch] = useState('');
   const [bovedaTipoEspacioId, setBovedaTipoEspacioId] = useState('');
@@ -604,8 +628,15 @@ export default function CreateContratoPage() {
 
   function addNewResponsable() {
     if (!newResponsable.nombres || !newResponsable.apellidos || !newResponsable.numeroIdentificacion) {
-      setError('Complete al menos nombres, apellidos y número de identificación del responsable');
+      setNewResponsableError('Complete al menos nombres, apellidos y número de identificación del responsable');
       return;
+    }
+    if (newResponsable.tipoIdentificacion === 'Cedula') {
+      const errorCedula = validarCedulaEcuatoriana(newResponsable.numeroIdentificacion);
+      if (errorCedula) {
+        setNewResponsableError(errorCedula);
+        return;
+      }
     }
     setForm((prev) => ({
       ...prev,
@@ -1742,7 +1773,7 @@ export default function CreateContratoPage() {
       {/* Modal: Nuevo responsable */}
       <Modal
         open={showResponsableModal}
-        onClose={() => setShowResponsableModal(false)}
+        onClose={() => { setShowResponsableModal(false); setNewResponsableError(''); }}
         title="Crear nuevo responsable"
         size="md"
         footer={
@@ -1760,7 +1791,13 @@ export default function CreateContratoPage() {
           </>
         }
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
+          {newResponsableError && (
+            <div className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700 ring-1 ring-danger-200">
+              {newResponsableError}
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="responsable-nombres">Nombres</Label>
                 <input
@@ -1813,7 +1850,7 @@ export default function CreateContratoPage() {
                   onChange={(e) =>
                     setNewResponsable((prev) => ({
                       ...prev,
-                      numeroIdentificacion: e.target.value,
+                      numeroIdentificacion: soloDigitos(e.target.value),
                     }))
                   }
                 />
@@ -1827,7 +1864,7 @@ export default function CreateContratoPage() {
                   onChange={(e) =>
                     setNewResponsable((prev) => ({
                       ...prev,
-                      telefono: e.target.value,
+                      telefono: soloDigitos(e.target.value),
                     }))
                   }
                 />
@@ -1860,6 +1897,7 @@ export default function CreateContratoPage() {
                   }
                 />
               </div>
+          </div>
         </div>
       </Modal>
     </div>

@@ -4,10 +4,11 @@ const path = require('path');
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   serverExternalPackages: ['pdfkit'],
+
   webpack: (config, { dev }) => {
     if (dev) {
-      // Avoid filesystem cache corruption in local dev rebuilds.
-      config.cache = false;
+      // Cache en memoria: evita corrupción de disco y acelera recompilaciones
+      config.cache = { type: 'memory' };
     }
     return config;
   },

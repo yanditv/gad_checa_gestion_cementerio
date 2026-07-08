@@ -10,6 +10,7 @@ import {
   Clock,
   Info,
   Package,
+  Plus,
   Receipt,
   Tag,
   UserCheck,
@@ -29,6 +30,8 @@ import {
   PageHeader,
   Select,
 } from '@/components/ui';
+import { CategoriaFormModal } from '@/app/inventario/categorias/CategoriaFormModal';
+import { CustodioFormModal } from '@/app/inventario/custodios/CustodioFormModal';
 
 const ESTADOS_CONSERVACION = [
   { value: 'bueno', label: 'Bueno' },
@@ -92,6 +95,25 @@ export default function NuevoBienPage() {
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const categoriaSeleccionada = categorias.find((c) => c.id === Number(formData.categoriaId));
   const custodioSeleccionado = custodios.find((c) => c.id === Number(formData.custodioId));
+
+  const [showCategoriaModal, setShowCategoriaModal] = useState(false);
+  const [showCustodioModal, setShowCustodioModal] = useState(false);
+
+  const recargarCategorias = async (nuevoId?: number) => {
+    try {
+      const rows = await inventarioCategoriasApi.findAll();
+      setCategorias(rows ?? []);
+      if (nuevoId) set('categoriaId', String(nuevoId));
+    } catch { /* no-op */ }
+  };
+
+  const recargarCustodios = async (nuevoId?: number) => {
+    try {
+      const rows = await inventarioCustodiosApi.findAll();
+      setCustodios(rows ?? []);
+      if (nuevoId) set('custodioId', String(nuevoId));
+    } catch { /* no-op */ }
+  };
 
   useEffect(() => {
     inventarioCategoriasApi
@@ -181,19 +203,32 @@ export default function NuevoBienPage() {
                   value={formData.codigo}
                   onChange={(e) => set('codigo', e.target.value)}
                 />
-                <Select
-                  label="Categoría"
-                  required
-                  placeholder="Seleccione…"
-                  value={formData.categoriaId}
-                  onChange={(e) => set('categoriaId', e.target.value)}
-                >
-                  {categorias.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </Select>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Select
+                      label="Categoría"
+                      required
+                      placeholder="Seleccione…"
+                      value={formData.categoriaId}
+                      onChange={(e) => set('categoriaId', e.target.value)}
+                    >
+                      {categorias.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => setShowCategoriaModal(true)}
+                    leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+                    className="shrink-0"
+                  >
+                    Nueva
+                  </Button>
+                </div>
                 <Input
                   label="Descripción"
                   required
@@ -291,19 +326,31 @@ export default function NuevoBienPage() {
             </FormSection>
 
             <FormSection title="Responsable" icon={<UserCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-              <Select
-                label="Custodio"
-                wrapperClassName="sm:max-w-sm"
-                value={formData.custodioId}
-                onChange={(e) => set('custodioId', e.target.value)}
-              >
-                <option value="">Sin custodio</option>
-                {custodios.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </Select>
+              <div className="flex items-end gap-2 sm:max-w-sm">
+                <div className="flex-1">
+                  <Select
+                    label="Custodio"
+                    value={formData.custodioId}
+                    onChange={(e) => set('custodioId', e.target.value)}
+                  >
+                    <option value="">Sin custodio</option>
+                    {custodios.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setShowCustodioModal(true)}
+                  leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+                  className="shrink-0"
+                >
+                  Nuevo
+                </Button>
+              </div>
             </FormSection>
 
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-5 pb-5">
@@ -396,6 +443,18 @@ export default function NuevoBienPage() {
           </div>
         </Card>
       </div>
+
+      <CategoriaFormModal
+        open={showCategoriaModal}
+        onClose={() => setShowCategoriaModal(false)}
+        onSaved={(data: any) => recargarCategorias(data?.id)}
+      />
+
+      <CustodioFormModal
+        open={showCustodioModal}
+        onClose={() => setShowCustodioModal(false)}
+        onSaved={(data: any) => recargarCustodios(data?.id)}
+      />
     </div>
   );
 }

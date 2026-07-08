@@ -15,7 +15,7 @@ interface FormState {
 interface CategoriaFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (data?: any) => void;
   categoria?: {
     id: number;
     nombre: string;
@@ -68,8 +68,9 @@ export function CategoriaFormModal({ open, onClose, onSaved, categoria }: Catego
     setLoading(true);
     setError('');
     try {
+      let result: any;
       if (isEdit) {
-        await inventarioCategoriasApi.update(categoria!.id, {
+        result = await inventarioCategoriasApi.update(categoria!.id, {
           nombre: formData.nombre.trim(),
           vidaUtilAnios: Number(formData.vidaUtilAnios),
           valorResidualPct:
@@ -79,7 +80,7 @@ export function CategoriaFormModal({ open, onClose, onSaved, categoria }: Catego
           estado: formData.estado,
         });
       } else {
-        await inventarioCategoriasApi.create({
+        result = await inventarioCategoriasApi.create({
           nombre: formData.nombre.trim(),
           vidaUtilAnios: Number(formData.vidaUtilAnios),
           valorResidualPct:
@@ -88,7 +89,7 @@ export function CategoriaFormModal({ open, onClose, onSaved, categoria }: Catego
               : Number(formData.valorResidualPct),
         });
       }
-      onSaved();
+      onSaved(result);
       onClose();
     } catch (err: any) {
       setError(err.message || 'No se pudo guardar la categoría');
