@@ -147,7 +147,7 @@ export function Modal({
         aria-describedby={description != null ? descId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative w-full rounded-2xl bg-white shadow-overlay animate-scale-in focus:outline-none overflow-hidden',
+          'relative w-full rounded-2xl bg-white shadow-overlay animate-scale-in focus:outline-none',
           sizes[size],
           className,
         )}
@@ -183,7 +183,7 @@ export function Modal({
         )}
         {children != null && <div className="px-6 py-5">{children}</div>}
         {footer != null && (
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl px-6 py-4">
             {footer}
           </div>
         )}
