@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FolderX, Loader2, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { FolderX, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { inventarioCustodiosApi, PaginationMeta } from '@/lib/api';
 import {
   Badge,
@@ -167,8 +167,8 @@ export default function CustodiosPage() {
       />
 
       <Card padding="none">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 sm:items-center">
+        <div className="border-b border-slate-100 p-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-center">
             <Input
               type="search"
               placeholder="Nombre, identificación o cargo"
@@ -190,18 +190,6 @@ export default function CustodiosPage() {
               }}
             />
           </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              setPage(1);
-              setFiltro('');
-            }}
-            leftIcon={<X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
-          >
-            Limpiar
-          </Button>
         </div>
 
         {error && (
