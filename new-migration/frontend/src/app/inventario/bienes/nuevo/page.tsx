@@ -183,10 +183,9 @@ export default function NuevoBienPage() {
         icon={<Package className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6">
         <Card
           padding="none"
-          className="lg:col-span-2"
           header={<Card.Title icon={<ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>Datos del bien</Card.Title>}
         >
           <form onSubmit={handleSubmit} className="space-y-6 px-5">
@@ -197,22 +196,57 @@ export default function NuevoBienPage() {
             )}
             <FormSection divided={false}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <ImageUpload
+                  shape="square"
+                  label="Foto (opcional)"
+                  hint="JPG, PNG o WEBP, máx. 5 MB"
+                  onChange={setFotoFile}
+                />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
+                  <Input
+                    label="Código (placa)"
+                    value={formData.codigo}
+                    onChange={(e) => set('codigo', e.target.value)}
+                  />
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Select
+                        label="Categoría"
+                        required
+                        value={formData.categoriaId}
+                        onChange={(e) => set('categoriaId', e.target.value)}
+                      >
+                        {categorias.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nombre}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={() => setShowCategoriaModal(true)}
+                      leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+                    />
+                  </div>
+                </div>
+
                 <Input
-                  label="Código (placa)"
-                  placeholder="Se autogenera si se deja vacío"
-                  value={formData.codigo}
-                  onChange={(e) => set('codigo', e.target.value)}
+                  label="Descripción"
+                  required
+                  value={formData.descripcion}
+                  onChange={(e) => set('descripcion', e.target.value)}
                 />
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <Select
-                      label="Categoría"
-                      required
-                      placeholder="Seleccione…"
-                      value={formData.categoriaId}
-                      onChange={(e) => set('categoriaId', e.target.value)}
+                      label="Custodio"
+                      value={formData.custodioId}
+                      onChange={(e) => set('custodioId', e.target.value)}
                     >
-                      {categorias.map((c) => (
+                      <option value="">Sin custodio</option>
+                      {custodios.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.nombre}
                         </option>
@@ -222,36 +256,23 @@ export default function NuevoBienPage() {
                   <Button
                     variant="secondary"
                     size="md"
-                    onClick={() => setShowCategoriaModal(true)}
+                    onClick={() => setShowCustodioModal(true)}
                     leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                     className="shrink-0"
-                  >
-                    Nueva
-                  </Button>
+                  />
                 </div>
                 <Input
-                  label="Descripción"
-                  required
-                  wrapperClassName="sm:col-span-2"
-                  placeholder="Computadora de escritorio HP"
-                  value={formData.descripcion}
-                  onChange={(e) => set('descripcion', e.target.value)}
-                />
-                <Input
                   label="Marca"
-                  placeholder="HP"
                   value={formData.marca}
                   onChange={(e) => set('marca', e.target.value)}
                 />
                 <Input
                   label="Modelo"
-                  placeholder="ProDesk 600 G6"
                   value={formData.modelo}
                   onChange={(e) => set('modelo', e.target.value)}
                 />
                 <Input
                   label="Serie"
-                  placeholder="SN-123456"
                   value={formData.serie}
                   onChange={(e) => set('serie', e.target.value)}
                 />
@@ -263,17 +284,8 @@ export default function NuevoBienPage() {
                 />
               </div>
             </FormSection>
-            <FormSection title="Fotografía" icon={<Camera className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-              <ImageUpload
-                shape="square"
-                label="Foto (opcional)"
-                hint="JPG, PNG o WEBP, máx. 5 MB"
-                onChange={setFotoFile}
-              />
-            </FormSection>
             <FormSection
               title="Adquisición y depreciación"
-              description="Datos contables del bien (CGE 406-03)."
               icon={<Receipt className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -289,19 +301,16 @@ export default function NuevoBienPage() {
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="850.00"
                   value={formData.valorAdquisicion}
                   onChange={(e) => set('valorAdquisicion', e.target.value)}
                 />
                 <Input
                   label="Fuente de financiamiento"
-                  placeholder="Recursos propios"
                   value={formData.fuenteFinanciamiento}
                   onChange={(e) => set('fuenteFinanciamiento', e.target.value)}
                 />
                 <Input
                   label="Ubicación"
-                  placeholder="Secretaría"
                   value={formData.ubicacion}
                   onChange={(e) => set('ubicacion', e.target.value)}
                 />
@@ -310,7 +319,6 @@ export default function NuevoBienPage() {
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="Por defecto: % de la categoría"
                   value={formData.valorResidual}
                   onChange={(e) => set('valorResidual', e.target.value)}
                 />
@@ -318,42 +326,13 @@ export default function NuevoBienPage() {
                   label="Vida útil en meses (override)"
                   type="number"
                   min="1"
-                  placeholder="Por defecto: vida útil de la categoría"
                   value={formData.vidaUtilMesesOverride}
                   onChange={(e) => set('vidaUtilMesesOverride', e.target.value)}
                 />
               </div>
             </FormSection>
 
-            <FormSection title="Responsable" icon={<UserCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-              <div className="flex items-end gap-2 sm:max-w-sm">
-                <div className="flex-1">
-                  <Select
-                    label="Custodio"
-                    value={formData.custodioId}
-                    onChange={(e) => set('custodioId', e.target.value)}
-                  >
-                    <option value="">Sin custodio</option>
-                    {custodios.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  onClick={() => setShowCustodioModal(true)}
-                  leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
-                  className="shrink-0"
-                >
-                  Nuevo
-                </Button>
-              </div>
-            </FormSection>
-
-            <div className="flex justify-end gap-2 border-t border-slate-100 pt-5 pb-5">
+            <div className="flex justify-end gap-2 border-t border-slate-100 py-6">
               <Button
                 variant="secondary"
                 onClick={() => router.push('/inventario/bienes')}
@@ -371,77 +350,6 @@ export default function NuevoBienPage() {
           </form>
         </Card>
 
-        <Card
-          padding="none"
-          className="self-start"
-          header={<Card.Title icon={<Info className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>Información</Card.Title>}
-        >
-          <div className="space-y-4 p-5 text-sm text-slate-600">
-            <div className="rounded-lg border border-primary-100 bg-primary-50/70 p-3">
-              <div className="flex items-start gap-2">
-                <Package className="mt-0.5 h-4 w-4 shrink-0 text-primary-700" strokeWidth={2} aria-hidden="true" />
-                <div>
-                  <p className="font-semibold text-slate-800">
-                    {formData.descripcion.trim() || 'Bien sin descripción'}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-600">
-                    {formData.codigo.trim() || 'El código se autogenera al guardar'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <Tag className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
-                  Categoría
-                </div>
-                <p className="mt-2 truncate font-semibold text-slate-800">
-                  {categoriaSeleccionada?.nombre || '—'}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <UserCheck className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
-                  Custodio
-                </div>
-                <p className="mt-2 truncate font-semibold text-slate-800">
-                  {custodioSeleccionado?.nombre || 'Sin asignar'}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-100 bg-white p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <CircleDollarSign className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
-                  Valor
-                </div>
-                <p className="mt-2 font-semibold text-slate-800">
-                  {formatCurrency(formData.valorAdquisicion)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-100 bg-white p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <Clock className="h-4 w-4 text-slate-500" strokeWidth={2} aria-hidden="true" />
-                  Fecha
-                </div>
-                <p className="mt-2 font-semibold text-slate-800">
-                  {formData.fechaAdquisicion || '—'}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
-              <p>
-                Al guardar se crea automáticamente un movimiento de
-                <strong className="text-slate-700"> alta</strong> en el historial.
-              </p>
-              <p>
-                La depreciación usa la vida útil y el valor residual de la categoría,
-                salvo que indiques valores override.
-              </p>
-            </div>
-          </div>
-        </Card>
       </div>
 
       <CategoriaFormModal
