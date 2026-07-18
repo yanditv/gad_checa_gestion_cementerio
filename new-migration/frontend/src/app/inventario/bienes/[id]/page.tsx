@@ -1,7 +1,8 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {
   Camera,
   Check,
@@ -10,8 +11,10 @@ import {
   History,
   MapPin,
   Package,
+  Receipt,
   RotateCcw,
   Settings,
+  Pencil,
   TrendingDown,
   Truck,
   UserPlus,
@@ -22,6 +25,7 @@ import {
   Button,
   Card,
   DatePicker,
+  FormSection,
   ImageUpload,
   Input,
   Modal,
@@ -154,13 +158,9 @@ function DataField({
 
 type ModalKind = 'reasignar' | 'mover' | 'baja' | null;
 
-export default function BienDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
-  const bienId = Number(id);
+export default function BienDetailPage() {
+  const params = useParams<{ id: string }>();
+  const bienId = Number(params.id);
 
   const [bien, setBien] = useState<Bien | null>(null);
   const [historial, setHistorial] = useState<HistorialItem[]>([]);
@@ -400,50 +400,52 @@ export default function BienDetailPage({
   );
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title={bien.descripcion}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-2">
-            <Avatar src={mediaUrl(bien.fotoUrl)} name={bien.descripcion} size="sm" />
-            <span className="font-mono font-semibold text-slate-600">
-              {bien.codigo}
-            </span>
-            {bien.dadoDeBaja && (
-              <Badge tone="danger" dot>
-                Dado de baja
-              </Badge>
-            )}
-            {!bien.estado && (
-              <Badge tone="neutral" dot>
-                Inactivo
-              </Badge>
-            )}
-          </span>
-        }
         backHref="/inventario/bienes"
+        subtitle="Información detallada del bien"
         icon={<Package className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
       />
 
       {error && (
-        <div className="mb-6 rounded-xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+        <div className="rounded-xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card
-            padding="md"
-            header={
-              <Card.Title icon={<ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                Datos del bien
-              </Card.Title>
-            }
-          >
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <DataField label="Código" value={bien.codigo} />
-              <DataField label="Categoría" value={bien.categoria?.nombre} />
+      {/* 1. Datos del bien (estilo crear bien) */}
+      <Card
+        padding="none"
+        header={
+          <Card.Title icon={<ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+            Datos del bien
+          </Card.Title>
+        }
+      >
+        <div className="space-y-6 px-5 py-5">
+          <FormSection divided={false}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <ImageUpload
+                shape="square"
+                value={mediaUrl(bien.fotoUrl)}
+                disabled={fotoBusy}
+                hint="JPG, PNG o WEBP, máx. 5 MB"
+                onChange={handleFotoChange}
+              />
+              {fotoError && (
+                <p className="mt-2 text-caption text-danger-600">{fotoError}</p>
+              )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
+                <DataField label="Código (placa)" value={bien.codigo} />
+                <DataField label="Categoría" value={bien.categoria?.nombre} />
+              </div>
+
+              <DataField label="Descripción" value={bien.descripcion} />
+              <DataField label="Custodio" value={bien.custodio?.nombre} />
+              <DataField label="Marca" value={bien.marca} />
+              <DataField label="Modelo" value={bien.modelo} />
+              <DataField label="Serie" value={bien.serie} />
               <DataField
                 label="Estado de conservación"
                 value={
@@ -452,9 +454,11 @@ export default function BienDetailPage({
                   </Badge>
                 }
               />
-              <DataField label="Marca" value={bien.marca} />
-              <DataField label="Modelo" value={bien.modelo} />
-              <DataField label="Serie" value={bien.serie} />
+            </div>
+          </FormSection>
+
+          <FormSection title="Adquisición y depreciación" icon={<Receipt className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <DataField
                 label="Fecha de adquisición"
                 value={formatDate(bien.fechaAdquisicion)}
@@ -467,224 +471,197 @@ export default function BienDetailPage({
                 label="Fuente de financiamiento"
                 value={bien.fuenteFinanciamiento}
               />
+              <DataField label="Ubicación" value={bien.ubicacion} />
+              <DataField
+                label="Valor residual"
+                value={formatMoney(bien.valorResidual ?? (depreciacion?.valorResidual))}
+              />
+              <DataField
+                label="Vida útil en meses"
+                value={bien.vidaUtilMesesOverride ?? (depreciacion?.vidaUtilMeses)}
+              />
             </div>
-          </Card>
+          </FormSection>
+        </div>
+      </Card>
 
-          {bien.dadoDeBaja && (
-            <Card
-              padding="md"
-              header={
-                <Card.Title icon={<CircleX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                  Baja del bien
-                </Card.Title>
-              }
-            >
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                <DataField label="Fecha de baja" value={formatDate(bien.fechaBaja)} />
-                <DataField label="Motivo" value={bien.motivoBaja} />
-              </div>
-            </Card>
+      {/* 2. Información de Baja si aplica */}
+      {bien.dadoDeBaja && (
+        <Card
+          padding="md"
+          header={
+            <Card.Title icon={<CircleX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+              Baja del bien
+            </Card.Title>
+          }
+        >
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
+            <DataField label="Fecha de baja" value={formatDate(bien.fechaBaja)} />
+            <DataField label="Motivo" value={bien.motivoBaja} />
+          </div>
+        </Card>
+      )}
+
+      {/* 3. Secciones secundarias: Historial y Depreciación en dos columnas */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
+        {/* Historial de Movimientos */}
+        <Card
+          padding="none"
+          header={
+            <div className="flex items-center gap-2">
+              <Card.Title icon={<History className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+                Historial
+              </Card.Title>
+              <Badge tone="neutral" size="md">
+                {historial.length}
+              </Badge>
+            </div>
+          }
+        >
+          {historial.length === 0 ? (
+            <p className="text-sm text-slate-600">Sin movimientos registrados.</p>
+          ) : (
+            <ol className="relative space-y-5 border-l border-slate-200 pl-5 px-5 py-3">
+              {historial.map((h, idx) => (
+                <li key={idx} className="relative">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={TIPO_TONE[h.tipo] ?? 'neutral'} size="sm">
+                      {TIPO_LABEL[h.tipo] ?? h.tipo}
+                    </Badge>
+                    <span className="text-md text-slate-600">
+                      {formatDate(h.fecha)}
+                    </span>
+                  </div>
+                  {h.detalle && (
+                    <p className="mt-1.5 text-md text-slate-600">{h.detalle}</p>
+                  )}
+                  {(h.custodioAnterior || h.custodioNuevo) && (
+                    <p className="mt-1 text-md text-slate-500">
+                      Custodio: {h.custodioAnterior?.nombre ?? '—'} →{' '}
+                      {h.custodioNuevo?.nombre ?? '—'}
+                    </p>
+                  )}
+                  {(h.ubicacionAnterior || h.ubicacionNueva) && (
+                    <p className="mt-1 text-md text-slate-500">
+                      Ubicación: {h.ubicacionAnterior ?? '—'} →{' '}
+                      {h.ubicacionNueva ?? '—'}
+                    </p>
+                  )}
+                  {h.origen === 'depreciacion' && (
+                    <p className="mt-1 text-md text-slate-500">
+                      Depreciado {formatMoney(h.valorDepreciado)} · acumulada{' '}
+                      {formatMoney(h.depreciacionAcumulada)} · en libros{' '}
+                      {formatMoney(h.valorEnLibros)}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
           )}
+        </Card>
 
-          <Card
-            padding="md"
-            header={
-              <div className="flex items-center gap-2">
-                <Card.Title icon={<History className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                  Historial
-                </Card.Title>
-                <Badge tone="neutral" size="sm">
-                  {historial.length}
-                </Badge>
-              </div>
-            }
-          >
-            {historial.length === 0 ? (
-              <p className="text-sm text-slate-600">Sin movimientos registrados.</p>
-            ) : (
-              <ol className="relative space-y-5 border-l border-slate-200 pl-5">
-                {historial.map((h, idx) => (
-                  <li key={idx} className="relative">
-                    <span className="absolute -left-[1.45rem] top-1 h-2.5 w-2.5 rounded-full bg-primary-500 ring-2 ring-white" />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={TIPO_TONE[h.tipo] ?? 'neutral'} size="sm">
-                        {TIPO_LABEL[h.tipo] ?? h.tipo}
-                      </Badge>
-                      <span className="text-xs text-slate-600">
-                        {formatDate(h.fecha)}
-                      </span>
-                    </div>
-                    {h.detalle && (
-                      <p className="mt-1.5 text-sm text-slate-600">{h.detalle}</p>
-                    )}
-                    {(h.custodioAnterior || h.custodioNuevo) && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        Custodio: {h.custodioAnterior?.nombre ?? '—'} →{' '}
-                        {h.custodioNuevo?.nombre ?? '—'}
-                      </p>
-                    )}
-                    {(h.ubicacionAnterior || h.ubicacionNueva) && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        Ubicación: {h.ubicacionAnterior ?? '—'} →{' '}
-                        {h.ubicacionNueva ?? '—'}
-                      </p>
-                    )}
-                    {h.origen === 'depreciacion' && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        Depreciado {formatMoney(h.valorDepreciado)} · acumulada{' '}
-                        {formatMoney(h.depreciacionAcumulada)} · en libros{' '}
-                        {formatMoney(h.valorEnLibros)}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card
-            padding="md"
-            header={
-              <Card.Title icon={<Camera className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                Fotografía
-              </Card.Title>
-            }
-          >
-            <ImageUpload
-              shape="square"
-              value={mediaUrl(bien.fotoUrl)}
-              disabled={fotoBusy}
-              hint="JPG, PNG o WEBP, máx. 5 MB"
-              onChange={handleFotoChange}
-            />
-            {fotoError && (
-              <p className="mt-2 text-caption text-danger-600">{fotoError}</p>
-            )}
-          </Card>
-
-          <Card
-            padding="md"
-            header={
-              <Card.Title icon={<MapPin className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                Custodio y ubicación
-              </Card.Title>
-            }
-          >
-            <dl className="space-y-3 text-sm">
-              <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">Custodio</dt>
-                <dd className="text-right font-medium text-slate-700">
-                  {bien.custodio?.nombre ?? '—'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">Ubicación</dt>
-                <dd className="text-right text-slate-700">{bien.ubicacion ?? '—'}</dd>
-              </div>
-            </dl>
-          </Card>
-
-          <Card
-            padding="md"
-            header={
-              <Card.Title icon={<TrendingDown className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                Depreciación
-              </Card.Title>
-            }
-          >
-            <dl className="space-y-3 text-sm">
-              <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">Valor en libros</dt>
-                <dd className="text-right font-semibold text-slate-900">
-                  {formatMoney(valorEnLibros)}
-                </dd>
-              </div>
-              {depreciacion && (
-                <>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-slate-500">Valor residual</dt>
-                    <dd className="text-right text-slate-700">
-                      {formatMoney(depreciacion.valorResidual)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-slate-500">Vida útil (meses)</dt>
-                    <dd className="text-right text-slate-700">
-                      {depreciacion.vidaUtilMeses}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-slate-500">Depreciación mensual</dt>
-                    <dd className="text-right text-slate-700">
-                      {formatMoney(depreciacion.depreciacionMensual)}
-                    </dd>
-                  </div>
-                </>
-              )}
-            </dl>
-          </Card>
-
-          <Card
-            padding="md"
-            header={
-              <Card.Title icon={<Settings className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
-                Acciones
-              </Card.Title>
-            }
-          >
-            <div className="space-y-2">
-              <Button
-                variant="secondary"
-                block
-                disabled={bien.dadoDeBaja}
-                onClick={() => openModal('reasignar')}
-                leftIcon={<UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
-              >
-                Reasignar custodio
-              </Button>
-              <Button
-                variant="secondary"
-                block
-                disabled={bien.dadoDeBaja}
-                onClick={() => openModal('mover')}
-                leftIcon={<Truck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
-              >
-                Mover de ubicación
-              </Button>
-
-              {isAdmin && !bien.dadoDeBaja && (
-                <Button
-                  variant="secondary"
-                  block
-                  onClick={() => openModal('baja')}
-                  leftIcon={<CircleX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
-                  className="border-danger-200 text-danger-600 ring-danger-200 hover:bg-danger-50 hover:text-danger-700"
-                >
-                  Dar de baja
-                </Button>
-              )}
-              {isAdmin && bien.dadoDeBaja && (
-                <Button
-                  variant="secondary"
-                  block
-                  loading={submitting}
-                  onClick={handleReactivar}
-                  leftIcon={<RotateCcw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
-                  className="border-success-200 text-success-700 ring-success-200 hover:bg-success-50"
-                >
-                  Reactivar bien
-                </Button>
-              )}
-              {!isAdmin && (
-                <p className="pt-1 text-xs text-slate-600">
-                  La baja y reactivación de bienes está reservada a Administradores.
-                </p>
-              )}
+        {/* Depreciación Contable */}
+        <Card
+          padding="none"
+          header={
+            <Card.Title icon={<TrendingDown className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}>
+              Cálculo de Depreciación
+            </Card.Title>
+          }
+        >
+          <dl className="grid grid-cols-2 gap-4 px-5 py-3">
+            <div className="col-span-2 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+              <dt className="text-slate-500 font-medium">Valor actual en libros</dt>
+              <dd className="mt-1 font-bold text-slate-900 text-2xl">
+                {formatMoney(valorEnLibros)}
+              </dd>
             </div>
-          </Card>
-        </div>
+            {depreciacion && (
+              <>
+                <div>
+                  <dt className="text-slate-500">Valor residual</dt>
+                  <dd className="mt-1 font-semibold text-slate-700 text-base">
+                    {formatMoney(depreciacion.valorResidual)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Vida útil (meses)</dt>
+                  <dd className="mt-1 font-semibold text-slate-700 text-base">
+                    {depreciacion.vidaUtilMeses}
+                  </dd>
+                </div>
+                <div className="col-span-2 border-t border-slate-100 pt-3 mt-1">
+                  <dt className="text-slate-500">Depreciación mensual</dt>
+                  <dd className="mt-1 font-semibold text-slate-900 text-base">
+                    {formatMoney(depreciacion.depreciacionMensual)}
+                  </dd>
+                </div>
+              </>
+            )}
+          </dl>
+        </Card>
+      </div>
+
+      {/* 4. Tarjeta de Acciones al fondo */}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Link href={`/inventario/bienes/${bien.id}/edit`} className="block">
+          <Button
+            variant="secondary"
+            block
+            disabled={bien.dadoDeBaja}
+            leftIcon={<Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+          >
+            Editar datos del bien
+          </Button>
+        </Link>
+        <Button
+          variant="secondary"
+          block
+          disabled={bien.dadoDeBaja}
+          onClick={() => openModal('reasignar')}
+          leftIcon={<UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+        >
+          Reasignar custodio
+        </Button>
+        <Button
+          variant="secondary"
+          block
+          disabled={bien.dadoDeBaja}
+          onClick={() => openModal('mover')}
+          leftIcon={<Truck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+        >
+          Mover de ubicación
+        </Button>
+
+        {isAdmin && !bien.dadoDeBaja && (
+          <Button
+            variant="secondary"
+            block
+            onClick={() => openModal('baja')}
+            leftIcon={<CircleX className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+            className="border-danger-200 text-danger-600 ring-danger-200 hover:bg-danger-50 hover:text-danger-700"
+          >
+            Dar de baja
+          </Button>
+        )}
+        {isAdmin && bien.dadoDeBaja && (
+          <Button
+            variant="secondary"
+            block
+            loading={submitting}
+            onClick={handleReactivar}
+            leftIcon={<RotateCcw className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
+            className="border-success-200 text-success-700 ring-success-200 hover:bg-success-50"
+          >
+            Reactivar bien
+          </Button>
+        )}
+        {!isAdmin && (
+          <div className="flex items-center justify-center p-2.5 rounded-lg border border-slate-100 bg-slate-50 text-center text-xs font-medium text-slate-500">
+            Baja reservada a Administradores
+          </div>
+        )}
       </div>
 
       <Modal

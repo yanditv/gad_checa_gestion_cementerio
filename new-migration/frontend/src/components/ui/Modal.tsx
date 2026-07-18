@@ -153,7 +153,7 @@ export function Modal({
         )}
       >
         {(title != null || !hideClose) && (
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 pt-5 pb-3">
             <div className="min-w-0">
               {title != null && (
                 <h2
@@ -181,7 +181,7 @@ export function Modal({
             )}
           </div>
         )}
-        {children != null && <div className="px-6 py-5">{children}</div>}
+        {children != null && <div className="px-6 pb-5 pt-3">{children}</div>}
         {footer != null && (
           <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl px-6 py-4">
             {footer}
