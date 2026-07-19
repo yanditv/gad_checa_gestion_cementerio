@@ -6,11 +6,12 @@ import {
   formatDate,
   streamPdf,
   type Column,
+  type InstitucionPdf,
 } from './common';
 
-export async function buildCuentasPorCobrarPdf(data: any): Promise<Buffer> {
+export async function buildCuentasPorCobrarPdf(data: any, institucion?: InstitucionPdf): Promise<Buffer> {
   return streamPdf((doc) => {
-    drawHeader(doc, 'CUENTAS POR COBRAR');
+    drawHeader(doc, 'CUENTAS POR COBRAR', undefined, institucion);
 
     const left = doc.page.margins.left;
 
@@ -76,6 +77,6 @@ export async function buildCuentasPorCobrarPdf(data: any): Promise<Buffer> {
         width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
       });
 
-    drawFooter(doc);
+    drawFooter(doc, institucion);
   }, { size: 'A4', layout: 'landscape' });
 }

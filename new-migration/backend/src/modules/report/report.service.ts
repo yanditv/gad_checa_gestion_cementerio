@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { getInstitucionPdf } from '../../common/utils/institucion.util';
 import {
   clasificarEstadoBoveda,
   diasMora,
@@ -24,6 +25,10 @@ export interface TipoEspacioResumen {
 @Injectable()
 export class ReportService {
   constructor(private prisma: PrismaService) {}
+
+  async getInstitucion(subtitulo?: string) {
+    return getInstitucionPdf(this.prisma, subtitulo);
+  }
 
   // ---------------------------------------------------------------------------
   // 1. Resumen general (KPIs)

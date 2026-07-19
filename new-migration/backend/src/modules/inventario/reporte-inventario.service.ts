@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { getInstitucionPdf } from '../../common/utils/institucion.util';
 import type { InstitucionPdf } from '../report/pdf/common';
 import {
   calcularDepreciacion,
@@ -75,23 +76,7 @@ export class ReporteInventarioService {
   // hardcodea "Checa": el sistema se despliega para otros GAD.
   // ---------------------------------------------------------------------------
   async getInstitucion(): Promise<InstitucionPdf> {
-    const [gad, cementerio] = await this.prisma.$transaction([
-      this.prisma.gADInformacion.findFirst({
-        orderBy: { id: 'asc' },
-        select: { nombre: true },
-      }),
-      this.prisma.cementerio.findFirst({
-        where: { estado: true },
-        orderBy: { id: 'asc' },
-        select: { nombre: true },
-      }),
-    ]);
-
-    const nombre = gad?.nombre?.trim() || cementerio?.nombre?.trim();
-    return {
-      nombre: nombre || 'GAD Parroquial',
-      subtitulo: 'Sistema de Gestión de Inventario de Bienes',
-    };
+    return getInstitucionPdf(this.prisma, 'Sistema de Gestión de Inventario de Bienes');
   }
 
   // ---------------------------------------------------------------------------

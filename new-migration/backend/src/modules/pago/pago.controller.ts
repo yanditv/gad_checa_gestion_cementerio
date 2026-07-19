@@ -57,8 +57,11 @@ export class PagoController {
     @Param('id', ParseIntPipe) id: number,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const pago = await this.service.findOne(id);
-    const buffer = await buildFacturaPdfBuffer(pago);
+    const [pago, institucion] = await Promise.all([
+      this.service.findOne(id),
+      this.service.getInstitucion(),
+    ]);
+    const buffer = await buildFacturaPdfBuffer(pago, institucion);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="Recibo_${pago.numeroRecibo}.pdf"`,

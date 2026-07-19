@@ -27,7 +27,15 @@ export function formatDate(value: Date | string | null | undefined): string {
   });
 }
 
-export function findLogo(): string | null {
+export function findLogo(logoKey?: string | null): string | null {
+  if (logoKey) {
+    const storagePath = process.env.STORAGE_PATH || path.join(process.cwd(), 'storage');
+    const customLogoPath = path.resolve(storagePath, logoKey);
+    if (fs.existsSync(customLogoPath)) {
+      return customLogoPath;
+    }
+  }
+
   const candidates = [
     path.join(process.cwd(), 'public', 'logo_gad.png'),
     path.join(process.cwd(), '..', 'frontend', 'public', 'logo.png'),
@@ -49,11 +57,14 @@ export interface InstitucionPdf {
   nombre: string;
   /** Línea secundaria (ej. "Sistema de Gestión de Inventario"). */
   subtitulo?: string;
+  /** Clave de almacenamiento del logo. */
+  logoKey?: string | null;
 }
 
 const INSTITUCION_DEFAULT: InstitucionPdf = {
   nombre: 'GAD Parroquial de Checa',
   subtitulo: 'Sistema de Gestión de Cementerio',
+  logoKey: null,
 };
 
 export function drawHeader(
@@ -66,7 +77,7 @@ export function drawHeader(
   const right = doc.page.width - doc.page.margins.right;
   const contentWidth = right - left;
 
-  const logoPath = findLogo();
+  const logoPath = findLogo(institucion?.logoKey);
   if (logoPath) {
     try {
       doc.image(logoPath, left, 24, { width: 42, height: 42 });
