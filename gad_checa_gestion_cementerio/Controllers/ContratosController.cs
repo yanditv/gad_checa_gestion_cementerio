@@ -280,6 +280,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (contratoExistente.Boveda?.PropietarioId == null)
+            {
+                TempData["Error"] = "Solo se puede agregar otro difunto en bóvedas con propietario.";
+                return RedirectToAction("Edit", "Bovedas", new { id = contratoExistente.BovedaId });
+            }
+
             // Verificar que la bóveda no esté completamente ocupada (máximo 2 difuntos)
             var contratosEnBoveda = _context.Contrato
                 .Where(c => c.BovedaId == contratoExistente.BovedaId &&

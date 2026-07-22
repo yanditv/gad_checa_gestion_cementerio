@@ -8,6 +8,7 @@
         .OrderByDescending(c => c.FechaInicio)
         .FirstOrDefault();
     var contratosActivos = contratosBoveda.Count(c => c.Estado && c.FechaFin >= DateTime.Today);
+    var permiteAgregarDifunto = Model.PropietarioId.HasValue && contratoActivoParaAgregar != null && contratosActivos < 2;
 }
 
 <div class="card border-0 shadow-sm">
@@ -139,7 +140,7 @@
             <div class="card-header bg-light border-0 py-2">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="ti ti-history me-2 text-primary"></i>Historial de difuntos</h6>
-                    @if (contratoActivoParaAgregar != null && contratosActivos < 2)
+                    @if (permiteAgregarDifunto)
                     {
                         <a asp-controller="Contratos" asp-action="CreateRelacionado" asp-route-contratoExistenteId="@contratoActivoParaAgregar.Id"
                            class="btn btn-sm btn-outline-primary">
