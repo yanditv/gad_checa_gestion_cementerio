@@ -2,6 +2,12 @@
 
 @{
     ViewData["Title"] = "Editar Bóveda";
+    var contratosBoveda = ViewBag.ContratosBoveda as List<gad_checa_gestion_cementerio.Data.Contrato> ?? new List<gad_checa_gestion_cementerio.Data.Contrato>();
+    var contratoActivoParaAgregar = contratosBoveda
+        .Where(c => c.Estado && c.FechaFin >= DateTime.Today)
+        .OrderByDescending(c => c.FechaInicio)
+        .FirstOrDefault();
+    var contratosActivos = contratosBoveda.Count(c => c.Estado && c.FechaFin >= DateTime.Today);
 }
 
 <div class="card border-0 shadow-sm">
@@ -128,6 +134,95 @@
                 </button>
             </div>
         </form>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-light border-0 py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="ti ti-history me-2 text-primary"></i>Historial de difuntos</h6>
+                    @if (contratoActivoParaAgregar != null && contratosActivos < 2)
+                    {
+                        <a asp-controller="Contratos" asp-action="CreateRelacionado" asp-route-contratoExistenteId="@contratoActivoParaAgregar.Id"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="ti ti-plus me-1"></i>Agregar difunto
+                        </a>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (!contratosBoveda.Any())
+                {
+                    <div class="alert alert-light border mb-0">
+                        <i class="ti ti-info-circle me-2"></i>
+                        Esta bóveda todavía no tiene contratos o difuntos asociados.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Contrato</th>
+                                    <th>Difunto actual</th>
+                                    <th>Periodo</th>
+                                    <th>Estado</th>
+                                    <th style="min-width: 320px;">Cambiar difunto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var contrato in contratosBoveda)
+                                {
+                                    var activo = contrato.Estado && contrato.FechaFin >= DateTime.Today;
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold">@contrato.NumeroSecuencial</span>
+                                            @if (contrato.EsRenovacion)
+                                            {
+                                                <span class="badge bg-light-primary text-primary ms-1">Renovación</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">
+                                                @(contrato.Difunto != null ? $"{contrato.Difunto.Nombres} {contrato.Difunto.Apellidos}" : "No registrado")
+                                            </div>
+                                            <small class="text-muted">@(contrato.Difunto?.NumeroIdentificacion ?? "Sin identificación")</small>
+                                        </td>
+                                        <td>
+                                            <span class="text-nowrap">@contrato.FechaInicio.ToString("dd/MM/yyyy")</span>
+                                            <span class="text-muted">-</span>
+                                            <span class="text-nowrap">@contrato.FechaFin.ToString("dd/MM/yyyy")</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light-@(activo ? "success" : "secondary") text-@(activo ? "success" : "secondary")">
+                                                @(activo ? "Activo" : "Histórico")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <form asp-action="CambiarDifuntoContrato" method="post" class="d-flex gap-2">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="bovedaId" value="@Model.Id" />
+                                                <input type="hidden" name="contratoId" value="@contrato.Id" />
+                                                <select name="difuntoId" class="form-select selectDifunto" required>
+                                                    @if (contrato.Difunto != null)
+                                                    {
+                                                        <option value="@contrato.Difunto.Id" selected>
+                                                            @contrato.Difunto.Nombres @contrato.Difunto.Apellidos - @contrato.Difunto.NumeroIdentificacion
+                                                        </option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-outline-primary text-nowrap">
+                                                    <i class="ti ti-device-floppy me-1"></i>Aplicar
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 </div>
 <!-- Modal de Creación de Propietario -->
@@ -275,6 +370,34 @@
                     cache: true
                 },
                 minimumInputLength: 3
+            });
+            $('.selectDifunto').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Buscar difunto...',
+                allowClear: true,
+                ajax: {
+                    url: '/Bovedas/BuscarDifuntos',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            searchTerm: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(function (item) {
+                                return {
+                                    id: item.id,
+                                    text: `${item.nombres} ${item.apellidos} - ${item.numeroIdentificacion || 'Sin identificación'}`
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 3,
+                width: '100%'
             });
             // Inicializar modal
             var crearPropietarioModal = new bootstrap.Modal(document.getElementById('crearPropietarioModal'));

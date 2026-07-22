@@ -6,27 +6,23 @@
 
 <h2 class="mb-4">Centro de Notificaciones</h2>
 
-@foreach (var item in Model)
+@if (!Model.Any())
 {
-    var alertClass = "alert-info"; // Por defecto
-    var icon = "bi-info-circle-fill";
-
-    if (item.title.ToLower().Contains("contrato"))
-    {
-        alertClass = "alert-warning";
-        icon = "bi-exclamation-triangle-fill";
-    }
-    else if (item.title.ToLower().Contains("cuota"))
-    {
-        alertClass = "alert-danger";
-        icon = "bi-exclamation-octagon-fill";
-    }
-
-    <div class="alert @alertClass shadow-sm d-flex align-items-start gap-3 mb-3" role="alert">
-        <i class="bi @icon fs-4"></i>
-        <div>
-            <h5 class="mb-1">@item.title</h5>
-            <p class="mb-0">@item.description</p>
-        </div>
+    <div class="alert alert-light border shadow-sm">
+        <i class="ti ti-bell-off me-2"></i>No hay notificaciones nuevas.
     </div>
+}
+else
+{
+    @foreach (var item in Model)
+    {
+        <a href="@item.url" class="alert alert-@item.level shadow-sm d-flex align-items-start gap-3 mb-3 text-decoration-none" role="alert">
+            <i class="@item.icon fs-4"></i>
+            <div>
+                <h5 class="mb-1">@item.title</h5>
+                <p class="mb-1">@item.description</p>
+                <span class="fw-semibold">Abrir</span>
+            </div>
+        </a>
+    }
 }

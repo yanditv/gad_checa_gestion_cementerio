@@ -1,17 +1,57 @@
 @model IEnumerable<gad_checa_gestion_cementerio.Models.NotifyModel>
 
-@foreach (var item in Model)
-{
-    <a class="list-group-item list-group-item-action">
-        <div class="d-flex">
-            <div class="flex-shrink-0">
-                <img src="~/images/user/avatar-2.jpg" alt="user-image" class="user-avtar">
-            </div>
-            <div class="flex-grow-1 ms-1">
-                <span class="float-end text-muted">@DateTime.Now.ToShortTimeString()</span>
-                <p class="text-body mb-1"><b>@item.title:</b> @item.description</p>
-                <span class="text-muted">hace un momento</span>
-            </div>
-        </div>
-    </a>
+@{
+    var totalNotificaciones = ViewBag.TotalNotificaciones as int? ?? Model.Count();
 }
+
+@if (!Model.Any())
+{
+    <div class="list-group-item text-center text-muted py-4">
+        <i class="ti ti-bell-off d-block fs-4 mb-2"></i>
+        No hay notificaciones nuevas
+    </div>
+}
+else
+{
+    @foreach (var item in Model)
+    {
+        <a href="@item.url" class="list-group-item list-group-item-action">
+            <div class="d-flex">
+                <div class="flex-shrink-0">
+                    <span class="notification-icon bg-light-@item.level text-@item.level rounded-circle d-inline-flex align-items-center justify-content-center">
+                        <i class="@item.icon"></i>
+                    </span>
+                </div>
+                <div class="flex-grow-1 ms-2">
+                    <span class="float-end text-muted">@DateTime.Now.ToShortTimeString()</span>
+                    <p class="text-body mb-1"><b>@item.title:</b> @item.description</p>
+                    <span class="text-primary">Abrir</span>
+                </div>
+            </div>
+        </a>
+    }
+}
+
+<script>
+    (function () {
+        var count = @totalNotificaciones;
+        var badge = document.getElementById('notification-count');
+        if (!badge) {
+            return;
+        }
+
+        if (count > 0) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.classList.remove('d-none');
+        } else {
+            badge.classList.add('d-none');
+        }
+    })();
+</script>
+
+<style>
+    .notification-icon {
+        width: 34px;
+        height: 34px;
+    }
+</style>

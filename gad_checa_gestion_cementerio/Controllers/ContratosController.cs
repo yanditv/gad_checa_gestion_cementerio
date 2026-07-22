@@ -13,6 +13,8 @@ using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using QuestPDF.Helpers;
 using gad_checa_gestion_cementerio.Areas.Identity.Data;
+using System.Globalization;
+using System.Text;
 namespace gad_checa_gestion_cementerio.Controllers
 {
     public class ContratosController : BaseController
@@ -236,13 +238,13 @@ namespace gad_checa_gestion_cementerio.Controllers
             int maxRenovaciones = 0;
 
             // Determinar el tipo de espacio y su límite máximo de renovaciones
-            string? tipoBoveda = contrato.Boveda?.Piso?.Bloque?.Tipo?.ToUpperInvariant();
+            string? tipoBoveda = contrato.Boveda?.Piso?.Bloque?.Tipo;
             string? description = contrato.Boveda?.Piso?.Bloque?.Descripcion.ToUpperInvariant();
-            if (tipoBoveda == "Nicho")
+            if (EsNicho(tipoBoveda))
             {
                 maxRenovaciones = cementerio?.VecesRenovacionNicho ?? 0;
             }
-            else if (tipoBoveda == "Boveda" && description.Contains("Tumulos"))
+            else if (description?.Contains("Tumulos") == true)
             {
                 // Si tienes lógica especial para TÚMULOS, agrégala aquí
                 maxRenovaciones = 0; // O el valor correspondiente
@@ -292,10 +294,45 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
 
             // Preparar el modelo con información del contrato existente
+            var contratoExistenteModel = new ContratoModel
+            {
+                Id = contratoExistente.Id,
+                NumeroSecuencial = contratoExistente.NumeroSecuencial,
+                BovedaId = contratoExistente.BovedaId,
+                FechaInicio = contratoExistente.FechaInicio,
+                FechaFin = contratoExistente.FechaFin,
+                NumeroDeMeses = contratoExistente.NumeroDeMeses,
+                MontoTotal = contratoExistente.MontoTotal,
+                Estado = contratoExistente.Estado,
+                Observaciones = contratoExistente.Observaciones,
+                EsRenovacion = contratoExistente.EsRenovacion,
+                VecesRenovado = contratoExistente.VecesRenovado,
+                ContratoOrigenId = contratoExistente.ContratoOrigenId,
+                ContratoRelacionadoId = contratoExistente.ContratoRelacionadoId,
+                Boveda = contratoExistente.Boveda != null ? new BovedaModel
+                {
+                    Id = contratoExistente.Boveda.Id,
+                    Numero = contratoExistente.Boveda.Numero,
+                    NumeroSecuencial = contratoExistente.Boveda.NumeroSecuencial,
+                    Estado = contratoExistente.Boveda.Estado,
+                    PisoId = contratoExistente.Boveda.PisoId ?? contratoExistente.Boveda.Piso?.Id ?? 0,
+                    PropietarioId = contratoExistente.Boveda.PropietarioId
+                } : null,
+                Difunto = contratoExistente.Difunto != null ? new DifuntoModel
+                {
+                    Id = contratoExistente.Difunto.Id,
+                    Nombres = contratoExistente.Difunto.Nombres,
+                    Apellidos = contratoExistente.Difunto.Apellidos,
+                    NumeroIdentificacion = contratoExistente.Difunto.NumeroIdentificacion,
+                    FechaFallecimiento = contratoExistente.Difunto.FechaFallecimiento,
+                    DescuentoId = contratoExistente.Difunto.DescuentoId
+                } : null
+            };
+
             var model = new CreateContratoModel
             {
                 ContratoExistenteId = contratoExistenteId,
-                ContratoExistente = _mapper.Map<ContratoModel>(contratoExistente),
+                ContratoExistente = contratoExistenteModel,
                 contrato = new ContratoModel
                 {
                     BovedaId = contratoExistente.BovedaId,
@@ -349,7 +386,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     string? tipoBoveda = null;
                     if (contrato.Boveda?.Piso?.Bloque != null)
                     {
-                        tipoBoveda = contrato.Boveda.Piso.Bloque.Tipo?.ToUpperInvariant();
+                        tipoBoveda = contrato.Boveda.Piso.Bloque.Tipo;
                     }
 
                     // Contar cuántas veces se ha renovado este contrato (hijos generados directamente)
@@ -358,11 +395,11 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                     // Determinar máximo de renovaciones según el tipo
                     int maxRenovaciones;
-                    if (tipoBoveda == "NICHOS")
+                    if (EsNicho(tipoBoveda))
                     {
                         maxRenovaciones = cementerio.VecesRenovacionNicho;
                     }
-                    else if (tipoBoveda == "TÚMULOS")
+                    else if (EsTumulo(tipoBoveda))
                     {
                         // Si tienes lógica especial para TÚMULOS, agrégala aquí
                         maxRenovaciones = 0; // O el valor correspondiente
@@ -419,7 +456,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     // Verificar si ya se alcanzó el límite total de renovaciones permitidas para esta cadena
                     if (totalRenovacionesEnCadena >= maxRenovaciones)
                     {
-                        string tipoEspacio = tipoBoveda?.ToLower() == "nichos" ? "nicho" : "bóveda";
+                        string tipoEspacio = EsNicho(tipoBoveda) ? "nicho" : "bóveda";
                         TempData["Error"] = $"No se puede renovar este {tipoEspacio}. La cadena completa ya ha alcanzado el límite máximo de {maxRenovaciones} renovaciones.";
                         return RedirectToAction(nameof(Details), new { id = idContrato });
                     }
@@ -579,23 +616,23 @@ namespace gad_checa_gestion_cementerio.Controllers
                 }
 
                 // Obtener el tipo de bóveda (NICHOS, TÚMULOS, BÓVEDAS)
-                string? tipoBoveda = contratoOriginal.Boveda?.Piso?.Bloque?.Tipo?.ToUpperInvariant();
+                string? tipoBoveda = contratoOriginal.Boveda?.Piso?.Bloque?.Tipo;
 
                 // Contar cuántas veces se ha renovado en toda la cadena
                 int renovacionesTotales = ContarRenovacionesEnCadena(contratoRaizId);
 
                 // Determinar máximo de renovaciones según el tipo
                 int maxRenovaciones = 0; // Por defecto 0 si no se puede determinar el tipo
-                if (tipoBoveda == "NICHOS")
+                if (EsNicho(tipoBoveda))
                 {
                     maxRenovaciones = cementerio.VecesRenovacionNicho;
                 }
-                else if (tipoBoveda == "TÚMULOS")
+                else if (EsTumulo(tipoBoveda))
                 {
                     // Si tienes lógica especial para TÚMULOS, agrégala aquí
                     maxRenovaciones = 0; // O el valor correspondiente
                 }
-                else if (tipoBoveda == "BÓVEDAS")
+                else if (EsBoveda(tipoBoveda))
                 {
                     maxRenovaciones = cementerio.VecesRenovacionBovedas;
                 }
@@ -603,7 +640,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 // Verificar si se alcanzó el límite de renovaciones total en la cadena
                 if (renovacionesTotales >= maxRenovaciones)
                 {
-                    string mensaje = tipoBoveda?.ToLower() == "nichos" ?
+                    string mensaje = EsNicho(tipoBoveda) ?
                         $"No se puede renovar este nicho. La cadena ha alcanzado el límite máximo de {maxRenovaciones} renovaciones." :
                         $"No se puede renovar esta bóveda. La cadena ha alcanzado el límite máximo de {maxRenovaciones} renovaciones.";
 
@@ -2023,6 +2060,45 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
 
             return total;
+        }
+
+        private static string NormalizarTipoEspacio(string? tipo)
+        {
+            if (string.IsNullOrWhiteSpace(tipo))
+            {
+                return string.Empty;
+            }
+
+            var normalized = tipo.Trim().Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(normalized.Length);
+
+            foreach (var character in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(character);
+                }
+            }
+
+            return builder.ToString().Normalize(NormalizationForm.FormC).ToUpperInvariant();
+        }
+
+        private static bool EsNicho(string? tipo)
+        {
+            var normalizado = NormalizarTipoEspacio(tipo);
+            return normalizado == "NICHO" || normalizado == "NICHOS";
+        }
+
+        private static bool EsTumulo(string? tipo)
+        {
+            var normalizado = NormalizarTipoEspacio(tipo);
+            return normalizado == "TUMULO" || normalizado == "TUMULOS";
+        }
+
+        private static bool EsBoveda(string? tipo)
+        {
+            var normalizado = NormalizarTipoEspacio(tipo);
+            return normalizado == "BOVEDA" || normalizado == "BOVEDAS" || string.IsNullOrEmpty(normalizado);
         }
 
         // Método para encontrar el último contrato en una cadena de renovaciones

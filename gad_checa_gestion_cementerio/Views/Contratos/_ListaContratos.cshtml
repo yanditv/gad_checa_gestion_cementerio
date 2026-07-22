@@ -44,6 +44,31 @@
         // Seguir la cadena hacia arriba
         return EncontrarContratoRaiz(contrato.ContratoOrigenId.Value, db);
     }
+
+    string NormalizarTipoEspacio(string? tipo)
+    {
+        if (string.IsNullOrWhiteSpace(tipo))
+            return string.Empty;
+
+        var normalized = tipo.Trim().Normalize(System.Text.NormalizationForm.FormD);
+        var builder = new System.Text.StringBuilder(normalized.Length);
+
+        foreach (var character in normalized)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(character) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().Normalize(System.Text.NormalizationForm.FormC).ToUpperInvariant();
+    }
+
+    bool EsNicho(string? tipo)
+    {
+        var normalizado = NormalizarTipoEspacio(tipo);
+        return normalizado == "NICHO" || normalizado == "NICHOS";
+    }
     
     // Obtener configuración del cementerio para validar renovaciones
     var cementerio = DbContext.Cementerio.FirstOrDefault();
@@ -94,8 +119,8 @@
             {
                 // Calcular si este contrato se puede renovar
                 bool esRenovable = false;
-                string? tipoBoveda = item.Boveda?.Piso?.Bloque?.Tipo?.ToLower();
-                int maxRenovacionesPermitidas = tipoBoveda == "nichos" ? maxRenovacionesNicho : maxRenovacionesBovedas;
+                string? tipoBoveda = item.Boveda?.Piso?.Bloque?.Tipo;
+                int maxRenovacionesPermitidas = EsNicho(tipoBoveda) ? maxRenovacionesNicho : maxRenovacionesBovedas;
                 
                 // Contar renovaciones directas (contratos hijos)
                 int hijoDirectos = DbContext.Contrato.Count(c => c.ContratoOrigenId == item.Id);

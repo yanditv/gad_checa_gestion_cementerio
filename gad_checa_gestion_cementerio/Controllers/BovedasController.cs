@@ -193,9 +193,11 @@ namespace WebApp.Controllers
             }
 
             var boveda = await _context.Boveda
-            .Include(b => b.Propietario)
+                .Include(b => b.Propietario)
                 .Include(b => b.Piso)
                     .ThenInclude(p => p.Bloque)
+                .Include(b => b.Contratos)
+                    .ThenInclude(c => c.Difunto)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (boveda == null)
@@ -206,6 +208,10 @@ namespace WebApp.Controllers
             ViewBag.BloqueNombre = boveda.Piso.Bloque.Descripcion;
             ViewBag.PisoNumero = boveda.Piso.NumeroPiso;
             ViewBag.Precio = boveda.Piso.Precio.ToString("N2");
+            ViewBag.ContratosBoveda = boveda.Contratos?
+                .Where(c => c.FechaEliminacion == null)
+                .OrderByDescending(c => c.FechaInicio)
+                .ToList() ?? new List<Contrato>();
 
             return View(boveda);
         }
@@ -213,7 +219,7 @@ namespace WebApp.Controllers
         // POST: Bovedas/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,NumeroSecuecial,PropietarioId")] Boveda boveda)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,NumeroSecuencial,PropietarioId")] Boveda boveda)
         {
             if (id != boveda.Id)
             {
@@ -230,14 +236,20 @@ namespace WebApp.Controllers
                     TempData["Error"] = $"Errores de validación: {errors}";
 
                     var bovedaParaView = await _context.Boveda
-                    .Include(b => b.Propietario)
+                        .Include(b => b.Propietario)
                         .Include(b => b.Piso)
                             .ThenInclude(p => p.Bloque)
+                        .Include(b => b.Contratos)
+                            .ThenInclude(c => c.Difunto)
                         .FirstOrDefaultAsync(b => b.Id == id);
 
                     ViewBag.BloqueNombre = bovedaParaView.Piso.Bloque.Descripcion;
                     ViewBag.PisoNumero = bovedaParaView.Piso.NumeroPiso;
                     ViewBag.Precio = bovedaParaView.Piso.Precio.ToString("N2");
+                    ViewBag.ContratosBoveda = bovedaParaView.Contratos?
+                        .Where(c => c.FechaEliminacion == null)
+                        .OrderByDescending(c => c.FechaInicio)
+                        .ToList() ?? new List<Contrato>();
 
                     return View(boveda);
                 }
@@ -296,14 +308,83 @@ namespace WebApp.Controllers
                 var bovedaParaView = await _context.Boveda
                     .Include(b => b.Piso)
                         .ThenInclude(p => p.Bloque)
+                    .Include(b => b.Contratos)
+                        .ThenInclude(c => c.Difunto)
                     .FirstOrDefaultAsync(b => b.Id == id);
 
                 ViewBag.BloqueNombre = bovedaParaView.Piso.Bloque.Descripcion;
                 ViewBag.PisoNumero = bovedaParaView.Piso.NumeroPiso;
                 ViewBag.Precio = bovedaParaView.Piso.Precio.ToString("N2");
+                ViewBag.ContratosBoveda = bovedaParaView.Contratos?
+                    .Where(c => c.FechaEliminacion == null)
+                    .OrderByDescending(c => c.FechaInicio)
+                    .ToList() ?? new List<Contrato>();
 
                 return View(boveda);
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BuscarDifuntos(string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Trim().Length < 3)
+            {
+                return Json(new List<object>());
+            }
+
+            var termino = searchTerm.Trim();
+            var difuntos = await _context.Difunto
+                .Where(d => d.FechaEliminacion == null &&
+                    (d.NumeroIdentificacion.Contains(termino) ||
+                     (d.Nombres + " " + d.Apellidos).Contains(termino)))
+                .OrderBy(d => d.Apellidos)
+                .ThenBy(d => d.Nombres)
+                .Take(10)
+                .Select(d => new
+                {
+                    d.Id,
+                    d.Nombres,
+                    d.Apellidos,
+                    d.NumeroIdentificacion,
+                    d.FechaFallecimiento
+                })
+                .ToListAsync();
+
+            return Json(difuntos);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarDifuntoContrato(int bovedaId, int contratoId, int difuntoId)
+        {
+            var contrato = await _context.Contrato
+                .Include(c => c.Boveda)
+                .FirstOrDefaultAsync(c => c.Id == contratoId && c.BovedaId == bovedaId && c.FechaEliminacion == null);
+
+            if (contrato == null)
+            {
+                TempData["Error"] = "No se encontró el contrato asociado a esta bóveda.";
+                return RedirectToAction(nameof(Edit), new { id = bovedaId });
+            }
+
+            var difunto = await _context.Difunto
+                .FirstOrDefaultAsync(d => d.Id == difuntoId && d.FechaEliminacion == null);
+
+            if (difunto == null)
+            {
+                TempData["Error"] = "No se encontró el difunto seleccionado.";
+                return RedirectToAction(nameof(Edit), new { id = bovedaId });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            contrato.DifuntoId = difunto.Id;
+            contrato.FechaActualizacion = DateTime.Now;
+            contrato.UsuarioActualizador = user;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Difunto actualizado en el contrato {contrato.NumeroSecuencial}.";
+            return RedirectToAction(nameof(Edit), new { id = bovedaId });
         }
 
         // GET: Bovedas/Delete/5

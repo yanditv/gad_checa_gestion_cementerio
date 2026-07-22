@@ -24,6 +24,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             // Contratos que vencen en los próximos 30 días
             var contratosPorVencer = _context.Contrato
                 .Where(c => c.FechaFin >= DateTime.Now && c.FechaFin <= DateTime.Now.AddDays(30) && c.Estado)
+                .OrderBy(c => c.FechaFin)
                 .ToList();
 
             foreach (var contrato in contratosPorVencer)
@@ -31,7 +32,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 ListNotify.Add(new NotifyModel
                 {
                     title = "Contrato por vencer",
-                    description = $"El contrato #{contrato.NumeroSecuencial} vence el {contrato.FechaFin:dd/MM/yyyy}."
+                    description = $"El contrato #{contrato.NumeroSecuencial} vence el {contrato.FechaFin:dd/MM/yyyy}.",
+                    url = Url.Action("Details", "Contratos", new { id = contrato.Id }) ?? "#",
+                    icon = "ti ti-file-alert",
+                    level = "warning"
                 });
             }
 
@@ -39,6 +43,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             var cuotasPorVencer = _context.Cuota
                 .Include(q => q.Contrato)
                 .Where(q => !q.Pagada && q.FechaVencimiento >= DateTime.Now && q.FechaVencimiento <= DateTime.Now.AddDays(15))
+                .OrderBy(q => q.FechaVencimiento)
                 .ToList();
 
             foreach (var cuota in cuotasPorVencer)
@@ -49,7 +54,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                     ListNotify.Add(new NotifyModel
                     {
                         title = "Cuota próxima a vencer",
-                        description = $"Cuota del contrato #{contrato.NumeroSecuencial} vence el {cuota.FechaVencimiento:dd/MM/yyyy} por un monto de ${cuota.Monto:F2}."
+                        description = $"Cuota del contrato #{contrato.NumeroSecuencial} vence el {cuota.FechaVencimiento:dd/MM/yyyy} por un monto de ${cuota.Monto:F2}.",
+                        url = Url.Action("Cobrar", "Cobros", new { id = cuota.ContratoId }) ?? "#",
+                        icon = "ti ti-cash",
+                        level = "danger"
                     });
                 }
             }
