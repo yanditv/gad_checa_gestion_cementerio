@@ -142,10 +142,9 @@
                     <h6 class="mb-0"><i class="ti ti-history me-2 text-primary"></i>Historial de difuntos</h6>
                     @if (permiteAgregarDifunto)
                     {
-                        <a asp-controller="Contratos" asp-action="CreateRelacionado" asp-route-contratoExistenteId="@contratoActivoParaAgregar.Id"
-                           class="btn btn-sm btn-outline-primary">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#agregarDifuntoModal">
                             <i class="ti ti-plus me-1"></i>Agregar difunto
-                        </a>
+                        </button>
                     }
                 </div>
             </div>
@@ -226,6 +225,84 @@
         </div>
     </div>
 </div>
+
+@if (permiteAgregarDifunto)
+{
+    <div class="modal fade" id="agregarDifuntoModal" tabindex="-1" aria-labelledby="agregarDifuntoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="AgregarDifuntoPropietario" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bovedaId" value="@Model.Id" />
+                    <input type="hidden" name="contratoBaseId" value="@contratoActivoParaAgregar!.Id" />
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="agregarDifuntoModalLabel">
+                            <i class="ti ti-user-heart text-primary me-2"></i>Agregar difunto
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-light border">
+                            Este registro se agregará a la bóveda con propietario y quedará vinculado al historial de difuntos.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Cédula</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-id"></i></span>
+                                    <input type="text" name="NumeroIdentificacion" class="form-control" maxlength="20" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nombres</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-user"></i></span>
+                                    <input type="text" name="Nombres" class="form-control" maxlength="100" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Apellidos</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-user-check"></i></span>
+                                    <input type="text" name="Apellidos" class="form-control" maxlength="100" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Fecha de nacimiento</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-calendar-heart"></i></span>
+                                    <input type="date" name="FechaNacimiento" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Fecha de defunción</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-calendar-x"></i></span>
+                                    <input type="date" name="FechaFallecimiento" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Descuento</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-discount"></i></span>
+                                    <select name="DescuentoId" class="form-select" asp-items="ViewBag.DescuentoId" required></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="ti ti-x me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i>Guardar difunto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
 <!-- Modal de Creación de Propietario -->
 <div class="modal fade" id="crearPropietarioModal" tabindex="-1" aria-labelledby="crearPropietarioModalLabel"
     aria-hidden="true">
