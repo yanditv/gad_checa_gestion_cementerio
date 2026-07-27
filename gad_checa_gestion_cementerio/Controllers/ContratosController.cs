@@ -693,7 +693,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                     try
                     {
                         var user = _userManager.GetUserAsync(User).Result;
-                        var userId = user?.Id;
+                        if (user == null)
+                        {
+                            return Json(new { success = false, errors = new List<string> { "No se pudo obtener el usuario autenticado para guardar el contrato." } });
+                        }
+
+                        var userId = user.Id;
                         var now = DateTime.Now;
 
                         // Convertir las personas a responsables antes de asociarlas al contrato
@@ -756,7 +761,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                             FechaNacimiento = viewModel.difunto.FechaNacimiento ?? DateTime.Now.AddYears(-70), // Usar fecha por defecto si es null
                             FechaFallecimiento = viewModel.difunto.FechaFallecimiento ?? DateTime.Now.AddDays(-30), // Usar fecha por defecto si es null
                             UsuarioCreadorId = userId,
+                            UsuarioActualizadorId = userId,
                             FechaCreacion = now,
+                            FechaActualizacion = now,
                             DescuentoId = viewModel.difunto.DescuentoId,
                             Estado = true
 
@@ -788,7 +795,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                         // Crear el pago
                         var pago = _mapper.Map<Pago>(viewModel.pago);
-                        pago.PersonaPagoId = viewModel.responsables.First().Id;
+                        pago.PersonaPagoId = responsables.First().Id;
                         pago.FechaPago = now;
                         pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
                         _context.Pago.Add(pago);
