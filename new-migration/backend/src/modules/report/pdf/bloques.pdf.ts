@@ -1,8 +1,8 @@
-import { drawFooter, drawHeader, drawTable, streamPdf, type Column } from './common';
+import { drawFooter, drawHeader, drawTable, streamPdf, type Column, type InstitucionPdf } from './common';
 
-export async function buildBloquesPdf(data: any): Promise<Buffer> {
+export async function buildBloquesPdf(data: any, institucion?: InstitucionPdf): Promise<Buffer> {
   return streamPdf((doc) => {
-    drawHeader(doc, 'OCUPACIÓN POR BLOQUE');
+    drawHeader(doc, 'OCUPACIÓN POR BLOQUE', undefined, institucion);
 
     const left = doc.page.margins.left;
 
@@ -64,6 +64,6 @@ export async function buildBloquesPdf(data: any): Promise<Buffer> {
     ];
 
     drawTable(doc, data.items ?? [], columns);
-    drawFooter(doc);
+    drawFooter(doc, institucion);
   }, { size: 'A4', layout: 'landscape' });
 }

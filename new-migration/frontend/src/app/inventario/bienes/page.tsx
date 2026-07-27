@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, FolderX, Plus, Search, X } from 'lucide-react';
+import { Eye, FolderX, Plus, Search, X, Pencil } from 'lucide-react';
 import {
   inventarioBienesApi,
   inventarioCategoriasApi,
@@ -189,13 +189,30 @@ export default function BienesPage() {
       align: 'right',
       cellClassName: 'whitespace-nowrap',
       cell: (row) => (
-        <Link
-          href={`/inventario/bienes/${row.id}`}
-          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
-          title="Ver ficha"
-        >
-          <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-        </Link>
+        <div className="inline-flex items-center gap-1">
+          <Link
+            href={`/inventario/bienes/${row.id}`}
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600"
+            title="Ver ficha"
+          >
+            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </Link>
+          <Link
+            href={`/inventario/bienes/${row.id}/edit`}
+            onClick={(e) => {
+              if (row.dadoDeBaja) {
+                e.preventDefault();
+                alert('No se puede editar un bien dado de baja; reactívelo primero.');
+              }
+            }}
+            className={`rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-primary-600 ${
+              row.dadoDeBaja ? 'opacity-40 cursor-not-allowed' : ''
+            }`}
+            title="Editar bien"
+          >
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          </Link>
+        </div>
       ),
     },
   ];

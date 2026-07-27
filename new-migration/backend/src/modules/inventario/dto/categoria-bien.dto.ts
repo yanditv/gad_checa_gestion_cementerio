@@ -1,4 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import {
   IsBoolean,
   IsInt,
@@ -71,4 +73,21 @@ export class CategoriaBienResponseDto {
 
   @ApiProperty()
   estado!: boolean;
+}
+
+export class QueryCategoriaBienDto extends PaginationQueryDto {
+  @ApiPropertyOptional({
+    description: 'Incluir también categorías inactivas',
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === 'true' || value === true
+      ? true
+      : value === 'false' || value === false
+        ? false
+        : undefined,
+  )
+  @IsBoolean()
+  includeInactive?: boolean;
 }

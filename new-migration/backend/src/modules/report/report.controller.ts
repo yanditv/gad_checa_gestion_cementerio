@@ -62,8 +62,11 @@ export class ReportController {
   @Get('ingresos/pdf')
   @ApiOperation({ summary: 'PDF de ingresos en rango' })
   async ingresosPdf(@Query() q: DateRangeDto, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-    const data = await this.service.getIngresos(q.desde, q.hasta);
-    const buffer = await buildIngresosPdf(data);
+    const [data, institucion] = await Promise.all([
+      this.service.getIngresos(q.desde, q.hasta),
+      this.service.getInstitucion(),
+    ]);
+    const buffer = await buildIngresosPdf(data, institucion);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="reporte-ingresos.pdf"',
@@ -74,8 +77,11 @@ export class ReportController {
   @Get('cuentas-por-cobrar/pdf')
   @ApiOperation({ summary: 'PDF de cuentas por cobrar' })
   async cuentasPdf(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-    const data = await this.service.getCuentasPorCobrar();
-    const buffer = await buildCuentasPorCobrarPdf(data);
+    const [data, institucion] = await Promise.all([
+      this.service.getCuentasPorCobrar(),
+      this.service.getInstitucion(),
+    ]);
+    const buffer = await buildCuentasPorCobrarPdf(data, institucion);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="cuentas-por-cobrar.pdf"',
@@ -86,8 +92,11 @@ export class ReportController {
   @Get('bovedas/pdf')
   @ApiOperation({ summary: 'PDF del reporte de bóvedas' })
   async bovedasPdf(@Query() q: BovedasFilterDto, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-    const data = await this.service.getBovedas(q.tipo, q.bloque, q.estado);
-    const buffer = await buildBovedasPdf(data);
+    const [data, institucion] = await Promise.all([
+      this.service.getBovedas(q.tipo, q.bloque, q.estado),
+      this.service.getInstitucion(),
+    ]);
+    const buffer = await buildBovedasPdf(data, institucion);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="reporte-bovedas.pdf"',
@@ -98,8 +107,11 @@ export class ReportController {
   @Get('bloques/pdf')
   @ApiOperation({ summary: 'PDF de ocupación por bloque' })
   async bloquesPdf(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-    const data = await this.service.getBloques();
-    const buffer = await buildBloquesPdf(data);
+    const [data, institucion] = await Promise.all([
+      this.service.getBloques(),
+      this.service.getInstitucion(),
+    ]);
+    const buffer = await buildBloquesPdf(data, institucion);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="reporte-bloques.pdf"',

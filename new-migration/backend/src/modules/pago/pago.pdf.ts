@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import PDFDocument from 'pdfkit';
+import type { InstitucionPdf } from '../report/pdf/common';
 
 const PAGE_MARGIN = 36;
 
@@ -33,7 +34,15 @@ function formatDate(value: Date | string | null | undefined): string {
   });
 }
 
-function findLogo(): string | null {
+function findLogo(logoKey?: string | null): string | null {
+  if (logoKey) {
+    const storagePath = process.env.STORAGE_PATH || path.join(process.cwd(), 'storage');
+    const customLogoPath = path.resolve(storagePath, logoKey);
+    if (fs.existsSync(customLogoPath)) {
+      return customLogoPath;
+    }
+  }
+
   const candidates = [
     path.join(process.cwd(), 'public', 'logo_gad.png'),
     path.join(process.cwd(), '..', 'frontend', 'public', 'logo.png'),
@@ -45,14 +54,14 @@ function findLogo(): string | null {
   return null;
 }
 
-export async function buildFacturaPdfBuffer(pago: any): Promise<Buffer> {
+export async function buildFacturaPdfBuffer(pago: any, institucion?: InstitucionPdf): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A5',
       margin: PAGE_MARGIN,
       info: {
         Title: `Recibo ${pago.numeroRecibo}`,
-        Author: 'GAD Parroquial de Checa',
+        Author: institucion?.nombre || 'GAD Parroquial de Checa',
         Subject: 'Recibo de pago',
       },
     });
@@ -80,7 +89,7 @@ export async function buildFacturaPdfBuffer(pago: any): Promise<Buffer> {
     // -----------------------------------------------------------------------
     // Cabecera
     // -----------------------------------------------------------------------
-    const logoPath = findLogo();
+    const logoPath = findLogo(institucion?.logoKey);
     if (logoPath) {
       try {
         doc.image(logoPath, left, 24, { width: 42, height: 42 });
@@ -93,11 +102,11 @@ export async function buildFacturaPdfBuffer(pago: any): Promise<Buffer> {
       .font('Helvetica-Bold')
       .fontSize(11)
       .fillColor('#0f172a')
-      .text('GAD Parroquial de Checa', left + 50, 28)
+      .text(institucion?.nombre || 'GAD Parroquial de Checa', left + 50, 28)
       .font('Helvetica')
       .fontSize(8)
       .fillColor('#475569')
-      .text('Sistema de Gestión de Cementerio', left + 50, 42);
+      .text(institucion?.subtitulo || 'Sistema de Gestión de Cementerio', left + 50, 42);
 
     doc
       .font('Helvetica-Bold')

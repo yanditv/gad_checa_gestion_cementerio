@@ -1,4 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class CreateCustodioDto {
@@ -54,4 +56,21 @@ export class CustodioResponseDto {
 
   @ApiProperty()
   estado!: boolean;
+}
+
+export class QueryCustodioDto extends PaginationQueryDto {
+  @ApiPropertyOptional({
+    description: 'Incluir también custodios inactivos',
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === 'true' || value === true
+      ? true
+      : value === 'false' || value === false
+        ? false
+        : undefined,
+  )
+  @IsBoolean()
+  includeInactive?: boolean;
 }

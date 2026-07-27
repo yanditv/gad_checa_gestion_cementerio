@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { getInstitucionPdf } from '../../common/utils/institucion.util';
 import { CobrarDto } from './dto/cobrar.dto';
 import { CreatePagoDto } from './dto/request/create-pago.dto';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
@@ -24,6 +25,10 @@ function round2(value: number): number {
 @Injectable()
 export class PagoService {
   constructor(private prisma: PrismaService) {}
+
+  async getInstitucion(subtitulo?: string) {
+    return getInstitucionPdf(this.prisma, subtitulo);
+  }
 
   // ---------------------------------------------------------------------------
   // Read

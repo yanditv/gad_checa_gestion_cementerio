@@ -6,9 +6,10 @@ import {
   formatDate,
   streamPdf,
   type Column,
+  type InstitucionPdf,
 } from './common';
 
-export async function buildIngresosPdf(data: any): Promise<Buffer> {
+export async function buildIngresosPdf(data: any, institucion?: InstitucionPdf): Promise<Buffer> {
   return streamPdf((doc) => {
     const desde = data.rango?.desde
       ? formatDate(new Date(data.rango.desde))
@@ -17,7 +18,7 @@ export async function buildIngresosPdf(data: any): Promise<Buffer> {
       ? formatDate(new Date(data.rango.hasta))
       : '—';
 
-    drawHeader(doc, 'REPORTE DE INGRESOS', `Período: ${desde} → ${hasta}`);
+    drawHeader(doc, 'REPORTE DE INGRESOS', `Período: ${desde} → ${hasta}`, institucion);
 
     const left = doc.page.margins.left;
     const right = doc.page.width - doc.page.margins.right;
@@ -85,6 +86,6 @@ export async function buildIngresosPdf(data: any): Promise<Buffer> {
         align: 'right',
       });
 
-    drawFooter(doc);
+    drawFooter(doc, institucion);
   }, { size: 'A4', layout: 'landscape' });
 }
