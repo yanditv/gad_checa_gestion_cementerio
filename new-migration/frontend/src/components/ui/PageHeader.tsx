@@ -34,7 +34,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn('mb-5 flex flex-col gap-3', className)}>
+    <div className={cn('flex flex-col gap-3', className)}>
       {backHref && (
         <Link
           href={backHref}

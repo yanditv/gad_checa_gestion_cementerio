@@ -1,19 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Camera,
   Check,
   ClipboardList,
-  CircleDollarSign,
-  Clock,
-  Info,
   Package,
   Plus,
   Receipt,
-  Tag,
-  UserCheck,
 } from 'lucide-react';
 import {
   inventarioBienesApi,
@@ -29,6 +24,7 @@ import {
   Input,
   PageHeader,
   Select,
+  Spinner,
 } from '@/components/ui';
 import { CategoriaFormModal } from '@/app/inventario/categorias/CategoriaFormModal';
 import { CustodioFormModal } from '@/app/inventario/custodios/CustodioFormModal';
@@ -78,23 +74,25 @@ function toOptional(value: string) {
   return trimmed.length === 0 ? undefined : trimmed;
 }
 
-function formatCurrency(value: string) {
-  return new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(Number(value || 0));
+function formatDateString(value: any) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().split('T')[0];
 }
 
-export default function NuevoBienPage() {
+export default function EditarBienPage() {
+  const params = useParams<{ id: string }>();
+  const bienId = Number(params.id);
   const router = useRouter();
+
+  const [fetching, setFetching] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<FormState>(INITIAL);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [custodios, setCustodios] = useState<{ id: number; nombre: string }[]>([]);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
-  const categoriaSeleccionada = categorias.find((c) => c.id === Number(formData.categoriaId));
-  const custodioSeleccionado = custodios.find((c) => c.id === Number(formData.custodioId));
 
   const [showCategoriaModal, setShowCategoriaModal] = useState(false);
   const [showCustodioModal, setShowCustodioModal] = useState(false);
@@ -116,15 +114,54 @@ export default function NuevoBienPage() {
   };
 
   useEffect(() => {
-    inventarioCategoriasApi
-      .findAll()
-      .then((rows) => setCategorias(rows ?? []))
-      .catch(() => undefined);
-    inventarioCustodiosApi
-      .findAll()
-      .then((rows) => setCustodios(rows ?? []))
-      .catch(() => undefined);
-  }, []);
+    let cancelled = false;
+    setFetching(true);
+    setError('');
+
+    Promise.all([
+      inventarioCategoriasApi.findAll().catch(() => []),
+      inventarioCustodiosApi.findAll().catch(() => []),
+      inventarioBienesApi.findOne(bienId),
+    ])
+      .then(([cats, custs, bien]) => {
+        if (cancelled) return;
+        setCategorias(cats ?? []);
+        setCustodios(custs ?? []);
+
+        if (bien.dadoDeBaja) {
+          setError('No se puede editar un bien dado de baja; reactívelo primero.');
+        }
+
+        setFormData({
+          codigo: bien.codigo ?? '',
+          descripcion: bien.descripcion ?? '',
+          marca: bien.marca ?? '',
+          modelo: bien.modelo ?? '',
+          serie: bien.serie ?? '',
+          fechaAdquisicion: formatDateString(bien.fechaAdquisicion),
+          valorAdquisicion: String(bien.valorAdquisicion ?? ''),
+          fuenteFinanciamiento: bien.fuenteFinanciamiento ?? '',
+          estadoConservacion: bien.estadoConservacion ?? 'bueno',
+          ubicacion: bien.ubicacion ?? '',
+          valorResidual: bien.valorResidual !== null && bien.valorResidual !== undefined ? String(bien.valorResidual) : '',
+          vidaUtilMesesOverride: bien.vidaUtilMesesOverride !== null && bien.vidaUtilMesesOverride !== undefined ? String(bien.vidaUtilMesesOverride) : '',
+          categoriaId: bien.categoria?.id ? String(bien.categoria.id) : '',
+          custodioId: bien.custodio?.id ? String(bien.custodio.id) : '',
+        });
+      })
+      .catch((err: any) => {
+        if (!cancelled) {
+          setError(err.message || 'No se pudo cargar la información del bien');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setFetching(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bienId]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -138,8 +175,7 @@ export default function NuevoBienPage() {
     setLoading(true);
     setError('');
     try {
-      const creado = await inventarioBienesApi.create({
-        codigo: toOptional(formData.codigo),
+      await inventarioBienesApi.update(bienId, {
         descripcion: formData.descripcion.trim(),
         marca: toOptional(formData.marca),
         modelo: toOptional(formData.modelo),
@@ -151,35 +187,44 @@ export default function NuevoBienPage() {
         ubicacion: toOptional(formData.ubicacion),
         valorResidual: formData.valorResidual.trim()
           ? Number(formData.valorResidual)
-          : undefined,
+          : null,
         vidaUtilMesesOverride: formData.vidaUtilMesesOverride.trim()
           ? Number(formData.vidaUtilMesesOverride)
-          : undefined,
+          : null,
         categoriaId: Number(formData.categoriaId),
-        custodioId: formData.custodioId ? Number(formData.custodioId) : undefined,
       });
-      // El bien ya quedó creado; la foto es opcional y tolerante a fallos.
-      if (fotoFile && creado?.id) {
+
+      // Si hay una foto seleccionada, la subimos
+      if (fotoFile) {
         try {
-          await inventarioBienesApi.uploadFoto(creado.id, fotoFile);
+          await inventarioBienesApi.uploadFoto(bienId, fotoFile);
         } catch {
-          /* no-op: el bien se creó; la foto puede subirse luego desde la ficha */
+          /* no-op: el bien se guardó; la foto puede fallar sin comprometer el guardado principal */
         }
       }
-      router.push('/inventario/bienes');
+
+      router.push(`/inventario/bienes/${bienId}`);
     } catch (err: any) {
-      setError(err.message || 'No se pudo registrar el bien');
+      setError(err.message || 'No se pudo actualizar el bien');
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetching) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Spinner size="lg" label="Cargando datos del bien" className="text-primary-500" />
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
-        title="Nuevo bien"
-        subtitle="Registrar (dar de alta) un bien institucional en el inventario."
-        backHref="/inventario/bienes"
+        title="Editar bien"
+        subtitle="Actualizar la información del bien institucional en el inventario."
+        backHref={`/inventario/bienes/${bienId}`}
         icon={<Package className="h-5 w-5" strokeWidth={2} aria-hidden="true" />}
       />
 
@@ -205,8 +250,8 @@ export default function NuevoBienPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
                   <Input
                     label="Código (placa)"
+                    disabled
                     value={formData.codigo}
-                    onChange={(e) => set('codigo', e.target.value)}
                   />
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
@@ -242,6 +287,7 @@ export default function NuevoBienPage() {
                   <div className="flex-1">
                     <Select
                       label="Custodio"
+                      disabled // Deshabilitado porque la reasignación de custodio se realiza como un movimiento en el detalle del bien
                       value={formData.custodioId}
                       onChange={(e) => set('custodioId', e.target.value)}
                     >
@@ -256,6 +302,7 @@ export default function NuevoBienPage() {
                   <Button
                     variant="secondary"
                     size="md"
+                    disabled
                     onClick={() => setShowCustodioModal(true)}
                     leftIcon={<Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
                     className="shrink-0"
@@ -311,6 +358,7 @@ export default function NuevoBienPage() {
                 />
                 <Input
                   label="Ubicación"
+                  disabled // Deshabilitado porque el cambio de ubicación se realiza como un movimiento en el detalle del bien
                   value={formData.ubicacion}
                   onChange={(e) => set('ubicacion', e.target.value)}
                 />
@@ -335,7 +383,7 @@ export default function NuevoBienPage() {
             <div className="flex justify-end gap-2 border-t border-slate-100 py-6">
               <Button
                 variant="secondary"
-                onClick={() => router.push('/inventario/bienes')}
+                onClick={() => router.push(`/inventario/bienes/${bienId}`)}
               >
                 Cancelar
               </Button>

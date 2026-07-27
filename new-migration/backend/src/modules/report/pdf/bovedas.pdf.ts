@@ -4,6 +4,7 @@ import {
   drawTable,
   streamPdf,
   type Column,
+  type InstitucionPdf,
 } from './common';
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -13,9 +14,9 @@ const ESTADO_LABELS: Record<string, string> = {
   vencida: 'Vencida',
 };
 
-export async function buildBovedasPdf(data: any): Promise<Buffer> {
+export async function buildBovedasPdf(data: any, institucion?: InstitucionPdf): Promise<Buffer> {
   return streamPdf((doc) => {
-    drawHeader(doc, 'REPORTE DE BÓVEDAS');
+    drawHeader(doc, 'REPORTE DE BÓVEDAS', undefined, institucion);
 
     const left = doc.page.margins.left;
 
@@ -60,6 +61,6 @@ export async function buildBovedasPdf(data: any): Promise<Buffer> {
     ];
 
     drawTable(doc, data.items ?? [], columns);
-    drawFooter(doc);
+    drawFooter(doc, institucion);
   }, { size: 'A4', layout: 'landscape' });
 }

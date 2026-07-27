@@ -28,6 +28,7 @@ import {
   buildExhumacionesPdf,
 } from './exhumacion.report';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { getInstitucionPdf } from '../../common/utils/institucion.util';
 import {
   AuthUser,
   CurrentUser,
@@ -77,8 +78,11 @@ export class ExhumacionController {
     @Query() query: QueryExhumacionDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const rows = await this.service.getHistorial(query);
-    const buffer = await buildExhumacionesPdf(rows);
+    const [rows, institucion] = await Promise.all([
+      this.service.getHistorial(query),
+      getInstitucionPdf(this.prisma),
+    ]);
+    const buffer = await buildExhumacionesPdf(rows, institucion);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="historial-exhumaciones.pdf"',
@@ -142,24 +146,27 @@ export class ExhumacionController {
     const exhumacion = await this.service.findOne(id);
 
     // Datos institucionales y bloque de la bóveda origen para el header/cuerpo.
-    const bovedaOrigen = await this.prisma.boveda.findUnique({
-      where: { id: exhumacion.bovedaOrigenId },
-      select: {
-        numero: true,
-        tipo: true,
-        bloque: { select: { nombre: true } },
-      },
-    });
-    const bovedaDestino = exhumacion.bovedaDestinoId
-      ? await this.prisma.boveda.findUnique({
-          where: { id: exhumacion.bovedaDestinoId },
-          select: {
-            numero: true,
-            tipo: true,
-            bloque: { select: { nombre: true } },
-          },
-        })
-      : null;
+    const [bovedaOrigen, bovedaDestino, institucion] = await Promise.all([
+      this.prisma.boveda.findUnique({
+        where: { id: exhumacion.bovedaOrigenId },
+        select: {
+          numero: true,
+          tipo: true,
+          bloque: { select: { nombre: true } },
+        },
+      }),
+      exhumacion.bovedaDestinoId
+        ? this.prisma.boveda.findUnique({
+            where: { id: exhumacion.bovedaDestinoId },
+            select: {
+              numero: true,
+              tipo: true,
+              bloque: { select: { nombre: true } },
+            },
+          })
+        : Promise.resolve(null),
+      getInstitucionPdf(this.prisma),
+    ]);
 
     const buffer = await buildActaExhumacionPdf({
       numeroActa: exhumacion.numeroActa,
@@ -186,7 +193,7 @@ export class ExhumacionController {
             bloque: bovedaDestino.bloque?.nombre ?? null,
           }
         : null,
-    });
+    }, institucion);
 
     res.set({
       'Content-Type': 'application/pdf',

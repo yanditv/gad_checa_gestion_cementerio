@@ -9,6 +9,7 @@ import {
   formatDate,
   streamPdf,
   type Column,
+  type InstitucionPdf,
 } from '../report/pdf/common';
 import { buildExcelBuffer, type ExcelColumn } from '../report/excel/excel.helper';
 
@@ -56,13 +57,14 @@ function bloqueNombre(r: ExhumacionRow): string {
   return r.bovedaOrigen?.bloque?.nombre ?? '—';
 }
 
-export function buildExhumacionesPdf(rows: ExhumacionRow[]): Promise<Buffer> {
+export function buildExhumacionesPdf(rows: ExhumacionRow[], institucion?: InstitucionPdf): Promise<Buffer> {
   return streamPdf(
     (doc) => {
       drawHeader(
         doc,
         'HISTORIAL DE EXHUMACIONES',
         `Total de registros: ${rows.length}`,
+        institucion,
       );
 
       const columns: Column<ExhumacionRow>[] = [
@@ -85,7 +87,7 @@ export function buildExhumacionesPdf(rows: ExhumacionRow[]): Promise<Buffer> {
       ];
 
       drawTable(doc, rows, columns);
-      drawFooter(doc);
+      drawFooter(doc, institucion);
     },
     { size: 'A4', layout: 'landscape' },
   );
