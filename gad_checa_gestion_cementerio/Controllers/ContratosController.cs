@@ -1459,6 +1459,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             var contrato_model = GetContratoFromSession();
             decimal tarifa = 0;
             var cementerio = _context.Cementerio.FirstOrDefault();
+            var esRenovacion = contrato_model.contrato.EsRenovacion && contrato_model.contrato.ContratoOrigenId.HasValue;
             if (contrato_model.contrato.BovedaId > 0)
             {
                 var boveda = _context.Boveda
@@ -1482,9 +1483,44 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 tarifa = cementerio?.tarifa_arriendo ?? 0;
             }
-            contrato_model.contrato.NumeroDeMeses = 5;
-            contrato_model.contrato.FechaInicio = DateTime.Now;
-            contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
+
+            if (!esRenovacion)
+            {
+                contrato_model.contrato.NumeroDeMeses = 5;
+                contrato_model.contrato.FechaInicio = DateTime.Now;
+                contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
+            }
+            else
+            {
+                var contratoOriginal = _context.Contrato
+                    .AsNoTracking()
+                    .FirstOrDefault(c => c.Id == contrato_model.contrato.ContratoOrigenId);
+
+                if (contratoOriginal != null)
+                {
+                    contrato_model.contrato.EsRenovacion = true;
+                    contrato_model.contrato.ContratoOrigenId = contratoOriginal.Id;
+                    contrato_model.contrato.BovedaId = contratoOriginal.BovedaId;
+
+                    if (string.IsNullOrWhiteSpace(contrato_model.contrato.NumeroSecuencial) ||
+                        !contrato_model.contrato.NumeroSecuencial.StartsWith("RNV-"))
+                    {
+                        contrato_model.contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contratoOriginal.BovedaId, isRenovacion: true);
+                    }
+
+                    contrato_model.contrato.NumeroDeMeses = contrato_model.contrato.NumeroDeMeses > 0
+                        ? contrato_model.contrato.NumeroDeMeses
+                        : contratoOriginal.NumeroDeMeses;
+
+                    if (contrato_model.contrato.FechaInicio == default || contrato_model.contrato.FechaInicio.Date == DateTime.Today)
+                    {
+                        contrato_model.contrato.FechaInicio = contratoOriginal.FechaFin.AddDays(1);
+                    }
+
+                    contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
+                    contrato_model.contrato.Observaciones ??= $"Renovación del contrato {contratoOriginal.NumeroSecuencial} de fecha {contratoOriginal.FechaInicio:dd/MM/yyyy} al {contratoOriginal.FechaFin:dd/MM/yyyy}";
+                }
+            }
             //contrato_model.contrato.Difunto = new DifuntoModel();
             contrato_model.contrato.MontoTotal = tarifa;
 
@@ -1492,7 +1528,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             // Esto es especialmente importante si estamos renovando un contrato existente
 
             // Si tenemos información de renovación en la sesión, mantenerla
-            if (contrato_model.contrato.EsRenovacion && contrato_model.contrato.ContratoOrigenId.HasValue)
+            if (esRenovacion)
             {
                 ViewBag.EsRenovacion = true;
                 ViewBag.ContratoOrigenId = contrato_model.contrato.ContratoOrigenId;
@@ -1508,6 +1544,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             }
 
             ViewBag.BovedaId = new SelectList(_context.Boveda.Where(b => b.Estado), "Id", "Numero");
+            SaveContratoToSession(contrato_model);
             return PartialView("_CreateContrato", contrato_model.contrato);
         }
         [HttpGet]
