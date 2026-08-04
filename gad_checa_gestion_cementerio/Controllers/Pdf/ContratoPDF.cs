@@ -27,6 +27,7 @@ public class ContratoPDF : IDocument
         var responsables = model.responsables;
         var responsable = model.responsables.FirstOrDefault();
         var pago = model.pago;
+        var tipoDocumento = contrato.EsRenovacion ? "RENOVACIÓN DE CONTRATO" : "CONTRATO";
 
         // Logging detallado para identificar problemas
         Console.WriteLine($"=== GENERANDO PDF ===");
@@ -102,7 +103,7 @@ public class ContratoPDF : IDocument
             {
                 column.Spacing(20);
 
-                column.Item().AlignCenter().Text(TruncateText($"CONTRATO DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. {contrato.NumeroSecuencial ?? "S/N"}", 100)).Bold().FontSize(13);
+                column.Item().AlignCenter().Text(TruncateText($"{tipoDocumento} DE ARRIENDO DE BÓVEDA DEL CEMENTERIO DE LA PARROQUIA CHECA NRO. {contrato.NumeroSecuencial ?? "S/N"}", 120)).Bold().FontSize(13);
 
                 column.Item().Text(text =>
                 {
@@ -112,7 +113,9 @@ public class ContratoPDF : IDocument
                     text.Span($"{contrato.FechaInicio.ToString("MMMM", new CultureInfo("es-ES"))}").Bold();
                     text.Span(" del ");
                     text.Span($"{contrato.FechaInicio:yyyy}").Bold();
-                    text.Span(", comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ");
+                    text.Span(contrato.EsRenovacion
+                        ? ", comparecen a celebrar la presente renovación del contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el "
+                        : ", comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ");
                     text.Span(presidente).Bold();
                     text.Span("; por otro lado, el/la Sr/Sra. ");
                     text.Span(TruncateText(responsable?.NombresCompletos ?? "________________", 50)).Bold();
@@ -122,7 +125,9 @@ public class ContratoPDF : IDocument
                     text.Span(TruncateText(responsable?.Telefono ?? "__________", 15)).Bold();
                     text.Span(", correo electrónico ");
                     text.Span(TruncateText(responsable?.Email ?? "________________", 30)).Bold();
-                    text.Span(", los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:");
+                    text.Span(contrato.EsRenovacion
+                        ? ", los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran la presente renovación de contrato de arrendamiento de acuerdo con las siguientes cláusulas:"
+                        : ", los comparecientes son mayores de edad, capaces ante la ley para celebrar todo acto y contrato quienes celebran el presente contrato de arrendamiento de acuerdo con las siguientes cláusulas:");
                 });
 
                 column.Item().Text(text =>
