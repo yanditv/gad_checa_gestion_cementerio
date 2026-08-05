@@ -1,10 +1,12 @@
 ﻿@model gad_checa_gestion_cementerio.Models.PagoModel
+@using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = "Crear Pago";
     var descuento = ViewBag.DescuentoPorcentaje != null ? (decimal)ViewBag.DescuentoPorcentaje : 0M;
     decimal montoOriginal = ViewBag.MontoOriginal != null ? (decimal)ViewBag.MontoOriginal : 0M;
     var montoDescuento = montoOriginal * (descuento / 100M);
     var montoFinal = montoOriginal - montoDescuento;
+    var responsablesContrato = ViewBag.ResponsablesContrato as List<SelectListItem> ?? new List<SelectListItem>();
 }
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-light border-0 py-3">
@@ -50,6 +52,14 @@
             </div>
             <div class="row g-3 mt-2">
                 <div class="col-md-6">
+                    <label asp-for="PersonaPagoId" class="form-label fw-semibold">
+                        <i class="ti ti-user-star text-primary me-1"></i>
+                        Responsable
+                    </label>
+                    <select asp-for="PersonaPagoId" class="form-select" asp-items="responsablesContrato"></select>
+                    <span asp-validation-for="PersonaPagoId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
                     <label asp-for="Monto" class="form-label fw-semibold">
                         <i class="ti ti-currency-dollar text-primary me-1"></i>
                         Monto
@@ -57,6 +67,8 @@
                     <input asp-for="Monto" class="form-control" readonly value="@(Model.Monto.ToString("N2"))" />
                     <span asp-validation-for="Monto" class="text-danger small"></span>
                 </div>
+            </div>
+            <div class="row g-3 mt-2">
                 <div class="col-md-6">
                     <label asp-for="FechaPago" class="form-label fw-semibold">
                         <i class="ti ti-calendar-event text-primary me-1"></i>

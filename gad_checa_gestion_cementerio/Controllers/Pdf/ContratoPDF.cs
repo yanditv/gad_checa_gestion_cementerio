@@ -25,8 +25,10 @@ public class ContratoPDF : IDocument
         var boveda = model.contrato.Boveda;
         var difunto = model.difunto;
         var responsables = model.responsables;
-        var responsable = model.responsables.OrderByDescending(r => r.Id).FirstOrDefault();
         var pago = model.pago;
+        var responsable = pago?.PersonaPagoId > 0
+            ? responsables.FirstOrDefault(r => r.Id == pago.PersonaPagoId)
+            : responsables.OrderByDescending(r => r.Id).FirstOrDefault();
         var tipoDocumento = contrato.EsRenovacion ? "RENOVACIÓN DE CONTRATO" : "CONTRATO";
 
         // Logging detallado para identificar problemas

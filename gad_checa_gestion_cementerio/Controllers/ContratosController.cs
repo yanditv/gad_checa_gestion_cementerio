@@ -20,6 +20,7 @@ namespace gad_checa_gestion_cementerio.Controllers
     public class ContratosController : BaseController
     {
         private readonly ContratoService _contratoService;
+        private const int DuracionContratoAniosPorDefecto = 5;
         private readonly IWebHostEnvironment _env;
         public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper, logger)
         {
@@ -478,8 +479,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                             Id = contrato.Id,
                             BovedaId = contrato.BovedaId,
                             FechaInicio = nuevaFechaInicio, // Usar la nueva fecha de inicio
-                            FechaFin = nuevaFechaInicio.AddYears(contrato.NumeroDeMeses), // Calcular nueva fecha fin
-                            NumeroDeMeses = contrato.NumeroDeMeses,
+                            FechaFin = nuevaFechaInicio.AddYears(DuracionContratoAniosPorDefecto), // Calcular nueva fecha fin
+                            NumeroDeMeses = DuracionContratoAniosPorDefecto,
                             MontoTotal = contrato.MontoTotal,
                             Observaciones = $"Renovación del contrato {contrato.NumeroSecuencial} de fecha {contrato.FechaInicio:dd/MM/yyyy} al {contrato.FechaFin:dd/MM/yyyy}",
                             Estado = contrato.Estado,
@@ -795,7 +796,12 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                         // Crear el pago
                         var pago = _mapper.Map<Pago>(viewModel.pago);
-                        pago.PersonaPagoId = responsables.OrderByDescending(r => r.Id).First().Id;
+                        if (!responsables.Any(r => r.Id == viewModel.pago.PersonaPagoId))
+                        {
+                            return Json(new { success = false, errors = new List<string> { "Debe seleccionar un responsable válido para el pago." } });
+                        }
+
+                        pago.PersonaPagoId = viewModel.pago.PersonaPagoId;
                         pago.FechaPago = now;
                         pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
                         _context.Pago.Add(pago);
@@ -1005,7 +1011,15 @@ namespace gad_checa_gestion_cementerio.Controllers
                         NumeroIdentificacion = "No especificado"
                     },
                     responsables = contratoModel.Responsables ?? new List<ResponsableModel>(),
-                    pago = new PagoModel()
+                    pago = new PagoModel
+                    {
+                        PersonaPagoId = contrato.Cuotas
+                            .SelectMany(c => c.Pagos)
+                            .OrderByDescending(p => p.FechaPago)
+                            .ThenByDescending(p => p.Id)
+                            .Select(p => p.PersonaPagoId)
+                            .FirstOrDefault()
+                    }
                 };
 
                 // Validaciones adicionales para evitar problemas en el PDF
@@ -1399,10 +1413,18 @@ namespace gad_checa_gestion_cementerio.Controllers
             decimal montoDescuento = montoSinDescuento * (descuento / 100m);
             contrato.pago.Monto = montoSinDescuento - montoDescuento;
 
-            var responsablePrincipal = contrato.responsables.LastOrDefault();
-            if (responsablePrincipal != null)
+            ViewBag.ResponsablesContrato = contrato.responsables.Select(r => new SelectListItem
             {
-                contrato.pago.PersonaPagoId = responsablePrincipal.Id;
+                Value = r.Id.ToString(),
+                Text = r.NombresCompletos
+            }).ToList();
+
+            var responsableSeleccionado = contrato.pago.PersonaPagoId > 0
+                ? contrato.responsables.FirstOrDefault(r => r.Id == contrato.pago.PersonaPagoId)
+                : contrato.responsables.LastOrDefault();
+            if (responsableSeleccionado != null)
+            {
+                contrato.pago.PersonaPagoId = responsableSeleccionado.Id;
             }
             SaveContratoToSession(contrato);
             return PartialView("_CreatePago", contrato.pago);
@@ -1487,7 +1509,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (!esRenovacion)
             {
-                contrato_model.contrato.NumeroDeMeses = 5;
+                contrato_model.contrato.NumeroDeMeses = DuracionContratoAniosPorDefecto;
                 contrato_model.contrato.FechaInicio = DateTime.Now;
                 contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
             }
@@ -1509,9 +1531,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                         contrato_model.contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contratoOriginal.BovedaId, isRenovacion: true);
                     }
 
-                    contrato_model.contrato.NumeroDeMeses = contrato_model.contrato.NumeroDeMeses > 0
-                        ? contrato_model.contrato.NumeroDeMeses
-                        : contratoOriginal.NumeroDeMeses;
+                    contrato_model.contrato.NumeroDeMeses = DuracionContratoAniosPorDefecto;
 
                     if (contrato_model.contrato.FechaInicio == default || contrato_model.contrato.FechaInicio.Date == DateTime.Today)
                     {

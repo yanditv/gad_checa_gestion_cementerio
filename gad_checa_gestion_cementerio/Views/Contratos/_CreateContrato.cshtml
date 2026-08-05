@@ -208,14 +208,24 @@
                 return;
             }
 
-            var numeroDeMeses = (fechaFin.getFullYear() - fechaInicio.getFullYear()) * 12 + (fechaFin.getMonth() - fechaInicio.getMonth());
-            document.getElementById('NumeroDeMeses').value = numeroDeMeses;
+            var numeroDeAnios = fechaFin.getFullYear() - fechaInicio.getFullYear();
+            if (
+                fechaFin.getMonth() < fechaInicio.getMonth() ||
+                (fechaFin.getMonth() === fechaInicio.getMonth() && fechaFin.getDate() < fechaInicio.getDate())
+            ) {
+                numeroDeAnios--;
+            }
+            document.getElementById('NumeroDeMeses').value = numeroDeAnios;
 
-            var montoCuota = montoTotal / numeroDeMeses;
+            if (numeroDeAnios <= 0) {
+                return;
+            }
 
-            for (var i = 0; i < numeroDeMeses; i++) {
+            var montoCuota = montoTotal / numeroDeAnios;
+
+            for (var i = 0; i < numeroDeAnios; i++) {
                 var cuotaFecha = new Date(fechaInicio);
-                cuotaFecha.setMonth(cuotaFecha.getMonth() + i);
+                cuotaFecha.setFullYear(cuotaFecha.getFullYear() + i + 1);
 
                 var cuotaDiv = document.createElement('div');
                 cuotaDiv.className = 'form-group';
