@@ -1,5 +1,19 @@
 ﻿@model gad_checa_gestion_cementerio.Models.PaginacionBaseViewModel
 
+@{
+    string BuildPageUrl(int pagina)
+    {
+        var queryParams = Context.Request.Query
+            .Where(q => !string.Equals(q.Key, "pagina", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(q => q.Value.Select(value =>
+                $"{Uri.EscapeDataString(q.Key)}={Uri.EscapeDataString(value ?? string.Empty)}"))
+            .ToList();
+
+        queryParams.Insert(0, $"pagina={pagina}");
+        return $"?{string.Join("&", queryParams)}";
+    }
+}
+
 <div class="d-flex justify-content-between align-items-center my-3 small px-3">
     <div>
         Página @Model.PaginaActual de @Model.TotalPaginas • Total @Model.TotalResultados resultados
@@ -9,13 +23,13 @@
             <ul class="pagination mb-0">
                 <li class="page-item ">
                     <a class="btn btn-sm btn-light me-2 pagination-link @(Model.TienePaginaAnterior ? "" : "disabled")"
-                        href="?pagina=@(Model.PaginaActual - 1)&filtro=@Model.Filtro" tabindex="-1">
+                        href="@BuildPageUrl(Model.PaginaActual - 1)" tabindex="-1">
                         &larr; Prev
                     </a>
                 </li>
                 <li class="page-item">
                     <a class="btn btn-sm btn-light me-2 pagination-link @(Model.TienePaginaSiguiente ? "" : "disabled")"
-                        href="?pagina=@(Model.PaginaActual + 1)&filtro=@Model.Filtro">
+                        href="@BuildPageUrl(Model.PaginaActual + 1)">
                         Next &rarr;
                     </a>
                 </li>

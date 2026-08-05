@@ -68,7 +68,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             .AsQueryable();
 
             // Filtro por texto - Búsqueda inteligente
-            if (!string.IsNullOrEmpty(filtro))
+            if (!string.IsNullOrWhiteSpace(filtro))
             {
                 filtro = filtro.Trim();
 
@@ -80,16 +80,27 @@ namespace gad_checa_gestion_cementerio.Controllers
                     var palabraLocal = palabra; // Variable local para closure
                     contratosQuery = contratosQuery.Where(c =>
                         c.NumeroSecuencial.Contains(palabraLocal) ||
-                        c.Difunto.Nombres.Contains(palabraLocal) ||
-                        c.Difunto.Apellidos.Contains(palabraLocal) ||
-                        (c.Difunto.NumeroIdentificacion != null && c.Difunto.NumeroIdentificacion.Contains(palabraLocal)));
+                        (c.Difunto != null && (
+                            c.Difunto.Nombres.Contains(palabraLocal) ||
+                            c.Difunto.Apellidos.Contains(palabraLocal) ||
+                            (c.Difunto.Nombres + " " + c.Difunto.Apellidos).Contains(palabraLocal) ||
+                            (c.Difunto.NumeroIdentificacion != null && c.Difunto.NumeroIdentificacion.Contains(palabraLocal)))) ||
+                        (c.Boveda != null && (
+                            c.Boveda.Numero.ToString().Contains(palabraLocal) ||
+                            (c.Boveda.NumeroSecuencial != null && c.Boveda.NumeroSecuencial.Contains(palabraLocal)))) ||
+                        c.Responsables.Any(r =>
+                            r.Nombres.Contains(palabraLocal) ||
+                            r.Apellidos.Contains(palabraLocal) ||
+                            (r.Nombres + " " + r.Apellidos).Contains(palabraLocal) ||
+                            (r.NumeroIdentificacion != null && r.NumeroIdentificacion.Contains(palabraLocal))));
                 }
             }
 
             // Filtro por estado
             var hoy = DateTime.Today;
-            if (!string.IsNullOrEmpty(estado))
+            if (!string.IsNullOrWhiteSpace(estado))
             {
+                estado = estado.Trim();
                 switch (estado.ToLower())
                 {
                     case "activos":
