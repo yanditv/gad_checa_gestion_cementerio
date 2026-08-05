@@ -5,7 +5,7 @@
     ViewData["Title"] = "Crear Pago";
     var contrato = ViewBag.Contrato as gad_checa_gestion_cementerio.Models.ContratoModel;
     var responsables = ViewBag.Responsables as List<SelectListItem>;
-    var responsablePrincipal = responsables?.FirstOrDefault();
+    var responsablePrincipal = contrato?.Responsables?.OrderByDescending(r => r.Id).FirstOrDefault();
 }
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-light border-0 py-3">
@@ -78,7 +78,7 @@
                                 <i class="ti ti-user-star text-info fs-4 me-2"></i>
                                 <div>
                                     <div class="text-muted small">Responsable Principal</div>
-                                    <span class="fw-bold">@responsablePrincipal?.Text</span>
+                                    <span class="fw-bold">@responsablePrincipal?.NombresCompletos</span>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center mb-2">
@@ -86,21 +86,21 @@
                                 <div>
                                     <div class="text-muted small">Identificación</div>
                                     <span
-                                        class="fw-bold">@contrato.Responsables?.FirstOrDefault()?.NumeroIdentificacion</span>
+                                        class="fw-bold">@responsablePrincipal?.NumeroIdentificacion</span>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center mb-2">
                                 <i class="ti ti-mail text-info me-2"></i>
                                 <div>
                                     <div class="text-muted small">Email</div>
-                                    <span class="fw-bold">@contrato.Responsables?.FirstOrDefault()?.Email</span>
+                                    <span class="fw-bold">@responsablePrincipal?.Email</span>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center">
                                 <i class="ti ti-phone text-info me-2"></i>
                                 <div>
                                     <div class="text-muted small">Teléfono</div>
-                                    <span class="fw-bold">@contrato.Responsables?.FirstOrDefault()?.Telefono</span>
+                                    <span class="fw-bold">@responsablePrincipal?.Telefono</span>
                                 </div>
                             </div>
                         </div>

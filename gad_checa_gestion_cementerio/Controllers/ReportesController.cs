@@ -89,7 +89,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 var bloque = piso?.Bloque;
                 var cementerio = bloque?.Cementerio;
                 var contrato = contratos.FirstOrDefault(c => c.BovedaId == b.Id);
-                var responsable = contrato?.Responsables.FirstOrDefault();
+                var responsable = contrato?.Responsables.OrderByDescending(r => r.Id).FirstOrDefault();
                 var difunto = contrato?.Difunto;
 
                 // Determinar estado según la misma lógica del dashboard
@@ -277,7 +277,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     var piso = boveda?.Piso;
                     var bloque = piso?.Bloque;
                     var cementerio = bloque?.Cementerio;
-                    var responsable = contrato?.Responsables.FirstOrDefault();
+                    var responsable = contrato?.Responsables.OrderByDescending(r => r.Id).FirstOrDefault();
 
                     return new ReporteCuentasPorCobrarViewModel
                     {
@@ -409,7 +409,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                     var boveda = contrato.Boveda;
                     var piso = boveda?.Piso;
                     var bloque = piso?.Bloque;
-                    var responsable = contrato.Responsables.FirstOrDefault();
+                    var responsable = contrato.Responsables.OrderByDescending(r => r.Id).FirstOrDefault();
 
                     ingresos.Add(new ReporteIngresoPorFechaViewModel
                     {
@@ -510,7 +510,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 var viewModels = bovedas.Select(b =>
                 {
                     var contrato = contratos.FirstOrDefault(c => c.BovedaId == b.Id);
-                    var responsable = contrato?.Responsables.FirstOrDefault();
+                    var responsable = contrato?.Responsables.OrderByDescending(r => r.Id).FirstOrDefault();
                     var difunto = contrato?.Difunto;
                     var piso = b.Piso;
                     var bloque = piso?.Bloque;

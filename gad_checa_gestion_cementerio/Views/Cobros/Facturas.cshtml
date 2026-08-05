@@ -50,7 +50,7 @@
                     @foreach (var pago in Model)
                     {
                         var contrato = pago.Cuotas.FirstOrDefault()?.Contrato;
-                        var responsable = contrato?.Responsables?.FirstOrDefault();
+                        var responsable = contrato?.Responsables?.OrderByDescending(r => r.Id).FirstOrDefault();
                         var difunto = contrato?.Difunto;
                         <tr>
                             <td><span class="badge bg-primary-subtle text-primary">@pago.Id</span></td>

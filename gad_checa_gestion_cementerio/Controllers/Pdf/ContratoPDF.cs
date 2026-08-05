@@ -25,7 +25,7 @@ public class ContratoPDF : IDocument
         var boveda = model.contrato.Boveda;
         var difunto = model.difunto;
         var responsables = model.responsables;
-        var responsable = model.responsables.FirstOrDefault();
+        var responsable = model.responsables.OrderByDescending(r => r.Id).FirstOrDefault();
         var pago = model.pago;
         var tipoDocumento = contrato.EsRenovacion ? "RENOVACIÓN DE CONTRATO" : "CONTRATO";
 
@@ -136,7 +136,7 @@ public class ContratoPDF : IDocument
                     text.Span(" Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ");
                     text.Span(presidente).Bold();
                     text.Span("; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ");
-                    text.Span(TruncateText(responsables.FirstOrDefault()?.NombresCompletos ?? "________________", 50)).Bold();
+                    text.Span(TruncateText(responsable?.NombresCompletos ?? "________________", 50)).Bold();
                     text.Span(" a quien en lo posterior se le llamará Arrendatario.");
                 });
 
@@ -213,7 +213,6 @@ public class ContratoPDF : IDocument
 
                     row.AutoItem().Column(col =>
                     {
-                        var responsable = responsables.FirstOrDefault();
                         col.Item().AlignCenter().Text("____________________________").Bold();
                         col.Item().AlignCenter().Text(TruncateText($"Sr/Sra. {responsable?.NombresCompletos ?? "________________"}", 40)).Bold();
                         col.Item().AlignCenter().Text(TruncateText($"CI. {responsable?.NumeroIdentificacion ?? "____________"}", 25));

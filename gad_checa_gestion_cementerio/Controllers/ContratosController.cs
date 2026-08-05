@@ -795,7 +795,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                         // Crear el pago
                         var pago = _mapper.Map<Pago>(viewModel.pago);
-                        pago.PersonaPagoId = responsables.First().Id;
+                        pago.PersonaPagoId = responsables.OrderByDescending(r => r.Id).First().Id;
                         pago.FechaPago = now;
                         pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
                         _context.Pago.Add(pago);
@@ -1028,9 +1028,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 _logger.LogInformation("Número Secuencial: {NumSec}", modelo.contrato.NumeroSecuencial);
                 _logger.LogInformation("Presidente: {Pres} (Length: {Len})", cementerio.Presidente, cementerio.Presidente?.Length ?? 0);
                 _logger.LogInformation("Difunto: {Dif} (Length: {Len})", modelo.difunto.NombresCompletos, modelo.difunto.NombresCompletos?.Length ?? 0);
+                var responsablePrincipal = modelo.responsables.OrderByDescending(r => r.Id).FirstOrDefault();
                 _logger.LogInformation("Responsable: {Resp} (Length: {Len})",
-                    modelo.responsables.FirstOrDefault()?.NombresCompletos,
-                    modelo.responsables.FirstOrDefault()?.NombresCompletos?.Length ?? 0);
+                    responsablePrincipal?.NombresCompletos,
+                    responsablePrincipal?.NombresCompletos?.Length ?? 0);
                 _logger.LogInformation("Observaciones: {Obs} (Length: {Len})",
                     modelo.contrato.Observaciones?.Substring(0, Math.Min(50, modelo.contrato.Observaciones?.Length ?? 0)) + "...",
                     modelo.contrato.Observaciones?.Length ?? 0);
@@ -1398,10 +1399,10 @@ namespace gad_checa_gestion_cementerio.Controllers
             decimal montoDescuento = montoSinDescuento * (descuento / 100m);
             contrato.pago.Monto = montoSinDescuento - montoDescuento;
 
-            var firstResponsable = contrato.responsables.FirstOrDefault();
-            if (firstResponsable != null)
+            var responsablePrincipal = contrato.responsables.LastOrDefault();
+            if (responsablePrincipal != null)
             {
-                contrato.pago.PersonaPagoId = firstResponsable.Id;
+                contrato.pago.PersonaPagoId = responsablePrincipal.Id;
             }
             SaveContratoToSession(contrato);
             return PartialView("_CreatePago", contrato.pago);

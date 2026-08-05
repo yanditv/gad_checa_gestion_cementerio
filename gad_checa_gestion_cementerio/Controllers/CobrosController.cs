@@ -90,7 +90,9 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 return NotFound();
             }
-            var responsablePrincipal = contrato.Responsables.FirstOrDefault();
+            var responsablePrincipal = contrato.Responsables
+                .OrderByDescending(r => r.Id)
+                .FirstOrDefault();
             var pago = new PagoModel
             {
                 FechaPago = DateTime.Now,
@@ -241,4 +243,3 @@ namespace gad_checa_gestion_cementerio.Controllers
 
     }
 }
-

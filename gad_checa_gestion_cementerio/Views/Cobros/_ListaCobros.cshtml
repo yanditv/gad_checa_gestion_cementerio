@@ -34,8 +34,11 @@
                         </td>
                         <td>
                             <span class="badge bg-info-subtle text-info">
-                                <i class="ti ti-user-star me-1"></i>@(item.Responsables?.FirstOrDefault()?.Nombres)
-                                @(item.Responsables?.FirstOrDefault()?.Apellidos)
+                                @{
+                                    var responsablePrincipal = item.Responsables?.OrderByDescending(r => r.Id).FirstOrDefault();
+                                }
+                                <i class="ti ti-user-star me-1"></i>@responsablePrincipal?.Nombres
+                                @responsablePrincipal?.Apellidos
                             </span>
                         </td>
                         <td><span class="badge bg-light text-dark">@CurrencyHelper.FormatCurrency(item.MontoTotal)</span></td>
