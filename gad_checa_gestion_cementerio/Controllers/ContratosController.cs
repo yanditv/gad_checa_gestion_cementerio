@@ -1313,7 +1313,9 @@ namespace gad_checa_gestion_cementerio.Controllers
             var contrato = GetContratoFromSession();
             if (contrato.responsables.Any(r => r.Id == responsable.Id))
             {
-                return Json(new { success = false, message = "Esta persona ya está en la lista de responsables" });
+                contrato.pago.PersonaPagoId = responsable.Id;
+                SaveContratoToSession(contrato);
+                return Json(new { success = true, contrato.responsables });
             }
 
             // Crear el modelo de responsable con los datos de la persona
@@ -1332,6 +1334,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             };
 
             contrato.responsables.Add(responsableModel);
+            contrato.pago.PersonaPagoId = responsableModel.Id;
             SaveContratoToSession(contrato);
 
             return Json(new { success = true, contrato.responsables });
@@ -1362,6 +1365,10 @@ namespace gad_checa_gestion_cementerio.Controllers
                 if (responsableToRemove != null)
                 {
                     contrato.responsables.Remove(responsableToRemove);
+                    if (contrato.pago.PersonaPagoId == id)
+                    {
+                        contrato.pago.PersonaPagoId = contrato.responsables.LastOrDefault()?.Id ?? 0;
+                    }
                     SaveContratoToSession(contrato);
                     _logger.LogInformation($"Responsable {id} removido exitosamente");
                     return Json(new { success = true, message = "Responsable removido exitosamente" });
@@ -2000,25 +2007,18 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                         if (responsableExistente != null)
                         {
-                            // Si ya es un responsable, devolver error
-                            return Json(new
-                            {
-                                success = false,
-                                errors = new List<string> { "Esta persona ya es un responsable." }
-                            });
+                            nuevoResponsable = responsableExistente;
                         }
-
-                        // Si no es un responsable, actualizar sus datos y crear el responsable
-                        personaExistente.Nombres = responsable.Nombres;
-                        personaExistente.Apellidos = responsable.Apellidos;
-                        personaExistente.Telefono = responsable.Telefono;
-                        personaExistente.Email = responsable.Email;
-                        personaExistente.Direccion = responsable.Direccion;
-                        personaExistente.UsuarioCreadorId = identityUser1.Id;
-
-                        nuevoResponsable = _mapper.Map<Responsable>(responsable);
-                        _context.Responsable.Add(nuevoResponsable);
-                        await _context.SaveChangesAsync();
+                        else
+                        {
+                            nuevoResponsable = _mapper.Map<Responsable>(responsable);
+                            nuevoResponsable.Id = 0;
+                            nuevoResponsable.FechaCreacion = DateTime.Now;
+                            nuevoResponsable.UsuarioCreadorId = identityUser1.Id;
+                            nuevoResponsable.FechaInicio = DateTime.Now;
+                            _context.Responsable.Add(nuevoResponsable);
+                            await _context.SaveChangesAsync();
+                        }
                     }
                     else
                     {
@@ -2060,8 +2060,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                             FechaInicio = nuevoResponsable.FechaInicio,
                             FechaFin = nuevoResponsable.FechaFin
                         });
-                        SaveContratoToSession(contrato);
                     }
+                    contrato.pago.PersonaPagoId = nuevoResponsable.Id;
+                    SaveContratoToSession(contrato);
 
                     return Json(new
                     {

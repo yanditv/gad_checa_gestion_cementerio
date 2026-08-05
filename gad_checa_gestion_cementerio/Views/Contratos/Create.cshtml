@@ -484,8 +484,7 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                const responsableHtml = `                                                                                                                                   `;
-                                document.getElementById('responsablesContainer').innerHTML += responsableHtml;
+                                loadResponsables();
                                 $('#searchResponsable').val(null).trigger('change');
                             } else {
                                 console.error('Error:', data.message);
