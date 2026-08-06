@@ -21,6 +21,12 @@ namespace gad_checa_gestion_cementerio.Controllers
     {
         private readonly ContratoService _contratoService;
         private const int DuracionContratoAniosPorDefecto = 5;
+
+        private static void NormalizarDuracionContrato(ContratoModel contrato)
+        {
+            contrato.NumeroDeMeses = DuracionContratoAniosPorDefecto;
+            contrato.FechaFin = contrato.FechaInicio.AddYears(DuracionContratoAniosPorDefecto);
+        }
         private readonly IWebHostEnvironment _env;
         public ContratosController(ApplicationDbContext context, IMapper mapper, UserManager<ApplicationUser> userManager, ILogger<ContratosController> logger, ContratoService contratoService, IWebHostEnvironment env) : base(context, userManager, mapper, logger)
         {
@@ -584,7 +590,27 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (viewModel.pago == null || !viewModel.pago.Cuotas.Any())
             {
                 return Json(new { success = false, errors = new List<string> { "Debe realizar al menos un pago." } });
-            }            // Validar si se puede renovar según la configuración del cementerio
+            }
+
+            if (viewModel.contrato.EsRenovacion && viewModel.contrato.ContratoOrigenId.HasValue)
+            {
+                NormalizarDuracionContrato(viewModel.contrato);
+
+                foreach (var responsable in viewModel.responsables)
+                {
+                    if (responsable.FechaInicio == default || responsable.FechaInicio < viewModel.contrato.FechaInicio)
+                    {
+                        responsable.FechaInicio = viewModel.contrato.FechaInicio;
+                    }
+
+                    if (!responsable.FechaFin.HasValue || responsable.FechaFin.Value > viewModel.contrato.FechaFin)
+                    {
+                        responsable.FechaFin = viewModel.contrato.FechaFin;
+                    }
+                }
+            }
+
+            // Validar si se puede renovar según la configuración del cementerio
             if (viewModel.contrato.EsRenovacion && viewModel.contrato.ContratoOrigenId.HasValue)
             {
                 var cementerio = _context.Cementerio.FirstOrDefault();
@@ -1595,9 +1621,8 @@ namespace gad_checa_gestion_cementerio.Controllers
 
             if (!esRenovacion)
             {
-                contrato_model.contrato.NumeroDeMeses = DuracionContratoAniosPorDefecto;
                 contrato_model.contrato.FechaInicio = DateTime.Now;
-                contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
+                NormalizarDuracionContrato(contrato_model.contrato);
             }
             else
             {
@@ -1617,14 +1642,12 @@ namespace gad_checa_gestion_cementerio.Controllers
                         contrato_model.contrato.NumeroSecuencial = _contratoService.getNumeroContrato(contratoOriginal.BovedaId, isRenovacion: true);
                     }
 
-                    contrato_model.contrato.NumeroDeMeses = DuracionContratoAniosPorDefecto;
-
                     if (contrato_model.contrato.FechaInicio == default || contrato_model.contrato.FechaInicio.Date == DateTime.Today)
                     {
                         contrato_model.contrato.FechaInicio = contratoOriginal.FechaFin.AddDays(1);
                     }
 
-                    contrato_model.contrato.FechaFin = contrato_model.contrato.FechaInicio.AddYears(contrato_model.contrato.NumeroDeMeses);
+                    NormalizarDuracionContrato(contrato_model.contrato);
                     contrato_model.contrato.Observaciones ??= $"Renovación del contrato {contratoOriginal.NumeroSecuencial} de fecha {contratoOriginal.FechaInicio:dd/MM/yyyy} al {contratoOriginal.FechaFin:dd/MM/yyyy}";
                 }
             }
@@ -1725,6 +1748,14 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (ModelState.IsValid)
             {
                 var sessionContrato = GetContratoFromSession();
+
+                if (sessionContrato.contrato.EsRenovacion || contrato.EsRenovacion)
+                {
+                    contrato.EsRenovacion = true;
+                    contrato.ContratoOrigenId = contrato.ContratoOrigenId ?? sessionContrato.contrato.ContratoOrigenId;
+                    NormalizarDuracionContrato(contrato);
+                }
+
                 sessionContrato.contrato = contrato;
 
                 // Validar fechas
@@ -1741,10 +1772,11 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 // Crear cuotas
                 sessionContrato.contrato.Cuotas = new List<CuotaModel>();
-                var montoCuota = contrato.MontoTotal / contrato.NumeroDeMeses;
+                var numeroAnios = contrato.NumeroDeMeses > 0 ? contrato.NumeroDeMeses : DuracionContratoAniosPorDefecto;
+                var montoCuota = contrato.MontoTotal / numeroAnios;
                 var fechaActual = contrato.FechaInicio;
 
-                for (int i = 0; i < contrato.NumeroDeMeses; i++)
+                for (int i = 0; i < numeroAnios; i++)
                 {
                     var cuota = new CuotaModel
                     {
