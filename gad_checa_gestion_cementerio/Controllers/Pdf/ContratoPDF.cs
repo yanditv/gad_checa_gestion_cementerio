@@ -40,6 +40,7 @@ public class ContratoPDF : IDocument
         Console.WriteLine($"Bloque: {boveda?.Piso?.Bloque?.Descripcion} (Length: {boveda?.Piso?.Bloque?.Descripcion?.Length ?? 0})");
 
         var presidente = TruncateText(cementerio.Presidente ?? "Presidente del GAD Parroquial de Checa", 60);
+        var tituloPresidente = TruncateText(string.IsNullOrWhiteSpace(cementerio.AbreviaturaTituloPresidente) ? "Sr." : cementerio.AbreviaturaTituloPresidente.Trim(), 10);
         var telefono_cementerio = TruncateText(cementerio.Telefono ?? "02-XXXXXXX", 15);
         var email_cementerio = TruncateText(cementerio.Email ?? "checa@example.gob.ec", 40);
         var direccion_cementerio = TruncateText(cementerio.Direccion ?? "Checa, Ecuador", 60);
@@ -118,11 +119,13 @@ public class ContratoPDF : IDocument
                     text.Span(contrato.EsRenovacion
                         ? ", comparecen a celebrar la presente renovación del contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el "
                         : ", comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ");
+                    text.Span(tituloPresidente);
+                    text.Span(" ");
                     text.Span(presidente).Bold();
                     text.Span("; por otro lado, el/la Sr/Sra. ");
                     text.Span(TruncateText(responsable?.NombresCompletos ?? "________________", 50)).Bold();
                     text.Span(" con número de identidad ");
-                    text.Span(TruncateText(responsable?.NumeroIdentificacion ?? "__________", 20)).Bold();
+                    text.Span(TruncateText(SoloNumeros(responsable?.NumeroIdentificacion) ?? "__________", 20)).Bold();
                     text.Span(", número de teléfono ");
                     text.Span(TruncateText(responsable?.Telefono ?? "__________", 15)).Bold();
                     text.Span(", correo electrónico ");
@@ -136,6 +139,8 @@ public class ContratoPDF : IDocument
                 {
                     text.Span("PRIMERA COMPARECIENTES. -").Bold();
                     text.Span(" Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ");
+                    text.Span(tituloPresidente);
+                    text.Span(" ");
                     text.Span(presidente).Bold();
                     text.Span("; a quien en lo posterior se lo llamará arrendador, y por otra parte comparece el/la Sr/Sra. ");
                     text.Span(TruncateText(responsable?.NombresCompletos ?? "________________", 50)).Bold();
@@ -154,7 +159,7 @@ public class ContratoPDF : IDocument
                     text.Span(" El Gobierno Parroquial de Checa, en su calidad de Administrador del Cementerio General de la Parroquia, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: ");
                     text.Span(TruncateText(difunto.NombresCompletos, 50)).Bold();
                     text.Span(" con número de cédula ");
-                    text.Span(TruncateText(difunto.NumeroIdentificacion, 20)).Bold();
+                    text.Span(TruncateText(SoloNumeros(difunto.NumeroIdentificacion) ?? "__________", 20)).Bold();
                     text.Span(", restos que serán depositados en la bóveda número ");
                     text.Span(TruncateText(boveda?.NumeroSecuencial != "S/N" ? boveda?.NumeroSecuencial : boveda?.Numero.ToString() ?? "________________", 20)).Bold();
                     text.Span(" en el bloque ");
@@ -200,30 +205,37 @@ public class ContratoPDF : IDocument
                     });
                 }
 
-                column.Item().PaddingTop(20);
-                column.Item().AlignCenter().Row(row =>
+                column.Item().ShowEntire().PaddingTop(20).AlignCenter().Row(row =>
                 {
                     row.Spacing(40); // Espacio horizontal entre columnas - reducido para evitar overflow
 
                     row.AutoItem().Column(col =>
                     {
-                        col.Item().AlignCenter().Text("____________________________").Bold();
+                        col.Item().AlignCenter().Text("ARRENDADOR").Bold();
+                        col.Item().PaddingTop(20).AlignCenter().Text("____________________________").Bold();
                         col.Item().AlignCenter().Text(presidente).Bold();
                         col.Item().AlignCenter().Text("PRESIDENTE GAD CHECA");
-                        col.Item().AlignCenter().Text("ARRENDADOR");
                     });
 
                     row.AutoItem().Column(col =>
                     {
-                        col.Item().AlignCenter().Text("____________________________").Bold();
+                        col.Item().AlignCenter().Text("ARRENDATARIO").Bold();
+                        col.Item().PaddingTop(20).AlignCenter().Text("____________________________").Bold();
                         col.Item().AlignCenter().Text(TruncateText($"Sr/Sra. {responsable?.NombresCompletos ?? "________________"}", 40)).Bold();
-                        col.Item().AlignCenter().Text(TruncateText($"CI. {responsable?.NumeroIdentificacion ?? "____________"}", 25));
-                        col.Item().AlignCenter().Text("ARRENDATARIO");
+                        col.Item().AlignCenter().Text(TruncateText($"CI. {SoloNumeros(responsable?.NumeroIdentificacion) ?? "____________"}", 25));
                     });
                 });
 
             });
         });
+    }
+
+    private static string? SoloNumeros(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return value;
+
+        return new string(value.Where(char.IsDigit).ToArray());
     }
 
     // Método auxiliar para truncar texto y evitar problemas de layout

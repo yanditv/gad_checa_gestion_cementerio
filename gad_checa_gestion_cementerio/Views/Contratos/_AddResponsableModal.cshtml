@@ -48,7 +48,9 @@
                             <div class="mb-3">
                                 <label asp-for="NumeroIdentificacion" class="form-label">Número de
                                     Identificación</label>
-                                <input asp-for="NumeroIdentificacion" class="form-control" required />
+                                <input asp-for="NumeroIdentificacion" class="form-control" inputmode="numeric"
+                                    pattern="[0-9]*" maxlength="20" required
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                                 <span asp-validation-for="NumeroIdentificacion" class="text-danger"></span>
                             </div>
                         </div>

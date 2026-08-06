@@ -21,6 +21,8 @@ namespace gad_checa_gestion_cementerio.Models
 
         [Required(ErrorMessage = "El campo {0} es requerido")]
         [StringLength(20)]
+        [Display(Name = "Número de Identificación")]
+        [RegularExpression("^[0-9]+$", ErrorMessage = "El número de identificación solo debe contener números.")]
         public string NumeroIdentificacion { get; set; }
 
         [Required(ErrorMessage = "El campo {0} es requerido")]

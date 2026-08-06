@@ -205,6 +205,26 @@
                 height: calc(1.5em + 1rem + 2px);
             }
 
+            .responsable-search-group {
+                max-width: 520px;
+            }
+
+            .responsable-search-group .select2-container {
+                flex: 1 1 auto;
+                width: 1% !important;
+                min-width: 0;
+            }
+
+            .responsable-search-group .select2-container--default .select2-selection--single {
+                border-radius: 0;
+                border-left: 0;
+                height: calc(1.5em + 1rem + 2px);
+            }
+
+            .responsable-search-group .btn {
+                flex: 0 0 auto;
+            }
+
             /* Responsivo */
             @@media(max - width: 768px) {
                 .card-body {
@@ -462,9 +482,17 @@
 
             // Inicializar Select2
             function initSelect2() {
-                $('#searchResponsable').select2({
+                const searchResponsable = $('#searchResponsable');
+                if (!searchResponsable.length) return;
+
+                if (searchResponsable.hasClass('select2-hidden-accessible')) {
+                    searchResponsable.off('select2:select').select2('destroy');
+                }
+
+                searchResponsable.select2({
                     placeholder: 'Buscar responsable...',
-                    allowClear: true
+                    allowClear: true,
+                    width: 'resolve'
                 }).on('select2:select', function (e) {
                     const selectedOption = $(this).find('option:selected');
                     const formData = new FormData();
@@ -631,7 +659,6 @@
                                                                                                                                                                         `;
                                 container.innerHTML += html;
                             });
-                            initSelect2();
                         } else {
                             showErrors([data.message || 'Error al cargar responsables']);
                         }

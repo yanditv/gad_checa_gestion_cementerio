@@ -31,6 +31,7 @@ namespace gad_checa_gestion_cementerio.Models
         [StringLength(20)]
         [Display(Name = "Número de Identificación")]
         [Required(ErrorMessage = "El número de identificación es obligatorio.")]
+        [RegularExpression("^[0-9]+$", ErrorMessage = "El número de identificación solo debe contener números.")]
         [CustomValidation(typeof(PersonaModel), nameof(ValidateCedula))]
         public string NumeroIdentificacion { get; set; }
 
@@ -56,6 +57,11 @@ namespace gad_checa_gestion_cementerio.Models
             if (string.IsNullOrEmpty(cedula))
             {
                 return ValidationResult.Success;
+            }
+
+            if (!cedula.All(char.IsDigit))
+            {
+                return new ValidationResult("El número de identificación solo debe contener números.");
             }
 
             // Add custom validation logic for Cedula here

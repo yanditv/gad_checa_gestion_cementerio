@@ -30,7 +30,8 @@
                             <i class="ti ti-id text-muted"></i>
                         </span>
                         <input asp-for="NumeroIdentificacion" class="form-control border-start-0"
-                            placeholder="Ingrese número de cédula" />
+                            placeholder="Ingrese número de cédula" inputmode="numeric" pattern="[0-9]*" maxlength="20"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                     </div>
                     <span asp-validation-for="NumeroIdentificacion" class="text-danger small"></span>
                 </div>
