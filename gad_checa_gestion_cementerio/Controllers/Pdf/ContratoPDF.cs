@@ -30,6 +30,9 @@ public class ContratoPDF : IDocument
             ? responsables.FirstOrDefault(r => r.Id == pago.PersonaPagoId)
             : responsables.OrderByDescending(r => r.Id).FirstOrDefault();
         var tipoDocumento = contrato.EsRenovacion ? "RENOVACIÓN DE CONTRATO" : "CONTRATO";
+        var fechaCelebracion = contrato.EsRenovacion
+            ? (contrato.FechaCreacion == default ? DateTime.Today : contrato.FechaCreacion)
+            : contrato.FechaInicio;
 
         // Logging detallado para identificar problemas
         Console.WriteLine($"=== GENERANDO PDF ===");
@@ -111,11 +114,11 @@ public class ContratoPDF : IDocument
                 column.Item().Text(text =>
                 {
                     text.Span("En la Parroquia de Checa, a los ");
-                    text.Span($"{contrato.FechaInicio:dd}").Bold();
+                    text.Span($"{fechaCelebracion:dd}").Bold();
                     text.Span(" días del mes de ");
-                    text.Span($"{contrato.FechaInicio.ToString("MMMM", new CultureInfo("es-ES"))}").Bold();
+                    text.Span($"{fechaCelebracion.ToString("MMMM", new CultureInfo("es-ES"))}").Bold();
                     text.Span(" del ");
-                    text.Span($"{contrato.FechaInicio:yyyy}").Bold();
+                    text.Span($"{fechaCelebracion:yyyy}").Bold();
                     text.Span(contrato.EsRenovacion
                         ? ", comparecen a celebrar la presente renovación del contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el "
                         : ", comparecen a celebrar el presente contrato de arrendamiento, por una parte y en calidad de arrendador, el Gobierno Parroquial de Checa, debidamente representado por el ");

@@ -10,6 +10,7 @@ public class ContratoModel
     {
         this.Responsables = new List<ResponsableModel>();
         this.Cuotas = new List<CuotaModel>();
+        this.FechaCreacion = DateTime.Now;
         this.FechaInicio = DateTime.Now;
         this.FechaFin = DateTime.Now;
         this.Observaciones = "";
@@ -21,6 +22,8 @@ public class ContratoModel
 
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public DateTime FechaInicio { get; set; }
+
+    public DateTime FechaCreacion { get; set; }
 
     public DateTime? FechaFin { get; set; }
 
