@@ -319,7 +319,9 @@
 
             // Función para validar y enviar el formulario actual
             async function validateAndSubmitCurrentStep() {
-                if (currentStep === 3) return { success: true };
+                if (currentStep === 3) {
+                    return await guardarFechasResponsables();
+                }
                 const form = document.querySelector(`[data-content="${currentStep}"] form`);
                 if (!form) return { success: true };
 
@@ -352,6 +354,48 @@
                     console.error('Error:', error);
                     showErrors(['Error al enviar los datos']);
                     return { success: false, errors: ['Error de conexión con el servidor'] };
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            async function guardarFechasResponsables() {
+                const responsables = Array.from(document.querySelectorAll('[data-content="3"] .responsable')).map(item => ({
+                    id: Number(item.dataset.id),
+                    fechaInicio: item.querySelector('.fecha-inicio')?.value,
+                    fechaFin: item.querySelector('.fecha-fin')?.value || null
+                }));
+
+                if (!responsables.length) {
+                    showErrors(['Debe asignar al menos un responsable antes de continuar']);
+                    return { success: false };
+                }
+
+                if (responsables.some(r => !r.fechaInicio || !r.fechaFin)) {
+                    showErrors(['Todos los responsables deben tener fecha de inicio y fecha de fin']);
+                    return { success: false };
+                }
+
+                try {
+                    setLoading(true);
+                    const response = await fetch('@Url.Action("ActualizarFechasResponsables", "Contratos")', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(responsables)
+                    });
+                    const data = await response.json();
+                    if (!data.success) {
+                        showErrors(data.errors || ['Error al guardar los responsables']);
+                        return { success: false, errors: data.errors };
+                    }
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error:', error);
+                    showErrors(['Error al guardar los responsables']);
+                    return { success: false };
                 } finally {
                     setLoading(false);
                 }

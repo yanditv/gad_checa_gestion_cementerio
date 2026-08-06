@@ -1261,6 +1261,8 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             var contrato = GetContratoFromSession();
             var responsables = contrato.responsables;
+            NormalizarFechasResponsables(contrato, responsables);
+            SaveContratoToSession(contrato);
             var tipos = new List<string> { "Cedula", "RUC" };
             ViewData["TiposIdentificacion"] = new SelectList(tipos);
 
@@ -1287,6 +1289,7 @@ namespace gad_checa_gestion_cementerio.Controllers
                 try
                 {
                     var contrato = GetContratoFromSession();
+                    NormalizarFechasResponsables(contrato, responsables);
                     contrato.responsables = responsables;
                     SaveContratoToSession(contrato);
                     return Json(new { success = true });
@@ -1301,6 +1304,59 @@ namespace gad_checa_gestion_cementerio.Controllers
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, errors });
         }
+
+        [HttpPost]
+        public IActionResult ActualizarFechasResponsables([FromBody] List<ResponsableFechasRequest> responsables)
+        {
+            try
+            {
+                var contrato = GetContratoFromSession();
+                foreach (var responsable in responsables ?? new List<ResponsableFechasRequest>())
+                {
+                    var responsableSession = contrato.responsables.FirstOrDefault(r => r.Id == responsable.Id);
+                    if (responsableSession == null) continue;
+
+                    responsableSession.FechaInicio = responsable.FechaInicio == default
+                        ? contrato.contrato.FechaInicio
+                        : responsable.FechaInicio;
+                    responsableSession.FechaFin = responsable.FechaFin ?? contrato.contrato.FechaFin;
+                }
+
+                NormalizarFechasResponsables(contrato, contrato.responsables);
+                SaveContratoToSession(contrato);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar fechas de responsables");
+                return Json(new { success = false, errors = new List<string> { ex.Message } });
+            }
+        }
+
+        private static void NormalizarFechasResponsables(CreateContratoModel contrato, List<ResponsableModel> responsables)
+        {
+            foreach (var responsable in responsables)
+            {
+                if (responsable.FechaInicio == default || responsable.FechaInicio.Date < contrato.contrato.FechaInicio.Date)
+                {
+                    responsable.FechaInicio = contrato.contrato.FechaInicio;
+                }
+
+                var fechaFinContrato = contrato.contrato.FechaFin;
+                if (!responsable.FechaFin.HasValue || (fechaFinContrato.HasValue && responsable.FechaFin.Value.Date > fechaFinContrato.Value.Date))
+                {
+                    responsable.FechaFin = fechaFinContrato;
+                }
+            }
+        }
+
+        public class ResponsableFechasRequest
+        {
+            public int Id { get; set; }
+            public DateTime FechaInicio { get; set; }
+            public DateTime? FechaFin { get; set; }
+        }
+
         [HttpPost]
         public IActionResult AddResponsable(ResponsableModel responsable)
         {
@@ -1325,6 +1381,7 @@ namespace gad_checa_gestion_cementerio.Controllers
             if (contrato.responsables.Any(r => r.Id == responsable.Id))
             {
                 contrato.pago.PersonaPagoId = responsable.Id;
+                NormalizarFechasResponsables(contrato, contrato.responsables);
                 SaveContratoToSession(contrato);
                 return Json(new { success = true, contrato.responsables });
             }
@@ -1340,12 +1397,13 @@ namespace gad_checa_gestion_cementerio.Controllers
                 Telefono = persona.Telefono,
                 Email = persona.Email,
                 Direccion = persona.Direccion,
-                FechaInicio = DateTime.Now,
-                FechaFin = null
+                FechaInicio = contrato.contrato.FechaInicio,
+                FechaFin = contrato.contrato.FechaFin
             };
 
             contrato.responsables.Add(responsableModel);
             contrato.pago.PersonaPagoId = responsableModel.Id;
+            NormalizarFechasResponsables(contrato, contrato.responsables);
             SaveContratoToSession(contrato);
 
             return Json(new { success = true, contrato.responsables });
@@ -1400,6 +1458,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             ViewData["TiposPago"] = new SelectList(new List<string> { "Efectivo", "Transferencia", "Banco" });
             var contrato = GetContratoFromSession();
+            NormalizarFechasResponsables(contrato, contrato.responsables);
 
             // Validar que haya al menos un responsable asignado
             if (contrato.responsables == null || !contrato.responsables.Any())
@@ -2263,6 +2322,11 @@ namespace gad_checa_gestion_cementerio.Controllers
         {
             var contrato = GetContratoFromSession();
             var responsables = contrato?.responsables ?? new List<ResponsableModel>();
+            if (contrato != null)
+            {
+                NormalizarFechasResponsables(contrato, responsables);
+                SaveContratoToSession(contrato);
+            }
 
             return Json(new
             {
