@@ -716,6 +716,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                         // Convertir las personas a responsables antes de asociarlas al contrato
                         // Primero verifica si las personas ya existen
                         var responsables = new List<Responsable>();
+                        var responsablePagoSeleccionado = viewModel.responsables
+                            .FirstOrDefault(r => r.Id == viewModel.pago.PersonaPagoId);
                         foreach (var persona in viewModel.responsables)
                         {
                             // Verifica si ya existe un responsable para esta persona
@@ -725,8 +727,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                             if (responsableExistente != null)
                             {
                                 // Si existe, actualiza sus datos si es necesario
-                                responsableExistente.FechaInicio = now;
-                                responsableExistente.FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
+                                responsableExistente.FechaInicio = persona.FechaInicio == default ? viewModel.contrato.FechaInicio : persona.FechaInicio;
+                                responsableExistente.FechaFin = persona.FechaFin ?? viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
                                 responsables.Add(responsableExistente);
                             }
                             else
@@ -734,8 +736,8 @@ namespace gad_checa_gestion_cementerio.Controllers
                                 // Si no existe, crea uno nuevo
                                 var responsable = _mapper.Map<Responsable>(persona);
                                 responsable.Id = 0;
-                                responsable.FechaInicio = now;
-                                responsable.FechaFin = viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
+                                responsable.FechaInicio = persona.FechaInicio == default ? viewModel.contrato.FechaInicio : persona.FechaInicio;
+                                responsable.FechaFin = persona.FechaFin ?? viewModel.contrato.FechaFin ?? DateTime.Now.AddYears(5);
                                 responsable.FechaCreacion = now;
                                 responsable.UsuarioCreadorId = userId;
                                 _context.Responsable.Add(responsable);
@@ -807,12 +809,19 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                         // Crear el pago
                         var pago = _mapper.Map<Pago>(viewModel.pago);
-                        if (!responsables.Any(r => r.Id == viewModel.pago.PersonaPagoId))
+                        var responsablePago = responsables.FirstOrDefault(r => r.Id == viewModel.pago.PersonaPagoId);
+                        if (responsablePago == null && responsablePagoSeleccionado != null)
+                        {
+                            responsablePago = responsables.FirstOrDefault(r =>
+                                r.NumeroIdentificacion == responsablePagoSeleccionado.NumeroIdentificacion);
+                        }
+
+                        if (responsablePago == null)
                         {
                             return Json(new { success = false, errors = new List<string> { "Debe seleccionar un responsable válido para el pago." } });
                         }
 
-                        pago.PersonaPagoId = viewModel.pago.PersonaPagoId;
+                        pago.PersonaPagoId = responsablePago.Id;
                         pago.FechaPago = now;
                         pago.Cuotas = contrato.Cuotas.Where(c => c.Pagada).ToList();
                         _context.Pago.Add(pago);
