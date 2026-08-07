@@ -110,7 +110,7 @@ namespace gad_checa_gestion_cementerio.Models.Views
             else if (años > 0)
                 return $"{años} año{(años > 1 ? "s" : "")}";
             else
-                return $"{mesesRestantes} año{(mesesRestantes > 1 ? "s" : "")}";
+                return $"{mesesRestantes} mes{(mesesRestantes > 1 ? "es" : "")}";
         }
     }
 }

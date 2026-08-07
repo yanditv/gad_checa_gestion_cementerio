@@ -945,7 +945,7 @@ namespace gad_checa_gestion_cementerio.Controllers
 
                 contratoDb.FechaInicio = contrato.FechaInicio;
                 contratoDb.FechaFin = contrato.FechaFin;
-                contratoDb.NumeroDeMeses = CalcularAniosContrato(contrato.FechaInicio, contrato.FechaFin);
+                contratoDb.NumeroDeMeses = CalcularMesesContrato(contrato.FechaInicio, contrato.FechaFin);
                 contratoDb.MontoTotal = contrato.MontoTotal;
                 contratoDb.Observaciones = contrato.Observaciones ?? "";
                 contratoDb.FechaActualizacion = DateTime.Now;
@@ -1021,16 +1021,13 @@ namespace gad_checa_gestion_cementerio.Controllers
                 .ToList() ?? new List<SelectListItem>();
         }
 
-        private static int CalcularAniosContrato(DateTime fechaInicio, DateTime fechaFin)
+        // NumeroDeMeses guarda MESES en todo el sistema (ContratoService usa 5 * 12 para un
+        // contrato nuevo y Details divide entre 12 para mostrar los años). Se usa la misma
+        // fórmula que la migración del catastro para que la duración no cambie al editar.
+        private static int CalcularMesesContrato(DateTime fechaInicio, DateTime fechaFin)
         {
-            var anios = fechaFin.Year - fechaInicio.Year;
-            if (fechaFin.Month < fechaInicio.Month ||
-                (fechaFin.Month == fechaInicio.Month && fechaFin.Day < fechaInicio.Day))
-            {
-                anios--;
-            }
-
-            return Math.Max(1, anios);
+            var meses = ((fechaFin.Year - fechaInicio.Year) * 12) + fechaFin.Month - fechaInicio.Month;
+            return Math.Max(1, meses);
         }
 
         [HttpGet]
