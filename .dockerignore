@@ -23,6 +23,10 @@
 **/values.dev.yaml
 LICENSE
 README.md
+# Excluidos del build: su presencia hace que Program.cs borre la BD
+# y reimporte el catastro en CADA arranque del contenedor.
+gad_checa_gestion_cementerio/CATASTRO_FINAL.xlsx
+gad_checa_gestion_cementerio/CATASTRO_FINAL_MIGRADO_*.xlsx
 !**/.gitignore
 !.git/HEAD
 !.git/config
