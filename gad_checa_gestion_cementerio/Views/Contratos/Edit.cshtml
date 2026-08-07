@@ -121,9 +121,12 @@
                 </div>
 
                 <div class="col-md-12">
-                    <label asp-for="Observaciones" class="form-label fw-semibold">Observaciones</label>
-                    <textarea asp-for="Observaciones" rows="4" class="form-control"></textarea>
-                    <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                    <label asp-for="Observaciones" class="form-label fw-semibold">Observaciones <span class="text-muted fw-normal">(opcional)</span></label>
+                    @* Se escribe el textarea a mano en vez de usar asp-for: Observaciones es un
+                       string no anulable, asi que el tag helper le añade data-val-required y
+                       bloqueaba el guardado. La columna es NOT NULL, por eso no se cambia el tipo;
+                       el controlador ya guarda "" cuando viene vacio. *@
+                    <textarea name="Observaciones" id="Observaciones" rows="4" class="form-control">@Model.Observaciones</textarea>
                 </div>
             </div>
 
