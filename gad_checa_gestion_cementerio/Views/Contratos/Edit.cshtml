@@ -91,16 +91,27 @@
                                     <th>Identificación</th>
                                     <th>Teléfono</th>
                                     <th>Correo</th>
+                                    <th class="text-end" style="width:110px;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var responsable in Model.Responsables.OrderByDescending(r => r.FechaInicio).ThenByDescending(r => r.Id))
                                 {
                                     <tr data-id="@responsable.Id">
-                                        <td>@responsable.Nombres @responsable.Apellidos</td>
-                                        <td>@responsable.NumeroIdentificacion</td>
-                                        <td>@responsable.Telefono</td>
-                                        <td>@responsable.Email</td>
+                                        <td class="celda-nombre">@responsable.Nombres @responsable.Apellidos</td>
+                                        <td class="celda-identificacion">@responsable.NumeroIdentificacion</td>
+                                        <td class="celda-telefono">@responsable.Telefono</td>
+                                        <td class="celda-email">@responsable.Email</td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary btn-editar-responsable" title="Editar responsable">
+                                                    <i class="ti ti-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-eliminar-responsable" title="Quitar del contrato">
+                                                    <i class="ti ti-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -178,6 +189,60 @@
     </div>
 </div>
 
+<div class="modal fade" id="editarResponsableContratoModal" tabindex="-1" aria-labelledby="editarResponsableContratoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarResponsableContratoModalLabel">Editar Responsable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="editarResponsableErrors"></div>
+                <div class="alert alert-warning d-none" id="editarResponsableAviso"></div>
+                <input type="hidden" id="editarResponsableId" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input id="editarResponsableNombres" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input id="editarResponsableApellidos" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo de Identificación</label>
+                        <select id="editarResponsableTipoIdentificacion" class="form-select">
+                            <option value="Cedula">Cedula</option>
+                            <option value="RUC">RUC</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número de Identificación</label>
+                        <input id="editarResponsableNumeroIdentificacion" class="form-control" inputmode="numeric" maxlength="20" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input id="editarResponsableTelefono" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Correo</label>
+                        <input id="editarResponsableEmail" type="email" class="form-control" required />
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Dirección</label>
+                        <textarea id="editarResponsableDireccion" class="form-control" rows="2" required></textarea>
+                        <small class="text-muted">Se imprime en el contrato como domicilio del arrendatario.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarResponsableEditado">Guardar responsable</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
@@ -196,11 +261,47 @@
             const row = document.createElement('tr');
             row.dataset.id = responsable.id;
             row.innerHTML = `
-                <td>${responsable.nombres} ${responsable.apellidos}</td>
-                <td>${responsable.identificacion}</td>
-                <td>${responsable.telefono || ''}</td>
-                <td>${responsable.email || ''}</td>`;
+                <td class="celda-nombre">${responsable.nombres} ${responsable.apellidos}</td>
+                <td class="celda-identificacion">${responsable.identificacion}</td>
+                <td class="celda-telefono">${responsable.telefono || ''}</td>
+                <td class="celda-email">${responsable.email || ''}</td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary btn-editar-responsable" title="Editar responsable">
+                            <i class="ti ti-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-eliminar-responsable" title="Quitar del contrato">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </div>
+                </td>`;
             tbody.prepend(row);
+        }
+
+        function actualizarFilaResponsable(responsable) {
+            const row = document.querySelector(`#tablaResponsablesContrato tbody tr[data-id="${responsable.id}"]`);
+            if (!row) return;
+
+            row.querySelector('.celda-nombre').textContent = `${responsable.nombres} ${responsable.apellidos}`;
+            row.querySelector('.celda-identificacion').textContent = responsable.identificacion;
+            row.querySelector('.celda-telefono').textContent = responsable.telefono || '';
+            row.querySelector('.celda-email').textContent = responsable.email || '';
+        }
+
+        function actualizarOpcionResponsable(responsable) {
+            const option = document.querySelector(`#responsablePrincipalId option[value="${responsable.id}"]`);
+            if (option) {
+                option.textContent = responsable.text;
+            }
+        }
+
+        function quitarResponsableDeVista(responsableId, nuevoPrincipalId) {
+            document.querySelector(`#tablaResponsablesContrato tbody tr[data-id="${responsableId}"]`)?.remove();
+            document.querySelector(`#responsablePrincipalId option[value="${responsableId}"]`)?.remove();
+
+            if (nuevoPrincipalId) {
+                $('#responsablePrincipalId').val(String(nuevoPrincipalId)).trigger('change');
+            }
         }
 
         function marcarResponsablePrincipal(responsable) {
@@ -276,6 +377,118 @@
 
             marcarResponsablePrincipal(data.responsable);
             bootstrap.Modal.getInstance(document.getElementById('crearResponsableContratoModal'))?.hide();
+        });
+
+        const modalEditarResponsable = new bootstrap.Modal(document.getElementById('editarResponsableContratoModal'));
+
+        document.querySelector('#tablaResponsablesContrato tbody').addEventListener('click', async (evento) => {
+            const fila = evento.target.closest('tr[data-id]');
+            if (!fila) return;
+            const responsableId = fila.dataset.id;
+
+            if (evento.target.closest('.btn-editar-responsable')) {
+                const url = '@Url.Action("ObtenerResponsableContrato", "Contratos")' +
+                    `?contratoId=${contratoId}&responsableId=${responsableId}`;
+                const data = await (await fetch(url)).json();
+                if (!data.success) {
+                    alert(data.message || 'No se pudo cargar el responsable.');
+                    return;
+                }
+
+                const errores = document.getElementById('editarResponsableErrors');
+                errores.classList.add('d-none');
+                errores.textContent = '';
+
+                const aviso = document.getElementById('editarResponsableAviso');
+                if (data.otrosContratos > 0) {
+                    aviso.textContent = `Esta persona también es responsable en ${data.otrosContratos} contrato(s) más. Los cambios se aplicarán en todos.`;
+                    aviso.classList.remove('d-none');
+                } else {
+                    aviso.classList.add('d-none');
+                    aviso.textContent = '';
+                }
+
+                const r = data.responsable;
+                document.getElementById('editarResponsableId').value = r.id;
+                document.getElementById('editarResponsableNombres').value = r.nombres || '';
+                document.getElementById('editarResponsableApellidos').value = r.apellidos || '';
+                document.getElementById('editarResponsableTipoIdentificacion').value = r.tipoIdentificacion || 'Cedula';
+                document.getElementById('editarResponsableNumeroIdentificacion').value = r.numeroIdentificacion || '';
+                document.getElementById('editarResponsableTelefono').value = r.telefono || '';
+                document.getElementById('editarResponsableEmail').value = r.email || '';
+                document.getElementById('editarResponsableDireccion').value = r.direccion || '';
+
+                modalEditarResponsable.show();
+                return;
+            }
+
+            if (evento.target.closest('.btn-eliminar-responsable')) {
+                const filas = document.querySelectorAll('#tablaResponsablesContrato tbody tr[data-id]');
+                if (filas.length <= 1) {
+                    alert('El contrato debe conservar al menos un responsable.');
+                    return;
+                }
+
+                const nombre = fila.querySelector('.celda-nombre').textContent.trim();
+                if (!confirm(`¿Quitar a ${nombre} de este contrato?\n\nLa persona no se elimina del sistema, solo deja de ser responsable de este contrato.`)) {
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('__RequestVerificationToken', token);
+                formData.append('contratoId', contratoId);
+                formData.append('responsableId', responsableId);
+
+                const response = await fetch('@Url.Action("EliminarResponsableContrato", "Contratos")', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert(data.message || 'No se pudo quitar el responsable.');
+                    return;
+                }
+
+                quitarResponsableDeVista(responsableId, data.responsablePrincipalId);
+                if (data.reasignado) {
+                    alert('El responsable quitado figuraba en el documento. El contrato pasó al responsable que quedó seleccionado.');
+                }
+            }
+        });
+
+        document.getElementById('btnGuardarResponsableEditado').addEventListener('click', async () => {
+            const errores = document.getElementById('editarResponsableErrors');
+            errores.classList.add('d-none');
+            errores.textContent = '';
+
+            const responsableId = document.getElementById('editarResponsableId').value;
+
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', token);
+            formData.append('contratoId', contratoId);
+            formData.append('responsableId', responsableId);
+            formData.append('Nombres', document.getElementById('editarResponsableNombres').value);
+            formData.append('Apellidos', document.getElementById('editarResponsableApellidos').value);
+            formData.append('TipoIdentificacion', document.getElementById('editarResponsableTipoIdentificacion').value);
+            formData.append('NumeroIdentificacion', document.getElementById('editarResponsableNumeroIdentificacion').value);
+            formData.append('Telefono', document.getElementById('editarResponsableTelefono').value);
+            formData.append('Email', document.getElementById('editarResponsableEmail').value);
+            formData.append('Direccion', document.getElementById('editarResponsableDireccion').value);
+
+            const response = await fetch('@Url.Action("EditarResponsableContrato", "Contratos")', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!data.success) {
+                errores.textContent = data.message || 'No se pudo guardar el responsable.';
+                errores.classList.remove('d-none');
+                return;
+            }
+
+            actualizarFilaResponsable(data.responsable);
+            actualizarOpcionResponsable(data.responsable);
+            modalEditarResponsable.hide();
         });
     </script>
 }

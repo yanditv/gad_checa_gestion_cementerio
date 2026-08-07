@@ -1189,6 +1189,186 @@ namespace gad_checa_gestion_cementerio.Controllers
             });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ObtenerResponsableContrato(int contratoId, int responsableId)
+        {
+            var responsable = await _context.Contrato
+                .Where(c => c.Id == contratoId)
+                .SelectMany(c => c.Responsables)
+                .FirstOrDefaultAsync(r => r.Id == responsableId);
+
+            if (responsable == null)
+            {
+                return Json(new { success = false, message = "El responsable no pertenece a este contrato." });
+            }
+
+            // Un mismo responsable puede estar vinculado a varios contratos: editarlo los afecta a todos
+            var otrosContratos = await _context.Contrato
+                .CountAsync(c => c.Id != contratoId && c.Responsables.Any(r => r.Id == responsableId));
+
+            return Json(new
+            {
+                success = true,
+                otrosContratos,
+                responsable = new
+                {
+                    id = responsable.Id,
+                    nombres = responsable.Nombres,
+                    apellidos = responsable.Apellidos,
+                    tipoIdentificacion = responsable.TipoIdentificacion,
+                    numeroIdentificacion = responsable.NumeroIdentificacion,
+                    telefono = responsable.Telefono,
+                    email = responsable.Email,
+                    direccion = responsable.Direccion
+                }
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarResponsableContrato(int contratoId, int responsableId, ResponsableModel responsable)
+        {
+            ModelState.Clear();
+
+            var contrato = await _context.Contrato
+                .Include(c => c.Responsables)
+                .FirstOrDefaultAsync(c => c.Id == contratoId);
+
+            if (contrato == null)
+            {
+                return Json(new { success = false, message = "No se encontró el contrato." });
+            }
+
+            var responsableDb = contrato.Responsables.FirstOrDefault(r => r.Id == responsableId);
+            if (responsableDb == null)
+            {
+                return Json(new { success = false, message = "El responsable no pertenece a este contrato." });
+            }
+
+            var nombres = responsable.Nombres?.Trim() ?? string.Empty;
+            var apellidos = responsable.Apellidos?.Trim() ?? string.Empty;
+            var identificacion = responsable.NumeroIdentificacion?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(nombres) || string.IsNullOrWhiteSpace(apellidos) || string.IsNullOrWhiteSpace(identificacion))
+            {
+                return Json(new { success = false, message = "Nombres, apellidos e identificación son obligatorios." });
+            }
+
+            // Solo se valida si la identificación cambia: los datos migrados del catastro ya
+            // contienen responsables repetidos y bloquearlos impediría editar el resto de campos
+            if (!string.Equals(responsableDb.NumeroIdentificacion, identificacion, StringComparison.OrdinalIgnoreCase))
+            {
+                var identificacionEnUso = await _context.Responsable
+                    .AnyAsync(r => r.Id != responsableId && r.NumeroIdentificacion == identificacion);
+                if (identificacionEnUso)
+                {
+                    return Json(new { success = false, message = "Ya existe otro responsable con ese número de identificación." });
+                }
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "No se pudo obtener el usuario autenticado." });
+            }
+
+            responsableDb.Nombres = nombres;
+            responsableDb.Apellidos = apellidos;
+            responsableDb.NumeroIdentificacion = identificacion;
+
+            if (!string.IsNullOrWhiteSpace(responsable.TipoIdentificacion))
+            {
+                responsableDb.TipoIdentificacion = responsable.TipoIdentificacion.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(responsable.Telefono))
+            {
+                responsableDb.Telefono = responsable.Telefono.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(responsable.Email))
+            {
+                responsableDb.Email = responsable.Email.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(responsable.Direccion))
+            {
+                responsableDb.Direccion = responsable.Direccion.Trim();
+            }
+
+            contrato.FechaActualizacion = DateTime.Now;
+            contrato.UsuarioActualizadorId = user.Id;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                responsable = ResponsableEdicionJson(responsableDb)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarResponsableContrato(int contratoId, int responsableId)
+        {
+            var contrato = await _context.Contrato
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(c => c.Pagos)
+                .FirstOrDefaultAsync(c => c.Id == contratoId);
+
+            if (contrato == null)
+            {
+                return Json(new { success = false, message = "No se encontró el contrato." });
+            }
+
+            var responsable = contrato.Responsables.FirstOrDefault(r => r.Id == responsableId);
+            if (responsable == null)
+            {
+                return Json(new { success = false, message = "El responsable no pertenece a este contrato." });
+            }
+
+            if (contrato.Responsables.Count <= 1)
+            {
+                return Json(new { success = false, message = "El contrato debe conservar al menos un responsable." });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "No se pudo obtener el usuario autenticado." });
+            }
+
+            // Solo se desvincula del contrato: la persona sigue existiendo y conserva sus otros contratos
+            contrato.Responsables.Remove(responsable);
+
+            var reemplazo = contrato.Responsables
+                .OrderByDescending(r => r.FechaInicio)
+                .ThenByDescending(r => r.Id)
+                .First();
+
+            // Si el retirado era quien figuraba como arrendatario, el documento pasa al reemplazo
+            var pagosReasignados = contrato.Cuotas
+                .SelectMany(c => c.Pagos)
+                .Where(p => p.PersonaPagoId == responsableId)
+                .ToList();
+
+            foreach (var pago in pagosReasignados)
+            {
+                pago.PersonaPagoId = reemplazo.Id;
+            }
+
+            contrato.FechaActualizacion = DateTime.Now;
+            contrato.UsuarioActualizadorId = user.Id;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                responsablePrincipalId = reemplazo.Id,
+                reasignado = pagosReasignados.Count > 0
+            });
+        }
+
         private async Task<Responsable?> ObtenerOCrearResponsableDesdePersona(int personaId)
         {
             var persona = await _context.Persona.AsNoTracking().FirstOrDefaultAsync(p => p.Id == personaId);
