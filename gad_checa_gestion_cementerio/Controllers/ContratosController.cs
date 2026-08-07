@@ -917,90 +917,82 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            ModelState.Clear();
+
+            try
             {
-                try
+                var contratoDb = await _context.Contrato
+                    .Include(c => c.Responsables)
+                    .Include(c => c.Cuotas)
+                        .ThenInclude(c => c.Pagos)
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (contratoDb == null)
                 {
-                    var contratoDb = await _context.Contrato
-                        .Include(c => c.Responsables)
-                        .Include(c => c.Cuotas)
-                            .ThenInclude(c => c.Pagos)
-                        .FirstOrDefaultAsync(c => c.Id == id);
+                    return NotFound();
+                }
 
-                    if (contratoDb == null)
-                    {
-                        return NotFound();
-                    }
+                if (contrato.FechaInicio >= contrato.FechaFin)
+                {
+                    ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
+                    contratoDb.FechaInicio = contrato.FechaInicio;
+                    contratoDb.FechaFin = contrato.FechaFin;
+                    contratoDb.MontoTotal = contrato.MontoTotal;
+                    contratoDb.Estado = contrato.Estado;
+                    contratoDb.Observaciones = contrato.Observaciones ?? "";
+                    PrepararDatosEdicionContrato(contratoDb, responsablePrincipalId);
+                    return View(contratoDb);
+                }
 
-                    if (contrato.FechaInicio >= contrato.FechaFin)
+                contratoDb.FechaInicio = contrato.FechaInicio;
+                contratoDb.FechaFin = contrato.FechaFin;
+                contratoDb.NumeroDeMeses = CalcularAniosContrato(contrato.FechaInicio, contrato.FechaFin);
+                contratoDb.MontoTotal = contrato.MontoTotal;
+                contratoDb.Estado = contrato.Estado;
+                contratoDb.Observaciones = contrato.Observaciones ?? "";
+                contratoDb.FechaActualizacion = DateTime.Now;
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    contratoDb.UsuarioActualizadorId = user.Id;
+                }
+
+                if (responsablePrincipalId.HasValue)
+                {
+                    var responsablePerteneceAlContrato = contratoDb.Responsables.Any(r => r.Id == responsablePrincipalId.Value);
+                    if (!responsablePerteneceAlContrato)
                     {
-                        ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
+                        ModelState.AddModelError(string.Empty, "El responsable seleccionado no pertenece a este contrato.");
                         PrepararDatosEdicionContrato(contratoDb, responsablePrincipalId);
                         return View(contratoDb);
                     }
 
-                    contratoDb.FechaInicio = contrato.FechaInicio;
-                    contratoDb.FechaFin = contrato.FechaFin;
-                    contratoDb.NumeroDeMeses = CalcularAniosContrato(contrato.FechaInicio, contrato.FechaFin);
-                    contratoDb.MontoTotal = contrato.MontoTotal;
-                    contratoDb.Estado = contrato.Estado;
-                    contratoDb.Observaciones = contrato.Observaciones ?? "";
-                    contratoDb.FechaActualizacion = DateTime.Now;
+                    var pagos = contratoDb.Cuotas
+                        .SelectMany(c => c.Pagos)
+                        .ToList();
 
-                    var user = await _userManager.GetUserAsync(User);
-                    if (user != null)
+                    foreach (var pago in pagos)
                     {
-                        contratoDb.UsuarioActualizadorId = user.Id;
-                    }
-
-                    if (responsablePrincipalId.HasValue)
-                    {
-                        var responsablePerteneceAlContrato = contratoDb.Responsables.Any(r => r.Id == responsablePrincipalId.Value);
-                        if (!responsablePerteneceAlContrato)
-                        {
-                            ModelState.AddModelError(string.Empty, "El responsable seleccionado no pertenece a este contrato.");
-                            PrepararDatosEdicionContrato(contratoDb, responsablePrincipalId);
-                            return View(contratoDb);
-                        }
-
-                        var pagos = contratoDb.Cuotas
-                            .SelectMany(c => c.Pagos)
-                            .ToList();
-
-                        foreach (var pago in pagos)
-                        {
-                            pago.PersonaPagoId = responsablePrincipalId.Value;
-                        }
-                    }
-
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ContratoExists(contrato.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
+                        pago.PersonaPagoId = responsablePrincipalId.Value;
                     }
                 }
-                return RedirectToAction(nameof(Details), new { id });
+
+                await _context.SaveChangesAsync();
             }
-            var contratoActual = await _context.Contrato
-                .Include(c => c.Responsables)
-                .Include(c => c.Cuotas)
-                    .ThenInclude(c => c.Pagos)
-                .FirstOrDefaultAsync(c => c.Id == id);
-            if (contratoActual != null)
+            catch (DbUpdateConcurrencyException)
             {
-                PrepararDatosEdicionContrato(contratoActual, responsablePrincipalId);
-                return View(contratoActual);
+                if (!ContratoExists(contrato.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
 
-            PrepararDatosEdicionContrato(contrato, responsablePrincipalId);
-            return View(contrato);
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         private void PrepararDatosEdicionContrato(Contrato contrato, int? responsablePrincipalId = null)
