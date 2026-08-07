@@ -55,6 +55,9 @@ public class ContratoPDF : IDocument
         var NombreEntidadFinanciera = TruncateText(cementerio.NombreEntidadFinanciera ?? "Banco del Austro", 40);
         var numero_cuenta = TruncateText(cementerio.NumeroCuenta ?? "2000324704", 20);
         var abreviatura_banco = cementerio.EntidadFinanciera == "BANCO" ? "el banco" : "la Cooperativa de Ahorro y Crédito";
+        // Casi la mitad de las personas migradas del catastro no tienen dirección registrada
+        var direccion_responsable = TruncateText(
+            string.IsNullOrWhiteSpace(responsable?.Direccion) ? "________________" : responsable.Direccion.Trim(), 60);
 
         // Validar y truncar observaciones para evitar texto excesivamente largo
         if (!string.IsNullOrWhiteSpace(contrato.Observaciones) && contrato.Observaciones.Length > 300)
@@ -117,6 +120,7 @@ public class ContratoPDF : IDocument
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("En la Parroquia de Checa, a los ");
                     text.Span($"{fechaCelebracion:dd}").Bold();
                     text.Span(" días del mes de ");
@@ -133,6 +137,8 @@ public class ContratoPDF : IDocument
                     text.Span(TruncateText(responsable?.NombresCompletos ?? "________________", 50)).Bold();
                     text.Span(" con número de identidad ");
                     text.Span(TruncateText(SoloNumeros(responsable?.NumeroIdentificacion) ?? "__________", 20)).Bold();
+                    text.Span(", domiciliado en ");
+                    text.Span(direccion_responsable).Bold();
                     text.Span(", número de teléfono ");
                     text.Span(TruncateText(responsable?.Telefono ?? "__________", 15)).Bold();
                     text.Span(", correo electrónico ");
@@ -144,6 +150,7 @@ public class ContratoPDF : IDocument
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("PRIMERA COMPARECIENTES. -").Bold();
                     text.Span(" Comparecen por una parte el Gobierno Parroquial de Checa representada por su presidente el ");
                     text.Span(tituloPresidente);
@@ -156,12 +163,14 @@ public class ContratoPDF : IDocument
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("SEGUNDA ANTECEDENTE. -").Bold();
                     text.Span(" El Gobierno Parroquial de Checa es la Institución Pública que administra el Cementerio General de la Parroquia, es por ello que se encuentra facultado para suscribir todo contrato de arrendamiento o venta de bóveda del cementerio.");
                 });
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("TERCER OBJETO. -").Bold();
                     text.Span(" El Gobierno Parroquial de Checa, en su calidad de Administrador del Cementerio General de la Parroquia, por el presente contrato da en arriendo una bóveda a favor de quien en vida fue: ");
                     text.Span(TruncateText(difunto.NombresCompletos, 50)).Bold();
@@ -177,6 +186,7 @@ public class ContratoPDF : IDocument
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("CUARTA: PRECIO. -").Bold();
                     text.Span(" El valor por arriendo de la Bóveda es de ");
                     text.Span(contrato.Cuotas.Sum(x => x.Monto).ToString("C", new CultureInfo("en-US"))).Bold();
@@ -186,6 +196,7 @@ public class ContratoPDF : IDocument
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("QUINTA: OTRA. -").Bold();
                     text.Span(" La parte arrendadora aclara que una vez que el Gobierno Parroquial entrega el derecho de uso por ");
                     text.Span($"{contrato.Cuotas.Count()} años").Bold();
@@ -198,6 +209,7 @@ public class ContratoPDF : IDocument
 
                 column.Item().Text(text =>
                 {
+                    text.Justify();
                     text.Span("SEXTA: -").Bold();
                     text.Span(" Las partes por estar conforme con las estipulaciones del presente contrato, firman al pie del mismo y por duplicado para constancia de lo actuado suscriben.");
                 });
@@ -207,6 +219,7 @@ public class ContratoPDF : IDocument
                 {
                     column.Item().Text(text =>
                     {
+                        text.Justify();
                         text.Span("OBSERVACIONES: -").Bold();
                         text.Span($" {contrato.Observaciones}");
                     });
