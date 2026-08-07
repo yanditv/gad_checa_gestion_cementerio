@@ -910,7 +910,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FechaInicio,FechaFin,MontoTotal,Estado,Observaciones")] Contrato contrato, int? responsablePrincipalId)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,FechaInicio,FechaFin,MontoTotal,Observaciones")] Contrato contrato, int? responsablePrincipalId)
         {
             if (id != contrato.Id)
             {
@@ -938,7 +938,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                     contratoDb.FechaInicio = contrato.FechaInicio;
                     contratoDb.FechaFin = contrato.FechaFin;
                     contratoDb.MontoTotal = contrato.MontoTotal;
-                    contratoDb.Estado = contrato.Estado;
                     contratoDb.Observaciones = contrato.Observaciones ?? "";
                     PrepararDatosEdicionContrato(contratoDb, responsablePrincipalId);
                     return View(contratoDb);
@@ -948,7 +947,6 @@ namespace gad_checa_gestion_cementerio.Controllers
                 contratoDb.FechaFin = contrato.FechaFin;
                 contratoDb.NumeroDeMeses = CalcularAniosContrato(contrato.FechaInicio, contrato.FechaFin);
                 contratoDb.MontoTotal = contrato.MontoTotal;
-                contratoDb.Estado = contrato.Estado;
                 contratoDb.Observaciones = contrato.Observaciones ?? "";
                 contratoDb.FechaActualizacion = DateTime.Now;
 
