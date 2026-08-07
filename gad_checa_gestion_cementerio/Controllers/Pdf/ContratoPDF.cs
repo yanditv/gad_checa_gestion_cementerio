@@ -28,7 +28,11 @@ public class ContratoPDF : IDocument
         var pago = model.pago;
         var responsable = pago?.PersonaPagoId > 0
             ? responsables.FirstOrDefault(r => r.Id == pago.PersonaPagoId)
-            : responsables.OrderByDescending(r => r.Id).FirstOrDefault();
+            : null;
+        responsable ??= responsables
+            .OrderByDescending(r => r.FechaInicio)
+            .ThenByDescending(r => r.Id)
+            .FirstOrDefault();
         var tipoDocumento = contrato.EsRenovacion ? "RENOVACIÓN DE CONTRATO" : "CONTRATO";
         var fechaCelebracion = contrato.EsRenovacion
             ? (contrato.FechaCreacion == default ? DateTime.Today : contrato.FechaCreacion)

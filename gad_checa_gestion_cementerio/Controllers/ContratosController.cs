@@ -891,12 +891,17 @@ namespace gad_checa_gestion_cementerio.Controllers
                 return NotFound();
             }
 
-            var contrato = await _context.Contrato.FindAsync(id);
+            var contrato = await _context.Contrato
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(c => c.Pagos)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (contrato == null)
             {
                 return NotFound();
             }
-            ViewData["BovedaId"] = new SelectList(_context.Boveda, "Id", "Estado", contrato.BovedaId);
+
+            PrepararDatosEdicionContrato(contrato);
             return View(contrato);
         }
 
@@ -905,7 +910,7 @@ namespace gad_checa_gestion_cementerio.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,BovedaId,FechaInicio,FechaFin,MontoTotal,Estado,Observaciones")] Contrato contrato)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,FechaInicio,FechaFin,MontoTotal,Estado,Observaciones")] Contrato contrato, int? responsablePrincipalId)
         {
             if (id != contrato.Id)
             {
@@ -916,7 +921,58 @@ namespace gad_checa_gestion_cementerio.Controllers
             {
                 try
                 {
-                    _context.Update(contrato);
+                    var contratoDb = await _context.Contrato
+                        .Include(c => c.Responsables)
+                        .Include(c => c.Cuotas)
+                            .ThenInclude(c => c.Pagos)
+                        .FirstOrDefaultAsync(c => c.Id == id);
+
+                    if (contratoDb == null)
+                    {
+                        return NotFound();
+                    }
+
+                    if (contrato.FechaInicio >= contrato.FechaFin)
+                    {
+                        ModelState.AddModelError(string.Empty, "La fecha de inicio debe ser anterior a la fecha de fin.");
+                        PrepararDatosEdicionContrato(contratoDb, responsablePrincipalId);
+                        return View(contratoDb);
+                    }
+
+                    contratoDb.FechaInicio = contrato.FechaInicio;
+                    contratoDb.FechaFin = contrato.FechaFin;
+                    contratoDb.NumeroDeMeses = CalcularAniosContrato(contrato.FechaInicio, contrato.FechaFin);
+                    contratoDb.MontoTotal = contrato.MontoTotal;
+                    contratoDb.Estado = contrato.Estado;
+                    contratoDb.Observaciones = contrato.Observaciones ?? "";
+                    contratoDb.FechaActualizacion = DateTime.Now;
+
+                    var user = await _userManager.GetUserAsync(User);
+                    if (user != null)
+                    {
+                        contratoDb.UsuarioActualizadorId = user.Id;
+                    }
+
+                    if (responsablePrincipalId.HasValue)
+                    {
+                        var responsablePerteneceAlContrato = contratoDb.Responsables.Any(r => r.Id == responsablePrincipalId.Value);
+                        if (!responsablePerteneceAlContrato)
+                        {
+                            ModelState.AddModelError(string.Empty, "El responsable seleccionado no pertenece a este contrato.");
+                            PrepararDatosEdicionContrato(contratoDb, responsablePrincipalId);
+                            return View(contratoDb);
+                        }
+
+                        var pagos = contratoDb.Cuotas
+                            .SelectMany(c => c.Pagos)
+                            .ToList();
+
+                        foreach (var pago in pagos)
+                        {
+                            pago.PersonaPagoId = responsablePrincipalId.Value;
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
@@ -930,10 +986,61 @@ namespace gad_checa_gestion_cementerio.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Details), new { id });
             }
-            ViewData["BovedaId"] = new SelectList(_context.Boveda, "Id", "Estado", contrato.BovedaId);
+            var contratoActual = await _context.Contrato
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(c => c.Pagos)
+                .FirstOrDefaultAsync(c => c.Id == id);
+            if (contratoActual != null)
+            {
+                PrepararDatosEdicionContrato(contratoActual, responsablePrincipalId);
+                return View(contratoActual);
+            }
+
+            PrepararDatosEdicionContrato(contrato, responsablePrincipalId);
             return View(contrato);
+        }
+
+        private void PrepararDatosEdicionContrato(Contrato contrato, int? responsablePrincipalId = null)
+        {
+            var responsablePagoId = responsablePrincipalId
+                ?? contrato.Cuotas?
+                    .SelectMany(c => c.Pagos)
+                    .OrderByDescending(p => p.FechaPago)
+                    .ThenByDescending(p => p.Id)
+                    .Select(p => (int?)p.PersonaPagoId)
+                    .FirstOrDefault()
+                ?? contrato.Responsables?
+                    .OrderByDescending(r => r.FechaInicio)
+                    .ThenByDescending(r => r.Id)
+                    .Select(r => (int?)r.Id)
+                    .FirstOrDefault();
+
+            ViewBag.ResponsablePrincipalId = responsablePagoId;
+            ViewBag.ResponsablesContrato = contrato.Responsables?
+                .OrderByDescending(r => r.FechaInicio)
+                .ThenByDescending(r => r.Id)
+                .Select(r => new SelectListItem
+                {
+                    Value = r.Id.ToString(),
+                    Text = $"{r.Nombres} {r.Apellidos} - {r.NumeroIdentificacion}",
+                    Selected = responsablePagoId.HasValue && r.Id == responsablePagoId.Value
+                })
+                .ToList() ?? new List<SelectListItem>();
+        }
+
+        private static int CalcularAniosContrato(DateTime fechaInicio, DateTime fechaFin)
+        {
+            var anios = fechaFin.Year - fechaInicio.Year;
+            if (fechaFin.Month < fechaInicio.Month ||
+                (fechaFin.Month == fechaInicio.Month && fechaFin.Day < fechaInicio.Day))
+            {
+                anios--;
+            }
+
+            return Math.Max(1, anios);
         }
 
         // GET: Contratos/Delete/5
