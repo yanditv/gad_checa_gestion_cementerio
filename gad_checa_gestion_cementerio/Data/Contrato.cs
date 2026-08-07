@@ -28,6 +28,9 @@ namespace gad_checa_gestion_cementerio.Data
 
         [Required]
         // Nota: A pesar del nombre, este campo almacena años, no meses (ej: 5 = 5 años)
+        /// <summary>
+        /// OJO: pese al nombre, guarda AÑOS, no meses. Ver ContratoModel.NumeroDeMeses.
+        /// </summary>
         public int NumeroDeMeses { get; set; }
 
         [Required]

@@ -80,22 +80,8 @@
                                     <div>
                                         <small class="text-muted d-block">Duración</small>
                                         <span class="fw-bold">
-                                            @{
-                                                var aniosContrato = Model.NumeroDeMeses / 12;
-                                                var mesesContrato = Model.NumeroDeMeses % 12;
-                                            }
-                                            @if (aniosContrato > 0 && mesesContrato > 0)
-                                            {
-                                                @($"{aniosContrato} año{(aniosContrato > 1 ? "s" : "")} {mesesContrato} mes{(mesesContrato > 1 ? "es" : "")}")
-                                            }
-                                            else if (aniosContrato > 0)
-                                            {
-                                                @($"{aniosContrato} año{(aniosContrato > 1 ? "s" : "")}")
-                                            }
-                                            else
-                                            {
-                                                @($"{mesesContrato} mes{(mesesContrato > 1 ? "es" : "")}")
-                                            }
+                                            @* NumeroDeMeses guarda AÑOS (ver ContratoModel.NumeroDeMeses) *@
+                                            @($"{Model.NumeroDeMeses} año{(Model.NumeroDeMeses > 1 ? "s" : "")}")
                                         </span>
 
                                     </div>

@@ -18,7 +18,9 @@ public class ContratoService
     {
 
         var tarifa = _context.Cementerio.FirstOrDefault()?.tarifa_arriendo ?? 0;
-        var periodo = 5 * 12;
+        // NumeroDeMeses guarda AÑOS (ver ContratoModel.NumeroDeMeses). Antes valia 5 * 12 y
+        // la fecha fin se calculaba con AddYears(60), lo que generaba contratos hasta 2086.
+        var periodo = 5;
         return new Contrato
         {
             FechaCreacion = DateTime.Now,

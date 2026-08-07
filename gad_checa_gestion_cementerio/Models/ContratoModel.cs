@@ -27,6 +27,11 @@ public class ContratoModel
 
     public DateTime? FechaFin { get; set; }
 
+    /// <summary>
+    /// OJO: pese al nombre, guarda AÑOS, no meses. La pantalla lo muestra como
+    /// "Número de Años" y la generación de cuotas crea una cuota por unidad (una por año).
+    /// El nombre se conserva porque renombrarlo obliga a migrar la columna en la base.
+    /// </summary>
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public int NumeroDeMeses { get; set; }
 
