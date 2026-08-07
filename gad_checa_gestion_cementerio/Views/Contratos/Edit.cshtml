@@ -23,6 +23,7 @@
 
     <div class="card-body">
         <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
             <input type="hidden" asp-for="Id" />
 
@@ -78,6 +79,45 @@
                 </div>
 
                 <div class="col-md-12">
+                    <label for="buscarResponsableEditar" class="form-label fw-semibold">Agregar responsable</label>
+                    <div class="input-group">
+                        <select id="buscarResponsableEditar" class="form-select"></select>
+                        <button type="button" id="btnAgregarResponsableEditar" class="btn btn-success">
+                            <i class="ti ti-plus me-1"></i>Agregar
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#crearResponsableContratoModal">
+                            <i class="ti ti-user-plus me-1"></i>Nuevo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="tablaResponsablesContrato">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Responsable</th>
+                                    <th>Identificación</th>
+                                    <th>Teléfono</th>
+                                    <th>Correo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var responsable in Model.Responsables.OrderByDescending(r => r.FechaInicio).ThenByDescending(r => r.Id))
+                                {
+                                    <tr data-id="@responsable.Id">
+                                        <td>@responsable.Nombres @responsable.Apellidos</td>
+                                        <td>@responsable.NumeroIdentificacion</td>
+                                        <td>@responsable.Telefono</td>
+                                        <td>@responsable.Email</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
                     <label asp-for="Observaciones" class="form-label fw-semibold">Observaciones</label>
                     <textarea asp-for="Observaciones" rows="4" class="form-control"></textarea>
                     <span asp-validation-for="Observaciones" class="text-danger small"></span>
@@ -96,6 +136,155 @@
     </div>
 </div>
 
+<div class="modal fade" id="crearResponsableContratoModal" tabindex="-1" aria-labelledby="crearResponsableContratoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearResponsableContratoModalLabel">Crear Responsable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="responsableEditErrors"></div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input id="nuevoResponsableNombres" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input id="nuevoResponsableApellidos" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo de Identificación</label>
+                        <select id="nuevoResponsableTipoIdentificacion" class="form-select">
+                            <option value="Cedula">Cedula</option>
+                            <option value="RUC">RUC</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número de Identificación</label>
+                        <input id="nuevoResponsableNumeroIdentificacion" class="form-control" inputmode="numeric" maxlength="20" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input id="nuevoResponsableTelefono" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Correo</label>
+                        <input id="nuevoResponsableEmail" type="email" class="form-control" required />
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Dirección</label>
+                        <textarea id="nuevoResponsableDireccion" class="form-control" rows="2" required></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnCrearResponsableContrato">Guardar responsable</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const contratoId = @Model.Id;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        function agregarResponsableASelect(responsable) {
+            const option = new Option(responsable.text, responsable.id, true, true);
+            $('#responsablePrincipalId').append(option).trigger('change');
+        }
+
+        function agregarResponsableATabla(responsable) {
+            const tbody = document.querySelector('#tablaResponsablesContrato tbody');
+            if (tbody.querySelector(`tr[data-id="${responsable.id}"]`)) return;
+
+            const row = document.createElement('tr');
+            row.dataset.id = responsable.id;
+            row.innerHTML = `
+                <td>${responsable.nombres} ${responsable.apellidos}</td>
+                <td>${responsable.identificacion}</td>
+                <td>${responsable.telefono || ''}</td>
+                <td>${responsable.email || ''}</td>`;
+            tbody.prepend(row);
+        }
+
+        function marcarResponsablePrincipal(responsable) {
+            agregarResponsableASelect(responsable);
+            agregarResponsableATabla(responsable);
+            $('#responsablePrincipalId').val(String(responsable.id)).trigger('change');
+        }
+
+        $('#buscarResponsableEditar').select2({
+            placeholder: 'Buscar responsable por nombre o identificacion...',
+            minimumInputLength: 2,
+            ajax: {
+                url: '@Url.Action("BuscarResponsableEdicion", "Contratos")',
+                dataType: 'json',
+                delay: 250,
+                data: params => ({
+                    contratoId,
+                    searchTerm: params.term
+                }),
+                processResults: data => data
+            }
+        });
+
+        document.getElementById('btnAgregarResponsableEditar').addEventListener('click', async () => {
+            const responsableId = $('#buscarResponsableEditar').val();
+            if (!responsableId) return;
+
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', token);
+            formData.append('contratoId', contratoId);
+            formData.append('responsableId', responsableId);
+
+            const response = await fetch('@Url.Action("AgregarResponsableContrato", "Contratos")', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!data.success) {
+                alert(data.message || 'No se pudo agregar el responsable.');
+                return;
+            }
+
+            marcarResponsablePrincipal(data.responsable);
+            $('#buscarResponsableEditar').val(null).trigger('change');
+        });
+
+        document.getElementById('btnCrearResponsableContrato').addEventListener('click', async () => {
+            const errors = document.getElementById('responsableEditErrors');
+            errors.classList.add('d-none');
+            errors.textContent = '';
+
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', token);
+            formData.append('contratoId', contratoId);
+            formData.append('Nombres', document.getElementById('nuevoResponsableNombres').value);
+            formData.append('Apellidos', document.getElementById('nuevoResponsableApellidos').value);
+            formData.append('TipoIdentificacion', document.getElementById('nuevoResponsableTipoIdentificacion').value);
+            formData.append('NumeroIdentificacion', document.getElementById('nuevoResponsableNumeroIdentificacion').value);
+            formData.append('Telefono', document.getElementById('nuevoResponsableTelefono').value);
+            formData.append('Email', document.getElementById('nuevoResponsableEmail').value);
+            formData.append('Direccion', document.getElementById('nuevoResponsableDireccion').value);
+
+            const response = await fetch('@Url.Action("CrearResponsableContrato", "Contratos")', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!data.success) {
+                errors.textContent = data.message || 'No se pudo crear el responsable.';
+                errors.classList.remove('d-none');
+                return;
+            }
+
+            marcarResponsablePrincipal(data.responsable);
+            bootstrap.Modal.getInstance(document.getElementById('crearResponsableContratoModal'))?.hide();
+        });
+    </script>
 }

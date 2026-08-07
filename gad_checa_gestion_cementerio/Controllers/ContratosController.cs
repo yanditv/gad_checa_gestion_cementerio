@@ -1035,6 +1035,216 @@ namespace gad_checa_gestion_cementerio.Controllers
             return Math.Max(1, anios);
         }
 
+        [HttpGet]
+        public IActionResult BuscarResponsableEdicion(int contratoId, string? searchTerm)
+        {
+            var termino = searchTerm?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(termino))
+            {
+                return Json(new { results = Array.Empty<object>() });
+            }
+
+            var responsablesContratoIdentificaciones = _context.Contrato
+                .Where(c => c.Id == contratoId)
+                .SelectMany(c => c.Responsables.Select(r => r.NumeroIdentificacion))
+                .ToList();
+
+            var results = _context.Persona
+                .Where(p => !responsablesContratoIdentificaciones.Contains(p.NumeroIdentificacion) &&
+                            (p.Nombres.Contains(termino) ||
+                             p.Apellidos.Contains(termino) ||
+                             p.NumeroIdentificacion.Contains(termino)))
+                .OrderBy(p => p.Apellidos)
+                .ThenBy(p => p.Nombres)
+                .Take(10)
+                .Select(p => new
+                {
+                    id = p.Id,
+                    text = $"{p.Nombres} {p.Apellidos} - {p.NumeroIdentificacion}"
+                })
+                .ToList();
+
+            return Json(new { results });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarResponsableContrato(int contratoId, int responsableId)
+        {
+            var contrato = await _context.Contrato
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(c => c.Pagos)
+                .FirstOrDefaultAsync(c => c.Id == contratoId);
+
+            if (contrato == null)
+            {
+                return Json(new { success = false, message = "No se encontró el contrato." });
+            }
+
+            var responsable = await ObtenerOCrearResponsableDesdePersona(responsableId);
+            if (responsable == null)
+            {
+                return Json(new { success = false, message = "No se encontró el responsable seleccionado." });
+            }
+
+            if (!contrato.Responsables.Any(r => r.Id == responsable.Id))
+            {
+                responsable.FechaInicio = contrato.FechaInicio;
+                responsable.FechaFin = contrato.FechaFin;
+                contrato.Responsables.Add(responsable);
+            }
+
+            var pagos = contrato.Cuotas.SelectMany(c => c.Pagos).ToList();
+            foreach (var pago in pagos)
+            {
+                pago.PersonaPagoId = responsable.Id;
+            }
+
+            contrato.FechaActualizacion = DateTime.Now;
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                contrato.UsuarioActualizadorId = user.Id;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                responsable = ResponsableEdicionJson(responsable)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CrearResponsableContrato(int contratoId, ResponsableModel responsable)
+        {
+            ModelState.Clear();
+
+            var contrato = await _context.Contrato
+                .Include(c => c.Responsables)
+                .Include(c => c.Cuotas)
+                    .ThenInclude(c => c.Pagos)
+                .FirstOrDefaultAsync(c => c.Id == contratoId);
+
+            if (contrato == null)
+            {
+                return Json(new { success = false, message = "No se encontró el contrato." });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "No se pudo obtener el usuario autenticado." });
+            }
+
+            var nuevoResponsable = _context.Responsable
+                .FirstOrDefault(r => r.NumeroIdentificacion == responsable.NumeroIdentificacion);
+
+            if (nuevoResponsable == null)
+            {
+                nuevoResponsable = new Responsable
+                {
+                    Nombres = responsable.Nombres,
+                    Apellidos = responsable.Apellidos,
+                    TipoIdentificacion = responsable.TipoIdentificacion,
+                    NumeroIdentificacion = responsable.NumeroIdentificacion,
+                    Telefono = responsable.Telefono,
+                    Email = responsable.Email,
+                    Direccion = responsable.Direccion,
+                    Estado = true,
+                    FechaInicio = contrato.FechaInicio,
+                    FechaFin = contrato.FechaFin,
+                    FechaCreacion = DateTime.Now,
+                    UsuarioCreadorId = user.Id
+                };
+                _context.Responsable.Add(nuevoResponsable);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                nuevoResponsable.FechaInicio = contrato.FechaInicio;
+                nuevoResponsable.FechaFin = contrato.FechaFin;
+            }
+
+            if (!contrato.Responsables.Any(r => r.NumeroIdentificacion == nuevoResponsable.NumeroIdentificacion))
+            {
+                contrato.Responsables.Add(nuevoResponsable);
+            }
+
+            foreach (var pago in contrato.Cuotas.SelectMany(c => c.Pagos))
+            {
+                pago.PersonaPagoId = nuevoResponsable.Id;
+            }
+
+            contrato.FechaActualizacion = DateTime.Now;
+            contrato.UsuarioActualizadorId = user.Id;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                responsable = ResponsableEdicionJson(nuevoResponsable)
+            });
+        }
+
+        private async Task<Responsable?> ObtenerOCrearResponsableDesdePersona(int personaId)
+        {
+            var persona = await _context.Persona.AsNoTracking().FirstOrDefaultAsync(p => p.Id == personaId);
+            if (persona == null)
+            {
+                return null;
+            }
+
+            var responsable = await _context.Responsable
+                .FirstOrDefaultAsync(r => r.NumeroIdentificacion == persona.NumeroIdentificacion);
+            if (responsable != null)
+            {
+                return responsable;
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return null;
+            }
+
+            responsable = new Responsable
+            {
+                Nombres = persona.Nombres,
+                Apellidos = persona.Apellidos,
+                TipoIdentificacion = persona.TipoIdentificacion,
+                NumeroIdentificacion = persona.NumeroIdentificacion,
+                Telefono = persona.Telefono,
+                Email = persona.Email,
+                Direccion = persona.Direccion,
+                Estado = true,
+                FechaInicio = DateTime.Now,
+                FechaCreacion = DateTime.Now,
+                UsuarioCreadorId = user.Id
+            };
+            _context.Responsable.Add(responsable);
+            await _context.SaveChangesAsync();
+            return responsable;
+        }
+
+        private static object ResponsableEdicionJson(Responsable responsable)
+        {
+            return new
+            {
+                id = responsable.Id,
+                text = $"{responsable.Nombres} {responsable.Apellidos} - {responsable.NumeroIdentificacion}",
+                nombres = responsable.Nombres,
+                apellidos = responsable.Apellidos,
+                identificacion = responsable.NumeroIdentificacion,
+                telefono = responsable.Telefono,
+                email = responsable.Email
+            };
+        }
+
         // GET: Contratos/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
