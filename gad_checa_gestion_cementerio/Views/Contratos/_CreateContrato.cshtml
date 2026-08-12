@@ -268,10 +268,7 @@
             //renderPaginacion(data.paginaActual, data.totalPaginas);
         }
         function abrirModalBovedas(filtro) {
-            const tipoSelect = document.getElementById('tipoBoveda');
-            const tipo = tipoSelect ? tipoSelect.value : '';
-
-            fetch(`/Contratos/BuscarBovedas?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=1`)
+            fetch(`/Contratos/BuscarBovedas?filtro=${encodeURIComponent(filtro)}&pagina=1`)
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('contenedorModalBovedas').innerHTML = html;
@@ -285,6 +282,17 @@
 
                             // Esperar a que el modal se muestre antes de llamar a buscarBovedasJson
                             modalElement.addEventListener('shown.bs.modal', function () {
+                                const filtroInput = document.getElementById('filtroBoveda');
+                                if (filtroInput) {
+                                    filtroInput.focus();
+                                    // Buscar con Enter sin enviar el formulario del contrato
+                                    filtroInput.addEventListener('keydown', function (e) {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            buscarBovedasJson(1);
+                                        }
+                                    });
+                                }
                                 buscarBovedasJson(1);
                             }, { once: true }); // Solo una vez por apertura
                         } else {
@@ -297,10 +305,17 @@
         function buscarBovedasJson(pagina = 1) {
             const filtroInput = document.getElementById('filtroBoveda');
             const tipoSelect = document.getElementById('tipoBoveda');
+            const bloqueSelect = document.getElementById('bloqueBoveda');
             const filtro = filtroInput ? filtroInput.value : '';
             const tipo = tipoSelect ? tipoSelect.value : '';
+            const bloqueId = bloqueSelect ? bloqueSelect.value : '';
 
-            fetch(`/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=${pagina}`)
+            let url = `/Contratos/BuscarBovedasJson?filtro=${encodeURIComponent(filtro)}&tipo=${encodeURIComponent(tipo)}&pagina=${pagina}`;
+            if (bloqueId) {
+                url += `&bloqueId=${encodeURIComponent(bloqueId)}`;
+            }
+
+            fetch(url)
                 .then(response => {
                     if (!response.ok) throw new Error('Error en la solicitud');
                     return response.json();
@@ -308,25 +323,42 @@
                 .then(data => {
                     const body = document.getElementById('tablaBovedasBody');
                     body.innerHTML = '';
-                    console.log(data);
 
-                    data.bovedas.forEach(b => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
+                    if (!data.bovedas || data.bovedas.length === 0) {
+                        body.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="ti ti-mood-empty me-1"></i>
+                        No se encontraron bóvedas disponibles con los filtros seleccionados.
+                    </td>
+                </tr>`;
+                    } else {
+                        data.bovedas.forEach(b => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                <td class="fw-semibold">${b.numeroSecuencial == null ? "S/N" : b.numeroSecuencial}</td>
                 <td>${b.numero}</td>
-                <td>${b.numeroSecuencial == null ? "S/N" : b.numeroSecuencial}</td>
+                <td>${b.bloque}</td>
+                <td>${b.piso == null ? '-' : b.piso}</td>
+                <td><span class="badge bg-info-subtle text-info fw-normal">${b.tipo}</span></td>
                 <td>${b.propietario}</td>
-                <td>${b.tipo}</td>
-                <td>${b.estado}</td>
-                <td style="text-align: right;">
-                    <button type="button" class="btn btn-success btn-sm"
+                <td><span class="badge bg-success-subtle text-success">${b.estado}</span></td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-outline-success btn-sm px-3"
                         onclick="seleccionarBoveda(${b.id}, '${b.numeroSecuencial}')">
-                        Seleccionar
+                        <i class="ti ti-hand-point-right me-1"></i> Seleccionar
                     </button>
                 </td>
             `;
-                        body.appendChild(row);
-                    });
+                            body.appendChild(row);
+                        });
+                    }
+
+                    const resumen = document.getElementById('resumenBovedas');
+                    if (resumen) {
+                        const total = data.totalResultados != null ? data.totalResultados : 0;
+                        resumen.textContent = `${total} bóveda(s) disponible(s)`;
+                    }
 
                     generarPaginacion(data.paginaActual, data.totalPaginas, filtro);
                 })
@@ -339,6 +371,10 @@
         function generarPaginacion(paginaActual, totalPaginas, filtro) {
             const paginacion = document.getElementById('paginacionBovedas');
             paginacion.innerHTML = '';
+
+            if (!totalPaginas || totalPaginas < 1) {
+                return;
+            }
 
             const tieneAnterior = paginaActual > 1;
             const tieneSiguiente = paginaActual < totalPaginas;

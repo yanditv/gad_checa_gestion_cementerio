@@ -1,11 +1,13 @@
-﻿@model gad_checa_gestion_cementerio.Models.Listas.BovedaPaginadaViewModel
+@model gad_checa_gestion_cementerio.Models.Listas.BovedaPaginadaViewModel
 
 @{
     var filtroActual = Model.Filtro ?? "";
+    var tipoActual = Model.Tipo ?? "";
+    var bloqueActual = Model.BloqueId?.ToString() ?? "";
 }
 
 <div class="modal fade" id="modalBovedas" tabindex="-1" aria-labelledby="modalBovedasLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-light border-0">
                 <h5 class="modal-title fw-bold" id="modalBovedasLabel">
@@ -14,43 +16,56 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row g-2 align-items-center mb-4">
-                    <div class="col-md-6">
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold small mb-1">Buscar</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0">
                                 <i class="ti ti-search text-muted"></i>
                             </span>
                             <input type="text" name="filtro" id="filtroBoveda"
                                 class="form-control form-control-sm border-start-0"
-                                placeholder="Buscar por Nro. Secuencial" value="@filtroActual" />
+                                placeholder="Nro. secuencial, número o bloque" value="@filtroActual" />
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <select id="tipoBoveda" class="form-select form-select-sm">
-                            <option value="">Todos los tipos</option>
-                            <option value="Boveda">Bóveda</option>
-                            <option value="Nicho">Nicho</option>
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label fw-semibold small mb-1">Bloque</label>
+                        <select id="bloqueBoveda" class="form-select form-select-sm"
+                            onchange="buscarBovedasJson(1)">
+                            <option value="">Todos los bloques</option>
+                            @foreach (var bloque in Model.Bloques)
+                            {
+                                <option value="@bloque.Value" selected="@(bloque.Value == bloqueActual)">@bloque.Text</option>
+                            }
                         </select>
                     </div>
-                    <div class="col-md-3 text-end">
-                        <button type="button" class="btn btn-primary w-100" onclick="buscarBovedasJson(1)">
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label fw-semibold small mb-1">Tipo</label>
+                        <select id="tipoBoveda" class="form-select form-select-sm" onchange="buscarBovedasJson(1)">
+                            <option value="">Todos los tipos</option>
+                            <option value="Boveda" selected="@(tipoActual == "Boveda")">Bóveda</option>
+                            <option value="Nicho" selected="@(tipoActual == "Nicho")">Nicho</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <button type="button" class="btn btn-primary btn-sm w-100" onclick="buscarBovedasJson(1)">
                             <i class="ti ti-search me-1"></i>Buscar
                         </button>
                     </div>
                 </div>
+                <div id="resumenBovedas" class="text-muted small mb-2"></div>
                 <div class="table-responsive mb-3">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th><i class="ti ti-hash text-primary"></i></th>
                                 <th><i class="ti ti-hash text-primary"></i> Nro. Secuencial</th>
                                 <th><i class="ti ti-hash text-primary"></i> Número</th>
-                                <th><i class="ti ti-user text-primary"></i> Propietario</th>
+                                <th><i class="ti ti-building text-primary"></i> Bloque</th>
+                                <th><i class="ti ti-layers text-primary"></i> Piso</th>
                                 <th><i class="ti ti-list text-primary"></i> Tipo</th>
+                                <th><i class="ti ti-user text-primary"></i> Propietario</th>
                                 <th><i class="ti ti-stack text-primary"></i> Estado</th>
-                                <th class="text-end">
-                                    <ti class="ti ti-direction text-primary"></ti> Acción
-                                </th>
+                                <th class="text-end"><i class="ti ti-direction text-primary"></i> Acción</th>
                             </tr>
                         </thead>
                         <tbody id="tablaBovedasBody">
@@ -59,10 +74,13 @@
                                 <tr>
                                     <td class="fw-semibold">@boveda.NumeroSecuencial</td>
                                     <td>@boveda.Numero</td>
+                                    <td>@(boveda.Piso?.Bloque?.Descripcion ?? "Sin bloque")</td>
+                                    <td>@boveda.Piso?.NumeroPiso</td>
                                     <td>
                                         <span
-                                            class="badge bg-info-subtle text-info fw-normal">@boveda.Piso.Bloque.Tipo</span>
+                                            class="badge bg-info-subtle text-info fw-normal">@boveda.Piso?.Bloque?.Tipo</span>
                                     </td>
+                                    <td>@(boveda.Propietario != null ? $"{boveda.Propietario.Nombres} {boveda.Propietario.Apellidos}" : "Sin propietario")</td>
                                     <td>
                                         @if (boveda.Estado)
                                         {

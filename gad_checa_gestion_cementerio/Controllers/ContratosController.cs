@@ -2292,9 +2292,33 @@ namespace gad_checa_gestion_cementerio.Controllers
         }
         #region BusquedaBovedas
         [HttpGet]
-        public IActionResult BuscarBovedas(string filtro = "", string tipo = "", int pagina = 1)
+        public IActionResult BuscarBovedas(string filtro = "", string tipo = "", int? bloqueId = null, int pagina = 1)
         {
+            var hoy = DateTime.Today;
 
+            // Solo se listan los bloques que tienen al menos una bóveda disponible,
+            // con el conteo para que la secretaría sepa dónde hay cupo sin tener que probar uno por uno.
+            var bloques = _context.Bloque
+                .Where(b => b.Estado)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.Descripcion,
+                    Disponibles = _context.Boveda.Count(bo => bo.Estado
+                        && bo.Piso != null
+                        && bo.Piso.BloqueId == b.Id
+                        && !bo.Contratos.Any(c => c.Estado == true && (c.FechaFin == null || c.FechaFin >= hoy)))
+                })
+                .Where(b => b.Disponibles > 0)
+                .OrderBy(b => b.Descripcion)
+                .ToList()
+                .Select(b => new SelectListItem
+                {
+                    Value = b.Id.ToString(),
+                    Text = $"{b.Descripcion} ({b.Disponibles} disponibles)",
+                    Selected = bloqueId.HasValue && b.Id == bloqueId.Value
+                })
+                .ToList();
 
             var viewModel = new BovedaPaginadaViewModel
             {
@@ -2302,12 +2326,14 @@ namespace gad_checa_gestion_cementerio.Controllers
                 PaginaActual = pagina,
                 TotalPaginas = 0,
                 Filtro = filtro,
-                Tipo = tipo
+                Tipo = tipo,
+                BloqueId = bloqueId,
+                Bloques = bloques
             };
 
             return PartialView("_SelectBoveda", viewModel);
         }
-        public IActionResult BuscarBovedasJson(string filtro = "", string tipo = "", int pagina = 1)
+        public IActionResult BuscarBovedasJson(string filtro = "", string tipo = "", int? bloqueId = null, int pagina = 1)
         {
             try
             {
@@ -2325,12 +2351,18 @@ namespace gad_checa_gestion_cementerio.Controllers
                 if (!string.IsNullOrEmpty(filtro))
                 {
                     query = query.Where(b => (b.NumeroSecuencial != null && b.NumeroSecuencial.Contains(filtro))
-                        || b.Numero.ToString().Contains(filtro));
+                        || b.Numero.ToString().Contains(filtro)
+                        || (b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Descripcion.Contains(filtro)));
                 }
 
                 if (!string.IsNullOrEmpty(tipo))
                 {
                     query = query.Where(b => b.Piso != null && b.Piso.Bloque != null && b.Piso.Bloque.Tipo == tipo);
+                }
+
+                if (bloqueId.HasValue)
+                {
+                    query = query.Where(b => b.Piso != null && b.Piso.BloqueId == bloqueId.Value);
                 }
 
                 // FILTRO AVANZADO DE DISPONIBILIDAD
@@ -2354,8 +2386,9 @@ namespace gad_checa_gestion_cementerio.Controllers
                 int total = query.Count();
 
                 var bovedas = query
-                    .OrderByDescending(b => b.NumeroSecuencial != null)
-                    .ThenBy(b => b.NumeroSecuencial)
+                    .OrderBy(b => b.Piso != null && b.Piso.Bloque != null ? b.Piso.Bloque.Descripcion : "")
+                    .ThenBy(b => b.Piso != null ? b.Piso.NumeroPiso : 0)
+                    .ThenBy(b => b.Numero)
                     .Skip((pagina - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
@@ -2369,13 +2402,17 @@ namespace gad_checa_gestion_cementerio.Controllers
                         id = b.Id,
                         numeroSecuencial = b.NumeroSecuencial,
                         numero = b.Numero,
+                        bloque = b.Piso?.Bloque?.Descripcion ?? "Sin bloque",
+                        piso = b.Piso?.NumeroPiso,
                         tipo = b.Piso?.Bloque?.Tipo ?? "No especificado",
                         estado = b.Estado ? "Activa" : "Inactiva",
                         propietario = b.Propietario != null ? ($"{b.Propietario.Nombres} {b.Propietario.Apellidos}") : "Sin propietario"
                     }),
                     paginaActual = pagina,
                     totalPaginas = (int)Math.Ceiling(total / (double)pageSize),
-                    filtro = filtro
+                    totalResultados = total,
+                    filtro = filtro,
+                    bloqueId = bloqueId
                 };
 
                 return Json(resultado);
