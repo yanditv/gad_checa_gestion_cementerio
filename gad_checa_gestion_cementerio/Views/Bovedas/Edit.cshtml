@@ -2,13 +2,20 @@
 
 @{
     ViewData["Title"] = "Editar Bóveda";
+    const int maximoDifuntos = 2;
     var contratosBoveda = ViewBag.ContratosBoveda as List<gad_checa_gestion_cementerio.Data.Contrato> ?? new List<gad_checa_gestion_cementerio.Data.Contrato>();
+    var difuntosBoveda = ViewBag.DifuntosBoveda as List<gad_checa_gestion_cementerio.Data.Difunto> ?? new List<gad_checa_gestion_cementerio.Data.Difunto>();
     var contratoActivoParaAgregar = contratosBoveda
         .Where(c => c.Estado && c.FechaFin >= DateTime.Today)
         .OrderByDescending(c => c.FechaInicio)
         .FirstOrDefault();
     var contratosActivos = contratosBoveda.Count(c => c.Estado && c.FechaFin >= DateTime.Today);
-    var permiteAgregarDifunto = Model.PropietarioId.HasValue && contratoActivoParaAgregar != null && contratosActivos < 2;
+    // Ocupación total de la bóveda: contratos vigentes + difuntos asignados sin contrato
+    var ocupacionBoveda = contratosActivos + difuntosBoveda.Count;
+    var tienePropietario = Model.PropietarioId.HasValue;
+    var permiteAgregarDifunto = tienePropietario && contratoActivoParaAgregar != null && ocupacionBoveda < maximoDifuntos;
+    // En bóvedas con propietario no se genera contrato: el difunto se registra directamente
+    var permiteDifuntoSinContrato = tienePropietario && ocupacionBoveda < maximoDifuntos;
 }
 
 <div class="card border-0 shadow-sm">
@@ -136,6 +143,95 @@
             </div>
         </form>
 
+        @if (tienePropietario)
+        {
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-light border-0 py-2">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="mb-0"><i class="ti ti-user-heart me-2 text-primary"></i>Difuntos de la bóveda</h6>
+                        <div class="d-flex gap-2">
+                            @if (permiteDifuntoSinContrato)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                    data-bs-target="#asignarDifuntoModal">
+                                    <i class="ti ti-link me-1"></i>Asignar existente
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#registrarDifuntoModal">
+                                    <i class="ti ti-plus me-1"></i>Registrar difunto
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light border">
+                        <i class="ti ti-info-circle me-2"></i>
+                        Esta bóveda tiene propietario, por lo que los difuntos se registran directamente y no
+                        requieren contrato. Máximo @maximoDifuntos difuntos por bóveda
+                        (actualmente @ocupacionBoveda).
+                    </div>
+                    @if (!difuntosBoveda.Any())
+                    {
+                        <div class="text-muted small mb-0">
+                            Todavía no hay difuntos registrados sin contrato en esta bóveda.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Difunto</th>
+                                        <th>Cédula</th>
+                                        <th>Fallecimiento</th>
+                                        <th style="min-width: 340px;">Cambiar difunto</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var difunto in difuntosBoveda)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@difunto.Nombres @difunto.Apellidos</td>
+                                            <td>@(string.IsNullOrWhiteSpace(difunto.NumeroIdentificacion) ? "Sin identificación" : difunto.NumeroIdentificacion)</td>
+                                            <td class="text-nowrap">
+                                                @(difunto.FechaFallecimiento.HasValue ? difunto.FechaFallecimiento.Value.ToString("dd/MM/yyyy") : "-")
+                                            </td>
+                                            <td>
+                                                <form asp-action="AsignarDifuntoBoveda" method="post" class="d-flex gap-2">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="bovedaId" value="@Model.Id" />
+                                                    <input type="hidden" name="difuntoActualId" value="@difunto.Id" />
+                                                    <select name="difuntoId" class="form-select selectDifuntoLibre" required>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-outline-primary text-nowrap">
+                                                        <i class="ti ti-device-floppy me-1"></i>Aplicar
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td>
+                                                <form asp-action="QuitarDifuntoBoveda" method="post"
+                                                    onsubmit="return confirm('¿Quitar este difunto de la bóveda?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="bovedaId" value="@Model.Id" />
+                                                    <input type="hidden" name="difuntoId" value="@difunto.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger text-nowrap">
+                                                        <i class="ti ti-trash me-1"></i>Quitar
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         <div class="card border-0 shadow-sm mt-4">
             <div class="card-header bg-light border-0 py-2">
                 <div class="d-flex justify-content-between align-items-center">
@@ -153,7 +249,7 @@
                 {
                     <div class="alert alert-light border mb-0">
                         <i class="ti ti-info-circle me-2"></i>
-                        Esta bóveda todavía no tiene contratos o difuntos asociados.
+                        Esta bóveda no tiene contratos registrados.
                     </div>
                 }
                 else
@@ -296,6 +392,120 @@
                         </button>
                         <button type="submit" class="btn btn-primary">
                             <i class="ti ti-device-floppy me-1"></i>Guardar difunto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+@if (permiteDifuntoSinContrato)
+{
+    <!-- Modal: registrar un difunto nuevo directamente en la bóveda (sin contrato) -->
+    <div class="modal fade" id="registrarDifuntoModal" tabindex="-1" aria-labelledby="registrarDifuntoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="AgregarDifuntoBoveda" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bovedaId" value="@Model.Id" />
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="registrarDifuntoModalLabel">
+                            <i class="ti ti-user-heart text-primary me-2"></i>Registrar difunto en la bóveda
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-light border">
+                            El difunto quedará asociado directamente a esta bóveda con propietario. No se genera
+                            contrato ni cuotas.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Cédula</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-id"></i></span>
+                                    <input type="text" name="NumeroIdentificacion" class="form-control" maxlength="20"
+                                        required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nombres</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-user"></i></span>
+                                    <input type="text" name="Nombres" class="form-control" maxlength="100" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Apellidos</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-user-check"></i></span>
+                                    <input type="text" name="Apellidos" class="form-control" maxlength="100" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Fecha de nacimiento</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-calendar-heart"></i></span>
+                                    <input type="date" name="FechaNacimiento" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Fecha de defunción</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-calendar-x"></i></span>
+                                    <input type="date" name="FechaFallecimiento" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Descuento</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ti ti-discount"></i></span>
+                                    <select name="DescuentoId" class="form-select" asp-items="ViewBag.DescuentoId"
+                                        required></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="ti ti-x me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i>Guardar difunto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: asignar a la bóveda un difunto ya registrado -->
+    <div class="modal fade" id="asignarDifuntoModal" tabindex="-1" aria-labelledby="asignarDifuntoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="AsignarDifuntoBoveda" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bovedaId" value="@Model.Id" />
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="asignarDifuntoModalLabel">
+                            <i class="ti ti-link text-primary me-2"></i>Asignar difunto existente
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">Difunto</label>
+                        <select name="difuntoId" id="selectDifuntoExistente" class="form-select" required></select>
+                        <div class="form-text">Solo se listan difuntos que no están en otra bóveda ni en un contrato.
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="ti ti-x me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i>Asignar
                         </button>
                     </div>
                 </form>
@@ -477,6 +687,42 @@
                 minimumInputLength: 3,
                 width: '100%'
             });
+            // Búsqueda de difuntos que no están en otra bóveda ni en un contrato
+            function opcionesDifuntosLibres(extra) {
+                return $.extend({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Buscar difunto disponible...',
+                    allowClear: true,
+                    ajax: {
+                        url: '/Bovedas/BuscarDifuntos',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                searchTerm: params.term,
+                                soloLibres: true
+                            };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.map(function (item) {
+                                    return {
+                                        id: item.id,
+                                        text: `${item.nombres} ${item.apellidos} - ${item.numeroIdentificacion || 'Sin identificación'}`
+                                    };
+                                })
+                            };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 3,
+                    width: '100%'
+                }, extra || {});
+            }
+            $('.selectDifuntoLibre').select2(opcionesDifuntosLibres());
+            $('#selectDifuntoExistente').select2(opcionesDifuntosLibres({
+                dropdownParent: $('#asignarDifuntoModal')
+            }));
             // Inicializar modal
             var crearPropietarioModal = new bootstrap.Modal(document.getElementById('crearPropietarioModal'));
             // Evento al seleccionar un propietario
@@ -538,30 +784,35 @@
             });
             // Cargar propietario actual si existe
             @if (Model.PropietarioId.HasValue)
+            {
+                // Se serializa a JSON para no romper el script con comillas ni codificar caracteres como "+"
+                var propietarioJson = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    <text>
-                        var propietarioId = @Model.PropietarioId.Value;
-                        var propietarioNombre = '@Html.Raw(Model.Propietario?.Nombres) @Html.Raw(Model.Propietario?.Apellidos)';
-                        var propietarioIdentificacion = '@Html.Raw(Model.Propietario?.TipoIdentificacion): @Model.Propietario?.NumeroIdentificacion';
-                        var propietarioTelefono = '@Html.Raw(Model.Propietario?.Telefono)';
-                        var propietarioEmail = '@Html.Raw(Model.Propietario?.Email)';
-                        var propietarioDireccion = '@Html.Raw(Model.Propietario?.Direccion)';
-                        var option = new Option(
-                        `${propietarioNombre} - ${propietarioIdentificacion}`,
-                                                                                propietarioId,
-                                                                                true,
-                                                                                true
-                                                                            );
-                                                                            $('#selectPropietario').append(option).trigger('change');
-                                                                            $('#propietarioId').val(propietarioId);
-                                                                            $('#propietarioNombre').text(propietarioNombre);
-                                                                            $('#propietarioIdentificacion').text(propietarioIdentificacion);
-                                                                            $('#propietarioTelefono').text(propietarioTelefono || 'No especificado');
-                                                                            $('#propietarioEmail').text(propietarioEmail || 'No especificado');
-                                                                            $('#propietarioDireccion').text(propietarioDireccion || 'No especificada');
-                                                                            $('#propietarioInfo').removeClass('d-none');
-                                                                        </text>
-                                        }
-                                    });
+                    id = Model.PropietarioId.Value,
+                    nombre = $"{Model.Propietario?.Nombres} {Model.Propietario?.Apellidos}".Trim(),
+                    identificacion = $"{Model.Propietario?.TipoIdentificacion}: {Model.Propietario?.NumeroIdentificacion}",
+                    telefono = Model.Propietario?.Telefono,
+                    email = Model.Propietario?.Email,
+                    direccion = Model.Propietario?.Direccion
+                });
+                <text>
+                var propietarioActual = @Html.Raw(propietarioJson);
+                var option = new Option(
+                    `${propietarioActual.nombre} - ${propietarioActual.identificacion}`,
+                    propietarioActual.id,
+                    true,
+                    true
+                );
+                $('#selectPropietario').append(option).trigger('change');
+                $('#propietarioId').val(propietarioActual.id);
+                $('#propietarioNombre').text(propietarioActual.nombre);
+                $('#propietarioIdentificacion').text(propietarioActual.identificacion);
+                $('#propietarioTelefono').text(propietarioActual.telefono || 'No especificado');
+                $('#propietarioEmail').text(propietarioActual.email || 'No especificado');
+                $('#propietarioDireccion').text(propietarioActual.direccion || 'No especificada');
+                $('#propietarioInfo').removeClass('d-none');
+                </text>
+            }
+        });
     </script>
 }

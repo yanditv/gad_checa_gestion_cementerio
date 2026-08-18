@@ -111,6 +111,13 @@ namespace gad_checa_gestion_cementerio.Data
                 .WithMany()
                 .OnDelete(DeleteBehavior.NoAction);
 
+            // Difuntos asignados directamente a una bóveda con propietario (sin contrato)
+            builder.Entity<Difunto>()
+                .HasOne(d => d.Boveda)
+                .WithMany(b => b.Difuntos)
+                .HasForeignKey(d => d.BovedaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<Descuento>()
                 .HasOne<ApplicationUser>(d => d.UsuarioCreador)
                 .WithMany()

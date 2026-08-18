@@ -43,10 +43,18 @@ namespace gad_checa_gestion_cementerio.Models
 
         public ICollection<Contrato>? Contratos { get; set; }
 
+        // Difuntos asignados directamente a la bóveda, sin contrato (bóvedas con propietario)
+        public ICollection<Difunto>? Difuntos { get; set; }
+
         public bool TienePropietario => Propietario != null;
 
         public bool TieneContratoActivo => Contratos?.Any(c =>
             c.FechaInicio <= DateTime.Now &&
             (c.FechaFin == null || c.FechaFin >= DateTime.Now)) ?? false;
+
+        public bool TieneDifuntoSinContrato => Difuntos?.Any(d => d.FechaEliminacion == null) ?? false;
+
+        // Una bóveda está ocupada por contrato vigente o por un difunto registrado sin contrato
+        public bool EstaOcupada => TieneContratoActivo || TieneDifuntoSinContrato;
     }
 }

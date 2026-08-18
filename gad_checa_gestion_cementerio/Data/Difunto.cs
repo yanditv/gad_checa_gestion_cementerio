@@ -48,6 +48,13 @@ namespace gad_checa_gestion_cementerio.Data
 
         public Contrato? Contrato { get; set; }
 
+        // Vínculo directo con la bóveda para difuntos registrados sin contrato
+        // (bóvedas con propietario). Es null cuando el difunto llega por contrato.
+        public int? BovedaId { get; set; }
+
+        [ForeignKey("BovedaId")]
+        public Boveda? Boveda { get; set; }
+
         [Required]
         [ForeignKey("Descuento")]
         public int DescuentoId { get; set; }

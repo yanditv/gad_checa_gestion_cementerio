@@ -50,5 +50,9 @@ namespace gad_checa_gestion_cementerio.Data
         public Propietario? Propietario { get; set; }
 
         public ICollection<Contrato>? Contratos { get; set; } // Relación con los contratos
+
+        // Difuntos asignados directamente a la bóveda, sin contrato de por medio
+        // (aplica a bóvedas con propietario)
+        public ICollection<Difunto>? Difuntos { get; set; }
     }
 }

@@ -108,7 +108,7 @@
                                     <td>@item.Piso?.Bloque?.Descripcion</td>
                                     <td>@item.Piso?.NumeroPiso</td>
                                     <td>
-                                        @if (!item.TieneContratoActivo)
+                                        @if (!item.EstaOcupada)
                                         {
                                             <span class="badge bg-success-subtle text-success"><i
                                                     class="ti ti-check me-1"></i>Disponible</span>

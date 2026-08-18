@@ -48,7 +48,7 @@
                                     <i class="ti ti-toggle-left text-primary me-2"></i>
                                     <div>
                                         <small class="text-muted d-block">Estado</small>
-                                        @if (!Model.TieneContratoActivo)
+                                        @if (!Model.EstaOcupada)
                                         {
                                             <span class="badge bg-success-subtle text-success"><i
                                                     class="ti ti-check me-1"></i>Disponible</span>
@@ -355,6 +355,51 @@
                             </div>
                         </div>
                     }
+                </div>
+            </div>
+        }
+        <!-- Difuntos registrados sin contrato (bóvedas con propietario) -->
+        @{
+            var difuntosSinContrato = Model.Difuntos?.Where(d => d.FechaEliminacion == null).ToList()
+            ?? new List<gad_checa_gestion_cementerio.Data.Difunto>();
+        }
+        @if (difuntosSinContrato.Any())
+        {
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-info text-white border-0 py-2 d-flex align-items-center">
+                    <i class="ti ti-user-heart me-2 fs-5"></i>
+                    <h6 class="mb-0">Difuntos sin contrato</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Difunto</th>
+                                    <th>Identificación</th>
+                                    <th>Nacimiento</th>
+                                    <th>Fallecimiento</th>
+                                    <th>Descuento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var difunto in difuntosSinContrato)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@difunto.Nombres @difunto.Apellidos</td>
+                                        <td>@(string.IsNullOrWhiteSpace(difunto.NumeroIdentificacion) ? "No registrada" : difunto.NumeroIdentificacion)</td>
+                                        <td class="text-nowrap">@(difunto.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "No registrada")</td>
+                                        <td class="text-nowrap">@(difunto.FechaFallecimiento?.ToString("dd/MM/yyyy") ?? "No registrada")</td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">
+                                                @difunto.Descuento?.Descripcion (@(difunto.Descuento?.Porcentaje ?? 0)%)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         }
