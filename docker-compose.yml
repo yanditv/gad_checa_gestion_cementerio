@@ -16,6 +16,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      # En el primer arranque SQL Server crea/actualiza sus bases de sistema y
+      # tarda varios minutos. Sin start_period se agotan los reintentos, el
+      # contenedor se marca unhealthy y 'app' nunca llega a iniciar.
+      start_period: 300s
     entrypoint: >
       /bin/bash -c "
         /opt/mssql/bin/sqlservr &
@@ -56,11 +60,14 @@ services:
     volumes:
       - ./data-protection-keys:/app/keys:rw
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      # La ruta real es /api/Health (HealthController usa [Route("api/[controller]")]).
+      # Se usa wget porque la imagen final no trae curl instalado.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/api/Health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      # El primer arranque aplica migraciones y siembra datos iniciales.
+      start_period: 180s
     command: >
       /bin/bash -c "
         echo 'Esperando que SQL Server esté completamente listo...';
