@@ -691,6 +691,120 @@ namespace WebApp.Controllers
             return RedirectToAction(nameof(Edit), new { id = bovedaId });
         }
 
+        // Crea un difunto nuevo y lo pone en el lugar de otro en un solo paso.
+        // Con contratoId reemplaza al difunto de ese contrato; con difuntoActualId
+        // reemplaza a un difunto asignado sin contrato.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReemplazarDifuntoConNuevo(int bovedaId, int? contratoId, int? difuntoActualId, DifuntoModel difunto)
+        {
+            var boveda = await _context.Boveda
+                .FirstOrDefaultAsync(b => b.Id == bovedaId && b.FechaEliminacion == null);
+
+            if (boveda == null)
+            {
+                TempData["Error"] = "No se encontró la bóveda seleccionada.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!contratoId.HasValue && !difuntoActualId.HasValue)
+            {
+                TempData["Error"] = "No se indicó a qué difunto reemplazar.";
+                return RedirectToAction(nameof(Edit), new { id = bovedaId });
+            }
+
+            Contrato? contrato = null;
+            Difunto? difuntoActual = null;
+
+            if (contratoId.HasValue)
+            {
+                contrato = await _context.Contrato
+                    .FirstOrDefaultAsync(c => c.Id == contratoId.Value && c.BovedaId == bovedaId && c.FechaEliminacion == null);
+
+                if (contrato == null)
+                {
+                    TempData["Error"] = "No se encontró el contrato asociado a esta bóveda.";
+                    return RedirectToAction(nameof(Edit), new { id = bovedaId });
+                }
+            }
+            else
+            {
+                difuntoActual = await _context.Difunto
+                    .FirstOrDefaultAsync(d => d.Id == difuntoActualId!.Value && d.BovedaId == bovedaId && d.FechaEliminacion == null);
+
+                if (difuntoActual == null)
+                {
+                    TempData["Error"] = "No se encontró el difunto que se desea reemplazar en esta bóveda.";
+                    return RedirectToAction(nameof(Edit), new { id = bovedaId });
+                }
+            }
+
+            ValidarFechasDifunto(difunto);
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return RedirectToAction(nameof(Edit), new { id = bovedaId });
+            }
+
+            var identificacion = difunto.NumeroIdentificacion.Trim();
+            var existeDifunto = await _context.Difunto.AnyAsync(d =>
+                d.FechaEliminacion == null &&
+                d.NumeroIdentificacion == identificacion);
+
+            if (existeDifunto)
+            {
+                TempData["Error"] = "Ya existe un difunto con la identificación ingresada. Use el buscador para seleccionarlo.";
+                return RedirectToAction(nameof(Edit), new { id = bovedaId });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                TempData["Error"] = "No se pudo obtener el usuario actual.";
+                return RedirectToAction(nameof(Edit), new { id = bovedaId });
+            }
+
+            var ahora = DateTime.Now;
+            var nuevoDifunto = new Difunto
+            {
+                NumeroIdentificacion = identificacion,
+                Nombres = difunto.Nombres.Trim(),
+                Apellidos = difunto.Apellidos.Trim(),
+                FechaNacimiento = difunto.FechaNacimiento,
+                FechaFallecimiento = difunto.FechaFallecimiento,
+                DescuentoId = difunto.DescuentoId,
+                // Solo ocupa la bóveda directamente cuando reemplaza a un difunto sin contrato
+                BovedaId = contrato == null ? bovedaId : null,
+                Estado = true,
+                UsuarioCreadorId = user.Id,
+                UsuarioActualizadorId = user.Id,
+                FechaCreacion = ahora,
+                FechaActualizacion = ahora
+            };
+
+            _context.Difunto.Add(nuevoDifunto);
+            await _context.SaveChangesAsync();
+
+            if (contrato != null)
+            {
+                contrato.DifuntoId = nuevoDifunto.Id;
+                contrato.UsuarioActualizadorId = user.Id;
+                contrato.FechaActualizacion = ahora;
+            }
+            else
+            {
+                // El anterior queda libre, no se elimina
+                difuntoActual!.BovedaId = null;
+                difuntoActual.UsuarioActualizadorId = user.Id;
+                difuntoActual.FechaActualizacion = ahora;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Difunto {nuevoDifunto.Nombres} {nuevoDifunto.Apellidos} registrado y asignado en la bóveda.";
+            return RedirectToAction(nameof(Edit), new { id = bovedaId });
+        }
+
         // Quita el difunto de la bóveda sin eliminar su registro.
         [HttpPost]
         [ValidateAntiForgeryToken]
