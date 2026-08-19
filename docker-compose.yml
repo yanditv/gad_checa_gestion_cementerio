@@ -9,7 +9,11 @@ services:
       - SA_PASSWORD=${MSSQL_SA_PASSWORD}
       - MSSQL_PID=${MSSQL_PID}
     volumes:
-      - sql_data:/var/opt/sqlserver-checa
+      # SQL Server guarda sus datos en /var/opt/mssql. Antes se montaba en
+      # /var/opt/sqlserver-checa, una ruta que el motor nunca usa: el volumen
+      # quedaba vacío y la base vivía en la capa del contenedor, así que se
+      # perdía al recrearlo.
+      - sql_data:/var/opt/mssql
       - ./init.sql:/init.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD} -Q 'SELECT 1' -C -N" ]
