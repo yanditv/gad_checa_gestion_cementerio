@@ -556,16 +556,10 @@ namespace WebApp.Controllers
                 return RedirectToAction(nameof(Edit), new { id = bovedaId });
             }
 
+            // No se valida que la identificación sea única: el catastro migrado usa
+            // una cédula de relleno (9999999999) para los difuntos sin documento
+            // conocido, así que la repetición es lo normal y no un error.
             var identificacion = difunto.NumeroIdentificacion.Trim();
-            var existeDifunto = await _context.Difunto.AnyAsync(d =>
-                d.FechaEliminacion == null &&
-                d.NumeroIdentificacion == identificacion);
-
-            if (existeDifunto)
-            {
-                TempData["Error"] = "Ya existe un difunto con la identificación ingresada. Use la opción Asignar difunto existente.";
-                return RedirectToAction(nameof(Edit), new { id = bovedaId });
-            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -746,16 +740,8 @@ namespace WebApp.Controllers
                 return RedirectToAction(nameof(Edit), new { id = bovedaId });
             }
 
+            // Ver nota en AgregarDifuntoBoveda: la identificación puede repetirse
             var identificacion = difunto.NumeroIdentificacion.Trim();
-            var existeDifunto = await _context.Difunto.AnyAsync(d =>
-                d.FechaEliminacion == null &&
-                d.NumeroIdentificacion == identificacion);
-
-            if (existeDifunto)
-            {
-                TempData["Error"] = "Ya existe un difunto con la identificación ingresada. Use el buscador para seleccionarlo.";
-                return RedirectToAction(nameof(Edit), new { id = bovedaId });
-            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
